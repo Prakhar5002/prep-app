@@ -177,6 +177,22 @@ img { max-width: 100%; }
 .menu-toggle { display: none; }
 @media (max-width: 900px) { .menu-toggle { display: inline-flex; } }
 
+/* Mobile topbar: compact search, keep actions visible */
+@media (max-width: 700px) {
+  .topbar { padding: 0 10px; gap: 8px; }
+  .brand { margin-right: 4px; }
+  .brand-text { display: none; }
+  .search-trigger {
+    min-width: 0;
+    flex: 1;
+    padding: 6px 8px;
+    justify-content: center;
+  }
+  .search-trigger span,
+  .search-trigger kbd { display: none; }
+  .topbar-actions { flex-shrink: 0; }
+}
+
 kbd {
   display: inline-block;
   padding: 1px 5px;
