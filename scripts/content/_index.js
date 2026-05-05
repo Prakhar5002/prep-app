@@ -279,6 +279,28 @@ window.PREP_SITE.registry = {
         { id: "git-recovery", title: "Recovery (reflog etc.)" },
       ],
     },
+    {
+      id: "ai",
+      title: "AI / LLM Engineering",
+      topics: [
+        { id: "ai-prompts", title: "Prompt Engineering" },
+      ],
+    },
+    {
+      id: "backend",
+      title: "Backend (incl. System Design)",
+      topics: [
+        { id: "be-fundamentals", title: "Fundamentals" },
+        { id: "be-databases", title: "Databases" },
+        { id: "be-caching", title: "Caching" },
+        { id: "be-queues", title: "Queues & Streaming" },
+        { id: "be-architecture", title: "Architecture Patterns" },
+        { id: "be-resilience", title: "Resilience" },
+        { id: "be-observability", title: "Observability" },
+        { id: "bsd-framework", title: "Backend SD Framework" },
+        { id: "bsd-cases", title: "Backend SD Cases" },
+      ],
+    },
   ],
 };
 
