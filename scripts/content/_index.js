@@ -301,6 +301,22 @@ window.PREP_SITE.registry = {
         { id: "bsd-cases", title: "Backend SD Cases" },
       ],
     },
+    {
+      id: "workplace",
+      title: "Workplace Operations",
+      topics: [
+        { id: "wp-perf-promo", title: "Performance Reviews & Promo Narratives" },
+        { id: "wp-managing-up", title: "Managing Up & 1:1s" },
+        { id: "wp-pressure", title: "Pressure, Burnout & Recovery" },
+        { id: "wp-layoffs", title: "Layoff Survival & Recovery" },
+        { id: "wp-saying-no", title: "Saying No & Scope Pushback" },
+        { id: "wp-comp", title: "Compensation Conversations" },
+        { id: "wp-stakeholders", title: "Stakeholder Management" },
+        { id: "wp-conflict", title: "Conflict & Productive Disagreement" },
+        { id: "wp-reorgs", title: "Reorgs & Leadership Changes" },
+        { id: "wp-visibility", title: "Visibility & Self-Promotion" },
+      ],
+    },
   ],
 };
 
