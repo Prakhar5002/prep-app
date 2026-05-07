@@ -490,7 +490,11 @@
     $$('.section.collapsible .section-header', content).forEach(header => {
       header.addEventListener('click', (e) => {
         if (e.target.closest('.anchor-link')) return;
-        header.parentElement.classList.toggle('collapsed');
+        const section = header.parentElement;
+        const isHidden = section.classList.contains('collapsed') || section.classList.contains('mobile-collapsed');
+        // Always clear both — let the toggle decide the new state
+        section.classList.remove('mobile-collapsed', 'collapsed');
+        if (!isHidden) section.classList.add('collapsed');
       });
     });
 
@@ -719,23 +723,39 @@
   // ==========================================================
   function initTocFab() {
     const fab = $('#tocFab');
+    const toc = $('#toc');
+    if (!fab || !toc) return;
+
+    // Create / fetch backdrop
+    let backdrop = $('#tocBackdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.id = 'tocBackdrop';
+      backdrop.className = 'toc-backdrop';
+      document.body.appendChild(backdrop);
+    }
+
+    function openSheet() {
+      toc.classList.add('toc-sheet-open');
+      backdrop.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeSheet() {
+      toc.classList.remove('toc-sheet-open');
+      backdrop.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
     fab.addEventListener('click', () => {
-      const toc = $('#toc');
-      if (toc.style.display === 'block') {
-        toc.style.display = '';
-      } else {
-        toc.style.display = 'block';
-        toc.style.position = 'fixed';
-        toc.style.left = '0';
-        toc.style.right = '0';
-        toc.style.bottom = '0';
-        toc.style.top = 'auto';
-        toc.style.maxHeight = '60vh';
-        toc.style.width = '100%';
-        toc.style.zIndex = '25';
-        toc.style.borderTop = '1px solid var(--border)';
-        toc.style.borderLeft = 'none';
-      }
+      if (toc.classList.contains('toc-sheet-open')) closeSheet();
+      else openSheet();
+    });
+    backdrop.addEventListener('click', closeSheet);
+
+    // Close when a link is tapped
+    toc.addEventListener('click', (e) => {
+      const link = e.target.closest('a');
+      if (link) closeSheet();
     });
   }
 

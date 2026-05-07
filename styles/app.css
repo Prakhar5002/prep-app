@@ -585,8 +585,6 @@ html[data-theme="light"] .icon-moon { display: block; }
   margin-right: var(--toc-w);
   display: flex;
   justify-content: center;
-  position: relative;
-  z-index: 1;
 }
 @media (max-width: 1200px) {
   .main { margin-right: 0; }
@@ -1685,18 +1683,37 @@ html[data-theme="light"] .token.function { color: #8a4be6; }
 }
 .bottom-nav-btn.primary {
   position: relative;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  align-self: center;
 }
 .bottom-nav-btn.primary::before {
   content: "";
   position: absolute;
-  top: 6px;
-  width: 36px; height: 36px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px; height: 44px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--grad-1), var(--grad-2));
-  box-shadow: 0 4px 12px var(--accent-glow);
+  box-shadow: 0 6px 16px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+  transition: transform var(--dur-fast) var(--ease-spring);
 }
-.bottom-nav-btn.primary svg { position: relative; z-index: 1; color: white; }
-.bottom-nav-btn.primary span { color: var(--accent); font-weight: 600; position: relative; z-index: 1; }
+.bottom-nav-btn.primary:active::before { transform: translate(-50%, -50%) scale(0.92); }
+.bottom-nav-btn.primary svg {
+  position: relative;
+  z-index: 1;
+  color: white;
+  width: 22px;
+  height: 22px;
+}
+/* Icon-only on elevated CTA — matches iOS / Android tab-bar convention */
+.bottom-nav-btn.primary span {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
 
 @media (max-width: 700px) {
   .bottom-nav { display: flex; }
@@ -2030,4 +2047,72 @@ html.focus-mode #focusToggle {
   .main { margin-right: var(--toc-w); }
   .toc { display: block; }
   .toc-fab { display: none; }
+}
+
+/* ============================================================
+   STRUCTURAL: MOBILE TOC BOTTOM-SHEET
+   ============================================================ */
+
+/* Backdrop (only visible when sheet is open) */
+.toc-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease-out);
+  z-index: 46; /* between bottom-nav (45) and sheet (47) */
+}
+.toc-backdrop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Mobile/tablet bottom-sheet layout for TOC */
+@media (max-width: 1279px) {
+  .toc.toc-sheet-open {
+    display: block !important;
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-height: 70dvh;
+    max-height: 70vh; /* fallback */
+    background: var(--bg-elev) !important;
+    border-left: none !important;
+    border-top: 1px solid var(--border-strong);
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 47;
+    padding: 14px 20px 24px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    animation: sheet-up var(--dur-base) var(--ease-out);
+  }
+  .toc.toc-sheet-open::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border-strong);
+    margin: 0 auto 12px;
+  }
+  .toc.toc-sheet-open .toc-header {
+    margin-bottom: 10px;
+  }
+  /* When the sheet is open, lift FAB above backdrop so it's still tappable */
+  .toc.toc-sheet-open ~ .toc-fab,
+  .toc-sheet-open + .toc-fab,
+  .toc-fab {
+    z-index: 48;
+  }
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
