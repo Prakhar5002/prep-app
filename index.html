@@ -1,21 +1,45 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#0a0a0c" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
   <title>Prep · FAANG + Mobile Frontend</title>
+
+  <!-- Premium variable fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@400..700&display=swap" />
+
   <link rel="stylesheet" href="styles/app.css" />
   <link rel="stylesheet" href="vendor/prism.css" />
 </head>
 <body>
+  <!-- Aurora gradient mesh background (decorative, fixed) -->
+  <div class="bg-aurora" aria-hidden="true">
+    <div class="bg-aurora-blob bg-aurora-blob-1"></div>
+    <div class="bg-aurora-blob bg-aurora-blob-2"></div>
+    <div class="bg-aurora-blob bg-aurora-blob-3"></div>
+    <div class="bg-grid"></div>
+  </div>
+
+  <!-- Reading progress bar -->
+  <div class="reading-progress" id="readingProgress" aria-hidden="true"></div>
+
   <!-- Top bar -->
   <header class="topbar">
     <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Toggle menu">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
-    <a href="#/" class="brand">
-      <span class="brand-mark">⌘</span>
+    <a href="#/" class="brand" aria-label="Prep · home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M4 4h7a5 5 0 0 1 0 10H4z" fill="currentColor" opacity=".95"/>
+          <rect x="4" y="4" width="3" height="16" rx="1" fill="currentColor"/>
+        </svg>
+      </span>
       <span class="brand-text">Prep</span>
     </a>
     <button class="search-trigger" id="searchTrigger" aria-label="Search">
@@ -27,18 +51,37 @@
       <button class="icon-btn" id="progressToggle" aria-label="Mark as studied" title="Mark this topic as studied">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       </button>
-      <button class="icon-btn" id="themeToggle" aria-label="Toggle theme">
+      <button class="icon-btn" id="focusToggle" aria-label="Toggle focus mode (F)" title="Focus mode (F)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+      <button class="icon-btn" id="kbdToggle" aria-label="Keyboard shortcuts (?)" title="Keyboard shortcuts (?)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01"/><path d="M10 10h.01"/><path d="M14 10h.01"/><path d="M18 10h.01"/><path d="M6 14h.01"/><path d="M18 14h.01"/><path d="M10 14h4"/></svg>
+      </button>
+      <button class="icon-btn" id="themeToggle" aria-label="Toggle theme (T)" title="Toggle theme (T)">
         <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
     </div>
   </header>
 
+  <!-- Sticky section progress (only shown while reading a topic) -->
+  <div class="section-progress" id="sectionProgress" hidden>
+    <div class="section-progress-inner">
+      <span class="section-progress-label" id="sectionProgressLabel">—</span>
+      <span class="section-progress-count" id="sectionProgressCount"></span>
+      <div class="section-progress-dots" id="sectionProgressDots"></div>
+    </div>
+  </div>
+
+  <!-- Tablet rail (700-1024px) - module quick-jump -->
+  <nav class="sidebar-rail" id="sidebarRail" aria-label="Modules"></nav>
+
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar" aria-label="Module navigation">
     <div class="sidebar-header">
       <div class="sidebar-stat">
-        <span id="progressCount">0</span> / <span id="progressTotal">0</span> studied
+        <span><span class="stat-num" id="progressCount">0</span> / <span class="stat-num" id="progressTotal">0</span> studied</span>
+        <span class="stat-pct" id="progressPct">0%</span>
       </div>
       <div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
     </div>
@@ -84,6 +127,56 @@
   <button class="toc-fab" id="tocFab" aria-label="Show contents on this page">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
   </button>
+
+  <!-- Mobile bottom nav -->
+  <nav class="bottom-nav" aria-label="Primary actions">
+    <a href="#/" class="bottom-nav-btn" data-action="home" aria-label="Home">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Home</span>
+    </a>
+    <button type="button" class="bottom-nav-btn" data-action="modules" aria-label="Open modules sidebar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Modules</span>
+    </button>
+    <button type="button" class="bottom-nav-btn primary" data-action="search" aria-label="Search">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span>Search</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" data-action="studied" aria-label="Mark as studied">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <span>Studied</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" data-action="theme" aria-label="Toggle theme">
+      <svg class="bn-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/></svg>
+      <svg class="bn-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <span>Theme</span>
+    </button>
+  </nav>
+
+  <!-- Keyboard shortcuts cheatsheet -->
+  <div class="kbd-modal" id="kbdModal" hidden role="dialog" aria-label="Keyboard shortcuts">
+    <div class="kbd-backdrop" id="kbdBackdrop"></div>
+    <div class="kbd-panel">
+      <div class="kbd-panel-header">
+        <h2>Keyboard shortcuts</h2>
+        <button class="icon-btn" id="kbdClose" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="kbd-grid">
+        <div class="kbd-row"><span>Open search</span><span><kbd>⌘</kbd>+<kbd>K</kbd></span></div>
+        <div class="kbd-row"><span>Quick search</span><span><kbd>/</kbd></span></div>
+        <div class="kbd-row"><span>Next topic</span><span><kbd>→</kbd></span></div>
+        <div class="kbd-row"><span>Previous topic</span><span><kbd>←</kbd></span></div>
+        <div class="kbd-row"><span>Next section</span><span><kbd>J</kbd></span></div>
+        <div class="kbd-row"><span>Previous section</span><span><kbd>K</kbd></span></div>
+        <div class="kbd-row"><span>Mark studied</span><span><kbd>S</kbd></span></div>
+        <div class="kbd-row"><span>Toggle theme</span><span><kbd>T</kbd></span></div>
+        <div class="kbd-row"><span>Focus mode</span><span><kbd>F</kbd></span></div>
+        <div class="kbd-row"><span>Back to top</span><span><kbd>G</kbd> <kbd>G</kbd></span></div>
+        <div class="kbd-row"><span>This help</span><span><kbd>?</kbd></span></div>
+        <div class="kbd-row"><span>Close modals</span><span><kbd>Esc</kbd></span></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Vendor scripts (offline-safe — included locally) -->
   <script src="vendor/prism.js"></script>
