@@ -681,6 +681,11 @@
     $('#searchBackdrop').addEventListener('click', closeSearch);
     $('#searchInput').addEventListener('input', (e) => runSearch(e.target.value));
 
+    // Close search when a result is tapped/clicked (delegated; results re-render on input)
+    $('#searchResults').addEventListener('click', (e) => {
+      if (e.target.closest('.search-result')) closeSearch();
+    });
+
     document.addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
