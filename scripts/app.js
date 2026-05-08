@@ -486,17 +486,19 @@
       ${navHtml}
     `;
 
-    // Section collapse handlers
-    $$('.section.collapsible .section-header', content).forEach(header => {
-      header.addEventListener('click', (e) => {
+    // Section collapse handlers — delegated on #content so DOM rewrites can't lose them
+    if (!content._collapseDelegated) {
+      content._collapseDelegated = true;
+      content.addEventListener('click', (e) => {
         if (e.target.closest('.anchor-link')) return;
+        const header = e.target.closest('.section.collapsible > .section-header');
+        if (!header) return;
         const section = header.parentElement;
         const isHidden = section.classList.contains('collapsed') || section.classList.contains('mobile-collapsed');
-        // Always clear both — let the toggle decide the new state
         section.classList.remove('mobile-collapsed', 'collapsed');
         if (!isHidden) section.classList.add('collapsed');
       });
-    });
+    }
 
     // Syntax highlight code
     if (window.Prism) window.Prism.highlightAll(content);
@@ -758,7 +760,6 @@
       if (link) closeSheet();
     });
   }
-
   // ==========================================================
   // MOBILE BOTTOM NAV
   // ==========================================================

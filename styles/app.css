@@ -1500,6 +1500,18 @@ html[data-theme="light"] .token.property, html[data-theme="light"] .token.number
 html[data-theme="light"] .token.selector, html[data-theme="light"] .token.string { color: #0a8d50; }
 html[data-theme="light"] .token.keyword, html[data-theme="light"] .token.atrule { color: #4b63e6; }
 html[data-theme="light"] .token.function { color: #8a4be6; }
+/* Light-mode visibility fixes — operators (= => < >), entities, etc. */
+html[data-theme="light"] .token.operator,
+html[data-theme="light"] .token.entity,
+html[data-theme="light"] .token.url,
+html[data-theme="light"] .language-css .token.string { color: #15151a; }
+html[data-theme="light"] .token.punctuation { color: #555; }
+html[data-theme="light"] .token.regex,
+html[data-theme="light"] .token.important,
+html[data-theme="light"] .token.variable { color: #b45309; }
+html[data-theme="light"] .token.class-name { color: #6f42c1; }
+/* Inline code in body text — accent-strong is too pale for light bg */
+html[data-theme="light"] .section code { color: #4b63e6; background: #eef0f8; }
 
 /* ============================================================
    SCROLLBARS
@@ -2116,3 +2128,4 @@ html.focus-mode #focusToggle {
   from { transform: translateY(100%); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
+
