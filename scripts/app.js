@@ -241,6 +241,7 @@
   function parseRoute() {
     const hash = location.hash.slice(1);
     if (!hash || hash === '/' || hash === '') return { name: 'home' };
+    if (hash === '/practice' || hash === '/practice/') return { name: 'practice' };
     const topicMatch = hash.match(/^\/topic\/([\w-]+)(?:#(.+))?$/);
     if (topicMatch) return { name: 'topic', topicId: topicMatch[1], anchor: topicMatch[2] };
     return { name: 'home' };
@@ -250,6 +251,7 @@
     const r = parseRoute();
     if (r.name === 'home') renderHome();
     else if (r.name === 'topic') renderTopic(r.topicId, r.anchor);
+    else if (r.name === 'practice') window.PREP_SITE.renderPractice($('#content'));
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
