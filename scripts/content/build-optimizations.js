@@ -170,7 +170,7 @@ window.PREP_SITE.registerTopic({
   <thead><tr><th>Need</th><th>Recommendation (2024+)</th></tr></thead>
   <tbody>
     <tr><td>New SPA / SSG</td><td><strong>Vite</strong> (esbuild dev + Rollup prod)</td></tr>
-    <tr><td>Next.js</td><td>Built-in (swc compiler, Turbopack in dev for 14+)</td></tr>
+    <tr><td>Next.js</td><td>Built-in (swc compiler; Turbopack default + stable for dev and <code>next build</code> since Next 16)</td></tr>
     <tr><td>Library bundling</td><td><strong>tsup</strong> (esbuild) or <strong>unbuild</strong></td></tr>
     <tr><td>Migrating from Webpack with minimal config change</td><td><strong>Rspack</strong></td></tr>
     <tr><td>TypeScript-only transform</td><td><strong>swc</strong> or <strong>esbuild</strong> (drop tsc emit; use tsc --noEmit for type check)</td></tr>
@@ -504,11 +504,11 @@ jobs:
 // CI runs both in parallel; total ~ max of the two.</code></pre>
 
 <h3>Example 9 — Next.js with Turbopack</h3>
-<pre><code class="language-bash">next dev --turbo      # Rust-based incremental dev (Turbopack)
+<pre><code class="language-bash">next dev      # Rust-based incremental dev (Turbopack, default since Next 16)
 
 # In production:
-# Next 14+ uses swc for transforms by default
-# Turbopack for production builds is opt-in (still maturing)</code></pre>
+# swc handles transforms by default
+# Turbopack is the default + stable production bundler (next build) since Next 16</code></pre>
 
 <h3>Example 10 — bundle visualization</h3>
 <pre><code class="language-js">// vite.config.ts

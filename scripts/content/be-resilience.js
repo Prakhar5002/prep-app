@@ -1213,7 +1213,7 @@ app.post('/expensive', async (req, res) =&gt; {
   <li>Test cascading failure: kill upstream; verify fallback works.</li>
   <li>Try Chaos Monkey-style fault injection.</li>
   <li>Read Google's SRE book chapters on SLO + error budget.</li>
-  <li>Read Netflix's Hystrix / opossum / Polly docs.</li>
+  <li>Read the resilience4j (JVM; Hystrix has been in maintenance mode since 2018), opossum (Node), and Polly (.NET) docs.</li>
 </ul>
 
 <h3>"If I had more time" closers (for prep itself)</h3>

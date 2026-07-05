@@ -13,7 +13,7 @@ window.PREP_SITE.registerTopic({
   <li><strong>npm</strong> — bundled with Node. Mature, slowest install. Lockfile: <code>package-lock.json</code>.</li>
   <li><strong>Yarn</strong> — Facebook's pioneering pm. Yarn 1 (Classic) and Yarn 4 (Berry, modern). Faster than npm; PnP option for stricter dep resolution. Lockfile: <code>yarn.lock</code>.</li>
   <li><strong>pnpm</strong> — content-addressable global store; node_modules is symlinks. ~2× faster install, ~3× less disk. Lockfile: <code>pnpm-lock.yaml</code>. Default for many monorepos.</li>
-  <li><strong>Bun</strong> — Zig-based, fastest install (often 5-30× over npm). Also a JS runtime + bundler. Lockfile: <code>bun.lockb</code> (binary).</li>
+  <li><strong>Bun</strong> — Zig-based, fastest install (often 5-30× over npm). Also a JS runtime + bundler. Lockfile: <code>bun.lock</code> (text, default since Bun 1.2 in 2025); the old binary <code>bun.lockb</code> is legacy.</li>
   <li><strong>Lockfile</strong> — pins exact resolved versions; commit it; <code>npm ci</code> / <code>pnpm install --frozen-lockfile</code> in CI.</li>
   <li><strong>Workspaces</strong> — monorepo support. npm 7+, Yarn, pnpm, Bun all support. pnpm has the strictest hoisting controls.</li>
   <li><strong>Semver</strong> — <code>^1.2.3</code> = compatible (1.x.x), <code>~1.2.3</code> = patch (1.2.x), <code>1.2.3</code> = exact.</li>
@@ -89,7 +89,7 @@ window.PREP_SITE.registerTopic({
 <table>
   <thead><tr><th>PM</th><th>Cold install (typical app)</th><th>Hot install (cached)</th><th>Disk usage</th></tr></thead>
   <tbody>
-    <tr><td>npm 10</td><td>30-60s</td><td>5-15s</td><td>Baseline</td></tr>
+    <tr><td>npm 11</td><td>30-60s</td><td>5-15s</td><td>Baseline</td></tr>
     <tr><td>Yarn 1</td><td>20-40s</td><td>5-10s</td><td>Same as npm</td></tr>
     <tr><td>Yarn 4 (Berry)</td><td>10-25s</td><td>2-5s</td><td>Smaller (cache)</td></tr>
     <tr><td>pnpm</td><td>10-25s</td><td>2-5s</td><td>~30% of npm</td></tr>
@@ -239,11 +239,11 @@ packages:
 <h3>corepack — pin PM version</h3>
 <pre><code class="language-json">// package.json
 {
-  "packageManager": "pnpm@9.0.0"
+  "packageManager": "pnpm@11.0.0"
 }</code></pre>
 <pre><code class="language-bash">corepack enable                # ships with Node 16.10+
-corepack prepare pnpm@9.0.0 --activate
-# Now any "pnpm" command in this project uses 9.0.0</code></pre>
+corepack prepare pnpm@11.0.0 --activate
+# Now any "pnpm" command in this project uses 11.0.0</code></pre>
 
 <h3>npm scripts patterns</h3>
 <pre><code class="language-json">{
@@ -364,10 +364,10 @@ pnpm -r --parallel test                 # runs test in every package in parallel
 <h3>Example 3 — corepack lock PM version</h3>
 <pre><code class="language-json">// package.json
 {
-  "packageManager": "pnpm@9.5.0"
+  "packageManager": "pnpm@11.0.0"
 }</code></pre>
 <pre><code class="language-bash">corepack enable
-# Now: pnpm in this project always uses 9.5.0
+# Now: pnpm in this project always uses 11.0.0
 # Other team members + CI get the same version automatically</code></pre>
 
 <h3>Example 4 — package.json scripts orchestration</h3>
@@ -451,7 +451,7 @@ bun x create-vite@latest my-app</code></pre>
   "engines": {
     "node": "&gt;=18.0.0"
   },
-  "packageManager": "pnpm@9.0.0"
+  "packageManager": "pnpm@11.0.0"
 }</code></pre>
 
 <h3>Example 11 — npm scripts pre/post hooks</h3>
@@ -550,8 +550,8 @@ pnpm store status                       # global store info</code></pre>
 <h3>10. Bun + native modules</h3>
 <p>Bun is mostly Node-compat but some packages with native add-ons (<code>node-gyp</code> deps) fail. Improving over time but verify your stack.</p>
 
-<h3>11. Bun's binary lockfile</h3>
-<p><code>bun.lockb</code> is binary — not human-readable, hard to diff. Pros: smaller, faster. Cons: code review can't see version changes. Convention: also commit <code>bun.lockb.txt</code> generated via <code>bun pm dump</code>.</p>
+<h3>11. Bun's lockfile is now text</h3>
+<p>Since Bun 1.2 (2025), the default lockfile is <code>bun.lock</code> — a human-readable, diffable text format, so code review sees version changes directly (no workaround needed). The old binary <code>bun.lockb</code> is legacy; migrate with <code>bun install --save-text-lockfile</code> (or just run <code>bun install</code> on Bun 1.2+, which generates <code>bun.lock</code>).</p>
 
 <h3>12. Workspace globbing</h3>
 <p><code>"workspaces": ["packages/*"]</code> matches first level only. For deeper: <code>["packages/*/*"]</code>. pnpm allows YAML for clarity.</p>
@@ -648,7 +648,7 @@ pnpm store status                       # global store info</code></pre>
 <div class="qa-block">
   <div class="qa-question">Q2. What's a lockfile and why commit it?</div>
   <div class="qa-answer">
-    <p>A lockfile pins exact resolved versions of every dep + transitive dep, with integrity hashes. <code>package-lock.json</code> (npm), <code>yarn.lock</code> (Yarn), <code>pnpm-lock.yaml</code> (pnpm), <code>bun.lockb</code> (Bun). Without it, <code>npm install</code> on different machines or different times produces different versions — "works on my machine" bug. Commit it; CI uses <code>npm ci</code> (or <code>--frozen-lockfile</code>) to install exactly what's locked.</p>
+    <p>A lockfile pins exact resolved versions of every dep + transitive dep, with integrity hashes. <code>package-lock.json</code> (npm), <code>yarn.lock</code> (Yarn), <code>pnpm-lock.yaml</code> (pnpm), <code>bun.lock</code> (Bun, text default since 1.2). Without it, <code>npm install</code> on different machines or different times produces different versions — "works on my machine" bug. Commit it; CI uses <code>npm ci</code> (or <code>--frozen-lockfile</code>) to install exactly what's locked.</p>
   </div>
 </div>
 
@@ -710,7 +710,7 @@ pnpm store status                       # global store info</code></pre>
 <div class="qa-block">
   <div class="qa-question">Q9. How does corepack help?</div>
   <div class="qa-answer">
-    <p>corepack is bundled with Node 16.10+. It reads the <code>"packageManager"</code> field in package.json and ensures every developer + CI uses the exact same PM version. Saves the "you have pnpm 8, I have pnpm 9" debugging. Enable with <code>corepack enable</code>; pin with <code>"packageManager": "pnpm@9.0.0"</code>.</p>
+    <p>corepack is bundled with Node 16.10+. It reads the <code>"packageManager"</code> field in package.json and ensures every developer + CI uses the exact same PM version. Saves the "you have pnpm 8, I have pnpm 9" debugging. Enable with <code>corepack enable</code>; pin with <code>"packageManager": "pnpm@11.0.0"</code>.</p>
   </div>
 </div>
 
@@ -779,7 +779,7 @@ pnpm store status                       # global store info</code></pre>
       <li>Lockfile is YAML — diffable, reviewable.</li>
     </ul>
     <p>Pair with Turborepo or Nx for task orchestration. Pin pnpm version via corepack. CI uses <code>--frozen-lockfile</code>.</p>
-    <p>Yarn 4 also viable; npm 10 has improved but is still slower. Bun's monorepo support is maturing — promising for the future.</p>
+    <p>Yarn 4 also viable; npm 11 has improved but is still slower. Bun's monorepo support is maturing — promising for the future.</p>
   </div>
 </div>
 

@@ -91,7 +91,7 @@ window.PREP_SITE.registerTopic({
   <li>Name + subtitle/short-description carry the most-searched 1–2 keywords.</li>
   <li>iOS keywords field uses 95+ of 100 chars; comma-separated, no spaces, no plurals (Apple stems them).</li>
   <li>Screenshots tell a sequenced story (problem → solution → proof) with text overlays.</li>
-  <li>First 3 screenshots show without scroll on iPhone 14/15 Pro.</li>
+  <li>First 3 screenshots show without scroll on iPhone 16/17 Pro.</li>
   <li>Localized in your top 3–5 markets. Translated screenshots, not just text.</li>
   <li>Ratings prompt fires after a positive moment, not on first launch.</li>
   <li>Promotional text (iOS) used to highlight time-sensitive promos without resubmission.</li>
@@ -523,13 +523,12 @@ Output: 1 page summary + 3 prioritized action items for next quarter.
 <table>
   <thead><tr><th>iPhone</th><th>Required size</th></tr></thead>
   <tbody>
-    <tr><td>6.7" (Pro Max)</td><td>1290 × 2796 (iPhone 14/15 Pro Max)</td></tr>
+    <tr><td>6.9" (Pro Max)</td><td>1320 × 2868 (iPhone 16/17 Pro Max)</td></tr>
     <tr><td>6.5" (older Plus / Max)</td><td>1242 × 2688 or 1284 × 2778</td></tr>
-    <tr><td>5.5"</td><td>1242 × 2208 — DEPRECATED but still required for older devices</td></tr>
-    <tr><td>iPad 12.9"</td><td>2048 × 2732</td></tr>
+    <tr><td>iPad 13"</td><td>2064 × 2752</td></tr>
   </tbody>
 </table>
-<p>Apple uses 6.7" as the default for most users; ship that one and you're 90% there. App Store may "auto-fill" smaller sizes by downscaling (App Store Connect &gt;= mid-2023).</p>
+<p>Apple now requires only the 6.9" and 6.5" iPhone sizes (the 4.7"/5.5" requirement was dropped) and the 13" iPad. Ship 6.9" and you're 90% there; App Store Connect auto-fills the smaller sizes by downscaling.</p>
 
 <h3>Preview video constraints</h3>
 <ul>

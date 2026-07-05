@@ -21,6 +21,7 @@ window.PREP_SITE.registerTopic({
   <li><strong>Triple-slash directives:</strong> <code>///&lt;reference&gt;</code> — usually unnecessary now; <code>tsconfig</code>'s <code>types</code>/<code>typeRoots</code> handles it.</li>
 </ul>
 <p><strong>Mantra:</strong> "<code>.d.ts</code> describes what's there. <code>.ts</code> creates it. Don't mix."</p>
+<p><strong>Version note:</strong> current stable is <strong>TypeScript 6.0</strong> (GA March 2026); declaration-file mechanics are unchanged. The Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026) with ~10× faster type-checking and <code>.d.ts</code> emit.</p>
 `
     },
     {

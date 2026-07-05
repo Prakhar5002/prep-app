@@ -144,6 +144,7 @@ module.exports = {
   },
 };</code></pre>
 <pre><code class="language-ts">// jest-setup.ts
+// Deprecated: jest-native matchers are now built into @testing-library/react-native (v12.4+), no import needed
 import '@testing-library/jest-native/extend-expect';
 // Silence LogBox / Animated warnings in tests
 jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');

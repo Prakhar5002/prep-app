@@ -1,14 +1,14 @@
 window.PREP_SITE.registerTopic({
   id: 'rn-animations',
   module: 'React Native',
-  title: 'Animations (Reanimated 3)',
+  title: 'Animations (Reanimated 4)',
   estimatedReadTime: '28 min',
   tags: ['react-native', 'animations', 'reanimated', 'worklets', 'gesture-handler', 'jsi', 'shared-values'],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
 { id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>Reanimated 3</strong> is the production-grade animation library for React Native. It runs animations on the UI thread via <strong>worklets</strong> — JS functions serialized and executed in a second JS VM on the UI thread, communicating with the main JS thread via JSI-shared memory.</p>
+<p><strong>Reanimated 4</strong> (2025) is the current stable release and the production-grade animation library for React Native. It is <strong>New-Architecture-only</strong>, adds a new CSS-animations API, and depends on the standalone <code>react-native-worklets</code> package (worklets were extracted from the core library). Reanimated 3 remains available for apps still on the old architecture. It runs animations on the UI thread via <strong>worklets</strong> — JS functions serialized and executed in a second JS VM on the UI thread, communicating with the main JS thread via JSI-shared memory.</p>
 <ul>
   <li><strong>Shared values</strong> (<code>useSharedValue</code>) — reactive primitives readable/writable from both threads.</li>
   <li><strong>Animated styles</strong> (<code>useAnimatedStyle</code>) — worklets that derive styles from shared values.</li>
@@ -58,7 +58,7 @@ const animStyle = useAnimatedStyle(() =&gt; ({ transform: [{ translateX: x.value
 <p><strong>react-native-gesture-handler</strong> processes gestures on the UI thread natively. Combined with Reanimated worklets, a drag/swipe interaction drives shared values on the UI thread → animated style updates on the UI thread → view moves, all without a JS-thread round trip. This is how "native-feeling" animations are built in RN.</p>
 
 <h3>Why Layout Animations</h3>
-<p>When a component mounts, unmounts, or moves due to layout change, you often want a transition. Reanimated 3 provides declarative primitives:</p>
+<p>When a component mounts, unmounts, or moves due to layout change, you often want a transition. Reanimated provides declarative primitives:</p>
 <pre><code class="language-tsx">&lt;Animated.View entering={FadeIn} exiting={FadeOut} layout={LinearTransition.springify()} /&gt;</code></pre>
 <p>No imperative state; the library handles measuring + animating.</p>
 `},
@@ -512,11 +512,11 @@ useEffect(() =&gt; { progress.value = withTiming(1, { duration: 2000 }); }, []);
 <h3>10. withSpring tweaking</h3>
 <p><code>damping</code> (higher = less bouncy), <code>stiffness</code> (higher = faster), <code>mass</code>. Defaults often look sluggish; tune per design.</p>
 
-<h3>11. Reanimated 2 → 3 migration</h3>
-<p>API is mostly compatible; new features (layout animations, shared transitions) added. Check the changelog when upgrading.</p>
+<h3>11. Reanimated 3 → 4 migration</h3>
+<p>Reanimated 4 (2025) is the current stable; it's New-Architecture-only, adds a CSS-animations API, and moves worklets into the standalone <code>react-native-worklets</code> package (add it as a dependency). Stay on Reanimated 3 if you're still on the old architecture. Core APIs (shared values, <code>useAnimatedStyle</code>, drivers) are largely compatible; check the changelog when upgrading.</p>
 
 <h3>12. Hermes compatibility</h3>
-<p>Reanimated 3 works on Hermes out of the box. Older versions required additional config. Ensure RN + Reanimated versions are compatible.</p>
+<p>Reanimated 4 works on Hermes out of the box. Older versions required additional config. Ensure RN + Reanimated versions are compatible (Reanimated 4 requires the New Architecture; use Reanimated 3 on old-arch apps).</p>
 
 <h3>13. Debugging worklets</h3>
 <p><code>console.log</code> inside worklets works but is less ergonomic than JS-side logging. Pull the value out and log from the JS side.</p>

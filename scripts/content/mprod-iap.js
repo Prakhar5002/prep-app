@@ -10,12 +10,12 @@ window.PREP_SITE.registerTopic({
       title: '🎯 TL;DR',
       collapsible: false,
       html: `
-<p><strong>In-App Purchases (IAP)</strong> are how mobile apps charge users — for digital goods, subscriptions, consumables, and access to features. Apple and Google enforce that all <em>digital</em> purchases use their billing systems (StoreKit on iOS, Play Billing on Android). They take 15–30%; you live with it. Physical goods, ads, and many services route through normal payment processors.</p>
+<p><strong>In-App Purchases (IAP)</strong> are how mobile apps charge users — for digital goods, subscriptions, consumables, and access to features. Apple and Google enforce that all <em>digital</em> purchases use their billing systems (StoreKit on iOS, Play Billing on Android). They take 15–30%; you live with it — except that since May 2025 the US App Store must allow external purchase links app-wide at 0% commission (post <em>Epic v. Apple</em>), and the EU allows alternative processing under the DMA. Physical goods, ads, and many services route through normal payment processors.</p>
 <ul>
   <li><strong>Three product types.</strong> <em>Consumable</em> (coins, lives — buy again), <em>non-consumable</em> (one-time unlock, lifetime), <em>auto-renewing subscription</em> (most revenue for most apps).</li>
   <li><strong>Always validate receipts on your server.</strong> Client-side validation is trivially bypassable; treat every device receipt as untrusted input.</li>
   <li><strong>Restore is mandatory.</strong> Apple rejects apps without a "Restore Purchases" affordance. Subscriptions must work after reinstall, fresh login, new device.</li>
-  <li><strong>Default tools:</strong> <strong>RevenueCat</strong> (the de facto wrapper — handles receipts, server-to-server, entitlements, analytics; free up to $10k MTR), <strong>Apphud</strong>, <strong>Adapty</strong>, or roll-your-own with Apple/Google's SDKs and webhooks.</li>
+  <li><strong>Default tools:</strong> <strong>RevenueCat</strong> (the de facto wrapper — handles receipts, server-to-server, entitlements, analytics; free up to $2,500 monthly tracked revenue (MTR), then 1% of MTR), <strong>Apphud</strong>, <strong>Adapty</strong>, or roll-your-own with Apple/Google's SDKs and webhooks.</li>
   <li><strong>Subscription state is async.</strong> Renewals, cancellations, refunds happen on the server (S2S notifications). Don't trust the client view of "is this user active."</li>
   <li><strong>Pricing tiers.</strong> Apple/Google use price tier matrices; you don't pick arbitrary numbers. Localized pricing is automatic per country tier.</li>
   <li><strong>Family Sharing</strong> (iOS) and <strong>Family Library</strong> (Google) — non-consumable purchases share across the family by default unless disabled.</li>
@@ -47,6 +47,7 @@ window.PREP_SITE.registerTopic({
   <li><strong>Apple:</strong> 30% of every purchase. Drops to 15% in year 2 of a subscription. Small-business program (&lt;$1M/year) gets 15% across the board.</li>
   <li><strong>Google:</strong> Mirror of Apple — 30% standard, 15% past year 1 of subs and for the small-business tier.</li>
   <li><strong>EU DMA changes (2024+):</strong> Apple now allows alternative payment processing in the EU with reduced commission (10/17%) plus a "Core Technology Fee."</li>
+  <li><strong>US carve-out (May 2025+):</strong> After <em>Epic v. Apple</em> (Judge Gonzalez Rogers, Apr 30 2025), Apple must allow external purchase links in the US App Store app-wide, currently at <strong>0% commission</strong> — developers keep ~100% minus their payment processor's fees. Apple has signaled a "reasonable" fee may come later, but none is in force today.</li>
   <li><strong>South Korea, Netherlands:</strong> Local laws have forced reduced fees / alternative processing for specific app categories.</li>
 </ul>
 
@@ -54,7 +55,7 @@ window.PREP_SITE.registerTopic({
 <table>
   <thead><tr><th>Problem</th><th>Mobile reality</th></tr></thead>
   <tbody>
-    <tr><td>You cannot use Stripe</td><td>For digital goods you must use Apple/Google billing. Side-loading payment links can get you removed.</td></tr>
+    <tr><td>You cannot use Stripe (with regional exceptions)</td><td>For digital goods you generally must use Apple/Google billing. Since May 2025 external purchase links are permitted app-wide in the US App Store (0% commission), and in the EU under the DMA. Elsewhere, side-loading payment links can still get you removed.</td></tr>
     <tr><td>Receipts are server-validated</td><td>You query Apple's <code>verifyReceipt</code> or Google's purchases API; never trust the client.</td></tr>
     <tr><td>Subscription state is async</td><td>S2S notifications fire on renew, cancel, refund — you must subscribe and process them.</td></tr>
     <tr><td>Restore is mandatory</td><td>Apple rejects apps without a working Restore button.</td></tr>
@@ -361,6 +362,7 @@ app.post('/iap/apple/validate', async (req, res) =&gt; {
   res.json({ ok: true });
 });
 </code></pre>
+<p><strong>Note:</strong> Apple's legacy <code>/verifyReceipt</code> endpoint (shown above) is deprecated. New integrations should use the <strong>App Store Server API</strong> (query transactions/subscription status directly) plus <strong>App Store Server Notifications V2</strong> for the webhook side. The StoreKit 2 flow already returns JWS-signed transactions you verify against Apple's public keys without the round-trip.</p>
 
 <h3>Server-side receipt validation (Google, Node)</h3>
 <pre><code class="language-ts">import { google } from 'googleapis';
@@ -776,8 +778,8 @@ const products = await api.fetchProductCatalog();
 <h3>Anti-pattern 4: Not testing in sandbox before release</h3>
 <p>Subscription bugs surface only when renewals fire. By the time production users hit them, you've shipped a regression to all subs.</p>
 
-<h3>Anti-pattern 5: Side-loading payment links</h3>
-<p>Apple bans "Buy on the web for cheaper" links inside the app. EU DMA changes (2024+) allow this with conditions in the EU only. Outside those regions, this gets you removed from the store.</p>
+<h3>Anti-pattern 5: Side-loading payment links (region-dependent)</h3>
+<p>Apple historically banned "Buy on the web for cheaper" links inside the app. That's now permitted in two regions: the US App Store app-wide since May 2025 (post <em>Epic v. Apple</em>, currently 0% commission) and the EU under the DMA (2024+, with conditions). Outside those regions, side-loading payment links still gets you removed from the store — so gate the behavior by storefront.</p>
 
 <h3>Anti-pattern 6: Storing receipts client-side as the source of truth</h3>
 <p>Lose phone, lose entitlement. Always sync to backend.</p>
@@ -792,7 +794,7 @@ const products = await api.fetchProductCatalog();
 <p>"What's the conversion rate from view-paywall → purchase?" requires the same event pipeline. Tag IAP events with the same user_id so funnels work.</p>
 
 <h3>Anti-pattern 10: Going DIY on receipt validation when you don't have to</h3>
-<p>RevenueCat's free tier covers most apps. You're trading a few hundred bucks at scale for entire categories of bugs you'd otherwise own. Most teams should not roll their own.</p>
+<p>RevenueCat's free tier (up to $2,500 MTR, then 1%) covers most small apps. You're trading a small revenue percentage at scale for entire categories of bugs you'd otherwise own. Most teams should not roll their own.</p>
 `
     },
     {

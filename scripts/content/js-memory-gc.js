@@ -391,9 +391,10 @@ obs.observe(el);
 // The closure and its captured state are pinned for 10 minutes.
 // Use clearTimeout(id) if the operation becomes unnecessary.</code></pre>
 
-<h3>7. WeakMap key must be an object</h3>
+<h3>7. WeakMap key must be an object (or a non-registered Symbol)</h3>
 <pre><code class="language-js">const w = new WeakMap();
-w.set('key', 1); // TypeError — primitives disallowed (for now; stage-3 proposal changes this)</code></pre>
+w.set('key', 1); // TypeError — strings/numbers still disallowed
+w.set(Symbol('id'), 1); // OK since ES2023 — non-registered Symbols are valid keys</code></pre>
 
 <h3>8. WeakRef's deref may return undefined at any point</h3>
 <pre><code class="language-js">const ref = new WeakRef(obj);

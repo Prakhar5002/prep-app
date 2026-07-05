@@ -17,17 +17,17 @@ window.PREP_SITE.registerTopic({
 </ol>
 <ul>
   <li><strong>Hermes</strong> (default) — pre-compiled bytecode, smaller heap, faster startup vs JSC.</li>
-  <li><strong>New Architecture (Fabric + TurboModules + JSI)</strong> — synchronous native calls, concurrent rendering, removes bridge bottleneck.</li>
+  <li><strong>New Architecture (Fabric + TurboModules + JSI)</strong> — default since RN 0.76. Synchronous native calls, concurrent rendering, removes bridge bottleneck.</li>
   <li><strong>FlashList</strong> over FlatList for long lists — cell recycling dramatically reduces memory + render churn.</li>
   <li><strong>Reanimated + Gesture Handler</strong> — animations and gestures run on UI thread; stay smooth even when JS is busy.</li>
   <li><strong>Expo Image / Fast Image</strong> for production image handling with caching, placeholders, memory management.</li>
   <li><strong>inlineRequires: true</strong> in Metro — defers module loading to first use; improves startup.</li>
-  <li><strong>Profile before optimizing</strong>: Flipper, React DevTools Profiler, Xcode Instruments, Android Studio Profiler.</li>
+  <li><strong>Profile before optimizing</strong>: React Native DevTools, React DevTools Profiler, Xcode Instruments, Android Studio Profiler.</li>
 </ul>
 
 <div class="callout insight">
   <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Mobile is slower and pickier than web. Enable Hermes + new arch, use FlashList for lists, Reanimated for animations, Expo Image for images, and inlineRequires for startup. Profile to confirm fixes — intuition fails more often on mobile than on desktop.</p>
+  <p>Mobile is slower and pickier than web. Hermes and the New Architecture are on by default now (Hermes since 0.70, New Arch since 0.76) — keep them on, use FlashList for lists, Reanimated for animations, Expo Image for images, and inlineRequires for startup. Profile to confirm fixes — intuition fails more often on mobile than on desktop.</p>
 </div>
 `},
 
@@ -54,7 +54,7 @@ window.PREP_SITE.registerTopic({
 </table>
 
 <h3>Why profile before optimizing</h3>
-<p>Your intuition about "the slow part" is often wrong. Cheap components rendered many times cost more than one expensive component rendered once. A 3MB image on the hero costs more than a fancy animation. Use real tools (Flipper, Instruments) on a mid-range Android device to find the actual bottleneck.</p>
+<p>Your intuition about "the slow part" is often wrong. Cheap components rendered many times cost more than one expensive component rendered once. A 3MB image on the hero costs more than a fancy animation. Use real tools (React Native DevTools, Instruments) on a mid-range Android device to find the actual bottleneck.</p>
 
 <h3>Why Hermes matters</h3>
 <ul>
@@ -72,7 +72,7 @@ window.PREP_SITE.registerTopic({
   <li>Item state preserved across scroll (good for uncontrolled media).</li>
   <li>Better memory profile under heavy scroll.</li>
 </ul>
-<p>Requires <code>estimatedItemSize</code>. Drop-in replacement for most cases.</p>
+<p>FlashList v1 requires <code>estimatedItemSize</code>; FlashList v2 (2025) removed it (auto-measured), so it's no longer required. Drop-in replacement for most cases.</p>
 
 <h3>Why Reanimated for animations</h3>
 <p>Animations running on the JS thread drop frames when JS is busy (rendering, network, business logic). Reanimated's worklets run on the UI thread via JSI, decoupled from JS work — animations stay at 60-120fps regardless. Same for gestures via react-native-gesture-handler.</p>
@@ -148,7 +148,7 @@ Scale to 100 rows? Multiply. Scale to 1000? Virtualize.</code></pre>
 <div class="diagram">
 <pre>
   1. Reproduce the slow scenario on target device
-  2. Profile (Flipper / Instruments / Android Studio)
+  2. Profile (React Native DevTools / Instruments / Android Studio)
   3. Identify the top 3 hot spots
   4. Apply ONE fix
   5. Re-profile — confirm improvement
@@ -207,7 +207,7 @@ function List({ items }) {
   data={items}
   renderItem={renderItem}
   keyExtractor={(i) =&gt; i.id}
-  estimatedItemSize={120}     // REQUIRED
+  estimatedItemSize={120}     // v1 only — required on v1, removed in v2
   getItemType={(item) =&gt; item.type}  // optional; speeds up mixed lists
 /&gt;</code></pre>
 
@@ -271,14 +271,14 @@ InteractionManager.runAfterInteractions(() =&gt; {
   <li>Use <code>removeClippedSubviews</code> for FlatList on Android.</li>
 </ul>
 
-<h3>Profiling — Flipper</h3>
-<p>Flipper is the official mobile debug tool:</p>
+<h3>Profiling — React Native DevTools</h3>
+<p>React Native DevTools (built-in since RN 0.76) replaced Flipper as the current debug/profiling tool. Flipper is no longer supported for RN debugging:</p>
 <ul>
-  <li>React DevTools tab — Profile renders, see "why did this render."</li>
-  <li>Performance Monitor tab — JS frame rate, UI frame rate, memory.</li>
+  <li>Components + Profiler — profile renders, see "why did this render."</li>
+  <li>Perf Monitor (Dev Menu) — JS frame rate, UI frame rate, memory.</li>
   <li>Network inspector.</li>
-  <li>Layout inspector — inspect native view hierarchy.</li>
-  <li>React Native plugin — log bridge traffic (old arch) or JSI events.</li>
+  <li>Native layout inspection — use Xcode View Debugger / Android Studio Layout Inspector.</li>
+  <li>Debugs the actual on-device Hermes engine (not Chrome V8).</li>
 </ul>
 
 <h3>Profiling — Xcode Instruments</h3>
@@ -434,10 +434,11 @@ module.exports = {
 newArchEnabled=true
 hermesEnabled=true
 // ios/Podfile
-use_react_native!(:new_arch_enabled =&gt; true, :hermes_enabled =&gt; true)</code></pre>
+use_react_native!(:new_arch_enabled =&gt; true, :hermes_enabled =&gt; true)
+// Note: default-on since RN 0.76 — these flags are only needed to opt in on 0.71–0.75.</code></pre>
 
-<h3>Example 15 — memory snapshot via Flipper</h3>
-<p>Open Flipper → React DevTools → Memory → Take snapshot. Interact with the app → take another snapshot → compare. Growing components = likely leaks.</p>
+<h3>Example 15 — memory snapshot via React Native DevTools</h3>
+<p>Open React Native DevTools → Memory → Take snapshot. Interact with the app → take another snapshot → compare. Growing components = likely leaks.</p>
 `},
 
 // ─────────────────────────────────────────────────────────────
@@ -466,8 +467,8 @@ use_react_native!(:new_arch_enabled =&gt; true, :hermes_enabled =&gt; true)</cod
 <h3>8. React Profiler ID collision</h3>
 <p>If multiple <code>&lt;Profiler id="feed"&gt;</code> with the same id mount, callbacks conflate. Use unique IDs per instance.</p>
 
-<h3>9. Hermes debugging in Chrome DevTools not V8-accurate</h3>
-<p>Hermes has its own DevTools. Chrome "Debug in Chrome" runs JS in Chrome V8 — behavior differs from Hermes. Test production behavior on Hermes.</p>
+<h3>9. Remote JS debugging removed (was not V8-accurate)</h3>
+<p>The old "Debug in Chrome" ran JS in Chrome V8 — behavior differed from on-device Hermes — and was removed in RN 0.79. Use React Native DevTools, which debugs the actual Hermes engine. Test production behavior on Hermes.</p>
 
 <h3>10. Startup time regresses after a minor update</h3>
 <p>Common cause: a library's new version eagerly imports heavy deps. Check bundle analyzer after upgrades.</p>
@@ -534,8 +535,8 @@ export function put(k, v) { cache.set(k, v); }
 <h3>Anti-pattern 9 — not using FlashList for social feeds</h3>
 <p>Default FlatList fine for short lists but slower for scroll-heavy UIs. FlashList is a near drop-in win.</p>
 
-<h3>Anti-pattern 10 — keeping Chrome debugger attached in production testing</h3>
-<p>Runs JS in V8 (Chrome) not on-device. Perf numbers invalid.</p>
+<h3>Anti-pattern 10 — profiling with a JS debugger attached</h3>
+<p>Remote JS debugging (removed in RN 0.79) ran JS in V8 (Chrome), not on-device Hermes — perf numbers were invalid. Even with React Native DevTools, detach the debugger for perf-sensitive measurements.</p>
 
 <h3>Anti-pattern 11 — heavy work in useLayoutEffect</h3>
 <p>Blocks paint. Reserve for measurements + sync writes; async work in useEffect.</p>
@@ -572,7 +573,7 @@ export function put(k, v) { cache.set(k, v); }
   <div class="qa-question">Q2. FlatList vs FlashList — when to use which?</div>
   <div class="qa-answer">
     <p><strong>FlatList</strong>: built into RN, OK for &lt;100 items, unmounts off-screen.</p>
-    <p><strong>FlashList (Shopify)</strong>: recycles native views. Huge wins on long lists, mixed item types, scroll-heavy UIs. Requires <code>estimatedItemSize</code>.</p>
+    <p><strong>FlashList (Shopify)</strong>: recycles native views. Huge wins on long lists, mixed item types, scroll-heavy UIs. FlashList v1 required <code>estimatedItemSize</code>; v2 (2025) removed it.</p>
     <p>Modern apps default to FlashList for long lists; FlatList for short.</p>
   </div>
 </div>
@@ -581,8 +582,8 @@ export function put(k, v) { cache.set(k, v); }
   <div class="qa-question">Q3. How do you optimize app startup?</div>
   <div class="qa-answer">
     <ul>
-      <li>Enable Hermes — pre-compiled bytecode.</li>
-      <li>Enable new arch — lazy TurboModules, smaller init cost.</li>
+      <li>Hermes — pre-compiled bytecode (default since 0.70; keep it on).</li>
+      <li>New Architecture — lazy TurboModules, smaller init cost (default since 0.76).</li>
       <li><code>inlineRequires: true</code> in Metro.</li>
       <li>Lazy-import rarely-used screens / features.</li>
       <li>Reduce native deps at launch (link only what's needed).</li>
@@ -608,7 +609,7 @@ export function put(k, v) { cache.set(k, v); }
       <li>Avoid storing arbitrary refs to native views at module scope.</li>
       <li>Use virtualized lists — avoid keeping 1000s of items alive.</li>
       <li>Bound caches (query cache, image cache) with size limits.</li>
-      <li>Take heap snapshots via Flipper / Xcode; interact; compare snapshots to find growing object types.</li>
+      <li>Take heap snapshots via React Native DevTools / Xcode; interact; compare snapshots to find growing object types.</li>
       <li>Mind retain cycles in native modules (common on iOS ObjC).</li>
     </ul>
   </div>
@@ -666,7 +667,7 @@ npx source-map-explorer main.jsbundle main.jsbundle.map</code></pre>
 }}&gt;
   &lt;Home /&gt;
 &lt;/Profiler&gt;</code></pre>
-    <p>Combine with Flipper's Profiler tab for flamegraphs. Instrument critical screens in production RUM for p95 measurements.</p>
+    <p>Combine with React Native DevTools' Profiler for flamegraphs. Instrument critical screens in production RUM for p95 measurements.</p>
   </div>
 </div>
 
@@ -742,7 +743,7 @@ npx source-map-explorer main.jsbundle main.jsbundle.map</code></pre>
 <div class="callout success">
   <div class="callout-title">Interviewer's green-flag list for this topic</div>
   <ul>
-    <li>You enable Hermes + New Architecture.</li>
+    <li>You know Hermes + New Architecture are defaults (0.70 / 0.76) and keep them on.</li>
     <li>You use FlashList + Reanimated + expo-image as defaults.</li>
     <li>You profile on physical Android mid-range devices.</li>
     <li>You distinguish JS thread jank from UI thread jank.</li>

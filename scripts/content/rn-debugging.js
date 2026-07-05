@@ -83,7 +83,7 @@ window.PREP_SITE.registerTopic({
 <pre><code>Shake device or Cmd+D (iOS simulator) / Cmd+M (Android emulator):
 
   Reload
-  Debug JS Remotely (deprecated, use DevTools)
+  Debug JS Remotely (removed in 0.79, use DevTools)
   Enable Fast Refresh
   Toggle Element Inspector
   Show Perf Monitor           ← JS FPS + UI FPS + memory

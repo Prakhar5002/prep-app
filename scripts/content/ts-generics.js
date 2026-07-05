@@ -21,6 +21,7 @@ window.PREP_SITE.registerTopic({
   <li><strong>Don't reach for generics by reflex.</strong> If T appears once, it's not generic — it's <code>any</code> in disguise.</li>
 </ul>
 <p><strong>Mantra:</strong> "Type parameters preserve information across boundaries. Constrain them, infer them, never widen them by hand."</p>
+<p><strong>Version note:</strong> the per-feature versions below (variance annotations 4.7, <code>NoInfer</code> 5.4) are accurate. Current stable is <strong>TypeScript 6.0</strong> (GA March 2026); the Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026, ~10× faster type-checking).</p>
 `
     },
     {

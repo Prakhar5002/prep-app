@@ -794,7 +794,7 @@ function MyList() {
 <p>The View Transitions API requires a synchronous DOM swap inside <code>startViewTransition()</code>. Async work (fetch) must happen before. Fetch first, then call <code>startViewTransition</code>.</p>
 
 <h3>Browser support: View Transitions</h3>
-<p>Chromium-led; Safari behind; Firefox lagging. For broad compatibility, hand-roll FLIP or use Framer Motion.</p>
+<p>Same-document View Transitions (<code>document.startViewTransition()</code>) are now Baseline — Chrome 111+, Safari 18+, Firefox 144+. Only cross-document transitions (<code>@view-transition</code> for MPA navigations) remain Chromium-only. For older browsers, hand-roll FLIP or use Framer Motion.</p>
 
 <h3>Concurrent React + useLayoutEffect</h3>
 <p>FLIP via React relies on synchronous layout-effects. React 18 concurrent rendering may interleave; <code>flushSync</code> ensures the render happens before measurement. Add explicit flushSync for FLIP-critical updates.</p>

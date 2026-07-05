@@ -249,7 +249,7 @@ export default function NewPost() {
 
 <h3>Caching layers</h3>
 <ul>
-  <li><strong>Data cache</strong> (Next.js): memoizes <code>fetch()</code> responses inside the RSC render.</li>
+  <li><strong>Data cache</strong> (Next.js): stores <code>fetch()</code> responses across renders. Note: since Next 15 (Oct 2024) <code>fetch()</code> is <em>not</em> cached by default — the Data Cache is opt-in via <code>cache: 'force-cache'</code> or <code>next.revalidate</code>.</li>
   <li><strong>Full-route cache</strong>: HTML + RSC payload cached per route.</li>
   <li><strong>Router cache</strong> (client): caches navigated pages in memory for back/forward.</li>
   <li><strong>CDN</strong>: serves the cached HTML to all users.</li>
@@ -389,9 +389,11 @@ export const dynamic = 'force-dynamic';
 // Or use dynamic APIs (cookies(), headers()) that implicitly opt into dynamic rendering.</code></pre>
 
 <h3>Example 12 — caching a fetch in RSC</h3>
-<pre><code class="language-js">// By default, fetch() in Next RSC is cached
-const res = await fetch('https://api.example.com/data'); // cached forever
-// Opt out:
+<pre><code class="language-js">// Next.js 15+ (Oct 2024): fetch() is NOT cached by default (route segments are dynamic by default)
+const res = await fetch('https://api.example.com/data'); // uncached by default
+// Opt IN to caching:
+await fetch(url, { cache: 'force-cache' });
+// Explicitly uncached (also the default now):
 await fetch(url, { cache: 'no-store' });
 // Time-based:
 await fetch(url, { next: { revalidate: 60 } });
@@ -512,9 +514,9 @@ cookies(); // any usage forces dynamic rendering — can't be cached statically<
 <p>RSC lets you skip shipping components that don't need interactivity. A marketing landing page with one animated CTA can have zero JS for everything except the CTA.</p>
 
 <h3>Anti-pattern 6 — Over-caching dynamic content</h3>
-<pre><code class="language-js">// Next.js
-await fetch(url); // cached forever by default
-// User A's data shows up for User B. Use { cache: 'no-store' } or { next: { revalidate: ... } }.</code></pre>
+<pre><code class="language-js">// Next.js 15+: fetch() is uncached by default, so the leak risk appears when you opt in:
+await fetch(url, { cache: 'force-cache' }); // caching per-user data
+// User A's data can then show up for User B. Only force-cache shared, non-personalized data.</code></pre>
 
 <h3>Anti-pattern 7 — Under-caching static content</h3>
 <p><code>export const dynamic = 'force-dynamic'</code> on every page = every request CPU. For genuinely static content, revalidate on webhook instead.</p>

@@ -18,7 +18,7 @@ window.PREP_SITE.registerTopic({
   <li><strong>Idempotency matters:</strong> GET, PUT, DELETE are idempotent by spec; POST isn't unless you add an <code>Idempotency-Key</code> header.</li>
   <li><strong>Pagination, filtering, sorting</strong> are first-class concerns: cursor &gt; offset for large or live datasets.</li>
   <li><strong>Cache aggressively:</strong> <code>Cache-Control</code>, <code>ETag</code>, <code>Last-Modified</code>, <code>304 Not Modified</code> save bandwidth and round-trips.</li>
-  <li><strong>Errors:</strong> consistent shape — <code>application/problem+json</code> (RFC 7807) or your team's equivalent.</li>
+  <li><strong>Errors:</strong> consistent shape — <code>application/problem+json</code> (RFC 9457, formerly 7807) or your team's equivalent.</li>
 </ul>
 <p><strong>Mantra:</strong> "Resources as nouns, HTTP verbs as actions, status codes as semantics, headers as metadata."</p>
 `
@@ -291,7 +291,7 @@ GET /jobs/77
   </tbody>
 </table>
 
-<h3>Error envelope (RFC 7807 problem+json)</h3>
+<h3>Error envelope (RFC 9457, formerly 7807 — problem+json)</h3>
 <pre><code class="language-http">HTTP/1.1 422 Unprocessable Entity
 Content-Type: application/problem+json
 
@@ -307,7 +307,7 @@ Content-Type: application/problem+json
   ]
 }
 </code></pre>
-<p>Pick one shape — RFC 7807 or your own — and use it everywhere. Inconsistent error shapes are the #1 client-team complaint.</p>
+<p>Pick one shape — RFC 9457 (formerly 7807) or your own — and use it everywhere. Inconsistent error shapes are the #1 client-team complaint.</p>
 
 <h3>Rate limit headers</h3>
 <pre><code class="language-http">HTTP/1.1 429 Too Many Requests

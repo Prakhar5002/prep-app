@@ -240,8 +240,8 @@ const renderItem = useCallback(({ item }) =&gt; &lt;Row data={item} /&gt;, []);<
 <h3>4. getItemLayout with dynamic heights</h3>
 <p>Breaks. Only use for fixed-size rows. Skip otherwise.</p>
 
-<h3>5. FlashList requires estimatedItemSize</h3>
-<p>Missing it means FlashList can't pre-allocate cells. Mandatory prop.</p>
+<h3>5. FlashList estimatedItemSize</h3>
+<p>On FlashList v1 it's a mandatory prop — missing it means FlashList can't pre-allocate cells. FlashList v2 (2025) removed <code>estimatedItemSize</code>; it's no longer required (auto-measured).</p>
 
 <h3>6. FlatList unmounts off-screen; FlashList recycles</h3>
 <p>FlatList: scrolled-off items lose local state (useState). FlashList: recycles cells — local state may persist across items. Design accordingly.</p>
@@ -498,7 +498,7 @@ rm -rf $TMPDIR/metro-*</code></pre>
   <li>Include Info.plist usage descriptions for every iOS permission.</li>
   <li>Test on physical mid-range Android — not just simulators.</li>
   <li>Enable Hermes.</li>
-  <li>Enable New Architecture (Fabric + TurboModules).</li>
+  <li>New Architecture (Fabric + TurboModules) is the default since RN 0.76 — keep it on.</li>
   <li>Install Sentry on day 1; upload source maps.</li>
   <li>Handle the cold-start deep-link case for notifications.</li>
   <li>Unsubscribe listeners, clear timers, abort requests in useEffect cleanup.</li>

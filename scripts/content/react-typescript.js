@@ -204,6 +204,7 @@ const FancyInput = forwardRef&lt;HTMLInputElement, { placeholder?: string }&gt;(
     return &lt;input ref={ref} placeholder={placeholder} /&gt;;
   }
 );</code></pre>
+<p><em>(React 19: <code>ref</code> is now a normal prop passed to function components; <code>forwardRef</code> is deprecated and largely unnecessary.)</em></p>
 
 <h3>useState</h3>
 <pre><code class="language-tsx">// Inference works for primitives

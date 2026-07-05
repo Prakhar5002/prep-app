@@ -1056,7 +1056,7 @@ const pan = Gesture.Pan()
 <ul>
   <li>RNGH + Reanimated is the modern stack — RN core teams recommend it; it's what every production app should use.</li>
   <li>PanResponder still works but is deprecated in spirit; use only for trivial cases or codebases that haven't migrated.</li>
-  <li>Reanimated v3 (current) has the cleanest API — Gesture.X().onUpdate(worklet).</li>
+  <li>Reanimated 4.x is current (2025, New-Architecture-only; the worklets runtime moved out into the separate <code>react-native-worklets</code> plugin). Same clean gesture API — Gesture.X().onUpdate(worklet). Reanimated 3.x remains the choice for apps still on the old architecture.</li>
   <li>Test on real devices — simulator gestures don't model true touch latency.</li>
   <li>Mid-range Android devices (Snapdragon 6xx) are the right perf target — anything that drops frames there will worry users.</li>
   <li>Bridgeless mode (RN 0.74+) reduces some legacy bridge cost but doesn't eliminate the worklet advantage.</li>

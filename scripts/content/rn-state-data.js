@@ -753,8 +753,8 @@ AppState.addEventListener('change', (status) =&gt; {
     <ul>
       <li>TanStack Query DevTools: see all queries, their state, cache content, retries.</li>
       <li>Zustand DevTools middleware: log every state transition.</li>
-      <li>Flipper plugins for React Query + Zustand.</li>
-      <li>Network inspector (Flipper / Reactotron) for raw requests.</li>
+      <li>React Native DevTools / Reactotron for inspecting React Query + Zustand state.</li>
+      <li>Network inspector (React Native DevTools / Reactotron) for raw requests.</li>
       <li>Enable logger middleware for Zustand.</li>
     </ul>
   </div>

@@ -192,7 +192,7 @@ window.PREP_SITE.registerTopic({
 <p>The commit phase walks the tree looking at flags and applies matching work in the right sub-phase.</p>
 
 <h3>Lanes — priority model</h3>
-<p>React 18 replaced the old expirationTime with <strong>lanes</strong>, a 31-bit bitmask where each bit is a priority tier. Common lanes:</p>
+<p>React 17 (Oct 2020) introduced <strong>lanes</strong>, a 31-bit bitmask where each bit is a priority tier, replacing the old expirationTime model; React 18 layered the user-facing concurrent APIs on top of the existing lane model. Common lanes:</p>
 <ul>
   <li><code>SyncLane</code> — legacy sync updates and urgent input.</li>
   <li><code>InputContinuousLane</code> — continuous input (scroll, drag).</li>

@@ -728,7 +728,7 @@ self.addEventListener('install', (event) =&gt; {
 
 <h3>Safari-specific</h3>
 <ul>
-  <li>Safari supports SWs since iOS 11.3 / macOS 11.1, but with quirks:</li>
+  <li>Safari supports SWs since iOS 11.3 / Safari 11.1 (macOS 10.13.4), but with quirks:</li>
   <li>No Background Sync API (use <code>periodicsync</code> on Chrome only; manual polling on Safari).</li>
   <li>Push notifications on iOS Safari only since iOS 16.4 (and only for installed PWAs).</li>
   <li>Storage eviction is more aggressive: 7-day idle eviction for browsing data.</li>

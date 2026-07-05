@@ -33,7 +33,7 @@ window.PREP_SITE.registerTopic({
 <p>Modern ECMAScript specs split the Variable Environment into two records — <code>LexicalEnvironment</code> (for <code>let</code>/<code>const</code>/<code>class</code>) and <code>VariableEnvironment</code> (for <code>var</code>/function declarations) — but at interview level think of them as one "memory" object.</p>
 
 <h3>Why does JS need this at all?</h3>
-<p>JavaScript is a dynamically-scoped, first-class-function language. To resolve identifiers correctly, the engine needs:</p>
+<p>JavaScript is a lexically-scoped, first-class-function language. To resolve identifiers correctly, the engine needs:</p>
 <ol>
   <li>To know <strong>what identifiers exist</strong> in the current scope before execution begins (so function declarations can be called from above).</li>
   <li>To know <strong>how to walk outward</strong> if a variable isn't here (scope chain).</li>

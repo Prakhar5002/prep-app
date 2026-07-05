@@ -197,7 +197,7 @@ ref.current    // === 1 on next render</code></pre>
   }), []);
   return &lt;input ref={inputRef} /&gt;;
 });</code></pre>
-<p>Use sparingly — imperative APIs are an escape hatch. Prefer props.</p>
+<p>Use sparingly — imperative APIs are an escape hatch. Prefer props. <em>(React 19: <code>ref</code> is now a normal prop; <code>forwardRef</code> is deprecated.)</em></p>
 
 <h3><code>useDeferredValue</code> / <code>useTransition</code></h3>
 <p>Concurrent hooks for keeping input responsive while heavy updates happen.</p>

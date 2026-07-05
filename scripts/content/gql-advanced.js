@@ -388,7 +388,7 @@ return (
 );
 </code></pre>
 
-<p>Apollo Client 3.7+ supports <code>@defer</code> with multipart response parsing. Server: Apollo Server 4+, GraphQL Yoga, Hot Chocolate.</p>
+<p>Apollo Client 3.7+ supports <code>@defer</code> with multipart response parsing. Server: Apollo Server 5, GraphQL Yoga, Hot Chocolate.</p>
 
 <h3>@stream for lists</h3>
 <pre><code class="language-graphql">query InfiniteList {
@@ -889,7 +889,8 @@ query ProductWithReviews($id: ID!) {
 
 <h3>@defer / @stream support</h3>
 <ul>
-  <li>Server must support multipart streaming responses; not all do (Apollo Server 4+, GraphQL Yoga, Hot Chocolate).</li>
+  <li><strong>Still experimental / unratified:</strong> incremental delivery (<code>@defer</code>/<code>@stream</code>) is not yet a ratified part of the GraphQL spec — the reference implementation lives only in graphql-js 17 (pre-release). Treat it as a moving target, not a stable production standard.</li>
+  <li>Server must support multipart streaming responses; not all do (Apollo Server 5, GraphQL Yoga, Hot Chocolate).</li>
   <li>Intermediate proxies / CDNs may buffer; defer chunks arrive together.</li>
   <li>Test in production-like environment; localhost may behave differently.</li>
   <li>Browser support: fetch with streaming; works in modern browsers.</li>

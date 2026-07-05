@@ -14,7 +14,7 @@ window.PREP_SITE.registerTopic({
 <ul>
   <li><strong>Three pillars:</strong> Clarity (legible, focused, beautiful), Deference (UI helps users understand content, doesn't compete), Depth (visual layers + motion convey hierarchy).</li>
   <li><strong>Navigation patterns:</strong> tab bar (5 tabs max), navigation stack with back-swipe, modal presentation for self-contained tasks, sheets for inspector-style.</li>
-  <li><strong>System primitives to lean on:</strong> SF Symbols (5,000+ icons matching system weight + scale), Dynamic Type (text scales with user setting), system colours (auto dark mode), haptics (UIImpactFeedbackGenerator).</li>
+  <li><strong>System primitives to lean on:</strong> SF Symbols 7 (~6,900+ icons matching system weight + scale), Dynamic Type (text scales with user setting), system colours (auto dark mode), haptics (UIImpactFeedbackGenerator).</li>
   <li><strong>Layout fundamentals:</strong> Safe Area for notch / Dynamic Island / home indicator; 44×44pt minimum tap target; 8pt grid; status bar awareness.</li>
   <li><strong>Native feel checklist:</strong> back-swipe gesture works; swipe-to-dismiss modals; pull-to-refresh; large titles on top-level views; context menus on long-press.</li>
   <li><strong>RN gotchas:</strong> swap default <code>Touchable*</code> for <code>Pressable</code>; use <code>useSafeAreaInsets</code> from <code>react-native-safe-area-context</code>; don't fight the system Status Bar; use native modal stacks (react-navigation native-stack).</li>
@@ -39,7 +39,7 @@ window.PREP_SITE.registerTopic({
     <tr><td>Dark mode automatic</td><td>System colors flip; custom hex colors don't.</td></tr>
     <tr><td>App Store approval</td><td>Guideline 4.0 (Design) rejections cite "doesn't feel native"; following HIG is your evidence.</td></tr>
     <tr><td>Credibility</td><td>Apps that look "designed by people who don't use iPhones" lose 1-star reviews fast.</td></tr>
-    <tr><td>Future-proof</td><td>iOS 17 → 18 → 19 visual changes flow through system components automatically.</td></tr>
+    <tr><td>Future-proof</td><td>iOS visual changes (year-based numbering since 2025 — iOS 18 → 26 and beyond) flow through system components automatically.</td></tr>
   </tbody>
 </table>
 
@@ -61,6 +61,9 @@ window.PREP_SITE.registerTopic({
     <tr><td>Depth</td><td>Visual layers + motion give meaning</td><td>Cards float above background; modals slide up; large title shrinks on scroll</td></tr>
   </tbody>
 </table>
+
+<h3>Liquid Glass (iOS 26)</h3>
+<p>Apple's biggest visual redesign in years, introduced with iOS 26 in June 2025 (and shared across iPadOS/macOS/watchOS). <strong>Liquid Glass</strong> is a translucent, depth-based material: controls, tab bars, sidebars, and sheets are rendered as layered "glass" that refracts and reflects the content beneath them, shifting in real time as you scroll or move. It leans hard on the Deference + Depth pillars — chrome recedes and the content shows through. For engineers, the practical upshot is to lean on <em>system</em> materials (native nav bars, tab bars, sheets, and blur/vibrancy effects) rather than opaque hand-styled bars, so your app inherits the new look automatically instead of standing out as a flat, pre-26 UI. In RN, that means native-stack headers, the system tab bar, and native sheet presentations; avoid painting solid backgrounds over surfaces that should read as glass.</p>
 
 <h3>What "good iOS RN" looks like</h3>
 <ul>
@@ -129,7 +132,7 @@ window.PREP_SITE.registerTopic({
 </table>
 
 <h3>SF Symbols</h3>
-<p>5,000+ system icons that automatically match font weight, size, and Dynamic Type. Three weights (Light/Regular/Bold), three scales (Small/Medium/Large), nine font weights. Critical: they look <em>right</em>; custom-drawn icons usually don't.</p>
+<p>~6,900+ system icons (SF Symbols 7) that automatically match font weight, size, and Dynamic Type. Three weights (Light/Regular/Bold), three scales (Small/Medium/Large), nine font weights. Critical: they look <em>right</em>; custom-drawn icons usually don't.</p>
 <p>RN access via:</p>
 <ul>
   <li><code>react-native-sfsymbols</code> — native bridge to UIKit's SF Symbols.</li>
@@ -808,7 +811,7 @@ Alert.alert('Title', 'Message', actions);
 <h3>Tradeoff vocabulary to use out loud</h3>
 <ul>
   <li><em>"Native-stack via react-navigation gives us back-swipe + large titles + sheet detents for free — looks indistinguishable from native."</em></li>
-  <li><em>"SF Symbols via expo-symbols: 5,000+ icons that scale with Dynamic Type and flip color in dark mode automatically. Custom-drawn icons can't do that."</em></li>
+  <li><em>"SF Symbols via expo-symbols: ~6,900+ icons (SF Symbols 7) that scale with Dynamic Type and flip color in dark mode automatically. Custom-drawn icons can't do that."</em></li>
   <li><em>"Semantic colors in a theme object — useColorScheme switches the whole theme; no per-component dark-mode logic."</em></li>
   <li><em>"useSafeAreaInsets at the root; raw values where I need to position over content. SafeAreaView only for full-bleed screens; not nested."</em></li>
   <li><em>"Form sheets with detents for compose / filter screens — the modern iOS pattern; respects swipe-to-dismiss out of the box."</em></li>

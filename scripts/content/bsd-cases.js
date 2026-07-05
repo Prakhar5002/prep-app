@@ -114,6 +114,7 @@ async function shorten(longUrl: string) {
   <li><strong>Write path:</strong> 2K/sec well within Postgres write throughput.</li>
   <li><strong>10× scale:</strong> 360K reads/sec → multi-region CDN; Redis cluster; read replicas.</li>
   <li><strong>Reliability:</strong> Postgres primary + replica + auto-failover; Redis as accelerator only (DB is source of truth).</li>
+  <li><strong>Redis note:</strong> Redis relicensed off open-source BSD to SSPL/RSAL in March 2024, spawning the Linux Foundation <strong>Valkey</strong> fork (AWS/Google/Oracle); Redis 8 returned to open source under AGPLv3 in May 2025. AWS ElastiCache and Google Memorystore now default new deployments to Valkey — protocol-compatible, so everything here applies to either.</li>
   <li><strong>Click counter:</strong> Redis INCR per request; batch flush every 60s to DB; tolerate counter drift on Redis loss.</li>
   <li><strong>Observability:</strong> redirect rate, P99 latency, cache hit rate, error rate; SLO 99.99% &lt; 100ms.</li>
 </ul>
@@ -469,7 +470,7 @@ Per channel: 30% push, 50% email, 5% SMS, 15% in-app
 
 External APIs:
 - FCM/APNs: ~1M req/sec capacity (with quotas)
-- SES email: 14 emails/sec default; bursts to thousands with reservation
+- SES email: per-account, per-region send-rate limit (varies by account; request increases and warm up your sending) — scales to thousands/sec once raised
 - Twilio SMS: ~100/sec per number; multiple numbers needed
 </code></pre>
 

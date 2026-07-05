@@ -16,7 +16,7 @@ window.PREP_SITE.registerTopic({
   <li><strong>Cache-aside (lazy)</strong> is the default pattern: read miss → fetch from source → populate cache. Write goes to source; cache invalidated separately.</li>
   <li><strong>Write strategies:</strong> write-through (sync; consistent, slower writes), write-behind (async; fast writes, risk of loss), write-around (skip cache on write; populate on read).</li>
   <li><strong>Invalidation patterns:</strong> TTL-based (simple), event-driven (precise), versioned key (atomic), tags (group invalidation).</li>
-  <li><strong>Redis</strong> is the de facto distributed cache; also serves queues, pub/sub, rate-limit, locks, sorted sets (leaderboards).</li>
+  <li><strong>Redis</strong> is the de facto distributed cache; also serves queues, pub/sub, rate-limit, locks, sorted sets (leaderboards). <em>Licensing note:</em> Redis moved off the open-source BSD license to SSPL/RSAL in March 2024, triggering the Linux Foundation's <strong>Valkey</strong> fork (backed by AWS/Google/Oracle); Redis then returned to open source under AGPLv3 with Redis 8 (May 2025). AWS ElastiCache and Google Memorystore now default new deployments to Valkey — everything here applies to both since they share the protocol.</li>
   <li><strong>Common pitfalls:</strong> thundering herd, cache stampede, stale reads after writes, hot keys, inconsistent layered TTLs.</li>
   <li><strong>Cache hit ratio</strong> is the primary metric — aim for &gt;95% on hot paths.</li>
   <li><strong>Don't cache everything.</strong> Cache when reads &gt;&gt; writes, computation is expensive, and stale-by-N-seconds is acceptable.</li>

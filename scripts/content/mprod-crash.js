@@ -43,7 +43,7 @@ window.PREP_SITE.registerTopic({
 <h3>Why crash reporting matters</h3>
 <ol>
   <li><strong>You can't fix what you don't see.</strong> Most users never report; they uninstall. Crash reporting is the only feedback channel that scales.</li>
-  <li><strong>App store gating.</strong> Apple's App Store Connect "App Analytics" surfaces crash rate; Google Play Console flags "bad behavior threshold" excesses (1.09% perceptible ANR, 8% crash) which can suppress you in search.</li>
+  <li><strong>App store gating.</strong> Apple's App Store Connect "App Analytics" surfaces crash rate; Google Play Console flags "bad behavior threshold" excesses (user-perceived crash rate &gt; 1.09%, user-perceived ANR rate &gt; 0.47%) which can suppress you in search.</li>
   <li><strong>Release decisions.</strong> "Crash-free 99.7% on 1.4.0 vs 99.3% on 1.5.0 → roll back" depends on real-time data.</li>
   <li><strong>SLO accountability.</strong> Many product teams set a quarterly "≥ 99.5% crash-free users" target.</li>
   <li><strong>Triage focus.</strong> Without grouping, you have 10,000 stack traces. With grouping, you have 50 issues sorted by user impact.</li>
@@ -56,7 +56,7 @@ window.PREP_SITE.registerTopic({
     <tr><td>Symbolication</td><td>Source maps (1 file per release)</td><td>dSYMs (iOS) + ProGuard mappings (Android) + JS source maps (RN) — 3 artifacts × 2 platforms</td></tr>
     <tr><td>Network during crash</td><td>Hard refresh — most stale state gone</td><td>SDK must persist event to disk, send on next launch</td></tr>
     <tr><td>Process model</td><td>Single page</td><td>Background services, content providers, push receivers — each can crash independently</td></tr>
-    <tr><td>OS fragmentation</td><td>Few engines</td><td>iOS 14–17, Android 6–14, dozens of OEM forks of Android</td></tr>
+    <tr><td>OS fragmentation</td><td>Few engines</td><td>a wide live range (e.g. iOS ~18–26, Android ~11–16), dozens of OEM forks of Android</td></tr>
     <tr><td>Native + JS</td><td>JS only</td><td>Crash can originate in any of three layers; you need symbols for all of them</td></tr>
   </tbody>
 </table>

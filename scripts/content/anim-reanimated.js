@@ -1,7 +1,7 @@
 window.PREP_SITE.registerTopic({
   id: 'anim-reanimated',
   module: 'animation',
-  title: 'Reanimated 3 Worklets',
+  title: 'Reanimated 4 Worklets',
   estimatedReadTime: '50 min',
   tags: ['reanimated', 'react-native', 'worklets', 'shared-value', 'gesture-handler', 'ui-thread', 'animations', 'spring'],
   sections: [
@@ -10,7 +10,7 @@ window.PREP_SITE.registerTopic({
       title: '🎯 TL;DR',
       collapsible: false,
       html: `
-<p><strong>Reanimated</strong> is the de facto animation library for React Native. Reanimated 3 (released 2023) introduced a fundamentally new architecture: <strong>worklets</strong> — small JavaScript functions that run on the <strong>UI thread</strong>, not the JS thread. This means animations and gesture responses don't depend on a busy JS thread; they stay at 60/120fps even when JS is doing heavy work.</p>
+<p><strong>Reanimated</strong> is the de facto animation library for React Native. Its core primitive is the <strong>worklet</strong> — a small JavaScript function that runs on the <strong>UI thread</strong>, not the JS thread. This means animations and gesture responses don't depend on a busy JS thread; they stay at 60/120fps even when JS is doing heavy work. Worklets were introduced in Reanimated 2 (2021); Reanimated 3 (2023) made UI-thread rendering the default and added layout animations. Reanimated 4 (stable 2025) is <strong>New-Architecture-only</strong>, adds a <strong>CSS animations/transitions API</strong>, and depends on the standalone <code>react-native-worklets</code> package (the worklet runtime was extracted from core).</p>
 <ul>
   <li><strong>Two threads, two worlds.</strong> JS thread (your React app) and UI thread (native rendering). Reanimated lets a subset of JS run on the UI thread.</li>
   <li><strong>Worklet:</strong> a JS function marked with <code>'worklet'</code> directive that's serialized + run on the UI thread.</li>
@@ -1038,7 +1038,7 @@ useAnimatedStyle(() =&gt; ({
 <p>Hermes is the default since RN 0.70. Reanimated supports both; the worklet runtime is engine-agnostic.</p>
 
 <h3>"Reanimated 1" code in tutorials</h3>
-<p>Old tutorials use deprecated APIs. Reanimated 3 is the current; check the docs version. Reanimated 1 is removed.</p>
+<p>Old tutorials use deprecated APIs. Reanimated 4 is the current; check the docs version. Reanimated 1 is removed.</p>
 
 <h3>The "TypeScript can't infer my style" warning</h3>
 <p>useAnimatedStyle's return type sometimes doesn't satisfy ViewStyle. Cast carefully or specify return type explicitly.</p>
@@ -1228,7 +1228,7 @@ import Animated, { useSharedValue, ... } from 'react-native-reanimated';
   <li><strong>Senior signal:</strong> understanding the JS-thread vs UI-thread separation. Many candidates only know "useNativeDriver"; fewer can articulate the worklet model.</li>
   <li><strong>Discord-tier interviewers</strong> (Discord, Airbnb, Linear, Robinhood, Coinbase, Apple) probe Reanimated knowledge specifically — they ship animation-heavy apps.</li>
   <li><strong>Performance reasoning:</strong> "why is this animation choppy?" → "the JS thread is busy; the animation isn't on the UI thread."</li>
-  <li><strong>The new RN architecture (Fabric)</strong> changes some details but the worklet model persists. Reanimated 3 was rebuilt for the new architecture.</li>
+  <li><strong>The new RN architecture (Fabric)</strong> changes some details but the worklet model persists. Reanimated 3 supports both the old (Paper) and new (Fabric) architectures; Reanimated 4 is New-Architecture-only.</li>
 </ul>
 
 <h3>Deep questions</h3>

@@ -500,7 +500,7 @@ function smallestSufficientTeam(req_skills, people) {
 <p>See Single Number III in Mechanics — XOR + bit-isolation trick.</p>
 
 <h3>Example 8: Encode short strings as integers</h3>
-<pre><code class="language-js">// Encode a string of up to 5 lowercase letters as 26-base integer (~5 * 5 bits = 25 bits)
+<pre><code class="language-js">// Encode a string of up to 5 lowercase letters as base-27 (0 reserved as end-marker) integer (~5 * 5 bits = 25 bits)
 function encode(s) {
   let n = 0;
   for (const c of s) {
@@ -672,11 +672,11 @@ for (let i = 0n; i &lt; 50n; i++) mask |= (1n &lt;&lt; i);
 </code></pre>
 
 <h3>Bug 2: Forgetting parentheses</h3>
-<pre><code class="language-js">// BAD — operator precedence
-if (n &amp; 1 &lt;&lt; i) { ... }   // shifts 1 by i then ANDs n? Actually: 1&lt;&lt;i has higher priority
+<pre><code class="language-js">// BAD — comparison binds tighter than &amp;
+if (n &amp; x == y) { ... }   // parses as n &amp; (x == y) because == has higher priority than &amp;
 
 // EXPLICIT
-if (n &amp; (1 &lt;&lt; i)) { ... }
+if ((n &amp; x) == y) { ... }
 </code></pre>
 
 <h3>Bug 3: Comparing bitwise result to truthy</h3>

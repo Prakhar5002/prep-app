@@ -233,7 +233,7 @@ External: Object storage (S3) for user uploads
     <tr><td>App servers</td><td>Stateless; horizontally scalable; behind LB</td></tr>
     <tr><td>SQL DB</td><td>Strong consistency, joins, transactions (Postgres, MySQL)</td></tr>
     <tr><td>NoSQL DB</td><td>Specific access patterns at scale (DynamoDB, Cassandra, MongoDB)</td></tr>
-    <tr><td>Cache</td><td>In-memory key-value (Redis, Memcached)</td></tr>
+    <tr><td>Cache</td><td>In-memory key-value (Redis, Memcached). Note: Redis relicensed off open-source BSD to SSPL/RSAL in March 2024, spawning the Linux Foundation <strong>Valkey</strong> fork (AWS/Google/Oracle); Redis 8 returned to open source under AGPLv3 in May 2025. AWS ElastiCache and Google Memorystore now default new deployments to Valkey (drop-in, same protocol).</td></tr>
     <tr><td>Queue / stream</td><td>Async work, fan-out, event log (Kafka, SQS, Redis Streams)</td></tr>
     <tr><td>Object storage</td><td>Files / images / video (S3, GCS)</td></tr>
     <tr><td>CDN</td><td>Edge caching for global low-latency static + dynamic (Cloudflare, Fastly)</td></tr>

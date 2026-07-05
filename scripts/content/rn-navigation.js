@@ -11,7 +11,7 @@ window.PREP_SITE.registerTopic({
 <p>Navigation in React Native is not in the framework — it's a library. The standard choices in 2025:</p>
 <ul>
   <li><strong>React Navigation (v7)</strong> — the most-used library. Comprehensive, JS-based with native primitives under the hood via <code>react-native-screens</code>. Stack / Tab / Drawer navigators.</li>
-  <li><strong>Expo Router (v3+)</strong> — file-based routing on top of React Navigation. "Pages" = files. Feels like Next.js for mobile.</li>
+  <li><strong>Expo Router (v5-era, 2026)</strong> — file-based routing on top of React Navigation. "Pages" = files. Feels like Next.js for mobile.</li>
   <li><strong>React Native Navigation (Wix)</strong> — fully native-driven navigation. Less popular now but still used where 100% native-thread navigation is required.</li>
 </ul>
 <p>Core concepts apply to all three:</p>

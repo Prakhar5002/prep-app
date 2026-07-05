@@ -21,6 +21,7 @@ window.PREP_SITE.registerTopic({
   <li><strong>Literal types and <code>const</code> assertions</strong> make the type system express domain rules ("status must be one of these four strings") for free.</li>
 </ul>
 <p><strong>Mantra:</strong> "Model the data, narrow the unknowns, refuse <code>any</code>, never trust the network."</p>
+<p><strong>Version note:</strong> the type-system fundamentals here are version-stable. Current stable is <strong>TypeScript 6.0</strong> (GA March 2026); the Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026, ~10× faster type-checking).</p>
 `
     },
     {

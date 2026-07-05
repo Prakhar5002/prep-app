@@ -178,7 +178,10 @@ window.PREP_SITE.registerTopic({
 &lt;link rel="prefetch" href="/next-page.js" /&gt;
 
 &lt;!-- Render the page in the background ready for instant navigation --&gt;
-&lt;link rel="prerender" href="/likely-next-page" /&gt; &lt;!-- heavy; use sparingly --&gt;</code></pre>
+&lt;!-- NOTE: &lt;link rel="prerender"&gt; is deprecated; use the Speculation Rules API instead --&gt;
+&lt;script type="speculationrules"&gt;
+{ "prerender": [{ "urls": ["/likely-next-page"] }] }
+&lt;/script&gt; &lt;!-- heavy; use sparingly --&gt;</code></pre>
 
 <h3>Critical CSS inlining</h3>
 <p>Extract the CSS that applies to above-the-fold content and inline it in a <code>&lt;style&gt;</code> tag in the head. Load the rest via non-blocking link. Tools: Critters (Webpack), Penthouse, built-in support in Next.js/Remix.</p>

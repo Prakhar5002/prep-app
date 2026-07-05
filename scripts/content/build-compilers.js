@@ -47,13 +47,13 @@ window.PREP_SITE.registerTopic({
 </ul>
 
 <h3>Why Babel was the standard</h3>
-<p>Babel pioneered the plugin model. Every cutting-edge JS feature was implemented as a Babel plugin first, then standardized. Plugins exist for almost every transform. Plugin ecosystem is mature; even the React team's React Compiler is a Babel plugin first (with a Rust port underway). Cost: written in JS; slow on big projects.</p>
+<p>Babel pioneered the plugin model. Every cutting-edge JS feature was implemented as a Babel plugin first, then standardized. Plugins exist for almost every transform. Plugin ecosystem is mature; the React team's React Compiler (stable 1.0 in 2025) ships as both a Babel and an SWC plugin. Cost: written in JS; slow on big projects.</p>
 
 <h3>Why SWC / esbuild took over</h3>
 <p>Babel is interpreted JS interpreting JS. Native code (Rust / Go) parses and transforms 10-50× faster. SWC reimplements most popular Babel transforms — including TS, JSX, decorators, optional chaining. esbuild does similar but as part of a bundler. Net: same outputs, fraction of the time.</p>
 
 <h3>Why <code>tsc</code> for emit is slow</h3>
-<p>tsc does full semantic analysis: type checking, inference, declaration emit. Emit work is mostly straightforward syntax stripping. Other tools (SWC, esbuild) skip type analysis entirely — just strip TS syntax. For type checking, you still need tsc; for emit, prefer faster tools.</p>
+<p>tsc does full semantic analysis: type checking, inference, declaration emit. Emit work is mostly straightforward syntax stripping. Other tools (SWC, esbuild) skip type analysis entirely — just strip TS syntax. For type checking, you still need tsc; for emit, prefer faster tools. Note the gap is closing: the <strong>Go-native TypeScript compiler (TS 7)</strong>, at RC in June 2026, delivers roughly 10× faster type-checking and emit while keeping full semantics — narrowing the historical JS-tsc-vs-native-transpiler speed gap.</p>
 
 <h3>Why split type check from emit</h3>
 <pre><code class="language-bash"># Old (slow):
@@ -517,14 +517,15 @@ export default defineConfig({ plugins: [react()] });
 # Diff outputs:
 diff &lt;(babel src/file.ts -o -) &lt;(swc src/file.ts -o -)</code></pre>
 
-<h3>Example 14 — React Compiler (2024+)</h3>
-<pre><code class="language-bash"># React Compiler — Babel plugin (Rust port WIP)
+<h3>Example 14 — React Compiler (stable 1.0, 2025)</h3>
+<pre><code class="language-bash"># React Compiler is stable 1.0 — available as a Babel AND an SWC plugin
 npm install babel-plugin-react-compiler
 
 # .babelrc:
 {
   "plugins": ["babel-plugin-react-compiler"]
 }
+# Or via SWC (e.g. Next.js): experimental.reactCompiler in the SWC pipeline.
 # Auto-memoizes components based on static analysis.</code></pre>
 
 <h3>Example 15 — measuring transform time</h3>
@@ -735,7 +736,7 @@ npm exec esbuild src/index.ts --metafile=meta.json --bundle</code></pre>
 <div class="qa-block">
   <div class="qa-question">Q8. Why is tsc so slow?</div>
   <div class="qa-answer">
-    <p>tsc does full semantic analysis: parses every file + every dependency type definition, builds the type graph, infers types, checks assignability. It's not designed for emit speed; it's designed for correctness. SWC and esbuild skip semantic analysis entirely (just strip TS syntax), making them 10-100× faster at emit. For type checking, tsc is still the only choice.</p>
+    <p>tsc does full semantic analysis: parses every file + every dependency type definition, builds the type graph, infers types, checks assignability. It's not designed for emit speed; it's designed for correctness. SWC and esbuild skip semantic analysis entirely (just strip TS syntax), making them 10-100× faster at emit. tsc is still the only tool that does full type checking — but it's no longer inherently slow: the <strong>Go-native TypeScript compiler (TS 7)</strong>, at RC in June 2026, is ~10× faster at type-check + emit, so the native-vs-JS gap is closing fast.</p>
   </div>
 </div>
 
@@ -789,7 +790,7 @@ npm exec esbuild src/index.ts --metafile=meta.json --bundle</code></pre>
 <div class="qa-block">
   <div class="qa-question">Q14. Is the React Compiler a build-time tool?</div>
   <div class="qa-answer">
-    <p>Yes — a Babel plugin (Rust port via SWC under way) that statically analyzes React components and auto-inserts memoization (<code>useMemo</code>, <code>useCallback</code>, <code>React.memo</code>). Runs at build time; output is regular React with explicit memo calls. Reduces need for manual memoization. Opt-in; eslint-plugin-react-compiler helps catch violations.</p>
+    <p>Yes — stable 1.0 (2025), available as both a Babel plugin and an SWC plugin, that statically analyzes React components and auto-inserts memoization (<code>useMemo</code>, <code>useCallback</code>, <code>React.memo</code>). Runs at build time; output is regular React with explicit memo calls. Reduces need for manual memoization. Opt-in; eslint-plugin-react-compiler helps catch violations.</p>
   </div>
 </div>
 

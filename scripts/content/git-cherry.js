@@ -344,7 +344,7 @@ git log &lt;branch&gt; --grep="cherry picked from" --oneline
 
 # Tools like:
 git cherry main release/v3.5
-# Lists commits in main not yet in release/v3.5
+# Lists commits in release/v3.5 not yet in main
 # (heuristic: detects identical patches; useful but imperfect)</code></pre>
 
 <h3>Cherry-pick with custom commit message</h3>
@@ -1008,7 +1008,7 @@ there's just one commit to pick."</code></pre>
    finds prior picks.
 
 3. git cherry source target (note: 'cherry', not 'cherry-pick')
-   lists commits in source not yet equivalent in target.
+   lists commits in target not yet equivalent in source.
 
 4. Team convention: incident notes list which branches got the
    pick.

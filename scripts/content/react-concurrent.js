@@ -156,7 +156,7 @@ client hydrates progressively:
   <li>Retry lanes — Suspense boundary retries after data arrives.</li>
   <li><code>IdleLane</code> — lowest. Never runs if anything higher is pending.</li>
 </ul>
-<p>The scheduler (V8's <code>MessageChannel</code> / <code>requestIdleCallback</code> / <code>requestAnimationFrame</code>) yields to the browser between fiber units. If an urgent update arrives, the current render is discarded and a new render begins at the higher priority.</p>
+<p>The scheduler (<code>MessageChannel</code> / <code>requestIdleCallback</code> / <code>requestAnimationFrame</code>) yields to the browser between fiber units. If an urgent update arrives, the current render is discarded and a new render begins at the higher priority.</p>
 
 <h3>Automatic batching</h3>
 <p>React 18 batches state updates in <em>all</em> contexts (promises, <code>setTimeout</code>, native event listeners) — not just React synthetic events as before. Result: multiple <code>setState</code> calls in async callbacks cause one render.</p>
@@ -224,7 +224,7 @@ const root = ReactDOM.createRoot(document.getElementById('app'));
 root.render(&lt;App/&gt;);
 // Legacy (no concurrent features)
 ReactDOM.render(&lt;App/&gt;, document.getElementById('app'));</code></pre>
-<p>Only <code>createRoot</code> unlocks concurrent features. <code>ReactDOM.render</code> still works in 18 but is in legacy mode and will be removed.</p>
+<p>Only <code>createRoot</code> unlocks concurrent features. <code>ReactDOM.render</code> (along with <code>hydrate</code> and <code>unmountComponentAtNode</code>) was <strong>removed in React 19 (Dec 2024)</strong> — <code>createRoot</code>/<code>hydrateRoot</code> are now mandatory.</p>
 `},
 
 // ─────────────────────────────────────────────────────────────
@@ -522,7 +522,7 @@ flushSync(() =&gt; setC(3));</code></pre>
 <p><code>use(promise)</code> throws to the nearest Suspense. Without one, the error bubbles to an ErrorBoundary or crashes.</p>
 
 <h3>Anti-pattern 15 — Legacy render + concurrent APIs</h3>
-<p>If you still use <code>ReactDOM.render</code> (legacy mode), <code>startTransition</code> is a no-op. Migrate to <code>createRoot</code> to unlock concurrent features.</p>
+<p><code>ReactDOM.render</code> was <strong>removed in React 19 (Dec 2024)</strong>, so this legacy trap is now moot — there's no legacy root to fall into. On React 18 it created a legacy root where <code>startTransition</code> was a no-op. Either way, use <code>createRoot</code>/<code>hydrateRoot</code> to unlock concurrent features.</p>
 `},
 
 // ─────────────────────────────────────────────────────────────
@@ -635,7 +635,7 @@ flushSync(() =&gt; setC(3));</code></pre>
 <div class="qa-block">
   <div class="qa-question">Q14. Explain the difference between <code>createRoot</code> and <code>ReactDOM.render</code>.</div>
   <div class="qa-answer">
-    <p><code>createRoot</code> (React 18+) creates a concurrent-capable root. Opt-in hooks (<code>useTransition</code>, <code>useDeferredValue</code>), Suspense streaming, automatic batching all work. <code>ReactDOM.render</code> (legacy) creates a synchronous root — concurrent features are no-ops. <code>ReactDOM.render</code> is deprecated and will be removed. Migration is usually a one-line change in the entry file.</p>
+    <p><code>createRoot</code> (React 18+) creates a concurrent-capable root. Opt-in hooks (<code>useTransition</code>, <code>useDeferredValue</code>), Suspense streaming, automatic batching all work. <code>ReactDOM.render</code> (legacy) creates a synchronous root — concurrent features are no-ops. <code>ReactDOM.render</code> (with <code>hydrate</code> and <code>unmountComponentAtNode</code>) was <strong>removed in React 19 (Dec 2024)</strong> — <code>createRoot</code>/<code>hydrateRoot</code> are now mandatory. Migration is usually a one-line change in the entry file.</p>
   </div>
 </div>
 

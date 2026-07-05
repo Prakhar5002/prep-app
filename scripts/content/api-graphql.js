@@ -323,7 +323,7 @@ const rules = [
 </table>
 
 <h3>Subscriptions transport</h3>
-<p>Most servers use <code>graphql-ws</code> over WebSocket; some use SSE for one-way. Apollo Server v4 ships subscription support via standalone <code>useServer</code> from <code>graphql-ws</code>:</p>
+<p>Most servers use <code>graphql-ws</code> over WebSocket; some use SSE for one-way. Apollo Server 5 (current; Apollo Server 4 reached end-of-life Jan 26 2026) wires subscriptions via standalone <code>useServer</code> from <code>graphql-ws</code>:</p>
 <pre><code class="language-typescript">import { useServer } from 'graphql-ws/lib/use/ws';
 import { WebSocketServer } from 'ws';
 
@@ -353,6 +353,7 @@ type Post {
 }
 </code></pre>
 <p>Router resolves <code>User.posts</code> by routing the sub-query to posts-subgraph; entity resolution by <code>id</code> ensures cross-subgraph joins.</p>
+<p><strong>Note:</strong> the example above uses Federation 1 syntax. In Federation 2 (current) <code>@external</code> is no longer required on <code>@key</code> fields and the <code>extend</code> keyword is optional — a plain <code>type User @key(fields: "id")</code> in each subgraph composes.</p>
 
 <h3>Auth: where to put it</h3>
 <table>

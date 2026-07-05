@@ -55,7 +55,7 @@ window.PREP_SITE.registerTopic({
   <li>The value is passed as a prop to a memoized child (stability prevents re-render).</li>
   <li>The value is a dependency of an effect — stability prevents effect re-runs.</li>
 </ul>
-<p>Blanket memoization of every primitive and handler is cargo cult. The upcoming <strong>React Compiler</strong> (Babel plugin) automatically memoizes components based on static analysis — when it ships widely, manual memoization is less needed.</p>
+<p>Blanket memoization of every primitive and handler is cargo cult. <strong>React Compiler 1.0</strong> (shipped stable on Oct 7 2025, working via both Babel and SWC) automatically memoizes components based on static analysis — in compiler-enabled projects, manual <code>useMemo</code>/<code>useCallback</code> are largely unnecessary.</p>
 
 <h3>Why stable identity matters</h3>
 <p>React's diff is a reference comparison for props and deps. If a parent passes <code>onClick={() =&gt; ...}</code>, the function is new every render — children can't bail out, effects re-run. Stable identity (via <code>useCallback</code>, moving definitions outside the component, deriving from stable props) is often more impactful than memoizing the receiving component.</p>
@@ -215,8 +215,8 @@ const onFilter = (q) =&gt; {
 &lt;/Profiler&gt;</code></pre>
 <p>Available in production. Useful for real-user monitoring of specific critical subtrees.</p>
 
-<h3>React Compiler (2025)</h3>
-<p>A Babel plugin that statically analyzes components and auto-memoizes. Wrapping in <code>React.memo</code>, calls to <code>useMemo</code>/<code>useCallback</code> mostly become unnecessary. Opt-in; not all patterns are supported yet. Will increasingly be the default advice once stable.</p>
+<h3>React Compiler (stable since Oct 2025)</h3>
+<p>A build-time compiler (works via both Babel and SWC) that statically analyzes components and auto-memoizes. Wrapping in <code>React.memo</code>, calls to <code>useMemo</code>/<code>useCallback</code> largely become unnecessary. <strong>React Compiler 1.0 shipped stable on Oct 7 2025</strong>; in compiler-enabled projects manual memoization is mostly redundant.</p>
 `},
 
 // ─────────────────────────────────────────────────────────────
@@ -568,7 +568,7 @@ const derived = useMemo(() =&gt; compute(a,b), [a,b]);</code></pre>
 <div class="qa-block">
   <div class="qa-question">Q11. What is the React Compiler?</div>
   <div class="qa-answer">
-    <p>A Babel plugin (in beta as of 2025) that statically analyzes your components and auto-inserts memoization. Functions it would wrap in <code>useCallback</code>, expressions in <code>useMemo</code>, components in <code>React.memo</code> — all happen automatically. Rules-of-React-compliant code just runs faster without manual tuning. Opt-in; not all patterns are supported. As adoption grows, manual memoization will be less common.</p>
+    <p>A build-time compiler (works via both Babel and SWC) that statically analyzes your components and auto-inserts memoization. Functions it would wrap in <code>useCallback</code>, expressions in <code>useMemo</code>, components in <code>React.memo</code> — all happen automatically. Rules-of-React-compliant code just runs faster without manual tuning. <strong>React Compiler 1.0 shipped stable on Oct 7 2025</strong>; in compiler-enabled projects manual <code>useMemo</code>/<code>useCallback</code> are largely unnecessary.</p>
   </div>
 </div>
 

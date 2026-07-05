@@ -46,7 +46,7 @@ window.PREP_SITE.registerTopic({
   <tbody>
     <tr><td>Postgres / MySQL</td><td>Default. Relational data, transactions matter, mixed access patterns, you'll need ad-hoc queries.</td></tr>
     <tr><td>Document (MongoDB, Firestore)</td><td>Self-contained documents, schema flexibility for prototyping, no cross-document JOINs.</td></tr>
-    <tr><td>Key-value (DynamoDB, Redis, Cassandra)</td><td>Single-key access patterns at huge scale, predictable latency over flexibility.</td></tr>
+    <tr><td>Key-value (DynamoDB, Redis, Cassandra)</td><td>Single-key access patterns at huge scale, predictable latency over flexibility. (Redis relicensed off open-source BSD to SSPL/RSAL in March 2024, spawning the Linux Foundation <strong>Valkey</strong> fork; Redis 8 returned to open source under AGPLv3 in May 2025. AWS ElastiCache and Google Memorystore now default new deployments to Valkey.)</td></tr>
     <tr><td>Wide-column (Cassandra, Bigtable)</td><td>Time-series, billions of rows, write-heavy, partition-key access.</td></tr>
     <tr><td>Graph (Neo4j, Neptune)</td><td>Many-to-many relationships, recommendations, fraud detection.</td></tr>
     <tr><td>Search (Elasticsearch, OpenSearch, Algolia)</td><td>Full-text search, faceting, ranking; secondary index, not source of truth.</td></tr>

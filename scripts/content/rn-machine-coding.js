@@ -110,7 +110,7 @@ Is it persisted across app launches?
     <tr><td>Form / multi-step</td><td><code>KeyboardAvoidingView</code> + controlled inputs + a tiny reducer</td></tr>
     <tr><td>Image-heavy gallery</td><td><code>FlatList</code> + <code>FastImage</code> (or Expo Image), pagination</td></tr>
     <tr><td>Bottom sheet / modal</td><td><code>@gorhom/bottom-sheet</code> or built-in <code>Modal</code></td></tr>
-    <tr><td>Animated interaction</td><td>Reanimated 3 worklets + Gesture Handler</td></tr>
+    <tr><td>Animated interaction</td><td>Reanimated worklets + Gesture Handler</td></tr>
   </tbody>
 </table>
 

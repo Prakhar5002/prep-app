@@ -169,7 +169,7 @@ p.foo;         // logs: get foo, returns 1
 <p>Because keys can be GC'd at any time, WeakMap has no <code>.size</code>, no iteration, no <code>.keys()</code>. This is intentional.</p>
 
 <h3>Intl — the runtime's i18n library</h3>
-<p>Browsers and Node ship with full ICU data (or close to it). Node's flag <code>--icu=full-icu</code> ensures all locales are available; Node 19+ does this by default. RN ships with Hermes which has Intl support since Hermes 0.10.</p>
+<p>Browsers and Node ship with full ICU data (or close to it). Node's flag <code>--icu=full-icu</code> ensures all locales are available; Node 13+ (2019) ships with full ICU by default. RN ships with Hermes which has Intl support since Hermes 0.10.</p>
 `
     },
     {
@@ -647,7 +647,7 @@ const x = g();
 <p>If the JS process exits, the callback never runs. Even mid-process, the engine may decide not to run it. Design assuming "this is just a hint."</p>
 
 <h3>Intl behavior in Node</h3>
-<p>Pre-Node 19, <code>--icu=full-icu</code> was needed for non-English locales. Node 19+ ships with full ICU by default. RN's Hermes supports Intl since 0.10; older Hermes needs polyfills (e.g., <code>@formatjs/intl-*</code>).</p>
+<p>Pre-Node 13, <code>--icu=full-icu</code> was needed for non-English locales. Node 13+ (2019) ships with full ICU by default. RN's Hermes supports Intl since 0.10; older Hermes needs polyfills (e.g., <code>@formatjs/intl-*</code>).</p>
 
 <h3>Intl date timezone defaults</h3>
 <p><code>Intl.DateTimeFormat</code> defaults to the system timezone. Pass <code>timeZone</code> explicitly to avoid surprises in server-side rendering.</p>

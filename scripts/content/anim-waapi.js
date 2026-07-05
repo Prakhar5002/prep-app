@@ -88,7 +88,7 @@ animation.finished.then(() =&gt; console.log('done'));
 </table>
 
 <h3>Browser support today</h3>
-<p>All modern browsers (Chrome, Edge, Safari 13.1+, Firefox 75+) support WAAPI core. <code>animation-timeline</code> (scroll-driven) is Chrome / Edge / Safari TP / pending Firefox. Polyfill: <code>web-animations-js</code> from Google for older browsers.</p>
+<p>All modern browsers (Chrome, Edge, Safari 13.1+, Firefox 75+) support WAAPI core. Scroll-driven animations (<code>animation-timeline</code> / ScrollTimeline / ViewTimeline) ship in Chrome / Edge and now in stable Safari 26 (early 2026); Firefox is still pending. Polyfill: <code>web-animations-js</code> from Google for older browsers.</p>
 
 <h3>When to use WAAPI</h3>
 <ul>
@@ -699,7 +699,7 @@ el.animate(..., { duration: 300, fill: 'forwards' });
 <p>Default <code>composite: 'replace'</code> means the most recently started animation wins. <code>composite: 'add'</code> stacks. For complex orchestration, prefer one animation with multiple keyframes.</p>
 
 <h3>animation-timeline browser support</h3>
-<p>ScrollTimeline / ViewTimeline are Chrome-led. Safari and Firefox lag (as of 2026). Polyfill via <code>scroll-timeline-polyfill</code> or feature-detect.</p>
+<p>ScrollTimeline / ViewTimeline shipped in Chrome / Edge and stable Safari 26 (early 2026); only Firefox still lags. Polyfill via <code>scroll-timeline-polyfill</code> or feature-detect.</p>
 
 <h3>Pseudo-element animation</h3>
 <pre><code class="language-js">el.animate(keyframes, { pseudoElement: '::before', duration: 300 });
@@ -725,7 +725,7 @@ el.animate(..., { duration: 300, fill: 'forwards' });
 <p>Safari historically had bugs with <code>composite: 'add'</code> on transform. Test cross-browser.</p>
 
 <h3>iOS Safari + scroll timeline</h3>
-<p>iOS Safari lags Chrome on scroll-driven animations. Use a JS-driven IntersectionObserver fallback for a wider audience.</p>
+<p>Safari 26 (early 2026) shipped scroll-driven animation support, so recent iOS Safari is on par with Chrome. For older iOS versions, use a JS-driven IntersectionObserver fallback.</p>
 
 <h3>Returning <code>animation</code> from React effects</h3>
 <pre><code class="language-jsx">useEffect(() =&gt; {

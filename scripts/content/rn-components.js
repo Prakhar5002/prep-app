@@ -198,10 +198,10 @@ window.PREP_SITE.registerTopic({
 &lt;FlashList
   data={items}
   keyExtractor={(item) =&gt; item.id}
-  estimatedItemSize={80}          // REQUIRED
+  estimatedItemSize={80}          // v1 only — REQUIRED on v1, removed in v2
   renderItem={({ item }) =&gt; &lt;Row item={item} /&gt;}
 /&gt;</code></pre>
-<p>Drop-in replacement for FlatList with recycling. <code>estimatedItemSize</code> is mandatory.</p>
+<p>Drop-in replacement for FlatList with recycling. <code>estimatedItemSize</code> was mandatory on v1; FlashList v2 (2025) removed it (auto-measured), so it's no longer required.</p>
 
 <h3>TextInput</h3>
 <pre><code class="language-tsx">&lt;TextInput
@@ -702,7 +702,7 @@ const refresh = useCallback(async () =&gt; {
       <li>Heavy dynamic composition.</li>
       <li>When item state must not persist across scroll-out (counterintuitive — FlatList unmounts, FlashList doesn't).</li>
     </ul>
-    <p>Drop-in migration is usually easy. Requires <code>estimatedItemSize</code>.</p>
+    <p>Drop-in migration is usually easy. <code>estimatedItemSize</code> was required on v1; FlashList v2 (2025) removed it, so it's no longer required.</p>
   </div>
 </div>
 

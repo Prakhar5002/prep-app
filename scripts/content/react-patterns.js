@@ -740,6 +740,7 @@ function Panel({ value, children }) {
   <div class="qa-question">Q10. What's forwardRef and when do you need it?</div>
   <div class="qa-answer">
     <p><code>forwardRef</code> lets a parent pass a ref through a custom component to the underlying DOM element (or an imperative handle). Without it, <code>&lt;MyInput ref={ref}/&gt;</code> gives a warning because function components don't accept refs directly. You need forwardRef when: (a) the component wraps a DOM element and callers want direct access (e.g., focus, scrollIntoView); (b) you expose an imperative API via <code>useImperativeHandle</code>. App components that can accept <code>inputRef</code> as a plain prop often don't need forwardRef.</p>
+    <p><strong>React 19 update:</strong> <code>ref</code> is now a regular prop for function components — passing <code>ref</code> no longer warns, so <code>forwardRef</code> is deprecated and largely unnecessary (a codemod migrates existing usage). The explanation above is the historical pre-19 model; new code can read <code>ref</code> directly from props.</p>
   </div>
 </div>
 

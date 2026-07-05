@@ -133,7 +133,7 @@ window.PREP_SITE.registerTopic({
     <tr><td>Pass state into the recursive call (depth, path, current sum)</td><td>Children compute and return; you combine</td></tr>
     <tr><td><code>solve(node, parentSum)</code></td><td><code>const x = solve(node.left)</code></td></tr>
     <tr><td>Path-from-root problems</td><td>Subtree-aggregate problems</td></tr>
-    <tr><td>Path Sum, Sum Root to Leaf</td><td>Max Depth, Diameter, Validate BST</td></tr>
+    <tr><td>Path Sum, Sum Root to Leaf, Validate BST</td><td>Max Depth, Diameter</td></tr>
   </tbody>
 </table>
 
@@ -515,7 +515,7 @@ function deserialize(s) {
   let prev = null;
   function go(n) {
     if (!n) return;
-    go(n.right);    // reverse postorder!
+    go(n.right);    // reverse preorder (Right → Left → Node)
     go(n.left);
     n.right = prev;
     n.left = null;

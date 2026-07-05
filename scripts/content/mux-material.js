@@ -10,7 +10,7 @@ window.PREP_SITE.registerTopic({
       title: '🎯 TL;DR',
       collapsible: false,
       html: `
-<p><strong>Material Design 3 (M3, "Material You")</strong> is Google's design system shipped with Android 12 (2021) and continuously updated. It's what makes an Android app feel "from this decade" rather than feeling like a port of an iOS app or stuck in 2017's M2 visuals. For a React Native engineer, M3 is the Android counterpart to iOS's HIG — different tokens, different navigation primitives, different gestures.</p>
+<p><strong>Material Design 3 (M3, "Material You")</strong> is Google's design system shipped with Android 12 (2021) and continuously updated. Its current shipping evolution is <strong>Material 3 Expressive</strong> (announced May 2025, rolled out with Android 16 QPR1 and on Pixel from September 2025) — springier emphasized motion, a refreshed type scale, and updated components layered on top of the same M3 foundation. It's what makes an Android app feel "from this decade" rather than feeling like a port of an iOS app or stuck in 2017's M2 visuals. For a React Native engineer, M3 is the Android counterpart to iOS's HIG — different tokens, different navigation primitives, different gestures.</p>
 <ul>
   <li><strong>Three M3 fundamentals:</strong> Dynamic color (extracted from user's wallpaper via Monet), updated typography scale, redesigned components (cards, FAB, navigation bar, top app bar).</li>
   <li><strong>Navigation primitives:</strong> bottom navigation bar (3–5 destinations), navigation drawer (more destinations or modal nav), navigation rail (tablet/foldable), top app bar with overflow menu.</li>
@@ -29,7 +29,7 @@ window.PREP_SITE.registerTopic({
       title: '🧠 What & Why',
       html: `
 <h3>What Material Design is</h3>
-<p>A design system Google originated in 2014 as a unified language across Android, web, and Google's own apps. Iterated through Material 1 (2014) → Material 2 (2018, Google's "rebrand" with bolder typography) → <strong>Material 3</strong> (2021, "Material You" with Dynamic Color). M3 is the current default and the only version Android 12+ system apps follow.</p>
+<p>A design system Google originated in 2014 as a unified language across Android, web, and Google's own apps. Iterated through Material 1 (2014) → Material 2 (2018, Google's "rebrand" with bolder typography) → <strong>Material 3</strong> (2021, "Material You" with Dynamic Color) → <strong>Material 3 Expressive</strong> (announced May 2025, shipped in Android 16 QPR1 / Pixel from September 2025 — springy emphasized motion, a new type scale, and updated components). M3 (in its Expressive form) is the current default and the only line Android 12+ system apps follow.</p>
 
 <h3>Why Material matters on Android</h3>
 <table>

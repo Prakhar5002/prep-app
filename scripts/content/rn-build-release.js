@@ -323,8 +323,9 @@ Sentry.init({
 });
 
 // Native + JS crashes symbolicated to source.
-// In CI after build: upload source maps + debug symbols:
-npx sentry-expo-upload-sourcemaps dist</code></pre>
+// In CI after build: upload source maps + debug symbols.
+// Note: sentry-expo is deprecated — use @sentry/react-native with the Sentry Metro/Expo plugin.
+npx @sentry/cli sourcemaps upload dist</code></pre>
 
 <h3>Staged rollout on Play</h3>
 <p>In Play Console → Production → Release to 5% first → monitor crash rate → increase to 25% → 50% → 100%. Can halt if crashes spike.</p>
@@ -371,7 +372,8 @@ export default {
 <h3>Example 3 — Sentry + source maps</h3>
 <pre><code># After EAS build, upload source maps
 eas update --branch production --message "v1.2.3"
-npx sentry-expo-upload-sourcemaps --auth-token $SENTRY_AUTH_TOKEN</code></pre>
+# Note: sentry-expo is deprecated — use @sentry/react-native + the Sentry Metro/Expo plugin.
+SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN npx @sentry/cli sourcemaps upload dist</code></pre>
 
 <h3>Example 4 — Fastlane iOS deploy</h3>
 <pre><code class="language-ruby">lane :production do

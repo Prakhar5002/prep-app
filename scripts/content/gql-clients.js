@@ -147,7 +147,6 @@ Environment (runtime)
    ↓ useQuery / useMutation
 Client
    └── Exchange chain
-        ├── dedupExchange       (drop concurrent dupes)
         ├── cacheExchange       (document or graphcache)
         ├── authExchange        (token injection + refresh)
         ├── retryExchange       (custom retry policy)
@@ -157,6 +156,7 @@ Client
                 ↓
               Network
 </code></pre>
+<p><strong>Note:</strong> as of urql v4, request deduplication is built into the <code>Client</code> itself — there's no more <code>dedupExchange</code> to add to the chain.</p>
 
 <h3>The TanStack Query approach</h3>
 <pre><code class="language-text">Component
@@ -268,7 +268,9 @@ export function useGetUserQuery(opts: QueryHookOptions&lt;GetUserQuery, GetUserQ
       title: '⚙️ Mechanics',
       html: `
 <h3>Apollo Client setup</h3>
-<pre><code class="language-typescript">import { ApolloClient, InMemoryCache, ApolloProvider, from } from '@apollo/client';
+<p><strong>Note:</strong> as of Apollo Client 4 (Sept 2025), the React hooks import from <code>@apollo/client/react</code> (not <code>@apollo/client</code>). v4 ships a smaller (~24 KB) React-decoupled core, so the client + cache still come from <code>@apollo/client</code> while <code>useQuery</code>/<code>useMutation</code>/<code>ApolloProvider</code> move to the <code>/react</code> entry point.</p>
+<pre><code class="language-typescript">import { ApolloClient, InMemoryCache, from } from '@apollo/client';
+import { ApolloProvider } from '@apollo/client/react';
 import { createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
@@ -334,7 +336,7 @@ function App() {
 </code></pre>
 
 <h3>Apollo: useQuery / useMutation / useSubscription</h3>
-<pre><code class="language-typescript">import { useQuery, useMutation, useSubscription } from '@apollo/client';
+<pre><code class="language-typescript">import { useQuery, useMutation, useSubscription } from '@apollo/client/react';
 import { GET_USER, UPDATE_USER, ON_NEW_COMMENT } from './queries';
 
 function UserCard({ id }: { id: string }) {
@@ -475,14 +477,15 @@ function ProfileScreen({ id }) {
 </code></pre>
 
 <h3>Urql setup</h3>
-<pre><code class="language-typescript">import { createClient, Provider, fetchExchange, cacheExchange, dedupExchange } from 'urql';
+<pre><code class="language-typescript">import { createClient, Provider, fetchExchange, cacheExchange } from 'urql';
 
 const client = createClient({
   url: '/graphql',
   fetchOptions: () =&gt; ({
     headers: { Authorization: \`Bearer \${getToken()}\` },
   }),
-  exchanges: [dedupExchange, cacheExchange, fetchExchange],
+  // urql v4: dedup is built into the Client — no dedupExchange needed
+  exchanges: [cacheExchange, fetchExchange],
 });
 
 function App() {

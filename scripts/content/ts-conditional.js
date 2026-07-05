@@ -22,6 +22,7 @@ window.PREP_SITE.registerTopic({
   <li><strong>Utility types</strong> like <code>Pick</code>, <code>Omit</code>, <code>Partial</code>, <code>ReturnType</code>, <code>Parameters</code> are built from these primitives — and you can write your own.</li>
 </ul>
 <p><strong>Mantra:</strong> "If your type is a function of another type, write it that way — don't duplicate."</p>
+<p><strong>Version note:</strong> the per-feature versions cited below (key remapping 4.1, tail-recursive conditionals 4.5, <code>infer extends</code> 4.8) are accurate. Current stable is <strong>TypeScript 6.0</strong> (GA March 2026); the Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026, ~10× faster type-checking).</p>
 `
     },
     {

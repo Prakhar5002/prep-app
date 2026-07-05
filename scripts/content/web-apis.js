@@ -325,7 +325,7 @@ const result = instance.exports.add(2, 3);
 <p>For non-trivial use, compile from Rust / C++ / AssemblyScript with toolchains (wasm-pack, Emscripten).</p>
 
 <h3>WebGPU</h3>
-<p>Modern GPU API; replaces WebGL for new code. GPU compute (machine learning in browser) and 3D rendering. Universally available 2024+.</p>
+<p>Modern GPU API; replaces WebGL for new code. GPU compute (machine learning in browser) and 3D rendering. Broadly available across all major browsers since late 2025 (Chrome/Edge shipped 2023; Firefox 141 in July 2025; Safari 26 in September 2025).</p>
 
 <h3>The "feature detect" pattern</h3>
 <pre><code class="language-js">if ('IntersectionObserver' in window) {
@@ -599,8 +599,9 @@ self.addEventListener('notificationclick', (event) =&gt; {
 });
 </code></pre>
 
-<h3>Battery API (deprecated in many)</h3>
-<pre><code class="language-js">// Battery API was deprecated by browsers due to fingerprinting; treat as unavailable
+<h3>Battery API (limited support)</h3>
+<pre><code class="language-js">// Chrome/Chromium still expose navigator.getBattery(); Firefox removed it over
+// fingerprinting concerns and Safari never shipped it — feature-detect and treat as optional
 if ('getBattery' in navigator) {
   const battery = await navigator.getBattery();
   console.log(battery.level, battery.charging);
@@ -920,8 +921,8 @@ controller.abort();   // removes listener
 <h3>Wake Lock API requires user interaction</h3>
 <p>Like notifications, must be requested from a user gesture.</p>
 
-<h3>Battery API removed</h3>
-<p>Browsers removed access to battery info due to fingerprinting concerns. Treat as unavailable.</p>
+<h3>Battery API — uneven support</h3>
+<p>Chrome/Chromium still expose <code>navigator.getBattery()</code>; Firefox removed it over fingerprinting concerns and Safari never shipped it. Feature-detect and treat as optional rather than universal.</p>
 
 <h3>WebUSB / WebHID Chrome-only</h3>
 <p>Hardware APIs are Chromium-led; Firefox refuses to implement (security stance). Safari minimal. Don't depend in cross-browser code.</p>

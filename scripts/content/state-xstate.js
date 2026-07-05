@@ -158,8 +158,8 @@ const toggleMachine = createMachine({
 <h3>Guards (conditional transitions)</h3>
 <pre><code class="language-js">on: {
   SUBMIT: [
-    { target: 'success', cond: 'isValid' },
-    { target: 'error',   cond: 'isInvalid' },
+    { target: 'success', guard: 'isValid' },
+    { target: 'error',   guard: 'isInvalid' },
   ]
 }
 </code></pre>
@@ -181,7 +181,7 @@ const toggleMachine = createMachine({
 <pre><code class="language-js">on: {
   RETRY: {
     target: 'submitting',
-    actions: assign({ retryCount: (ctx) =&gt; ctx.retryCount + 1 }),
+    actions: assign({ retryCount: ({ context }) =&gt; context.retryCount + 1 }),
   }
 }
 </code></pre>
@@ -192,8 +192,8 @@ const toggleMachine = createMachine({
     invoke: {
       id: 'fetchUser',
       src: 'fetchUser',                    // a Promise-returning function
-      onDone: { target: 'success', actions: assign({ user: (_, e) =&gt; e.data }) },
-      onError: { target: 'error',   actions: assign({ error: (_, e) =&gt; e.data }) },
+      onDone: { target: 'success', actions: assign({ user: ({ event }) =&gt; event.output }) },
+      onError: { target: 'error',   actions: assign({ error: ({ event }) =&gt; event.error }) },
     }
   }
 }
@@ -491,14 +491,14 @@ test('login flow', () =&gt; {
     profile: {
       on: {
         NEXT: { target: 'address', guard: 'profileFilled', actions: 'saveProfile' },
-        UPDATE: { actions: assign((ctx, e) =&gt; ({ ...ctx, ...e.data })) },
+        UPDATE: { actions: assign(({ context, event }) =&gt; ({ ...context, ...event.data })) },
       }
     },
     address: {
       on: {
         NEXT: { target: 'review', guard: 'addressFilled', actions: 'saveAddress' },
         BACK: 'profile',
-        UPDATE: { actions: assign((ctx, e) =&gt; ({ ...ctx, ...e.data })) },
+        UPDATE: { actions: assign(({ context, event }) =&gt; ({ ...context, ...event.data })) },
       }
     },
     review: {
@@ -536,13 +536,13 @@ test('login flow', () =&gt; {
       invoke: {
         src: 'request',
         onDone: 'success',
-        onError: { target: 'waiting', actions: assign({ lastError: (_, e) =&gt; e.data }) },
+        onError: { target: 'waiting', actions: assign({ lastError: ({ event }) =&gt; event.error }) },
       }
     },
     waiting: {
       after: {
         // exponential backoff: 1s, 2s, 4s, 8s
-        DELAY: { target: 'attempting', actions: assign({ attempt: (c) =&gt; c.attempt + 1 }) },
+        DELAY: { target: 'attempting', actions: assign({ attempt: ({ context }) =&gt; context.attempt + 1 }) },
       },
       always: { target: 'failed', guard: ({ context }) =&gt; context.attempt &gt;= 4 },
     },
@@ -643,7 +643,7 @@ test('login flow', () =&gt; {
     connecting: {
       invoke: {
         src: 'connectSocket',
-        onDone: { target: 'connected', actions: assign({ socket: (_, e) =&gt; e.data, retryCount: 0 }) },
+        onDone: { target: 'connected', actions: assign({ socket: ({ event }) =&gt; event.output, retryCount: 0 }) },
         onError: 'reconnecting'
       }
     },
@@ -659,7 +659,7 @@ test('login flow', () =&gt; {
     },
     reconnecting: {
       after: {
-        2000: { target: 'connecting', actions: assign({ retryCount: (c) =&gt; c.retryCount + 1 }) }
+        2000: { target: 'connecting', actions: assign({ retryCount: ({ context }) =&gt; context.retryCount + 1 }) }
       },
       always: { target: 'failed', guard: ({ context }) =&gt; context.retryCount &gt;= 5 }
     },
@@ -751,17 +751,17 @@ test('login flow', () =&gt; {
   context: { query: '', results: [] },
   states: {
     idle: {
-      on: { TYPE: { target: 'debouncing', actions: assign({ query: (_, e) =&gt; e.value }) } }
+      on: { TYPE: { target: 'debouncing', actions: assign({ query: ({ event }) =&gt; event.value }) } }
     },
     debouncing: {
       after: { 300: 'searching' },
-      on: { TYPE: { target: 'debouncing', actions: assign({ query: (_, e) =&gt; e.value }) } }   // reset
+      on: { TYPE: { target: 'debouncing', actions: assign({ query: ({ event }) =&gt; event.value }) } }   // reset
     },
     searching: {
       invoke: {
         src: 'search',
         input: ({ context }) =&gt; context.query,
-        onDone: { target: 'idle', actions: assign({ results: (_, e) =&gt; e.output }) },
+        onDone: { target: 'idle', actions: assign({ results: ({ event }) =&gt; event.output }) },
         onError: 'idle'
       }
     }

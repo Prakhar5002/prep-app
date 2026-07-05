@@ -24,6 +24,7 @@ window.PREP_SITE.registerTopic({
   <li><strong>Type predicate functions</strong> (<code>x is T</code>) over assertions.</li>
 </ul>
 <p><strong>Mantra:</strong> "Don't model with optionality and any. Model with shape, narrow with discriminators, validate at the seam."</p>
+<p><strong>Version note:</strong> these patterns are version-stable. Current stable is <strong>TypeScript 6.0</strong> (GA March 2026); the Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026) with ~10× faster type-checking.</p>
 `
     },
     {

@@ -84,7 +84,7 @@ window.PREP_SITE.registerTopic({
  Linear: scales perfectly.
  Linearithmic: still very good.
  Quadratic: breaks down at ~10⁴.
- Exponential: breaks down at ~30 input.</pre>
+ Exponential: breaks down at ~25–30 input.</pre>
 </div>
 
 <h3>The "common operations" cheat sheet</h3>
@@ -277,12 +277,12 @@ class DynamicArray {
   <thead><tr><th>n</th><th>O(n)</th><th>O(n log n)</th><th>O(n²)</th><th>O(2ⁿ)</th></tr></thead>
   <tbody>
     <tr><td>10</td><td>10ns</td><td>33ns</td><td>100ns</td><td>1µs</td></tr>
-    <tr><td>1,000</td><td>1µs</td><td>10µs</td><td>1ms</td><td>~10²⁹⁵ years</td></tr>
+    <tr><td>1,000</td><td>1µs</td><td>10µs</td><td>1ms</td><td>~10²⁸⁴ years</td></tr>
     <tr><td>1,000,000</td><td>1ms</td><td>20ms</td><td>17 minutes</td><td>impossible</td></tr>
     <tr><td>1,000,000,000</td><td>1s</td><td>30s</td><td>32 years</td><td>impossible</td></tr>
   </tbody>
 </table>
-<p>Practical limits: O(n²) breaks ~10⁴. O(2ⁿ) breaks ~25. O(n!) breaks ~12.</p>
+<p>Practical limits: O(n²) breaks ~10⁴. O(2ⁿ) breaks ~25–30. O(n!) breaks ~12.</p>
 
 <h3>Common operation costs (JavaScript-specific)</h3>
 <ul>

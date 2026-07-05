@@ -22,6 +22,7 @@ window.PREP_SITE.registerTopic({
   <li><strong>The unsoundness map:</strong> there are five well-known intentional holes in TS's soundness — know them so you can avoid relying on them.</li>
 </ul>
 <p><strong>Mantra:</strong> "Power and cost. Use these tools when the API surface justifies them. Otherwise prefer ordinary patterns."</p>
+<p><strong>Version note:</strong> current stable is <strong>TypeScript 6.0</strong> (GA March 2026); the per-feature attributions below (variance 4.7, <code>infer extends</code> 4.8, stage-3 decorators 5.0, etc.) still hold. The Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026) with ~10× faster type-checking.</p>
 `
     },
     {
@@ -237,6 +238,7 @@ for (const sf of program.getSourceFiles()) {
 }
 </code></pre>
 <p>The compiler API powers ESLint TS rules, the LSP, codemods (jscodeshift, ts-morph), and bundlers' type-aware passes.</p>
+<p><strong>Caveat:</strong> the Go-native TS 7 compiler ("tsgo", RC) does not yet expose the full JS compiler API (<code>ts.createProgram</code>, custom transformers) — that API still lives in the TS 6.x (JS) compiler, so transformer/codemod tooling should target TS 6.x for now.</p>
 
 <h3>Custom transformers</h3>
 <pre><code class="language-ts">// Conceptual: a transformer that strips all console.log calls

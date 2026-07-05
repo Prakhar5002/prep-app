@@ -114,7 +114,7 @@ window.PREP_SITE.registerTopic({
 <h3>What "good" looks like</h3>
 <ul>
   <li>You default to <code>transform</code> and <code>opacity</code>.</li>
-  <li>You profile in DevTools / Flipper / Hermes profiler before declaring "smooth."</li>
+  <li>You profile in DevTools / React Native DevTools / Hermes profiler before declaring "smooth."</li>
   <li>You don't sprinkle <code>will-change</code> everywhere.</li>
   <li>You know which CSS properties are compositor-only without checking docs.</li>
   <li>For RN: you reach for Reanimated worklets when animation is gesture-driven or complex.</li>

@@ -407,8 +407,8 @@ ws.on('offer', async (sdp) =&gt; {
 </code></pre>
 <p>The signalling channel (here, a <code>ws</code> connection) is just for SDP + ICE exchange; media flows directly between peers via UDP after that.</p>
 
-<h3>WebTransport — the future</h3>
-<p>WebTransport (HTTP/3 + QUIC) gives bidirectional streams + datagrams with multiplexing and unreliable delivery. Browser support is improving; useful for games, real-time CRDTs. Production-ready in Chrome / Edge; Safari + Firefox lag.</p>
+<h3>WebTransport</h3>
+<p>WebTransport (HTTP/3 + QUIC) gives bidirectional streams + datagrams with multiplexing and unreliable delivery. Useful for games, real-time CRDTs. As of March 2026 it is <strong>Baseline</strong>: supported in Chrome, Edge, Firefox (since v114), and Safari 26.4+ — broad enough to reach for in production, not just an experiment.</p>
 `
     },
     {
@@ -738,7 +738,7 @@ window.addEventListener('mousemove', (e) =&gt; {
 <ul>
   <li><em>"Per-channel rate limit on producers."</em></li>
   <li><em>"Geo-distributed socket servers with Redis cluster across regions."</em></li>
-  <li><em>"WebTransport experiment for game traffic; HTTP/3 multiplexing wins for many small messages."</em></li>
+  <li><em>"WebTransport for game traffic (now Baseline across major browsers); HTTP/3 multiplexing wins for many small messages."</em></li>
   <li><em>"Telemetry: per-message latency p50/p95/p99 from server publish to client ACK."</em></li>
   <li><em>"Replay buffer with TTL tuned to typical reconnection window (30s mobile, 5min desktop)."</em></li>
   <li><em>"Push deduplication so users don't get the same notification on web + iOS + Android."</em></li>
@@ -797,7 +797,7 @@ window.addEventListener('mousemove', (e) =&gt; {
 <ul>
   <li>"Read 'Designing Data-Intensive Applications' chapter on stream processing for the theory."</li>
   <li>"Build a WebRTC 1:1 + signalling end-to-end once — demystifies all the SDP / ICE jargon."</li>
-  <li>"Explore WebTransport — likely the future of low-latency browser realtime."</li>
+  <li>"Explore WebTransport — now Baseline across major browsers and a strong option for low-latency browser realtime."</li>
   <li>"Compare Phoenix Channels (Elixir), ActionCable (Rails), Apollo subscriptions, tRPC subs — different ecosystems hit the same problems."</li>
 </ul>
 `

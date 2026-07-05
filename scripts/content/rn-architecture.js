@@ -83,7 +83,7 @@ JS Thread                         Native Thread
   <li><strong>Memory efficient</strong>: generational GC tuned for mobile, lower peak memory.</li>
   <li><strong>Great debugging</strong>: Hermes dev tooling integrates with Chrome DevTools.</li>
 </ul>
-<p>Since RN 0.70, Hermes is default. In 0.73+, Fabric+TurboModules+Hermes is the recommended combination ("New Architecture").</p>
+<p>Since RN 0.70, Hermes is default. Since RN 0.76, Fabric+TurboModules+Hermes ("New Architecture") is the default — legacy arch is now frozen.</p>
 
 <h3>Why three threads</h3>
 <p>Splitting work:</p>
@@ -265,7 +265,7 @@ use_react_native!(
 // Android gradle.properties
 newArchEnabled=true
 hermesEnabled=true</code></pre>
-<p>Requires RN 0.71+ for stable, 0.73+ for recommended. Third-party libraries must support the new arch (check their docs/flags).</p>
+<p>Since RN 0.76 the New Architecture is default-on and these flags are no longer needed; on 0.76+ RN runs on the new arch by default. On older versions (0.71–0.75) set them explicitly to opt in. Third-party libraries must support the new arch (check their docs/flags).</p>
 `},
 
 // ─────────────────────────────────────────────────────────────
@@ -423,8 +423,8 @@ const pan = Gesture.Pan()
 <h3>1. Library not yet new-arch-compatible</h3>
 <p>Not every library ships TurboModule specs yet. Check the lib's README for "new architecture support." You can mix: some modules on the bridge, others as TurboModules. But enabling new arch fails the build if a depended module doesn't support it.</p>
 
-<h3>2. Debugger disables JIT and slows Hermes</h3>
-<p>When you "Debug in Chrome," JS actually runs in Chrome's V8 — not on the device's Hermes. Behavior can differ. Prefer Flipper or Hermes direct debug for accurate behavior.</p>
+<h3>2. Remote JS debugging was removed</h3>
+<p>The old "Debug in Chrome" / Remote JS Debugging ran your JS in Chrome's V8 — not the device's Hermes — so behavior could differ. It was removed in RN 0.79. Use React Native DevTools, which debugs the actual on-device Hermes engine for accurate behavior.</p>
 
 <h3>3. Text layout idiosyncrasies</h3>
 <p>Yoga layout + platform text measurement differ slightly. Fonts with different ascender metrics cause cross-platform vertical alignment tweaks. Use <code>includeFontPadding: false</code> on Android to normalize.</p>
@@ -641,7 +641,7 @@ emitter.addListener('change', (val) =&gt; setVal(val));</code></pre>
 <div class="qa-block">
   <div class="qa-question">Q9. What's the "bridgeless" mode?</div>
   <div class="qa-answer">
-    <p>The full form of the new architecture — the legacy bridge is entirely removed. All communication goes through JSI. Requires every native module to be a TurboModule and every component to be Fabric-compatible. Activated via the new-arch flag. Available in RN 0.73+. Some third-party libraries may not yet work in bridgeless mode.</p>
+    <p>The full form of the new architecture — the legacy bridge is entirely removed. All communication goes through JSI. Requires every native module to be a TurboModule and every component to be Fabric-compatible. Default since RN 0.76 (opt-in via the new-arch flag on earlier versions). Some third-party libraries may not yet work in bridgeless mode.</p>
   </div>
 </div>
 
@@ -704,7 +704,7 @@ emitter.addListener('change', (val) =&gt; setVal(val));</code></pre>
   <div class="qa-answer">
     <ol>
       <li>Is it scroll jank, touch response, or animation stutter?</li>
-      <li>Open Flipper / React DevTools / Perf Monitor (Dev Menu → Show Perf Monitor) — look at JS thread frame rate vs UI thread frame rate.</li>
+      <li>Open React Native DevTools / React DevTools / Perf Monitor (Dev Menu → Show Perf Monitor) — look at JS thread frame rate vs UI thread frame rate.</li>
       <li>JS thread low fps → heavy work on JS thread. Profile with Hermes profiler or React Profiler. Optimize renders, virtualize lists, move to worklet.</li>
       <li>UI thread low fps → heavy native work or too many layers / overdraw. Use the platform's native profiler (Instruments on iOS, Android Studio Profiler).</li>
       <li>Animation jank specifically → move animation to Reanimated worklet so it runs on UI thread regardless of JS load.</li>

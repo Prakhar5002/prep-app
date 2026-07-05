@@ -83,7 +83,7 @@ window.PREP_SITE.registerTopic({
 <table>
   <thead><tr><th>Layer</th><th>Concern</th><th>Tools</th></tr></thead>
   <tbody>
-    <tr><td>Model layer</td><td>Which model? Cost / quality / latency tier?</td><td>GPT-4.x / Claude 4.x / Gemini 2.x / on-device</td></tr>
+    <tr><td>Model layer</td><td>Which model? Cost / quality / latency tier?</td><td>GPT-5.x / Claude 4.x / Gemini 3 / on-device</td></tr>
     <tr><td>Prompt layer</td><td>How to make this model produce reliable output?</td><td>System prompt + few-shot + structured output + CoT</td></tr>
     <tr><td>Application layer</td><td>How to deliver to users?</td><td>Streaming, retry, fallback, evals, cost caps</td></tr>
   </tbody>
@@ -1019,7 +1019,7 @@ const model = selectModel('high', 10000);  // complex reasoning, code generation
 
 <h3>Context window overflow</h3>
 <ul>
-  <li>Each model has a max input + output token limit (Claude: 200k input; GPT-4.1: 1M input; Gemini 1.5: 2M input).</li>
+  <li>Each model has a max input + output token limit (Claude: 1M-token context on Sonnet 4.x+; GPT-5.x: ~1M input; Gemini 3: ~2M input).</li>
   <li>Long conversations + RAG context can exceed.</li>
   <li>Mitigations: summarize older turns; truncate retrieved docs; use smaller chunks; rerank top-k tighter.</li>
   <li>Cost scales with input length even if cached; be deliberate about what you pack in.</li>
