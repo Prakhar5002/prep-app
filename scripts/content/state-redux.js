@@ -22,6 +22,7 @@ window.PREP_SITE.registerTopic({
   <li><strong>Common mistakes:</strong> mutating state in reducers, putting derived data in the store, fetching directly from components, over-globalizing local UI state.</li>
 </ul>
 <p><strong>Mantra:</strong> "Use RTK, normalize entities, memoize selectors, keep UI state local. Redux only when the cross-feature shape demands it."</p>
+<p>New to Redux? Start from the ground up with the <a href="#/topic/redux-core">Redux module</a>, which hand-rolls a store to show how the primitives work before RTK removes the boilerplate.</p>
 `
     },
     {
