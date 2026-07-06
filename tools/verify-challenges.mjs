@@ -17,7 +17,7 @@ let failures = 0;
 
 // The registry itself must load; if it fails, aborting the whole run is fine.
 load(path.join(dir, '_practice-index.js'));
-const catFiles = fs.readdirSync(dir).filter(f => f.startsWith('js-') && f.endsWith('.js')).sort();
+const catFiles = fs.readdirSync(dir).filter(f => (f.startsWith('js-') || f.startsWith('rn-')) && f.endsWith('.js')).sort();
 for (const f of catFiles) {
   try {
     load(path.join(dir, f));
@@ -31,12 +31,29 @@ const P = sandbox.window.PREP_SITE;
 const challenges = P.challenges;
 
 // --- Shape validation ---
+function nonEmptyStr(v) { return typeof v === 'string' && v.trim().length > 0; }
+function validateShape(c) {
+  const errs = [];
+  if (!nonEmptyStr(c.prompt)) errs.push('empty prompt');
+  if (c.type === 'predict-output' || c.type === 'spot-the-bug') {
+    if (!nonEmptyStr(c.code)) errs.push('empty code');
+    if (!nonEmptyStr(c.answer)) errs.push('answer must be non-empty string');
+    if (!nonEmptyStr(c.explanation)) errs.push('empty explanation');
+  } else if (c.type === 'deep-dive' || c.type === 'scenario') {
+    const a = c.answer;
+    if (!a || typeof a !== 'object') { errs.push('answer must be an object'); return errs; }
+    const req = c.type === 'deep-dive' ? ['core','mechanism','tradeoffs','redFlags'] : ['approach','seniorChecks','walkthrough'];
+    req.forEach(f => { if (!nonEmptyStr(a[f])) errs.push('answer.' + f + ' empty'); });
+    if (!Array.isArray(a.followups) || a.followups.length === 0) errs.push('answer.followups must be a non-empty array');
+    else a.followups.forEach((f, i) => { if (!nonEmptyStr(f && f.q) || !nonEmptyStr(f && f.a)) errs.push('followups[' + i + '] needs q & a'); });
+  }
+  return errs;
+}
+
 const seen = new Set();
 for (const c of challenges) {
   const where = c && c.id ? c.id : JSON.stringify(c);
-  for (const field of ['prompt', 'code', 'answer', 'explanation']) {
-    if (!c[field] || !String(c[field]).trim()) { console.log(`✗ ${where}: empty ${field}`); failures++; }
-  }
+  validateShape(c).forEach(e => { console.log(`✗ ${where}: ${e}`); failures++; });
   if (seen.has(c.id)) { console.log(`✗ duplicate id: ${c.id}`); failures++; }
   seen.add(c.id);
 }
@@ -68,7 +85,7 @@ async function runSnippet(code) {
     pendingTimers.delete(id);
     clearTimeout(id);
   };
-  const s = { console: fakeConsole, setTimeout: fakeSetTimeout, clearTimeout: fakeClearTimeout, queueMicrotask, Promise };
+  const s = { console: fakeConsole, setTimeout: fakeSetTimeout, clearTimeout: fakeClearTimeout, queueMicrotask, Promise, structuredClone };
   s.globalThis = s;
   vm.createContext(s);
   try {
@@ -76,14 +93,19 @@ async function runSnippet(code) {
   } catch (err) {
     lines.push(`${err.name}: ${err.message}`);
   }
-  // Drain: real timers preserve ordering, so poll until none are outstanding.
-  // Safety cap so a runaway snippet (e.g. a timer that reschedules itself) can't hang the harness.
+  // Drain: interleave microtask-flush and timer-wait until BOTH are stable.
+  // A timer may be scheduled inside a microtask (or vice-versa), so flush microtasks
+  // FIRST each round, then break only when no timers remain. Safety cap prevents a
+  // self-rescheduling timer from hanging the harness.
   const deadline = Date.now() + 2000;
-  while (pendingTimers.size > 0 && Date.now() < deadline) {
-    await new Promise(r => setTimeout(r, 10));
+  while (Date.now() < deadline) {
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    await new Promise(r => setImmediate(r));
+    if (pendingTimers.size === 0) break;
+    await new Promise(r => setTimeout(r, 10)); // let the earliest pending timer fire
   }
-  // Flush trailing microtasks queued by the last timer callback(s).
-  for (let i = 0; i < 5; i++) await Promise.resolve();
+  // Final microtask flush for anything queued by the last timer callback(s).
+  for (let i = 0; i < 10; i++) await Promise.resolve();
   await new Promise(r => setImmediate(r));
   return lines.join('\n');
 }

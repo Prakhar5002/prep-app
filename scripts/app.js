@@ -201,11 +201,20 @@
   }
 
   function updateActiveNav(topicId) {
-    $$('.nav-topic').forEach(link => {
+    $$('.nav-topic[data-topic-id]').forEach(link => {
       link.classList.toggle('active', link.dataset.topicId === topicId);
     });
+    const practiceLink = $('#navPracticeLink');
+    if (practiceLink) practiceLink.classList.remove('active');
     updateRailActive();
     updateBottomNavState();
+  }
+
+  // Mark the JS Practice sidebar link active and clear topic links (mirrors updateActiveNav)
+  function setPracticeNavActive() {
+    $$('.nav-topic[data-topic-id]').forEach(link => link.classList.remove('active'));
+    const practiceLink = $('#navPracticeLink');
+    if (practiceLink) practiceLink.classList.add('active');
   }
 
   function updateProgress() {
@@ -251,7 +260,10 @@
     const r = parseRoute();
     if (r.name === 'home') renderHome();
     else if (r.name === 'topic') renderTopic(r.topicId, r.anchor);
-    else if (r.name === 'practice') window.PREP_SITE.renderPractice($('#content'));
+    else if (r.name === 'practice') {
+      window.PREP_SITE.renderPractice($('#content'));
+      setPracticeNavActive();
+    }
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
@@ -584,7 +596,7 @@
       else state.studied.add(id);
       store.set('studied', Array.from(state.studied));
       $('#progressToggle').classList.toggle('active', state.studied.has(id));
-      $$('.nav-topic').forEach(link => {
+      $$('.nav-topic[data-topic-id]').forEach(link => {
         link.classList.toggle('studied', state.studied.has(link.dataset.topicId));
       });
       updateProgress();
@@ -812,7 +824,7 @@
     store.set('studied', Array.from(state.studied));
     const pt = $('#progressToggle');
     if (pt) pt.classList.toggle('active', state.studied.has(id));
-    $$('.nav-topic').forEach(link => {
+    $$('.nav-topic[data-topic-id]').forEach(link => {
       link.classList.toggle('studied', state.studied.has(link.dataset.topicId));
     });
     updateProgress();

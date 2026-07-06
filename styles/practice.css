@@ -13,3 +13,13 @@
 .pc-answer { margin-top:12px; }
 .pc-answer-label { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--fg-muted, #8a8a8a); margin-bottom:4px; }
 .pc-why { margin-top:8px; line-height:1.55; }
+.pc-tracks { display:flex; gap:8px; margin:16px 0 12px; }
+.pc-tracks .pc-track { background:transparent; color:var(--fg-muted, #8a8a8a); border:1px solid var(--border); border-radius:999px; padding:6px 14px; font:inherit; cursor:pointer; }
+.pc-tracks .pc-track.active { background:var(--accent, #58a6ff); color:#fff; border-color:var(--accent, #58a6ff); }
+.pc-sec { margin-top:12px; }
+.pc-sec-label { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--fg-muted, #8a8a8a); margin-bottom:4px; }
+.pc-sec-body { line-height:1.6; }
+.pc-redflags .pc-sec-body { color:var(--red, #f85149); }
+.pc-fu { margin:4px 0 0; padding-left:18px; }
+.pc-fu li { margin-bottom:6px; line-height:1.5; }
+.pc-fu-q { font-weight:600; }
