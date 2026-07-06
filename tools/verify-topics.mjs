@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const contentDir = path.join(root, 'scripts', 'content');
 
-const TARGET_MODULES = ['redux', 'git', 'linux', 'eh'];
+const TARGET_MODULES = ['redux', 'git', 'linux', 'eh', 'design'];
 const NEW_TOPICS = new Set([
   'redux-core', 'redux-toolkit', 'redux-rtk-query', 'redux-middleware-async', 'redux-advanced-testing',
   'git-fundamentals', 'git-branching', 'git-remotes', 'git-undoing',
@@ -19,6 +19,8 @@ const NEW_TOPICS = new Set([
   'eh-foundations', 'eh-recon', 'eh-scanning', 'eh-vuln', 'eh-web', 'eh-network',
   'eh-wireless', 'eh-passwords', 'eh-exploitation', 'eh-postexploit',
   'eh-activedirectory', 'eh-social-physical', 'eh-reporting-cloud',
+  'design-solid-intro', 'design-srp', 'design-ocp', 'design-lsp',
+  'design-isp', 'design-dip', 'design-solid-capstone',
 ]);
 const REFERENCE_TOPICS = new Set(['linux-command-reference', 'eh-tools-arsenal']);
 const REQUIRED = ['tldr', 'what-why', 'mental-model', 'mechanics', 'examples', 'interview-patterns'];

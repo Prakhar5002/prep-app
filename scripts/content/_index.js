@@ -241,6 +241,19 @@ window.PREP_SITE.registry = {
       ],
     },
     {
+      id: "design",
+      title: "Design Principles",
+      topics: [
+        { id: "design-solid-intro",    title: "SOLID: Overview & Why" },
+        { id: "design-srp",            title: "S · Single Responsibility" },
+        { id: "design-ocp",            title: "O · Open/Closed" },
+        { id: "design-lsp",            title: "L · Liskov Substitution" },
+        { id: "design-isp",            title: "I · Interface Segregation" },
+        { id: "design-dip",            title: "D · Dependency Inversion" },
+        { id: "design-solid-capstone", title: "Putting SOLID Together" },
+      ],
+    },
+    {
       id: "system-design",
       title: "Frontend System Design",
       topics: [
