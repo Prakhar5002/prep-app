@@ -857,6 +857,35 @@ If step 4 fails:
 </ul>
 <p>9 topics. Together: enough backend literacy to pass FAANG senior+ system design rounds; collaborate effectively with backend teams; design + own a BFF or service end-to-end.</p>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Eight cases:</strong> URL shortener, rate limiter, Twitter feed, chat, Uber dispatch, notification system, distributed counter, payment system.</li>
+    <li>Don't memorize answers — <strong>pattern-match</strong> the tradeoffs each case forces.</li>
+    <li><strong>URL shortener:</strong> read-heavy, CDN + cache dominated; random 7-char base62 + collision check via <code>INSERT ... ON CONFLICT DO NOTHING RETURNING</code>; click counter = Redis INCR + periodic batch flush.</li>
+    <li><strong>Rate limiter:</strong> token bucket via an atomic Redis Lua script; state sharded by user_id; fail-open for analytics, fail-closed for auth.</li>
+    <li><strong>Twitter feed:</strong> hybrid fan-out — push to follower feed caches for &lt; 10K followers, pull at read time for celebrities (&ge; 10K), merge; feed = Redis sorted set capped ~1000; stores sharded by user_id.</li>
+    <li><strong>Chat:</strong> per-chat Kafka partition + server monotonic sequence for ordering; dedupe by message_id (idempotent); offline queue + replay since last seq; ~100M concurrent WS ÷ 50K per server ≈ 2000 connection servers.</li>
+    <li><strong>Uber dispatch:</strong> geo index (Redis Geo or H3) sharded by city; greedy dispatch offers nearest then expands radius; driver marked offline on a 30s TTL.</li>
+    <li><strong>Notification system:</strong> Kafka fan-out to per-channel workers; idempotency on (notification_id, channel); timezone-aware quiet hours; per-channel token bucket for external API limits; DLQ per channel.</li>
+    <li><strong>Distributed counter:</strong> shard a hot counter into N keys (random increment, SUM on read) for N× write throughput; periodic flush to DB as source of truth; CRDT counters for multi-region.</li>
+    <li><strong>Payment:</strong> idempotency key (unique constraint, return stored response on replay); double-entry ledger (entries per transaction sum to 0, append-only); saga + compensations across services; nightly reconciliation vs provider.</li>
+    <li><strong>Find the hot key in every problem</strong> (celebrity tweet, popular-post likes, large chat group, viral link, broadcast campaign, event hotspot, top merchant) and name its mitigation.</li>
+    <li><strong>Name the failure mode</strong> per component: DB → replica + auto-failover; cache → fall through to DB; queue → backpressure/load-shed; external API → circuit breaker; region → multi-region; WS → reconnect + replay.</li>
+    <li><strong>Reframings:</strong> Pinterest/Facebook feed = Twitter; Yelp/Tinder = Uber geo; Slack = chat; Stripe = payment; TinyURL = URL shortener; trends = counter + ranking.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I recognize the pattern first — Pinterest is the feed case, Tinder is the geo/dispatch case, Stripe is the payment case — then apply the technique."</div>
+  <div class="revision-say">"In every case I solve the hot key and plan the failure case, because that's what separates a working design from a hand-wave."</div>
+  <div class="revision-say">"At-least-once delivery plus idempotent consumers is my pragmatic 'exactly once' — I use it for payments, notifications, and any queue."</div>
+</div>
+`
     }
   ]
 });

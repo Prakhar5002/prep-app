@@ -680,6 +680,33 @@ g(); // [1, 1] — a is already initialized when b's default runs</code></pre>
     <li>You can debug a default-parameter TDZ example.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Hoisting is the observable effect of the creation / memory phase</strong> — the engine allocates every declaration before running any line. Nothing physically moves; "allocate first, run second."</li>
+    <li><strong><code>var</code></strong> → hoisted and <strong>initialized to <code>undefined</code></strong>; reading it before assignment gives <code>undefined</code>, not an error.</li>
+    <li><strong>Function declarations</strong> → hoisted <strong>fully with their body</strong>, so they're callable above their source line.</li>
+    <li><strong><code>let</code> / <code>const</code> / <code>class</code></strong> → hoisted as a binding but <strong>uninitialized</strong>; touching them before the declaration line throws <code>ReferenceError</code>.</li>
+    <li>The <strong>Temporal Dead Zone (TDZ)</strong> is the interval from the block's start to the declaration line where the binding exists but is uninitialized. It's <em>temporal</em> (runtime order), not merely lexical.</li>
+    <li><code>typeof</code> is safe on a truly <em>undeclared</em> name (returns <code>'undefined'</code>) but <strong>throws inside the TDZ</strong> — TDZ beats the <code>typeof</code> safeguard.</li>
+    <li>Function <em>expressions</em> and arrows do NOT hoist their body — only the variable hoists, per its keyword.</li>
+    <li>Calling a <code>var</code>-hoisted function expression before assignment throws a <strong><code>TypeError</code></strong> (<code>undefined()</code>), not a <code>ReferenceError</code>.</li>
+    <li><code>var</code> hoists to the nearest <strong>function</strong> (or global); <code>let</code>/<code>const</code>/<code>class</code> hoist to the enclosing <strong>block</strong>.</li>
+    <li>A <code>class</code> is in TDZ until its line — you can't reference it earlier, and <code>extends Parent</code> throws if <code>Parent</code> is still in TDZ.</li>
+    <li>Default parameters form their own scope, evaluated left-to-right: a later parameter is in TDZ while an earlier default runs (<code>function f(a = b, b = 1)</code> throws).</li>
+    <li><code>import</code> bindings are hoisted at <strong>module link time</strong>, before any code runs.</li>
+    <li>Global <code>var</code>/function declarations become properties of the global object; <strong>global <code>let</code>/<code>const</code>/<code>class</code> are NOT on <code>window</code></strong> (they live in a separate Script record).</li>
+    <li>The shadowing trap: an inner <code>let x</code> TDZs above its line, so logging <code>x</code> before it throws — it does not fall back to the outer <code>x</code>.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Hoisting isn't code moving up — it's the engine allocating every declaration in a creation phase before executing line by line."</div>
+  <div class="revision-say">"<code>var</code> hoists to <code>undefined</code> and function declarations hoist with their body, but <code>let</code>/<code>const</code>/<code>class</code> hoist uninitialized and throw if touched — that's the Temporal Dead Zone."</div>
+  <div class="revision-say">"<code>typeof</code> is safe on an undeclared variable but throws inside the TDZ, because the binding exists and reading it while uninitialized is a <code>ReferenceError</code>."</div>
+</div>
 `}
 
 ]

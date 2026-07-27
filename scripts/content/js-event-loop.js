@@ -700,6 +700,31 @@ console.log('sync');</code></pre>
     <li>Can you describe how async/await integrates via microtasks?</li>
   </ul>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>JS is single-threaded — one call stack.</strong> The event loop coordinates the JS thread, external (Web/host) APIs, and the queues.</li>
+    <li>Async work runs on other browser threads; when done, its callback is <strong>handed back to JS via a queue</strong> — it doesn't run mid-sync-code.</li>
+    <li><strong>Macrotasks</strong>: <code>setTimeout</code>, <code>setInterval</code>, I/O, UI events, <code>MessageChannel</code>.</li>
+    <li><strong>Microtasks</strong>: <code>Promise.then</code>/<code>.catch</code>/<code>.finally</code>, <code>queueMicrotask</code>, <code>MutationObserver</code>, and <code>async</code>/<code>await</code> resumptions.</li>
+    <li>Cadence: <strong>run sync to completion → drain ALL microtasks → maybe render → run ONE macrotask → drain microtasks → repeat.</strong></li>
+    <li><strong>The whole microtask queue drains between each macrotask</strong> — a microtask that schedules another microtask runs it before any pending timer.</li>
+    <li>A resolved promise's <code>.then</code> always beats a pending <code>setTimeout</code>, because microtasks have higher priority.</li>
+    <li><code>requestAnimationFrame</code> is its own bucket that fires just before paint — it is NOT a macrotask.</li>
+    <li>The <strong>Promise constructor's executor runs synchronously</strong>; only the <code>.then</code> callbacks are microtasks.</li>
+    <li>Each <code>await</code> suspends the function and re-queues the rest as a microtask (even <code>await</code> on a non-promise).</li>
+    <li><strong><code>setTimeout(fn, 0)</code> is never immediate</strong>: sync code must finish, microtasks drain first, and nested timers clamp to ~4ms.</li>
+    <li>Synchronous code blocks everything — <code>while(true){}</code> freezes rendering and input; an infinite microtask loop starves macrotasks and rendering entirely.</li>
+    <li>Node differs: libuv phases (timers → poll → check → close) and <code>process.nextTick</code> runs at higher priority than promise microtasks.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"JS is single-threaded; the event loop runs sync code to completion, drains the entire microtask queue, then takes exactly one macrotask, and repeats."</div>
+  <div class="revision-say">"Microtasks like promise callbacks always beat macrotasks like <code>setTimeout</code>, because the whole microtask queue drains between every macrotask."</div>
+  <div class="revision-say">"<code>setTimeout(fn, 0)</code> isn't immediate — sync code finishes, microtasks drain, and there's a ~4ms clamp; it's just the soonest macrotask."</div>
+</div>
 `}
 
 ]});

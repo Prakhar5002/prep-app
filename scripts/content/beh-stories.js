@@ -682,6 +682,36 @@ Adaptations:
   <li>"I'd update the bank quarterly so it doesn't go stale between job searches."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li>A <strong>story bank</strong> is 8&ndash;12 career incidents, each drafted in STAR-L and tagged to multiple competencies &mdash; you recall stories cued by competency, you don't memorize 60 answers.</li>
+    <li><strong>5&ndash;8 stories cover ~90% of questions</strong> if each is tagged with 3&ndash;4 competencies. Diversity of theme matters more than raw count.</li>
+    <li>Build a <strong>tag matrix</strong> (stories &times; competencies) and make sure <em>every</em> column has at least 2 strong stories &mdash; especially conflict and failure, which often get asked twice.</li>
+    <li><strong>Recency wins:</strong> prefer the last 3 years and mix in at least one from the last 12 months; old-only stories signal "I peaked."</li>
+    <li>Every real story has a <strong>3-act arc</strong>: setup &rarr; complication &rarr; resolution. No Act 2 (surprise, pivot, pushback) means it's a project description, not a story &mdash; add "I expected X but discovered Y."</li>
+    <li>Make the Action a path through <strong>2&ndash;3 decision points</strong>; fewer than that and the story is too thin.</li>
+    <li>Keep <strong>70&ndash;80% of the Action as "I-lines"</strong> &mdash; rewrite any beat dominated by "we" until your slice is unambiguous.</li>
+    <li>End with a <strong>real lesson</strong>: tactical ("I now do X earlier") or, for seniority, strategic ("I now treat X as a team-design problem"). Vague lessons like "communication is important" don't score.</li>
+    <li><strong>Defer secondary detail to follow-ups</strong> ("happy to go into the techniques") &mdash; it keeps the answer crisp and invites the interviewer to direct depth.</li>
+    <li>Keep <strong>one signature story</strong>: most polished, most quantified, expandable to 5 min or compressible to 90s on demand.</li>
+    <li>Always give <strong>numbers with a baseline</strong> ("p95 from 1.4s to 1.2s"), and if you don't remember the exact figure, say so &mdash; never fabricate.</li>
+    <li>Have <strong>backups per competency</strong> so you don't repeat one incident across a note-sharing loop; retire stories that no longer show your current level.</li>
+    <li><strong>Preview and close:</strong> offer the 30-second version first, and land the plane with Result + Learning &mdash; don't trail off.</li>
+    <li>Behavioral is often <strong>1/3 of the loop</strong> (decisive at staff+); prep it over ~2 weeks with out-loud rehearsal and mocks, not the night before.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Before I dive in &mdash; would it help if I gave you the 30-second version first, then went deeper wherever you'd like?"</div>
+  <div class="revision-say">"I expected the leak to be event listeners, but the heap dump showed it was uncached images &mdash; that surprise is what reframed my whole approach."</div>
+  <div class="revision-say">"The result was a crash rate cut from 2.1% to 0.4%; what stuck with me is to measure before optimizing. Happy to go deeper on any part."</div>
+</div>
+`
     }
   ]
 });

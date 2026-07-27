@@ -822,6 +822,43 @@ values.reverse();
   <li><em>"When would you pick an array over a linked list?"</em> → "Almost always in real product code — cache locality dominates Big O for typical sizes. Use linked lists when you have stable node references and need O(1) splice."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A linked list trades random access for cheap splicing:</strong> index lookup is O(n), but insert/delete at a node you already hold is O(1).</li>
+    <li><strong>Golden mantra:</strong> "Draw the pointers. Save <code>next</code> before you mutate. Use a dummy when head moves." The #1 bug is reseating <code>node.next</code> before saving where you were going.</li>
+    <li><strong>Dummy head sentinel</strong> removes the "is this the first node?" branch whenever the head can change (insert-before-head, delete head, merge, remove-nth). Return <code>dummy.next</code>.</li>
+    <li><strong>Iterative reverse:</strong> save <code>next</code> → flip <code>curr.next = prev</code> → step <code>prev = curr; curr = next</code>.</li>
+    <li><strong>Floyd's tortoise &amp; hare</strong> (slow +1, fast +2): detects a cycle in O(n)/O(1) and, restarting one pointer from head, finds the cycle entry too.</li>
+    <li><strong>Guard slow/fast loops with <code>fast &amp;&amp; fast.next</code></strong> — missing a null check TypeErrors on even-length lists / cycles.</li>
+    <li><strong>Find-middle parity:</strong> <code>fast &amp;&amp; fast.next</code> returns the <em>second</em> middle; <code>fast.next &amp;&amp; fast.next.next</code> returns the <em>first</em> — palindrome check uses the first-middle variant.</li>
+    <li><strong>Gap pointer for nth-from-end:</strong> advance fast n steps, then move both; pair with a dummy so removing the head is uniform.</li>
+    <li><strong>Doubly linked removal updates BOTH <code>prev.next</code> and <code>next.prev</code></strong> — forgetting one leaves a phantom node reachable from the other side.</li>
+    <li><strong>LRU cache = doubly linked list + hash map</strong> → O(1) get/put; on eviction remember to <code>map.delete(key)</code> or you leak nodes.</li>
+    <li><strong>Detach before re-attaching:</strong> setting <code>a.next</code> to a node still owned by another list creates a Y-shape or a cycle — terminate the tail with <code>= null</code> first.</li>
+    <li><strong>Always handle empty list (<code>head === null</code>) and single node (<code>head.next === null</code>)</strong>; test every solution against <code>[]</code> and <code>[1]</code>.</li>
+    <li><strong>Recursive reverse/sort blow the stack past ~10⁴ nodes in V8</strong> (no TCO) — convert to iterative for production or long inputs.</li>
+    <li><strong>Merge sort, not quicksort, on a linked list:</strong> it's sequential-friendly and stable; quicksort needs random-access partitioning.</li>
+    <li><strong>Prefer an array in real product code</strong> — cache locality beats identical Big O by 5–50×; reach for a list only for stable node refs + O(1) splice.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> access/search O(n); insert/delete at a known node O(1); reverse / cycle detect / find-middle / nth-from-end all O(n).</li>
+    <li><strong>Space:</strong> O(1) for the iterative two-pointer patterns; O(n) call stack for recursive variants.</li>
+    <li><strong>Signal → reach for it:</strong> "reverse / reorder in place" → save-next iterate · "detect / find start of cycle" or "find middle" → slow-fast · "nth from end" → gap pointer · "head may change / merge two lists" → dummy node · "O(1) get + put with eviction" → doubly linked list + hash map (LRU).</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Before I mutate any pointer I save <code>next</code>, and I add a dummy head whenever the head node can change — that kills most edge cases."</div>
+  <div class="revision-say">"For cycles I use Floyd's tortoise and hare: O(n) time, O(1) space, and it also locates the cycle's entry by restarting one pointer from the head."</div>
+  <div class="revision-say">"LRU is a doubly linked list for O(1) reordering plus a hash map for O(1) lookup — the prev pointer is what makes arbitrary-node deletion O(1)."</div>
+</div>
+`
     }
   ]
 });

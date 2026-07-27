@@ -633,6 +633,35 @@ I now write a 'cost of ownership' analysis on every infra proposal — runtime, 
 </ul>
 <p>Master all three; behavioral becomes a strength rather than a hurdle.</p>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li>Big tech publishes <strong>cultural principles</strong> and interviewers literally map your answers to them &mdash; culture fit is a graded rubric, not decoration.</li>
+    <li><strong>The 4-step pattern:</strong> read the values &rarr; tag your stories &rarr; use the language naturally &rarr; ask reverse questions that show you've done the work.</li>
+    <li><strong>Amazon LPs are the most prescriptive</strong> (16 of them). The bar-raiser system grades each story against assigned LPs; memorize them verbatim and ensure every LP has at least one story.</li>
+    <li><strong>Meta:</strong> Move Fast (with discipline), Focus on Long-Term Impact, Build Awesome Things, Live in the Future, Be Direct, "Meta, Metamates, Me" &mdash; grade is velocity-with-judgment.</li>
+    <li><strong>Google "Googleyness":</strong> intellectual humility, comfort with ambiguity, bias for action, collaboration, user focus &mdash; less codified, still rigorously assessed.</li>
+    <li><strong>Microsoft:</strong> growth mindset, customer-obsessed, diverse &amp; inclusive, One Microsoft. <strong>Apple:</strong> quality bar, craft, secrecy/discipline, understatement.</li>
+    <li><strong>Embody, don't quote.</strong> Saying "this shows Customer Obsession" sounds rehearsed; "the user reports made the real problem clear" demonstrates it.</li>
+    <li>Use each value's <strong>native vocabulary</strong> &mdash; "I traced it all the way back to..." for Dive Deep; "I decided within the hour" for Bias for Action &mdash; without naming the principle.</li>
+    <li><strong>Same story, different emphasis per company:</strong> lead with the customer-pain framing for Amazon, the velocity tradeoff for Meta, the moment you changed your mind for Google, the polish you fought for at Apple.</li>
+    <li><strong>Calibrate tone:</strong> Amazon-direct, Apple-understated, Google-humble &mdash; a mismatched tone lands flat.</li>
+    <li>When asked "which value resonates most?", pick a <strong>non-obvious one and defend it with a specific story</strong> &mdash; not the crowd-pleaser everyone names.</li>
+    <li>Make <strong>reverse questions value-anchored</strong> and about lived practice ("how does a disagree-and-commit moment actually play out here?"); prepare 3 per round. Never quiz, brown-nose, or aggressively challenge.</li>
+    <li>Read the <strong>current</strong> versions (Meta changed in 2022, Amazon added two LPs in 2021); do a separate per-company tag pass; and don't fake fit &mdash; honest engagement beats manufactured alignment.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I traced it all the way back to the root cause before proposing a fix &mdash; I sat with the data for two days first." (embodies Dive Deep without naming it)</div>
+  <div class="revision-say">"Are Right A Lot resonates most with me &mdash; specifically the 'seek diverse perspectives' clause; last quarter I was sure the answer was X, but sitting with our backend lead got me to Y, which was right."</div>
+  <div class="revision-say">"You talk about disagree-and-commit &mdash; when that happens on your team, is the disagreement documented, and do you revisit it after committing?"</div>
+</div>
+`
     }
   ]
 });

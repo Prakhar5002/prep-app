@@ -1064,6 +1064,35 @@ obs.observe(sentinelEl);
   <li>"I'd memorise 3 minimal CSS snippets (modal backdrop, list, form) so styling never costs &gt; 30s."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>60–90 min live build</strong> — the grader watches three things at once: ship a working thing, reach for the right primitives, narrate tradeoffs while typing.</li>
+    <li><strong>~15 patterns cover ~90% of asks:</strong> debounce/throttle, autocomplete, infinite scroll, virtualized list, modal + portal, toast queue, tooltip, tabs, accordion, OTP input, form with validation, carousel, stopwatch, drag-to-reorder, theme switcher.</li>
+    <li><strong>Name the pattern in the first 60 seconds</strong> — it skips 10 minutes of "where do I start?".</li>
+    <li><strong>5-minute skeleton loop:</strong> file scaffold → static layout → state model → wire data → edge cases + polish; something rendered on screen by ~minute 7.</li>
+    <li><strong>Memorize 6 hooks:</strong> <code>useDebounce</code>, <code>useThrottle</code>, <code>useFetch</code> (with AbortController), <code>useOnClickOutside</code>, <code>useLocalStorage</code>, <code>usePrevious</code>.</li>
+    <li><strong>State colocation:</strong> local by default → lift when two siblings share → context at 3+ levels → Redux/Zustand only for global + cross-route + persist (rarely needed in a round).</li>
+    <li><strong>Controlled</strong> (validate/format live) vs <strong>uncontrolled</strong> (value only at submit, no re-render per keystroke).</li>
+    <li><strong>Always demo five states:</strong> empty, loading, error, golden path, edge — if you don't demo them the grader assumes they don't work.</li>
+    <li><strong>Debounce</strong> = wait until the user stops (search, autosave); <strong>throttle</strong> = at most once per interval (scroll, mousemove, drag).</li>
+    <li><strong>IntersectionObserver</strong> beats scroll listeners for infinite scroll — off the main thread, free <code>rootMargin</code> lookahead.</li>
+    <li><strong>Modal</strong> = portal + focus trap + ESC + backdrop click + body scroll lock + return focus.</li>
+    <li><strong>The #1 bug is the async race</strong> — abort the previous fetch on cleanup (or use a sequence guard) so stale responses don't overwrite fresh.</li>
+    <li><strong>Hygiene:</strong> clean up every effect (timers/listeners/observers), never mutate state directly, no array-index keys in dynamic lists, don't mirror props in state, derive instead of store; virtualize beyond ~200 items.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Working beats pretty beats clever — skeleton in five minutes, and I narrate every tradeoff so the grader can follow my reasoning."</div>
+  <div class="revision-say">"I name the pattern first, build the skeleton, then demo all five states: empty, loading, error, golden, and edge."</div>
+  <div class="revision-say">"The classic bug here is the async race — I abort the previous request on cleanup so a stale response can't overwrite the fresh one."</div>
+</div>
+`
     }
   ]
 });

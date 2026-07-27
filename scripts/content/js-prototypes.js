@@ -807,6 +807,31 @@ setTimeout(c.inc, 100);
     <li>You warn against mutable state on the prototype.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>JS has prototypal inheritance, not classical.</strong> Every object has a hidden <code>[[Prototype]]</code> slot pointing at another object (or <code>null</code>), read via <code>Object.getPrototypeOf(obj)</code> (legacy <code>obj.__proto__</code>).</li>
+    <li><strong>Read walks up the chain, write shadows.</strong> A property read climbs prototypes until found or <code>null</code> (returns <code>undefined</code>, never a ReferenceError); a write creates/updates an <em>own</em> property on the instance — it never mutates the prototype.</li>
+    <li>Two different "prototype"s: <code>obj.[[Prototype]]</code>/<code>__proto__</code> is on <em>every object</em> (the lookup link); <code>Fn.prototype</code> is only on <em>functions</em> and becomes the <code>[[Prototype]]</code> of <code>new Fn()</code> instances. <code>Fn.prototype</code> matters only with <code>new</code>.</li>
+    <li>Arrow functions have <strong>no</strong> <code>prototype</code> property → <code>new (() =&gt; {})()</code> throws TypeError.</li>
+    <li><code>new Fn()</code> in 4 steps: create an object linked to <code>Fn.prototype</code> → call <code>Fn</code> with <code>this</code> = that object → if <code>Fn</code> returns an object that wins, else the new object → return it.</li>
+    <li><strong><code>class</code> is sugar over a constructor function + prototype — but NOT zero sugar:</strong> class bodies are strict, throw if called without <code>new</code>, sit in the TDZ (not hoisted like function declarations), have non-enumerable methods, and add <code>super</code>, <code>#private</code> fields, and static blocks.</li>
+    <li><code>instanceof</code> checks whether <code>C.prototype</code> appears anywhere in the object's chain (overridable via <code>Symbol.hasInstance</code>; watch the cross-realm pitfall).</li>
+    <li>Define methods on the <strong>prototype</strong> (one shared function object), not per-instance in the constructor (one function per instance — wasteful).</li>
+    <li><strong>Never put mutable state (arrays/objects) on the prototype</strong> — it is shared across all instances; initialize it in the constructor (<code>this.tags = []</code>).</li>
+    <li><strong>Prototype pollution</strong> is a real CVE class: merging untrusted input with <code>__proto__</code>/<code>constructor</code> keys can poison <code>Object.prototype</code>. Guard with <code>Object.hasOwn</code>, reject those keys, or merge into <code>Object.create(null)</code>.</li>
+    <li>In a subclass constructor, <code>this</code> is in the TDZ until <code>super()</code> runs.</li>
+    <li>Don't type-check with <code>obj.constructor</code> (overwritable) — prefer <code>instanceof</code>. Avoid <code>Object.setPrototypeOf</code> in hot code and never extend built-in prototypes (deopts + collisions).</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"JavaScript has prototypal inheritance — objects inherit from other objects through a hidden <code>[[Prototype]]</code> link, and classes are just syntax layered on top of that."</div>
+  <div class="revision-say">"Reads walk up the prototype chain; writes always land on the instance and shadow the prototype."</div>
+  <div class="revision-say">"<code>class</code> isn't pure sugar — it adds strict mode, new-only calling, a TDZ, and non-enumerable methods that a plain constructor function doesn't have."</div>
+</div>
 `}
 
 ]

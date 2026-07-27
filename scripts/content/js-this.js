@@ -781,6 +781,30 @@ wrap();              // ?</code></pre>
     <li>Can you spot "lost <code>this</code>" bugs in React class components or Node-style callbacks?</li>
   </ul>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong><code>this</code> is decided at call time by HOW a function is invoked</strong> — not by where it was written.</li>
+    <li>Four binding rules, in priority order: <strong><code>new</code> &gt; explicit (<code>call</code>/<code>apply</code>/<code>bind</code>) &gt; implicit (<code>obj.method()</code>) &gt; default (bare <code>fn()</code>)</strong>.</li>
+    <li><code>new Fn()</code> → <code>this</code> is the new object; explicit → the passed context; implicit → the object before the dot; default → global (sloppy) or <strong><code>undefined</code></strong> (strict / ES modules).</li>
+    <li><strong>Arrow functions have no <code>this</code> of their own</strong> — they inherit it lexically from where they're defined; <code>call</code>/<code>apply</code>/<code>bind</code> can NOT change an arrow's <code>this</code>.</li>
+    <li>In implicit binding only the <em>last</em> object in the path matters: <code>b.a.greet()</code> → <code>this</code> is <code>a</code>, not <code>b</code>.</li>
+    <li><strong>You "lose <code>this</code>" whenever the dot is dropped</strong>: assigning a method to a variable, passing it as a callback, destructuring it, or returning the reference.</li>
+    <li><code>bind</code> cannot be re-bound — <code>fn.bind(a).bind(b)</code> stays bound to <code>a</code>.</li>
+    <li><strong><code>new</code> beats <code>bind</code></strong>: <code>new (Fn.bind(ctx))()</code> ignores <code>ctx</code> and uses the fresh object.</li>
+    <li>Classes are always strict, so a detached method call throws a <code>TypeError</code> (<code>this</code> is <code>undefined</code>) rather than silently using the global.</li>
+    <li>Arrows can't be <code>new</code>'d — they have no <code>[[Construct]]</code>.</li>
+    <li>DOM event handlers: a regular <code>function</code> gets <code>this</code> = the element; an arrow gets the lexical <code>this</code>. Array methods like <code>forEach</code>/<code>map</code> accept a <code>thisArg</code> second argument.</li>
+    <li>Fix lost <code>this</code> with <code>bind</code>, an arrow wrapper (<code>() =&gt; obj.method()</code>), or an arrow class field.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"<code>this</code> is decided at call time by how a function is invoked — four rules in priority: <code>new</code>, explicit bind, implicit dot, then default."</div>
+  <div class="revision-say">"Arrow functions have no <code>this</code> of their own; they inherit it lexically, and <code>call</code>/<code>apply</code>/<code>bind</code> can't change it."</div>
+  <div class="revision-say">"The moment you detach a method from its object — destructure it or pass it as a callback — you lose the dot, and <code>this</code> becomes <code>undefined</code> in strict mode."</div>
+</div>
 `}
 
 ]});

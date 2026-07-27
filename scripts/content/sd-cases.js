@@ -804,6 +804,31 @@ POST /post              → creates a post referencing mediaId</code></pre>
     <li>You downscope explicitly when time pressure appears.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Six worked cases:</strong> Twitter/News Feed, Chat (WhatsApp/Slack), Collaborative editor (Google Docs), Autocomplete/typeahead, Video streaming (YouTube/Netflix), Photo/video upload (Instagram).</li>
+    <li>Read each case twice — once for the <strong>shape</strong> (what decision goes where), once for the <strong>vocabulary</strong> that makes answers sound senior.</li>
+    <li><strong>Twitter feed:</strong> SSR the first ~10 tweets for LCP, virtualized list, React Query + normalized cache, WebSocket new-tweet pushes buffered in a "N new tweets" pill, optimistic likes with rollback, offline via service worker + IndexedDB queue.</li>
+    <li><strong>Chat:</strong> order by (serverTimestamp, sequence); dedupe via a client-generated <code>clientId</code> used as the idempotency key; offline queue in IndexedDB; on reconnect request messages since the last sequence.</li>
+    <li><strong>Collaborative editor:</strong> CRDT (Yjs) for offline-first convergence; presence/awareness throttled to ~10Hz on the same WS; CRDT vs OT — CRDT wins for offline, OT gives tighter server control.</li>
+    <li><strong>Autocomplete:</strong> debounce ~150ms, AbortController to cancel in-flight, a sequence guard to drop out-of-order responses, LRU cache (cache-first), ARIA combobox, suppress requests during IME composition.</li>
+    <li><strong>Video streaming:</strong> adaptive bitrate from measured throughput + buffer level; start low for fast first frame then step up; TTFF via preloaded poster/manifest; HLS or DASH segments on CDN.</li>
+    <li><strong>Upload:</strong> chunked/resumable multipart, client-side compression, 3-4 parallel chunks, IndexedDB queue + service worker for background/resume, strip EXIF GPS before upload.</li>
+    <li><strong>Recurring patterns:</strong> normalized cache, optimistic mutation + rollback, WebSocket realtime (reconnect + "since" cursor), virtualized infinite list, offline-first queue, worker offload, adaptive quality, cursor pagination, presence protocol, error hierarchy, perf budget, a11y + i18n baselines.</li>
+    <li><strong>Cursor pagination</strong> is stable under inserts — used in feeds, chat history, and search.</li>
+    <li><strong>Pattern-match new prompts</strong> to a known case ("Pinterest ≈ the feed case") instead of starting from scratch.</li>
+    <li>Senior = framework + patterns + tradeoffs; <strong>staff</strong> adds product thinking, tooling/measurement (budgets, RUM), evolution/migration, and explicit downscoping.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I pattern-match the prompt to a case I've rehearsed — most feed prompts are the Twitter case, most editors are the CRDT/Docs case."</div>
+  <div class="revision-say">"I lean on the recurring patterns by name: normalized cache, optimistic-with-rollback, WebSocket plus a since-cursor, virtualized infinite list, offline queue."</div>
+  <div class="revision-say">"For a feed: SSR the first tweets, virtualize, React Query + normalized cache, WebSocket into a 'N new tweets' pill, optimistic likes — biggest open risk is scaling WebSocket to 10M concurrent."</div>
+</div>
 `}
 
 ]

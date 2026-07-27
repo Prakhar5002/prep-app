@@ -991,6 +991,37 @@ for (let i = 0; i &lt; n; i++) helper(arr[i]);</code></pre>
     <li>You implement rotation as three reverses.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A small pattern set covers ~60% of array/string problems:</strong> two pointers, sliding window, prefix sums, hash map, sort-first, cyclic sort, reverse/rotate, Kadane's.</li>
+    <li><strong>Two pointers:</strong> opposite ends converging (sorted array, palindrome, two-sum-sorted, container) OR slow/fast same direction (dedup, move zeros, partition). Typically <code>O(n)</code> time, <code>O(1)</code> space.</li>
+    <li><strong>Sliding window</strong> for a contiguous subarray/substring with a property: expand <code>r</code>, contract <code>l</code> when the invariant breaks. <code>O(n)</code>.</li>
+    <li><strong>Prefix sums:</strong> <code>O(n)</code> prep for <code>O(1)</code> range-sum queries — range sum <code>[l, r]</code> = <code>prefix[r+1] - prefix[l]</code>.</li>
+    <li><strong>Rotation = three reverses</strong> (whole, first k, rest); do <code>k = k % n</code> first. In-place <code>O(n)</code> time, <code>O(1)</code> space.</li>
+    <li><strong>Kadane's</strong> for max subarray sum; it handles an all-negative array (returns the max single element) — don't write a version that returns 0.</li>
+    <li><strong>Cyclic sort</strong> for numbers in <code>[1..n]</code> (find missing / duplicate) in <code>O(n)</code>.</li>
+    <li><strong>Strings are immutable:</strong> <code>s += x</code> in a loop is <code>O(n²)</code> (use <code>join</code>); <code>str.split('')</code> for in-place work; fixed count arrays (26 lowercase, 256 ASCII) beat hash maps for bounded charsets.</li>
+    <li><strong>Use Set/Map for <code>O(1)</code> presence</strong> — never <code>arr.includes</code> inside a loop (that's <code>O(n²)</code>).</li>
+    <li><strong>Product-except-self:</strong> a prefix pass then a suffix pass, <code>O(n)</code> time and <code>O(1)</code> extra, no division.</li>
+    <li><strong>Sort first</strong> when it simplifies the problem (3-sum, merge intervals) at <code>O(n log n)</code>; skip duplicates in pointer solutions to avoid repeated tuples.</li>
+    <li><strong>Always test edges:</strong> empty, single element, all-same, sorted ascending, sorted descending; guard off-by-one in <code>l</code>/<code>r</code> init and termination.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> most patterns are <code>O(n)</code>; sort-based approaches <code>O(n log n)</code>; nested-pointer solutions like 3-sum <code>O(n²)</code>.</li>
+    <li><strong>Space:</strong> two pointers / Kadane's / rotate are <code>O(1)</code>; hash and prefix-sum approaches are <code>O(n)</code>.</li>
+    <li><strong>Signal → reach for it:</strong> sorted + pair/triplet → two pointers · contiguous subarray/substring with a property → sliding window · range-sum queries → prefix sum · presence/frequency/complement → hash map · numbers in <code>[1..n]</code> → cyclic sort · max subarray → Kadane's · in-place rearrange → reverse/rotate.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I first identify the pattern — two pointers, sliding window, prefix sum, or hash — then write the template and handle empty / single / all-same up front."</div>
+  <div class="revision-say">"Two pointers and sliding window both use multiple indices, but sliding window maintains a region with a property while two pointers do pointwise work from the ends or at two speeds."</div>
+  <div class="revision-say">"Strings are immutable, so I avoid <code>+=</code> in a loop (that's O(n²)) — I split to a char array or join, and I use a fixed 26-slot count array for lowercase-letter problems."</div>
+</div>
 `}
 
 ]

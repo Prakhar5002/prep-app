@@ -907,6 +907,38 @@ for (const [k, v] of map)
     <li>You delete keys at count 0 when tracking distinct via size.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Hash map/set = <code>O(1)</code> average lookup, insert, and delete</strong> — trade <code>O(n)</code> space for time.</li>
+    <li><strong>Set for presence</strong> ("have I seen this?"); <strong>Map for key → value</strong> (counts, indices, group-by).</li>
+    <li><strong>Prefer Map over object</strong> for algorithm work: any key type without coercion, insertion-order iteration, and <code>map.size</code>.</li>
+    <li><strong>If brute force has a nested-loop lookup, a hash map usually collapses it to <code>O(n)</code>.</strong> The space is normally worth it.</li>
+    <li><strong>Two-sum pattern:</strong> check for the complement <em>before</em> storing the current value — this also handles duplicates correctly. <code>O(n)</code> time, <code>O(n)</code> space.</li>
+    <li><strong>Frequency count</strong> (value → count) is the foundation of anagram, top-K, and majority-element problems.</li>
+    <li><strong>Prefix sum + hash</strong> for subarray-sum-equals-K: a prefix → count map initialized with <code>[0, 1]</code> (the empty prefix); works with negatives, where a sliding window would not.</li>
+    <li><strong>Group by canonical form</strong> (sorted string or char-count signature) for anagrams; the count signature is <code>O(n·k)</code> vs sort's <code>O(n·k log k)</code> on long strings.</li>
+    <li><strong>Top-K frequent</strong> via bucket sort by frequency is <code>O(n)</code> (a heap alternative is <code>O(n log k)</code>).</li>
+    <li><strong>Longest consecutive sequence:</strong> only start counting from a sequence's smallest member (<code>n - 1</code> not in the set), which keeps it <code>O(n)</code>.</li>
+    <li><strong>For a small fixed charset (26 letters), use an Array indexed by char code</strong> — faster than a Map (no hash computation).</li>
+    <li><strong>Arrays/objects as keys don't compare by value</strong> — serialize compound keys (e.g. <code>"r,c"</code>); and in the counter idiom guard with <code>map.has(k)</code> or <code>?? 0</code> because <code>0</code> is falsy.</li>
+    <li><strong>Hash is <code>O(1)</code> only on average</strong> — all keys colliding is <code>O(n)</code> worst case; adversarial input is defended with randomized hashing.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> <code>O(1)</code> average per operation, so most hash solutions are <code>O(n)</code>; pair-sum splits (4-sum II) are <code>O(n²)</code> instead of the <code>O(n⁴)</code> brute force.</li>
+    <li><strong>Space:</strong> <code>O(n)</code> for the map/set (or <code>O(charset)</code> for a fixed count array).</li>
+    <li><strong>Signal → reach for it:</strong> presence/dedup → Set · frequency/top-K → count Map · complement search → two-sum-style map · subarray sum (including negatives) → prefix sum + hash · group anagrams → canonical-form key · any brute force with a nested lookup → replace the inner scan with a hash.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"When my brute force is doing nested-loop lookups, I reach for a hash map — it usually trades O(n) space to bring the time down to O(n)."</div>
+  <div class="revision-say">"For subarray-sum problems with negatives I use prefix sum plus a hash map, initialized with (0, 1) for the empty prefix — sliding window won't work with negative numbers."</div>
+  <div class="revision-say">"Hash lookup is O(1) on average, not worst case — all keys colliding degrades to O(n), which is why engines use randomized hashing against adversarial input."</div>
+</div>
 `}
 
 ]

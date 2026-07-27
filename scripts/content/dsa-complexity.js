@@ -744,6 +744,38 @@ function hasDupSort(arr) {
     <li>You know common-operation complexities by heart.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Big O is a growth rate, not a stopwatch.</strong> It describes how cost scales with input size, not how fast the code runs.</li>
+    <li><strong>Drop constants and lower-order terms:</strong> <code>3n² + 5n + 7</code> is <code>O(n²)</code>.</li>
+    <li>The ladder from best to worst: <code>O(1)</code> &lt; <code>O(log n)</code> &lt; <code>O(n)</code> &lt; <code>O(n log n)</code> &lt; <code>O(n²)</code> &lt; <code>O(2ⁿ)</code> &lt; <code>O(n!)</code>.</li>
+    <li><strong>Always state space alongside time.</strong> Recursion costs <code>O(depth)</code> stack space — JS engines mostly don't tail-call-optimize, so deep recursion can <code>RangeError</code>.</li>
+    <li><strong>Practical breakpoints:</strong> <code>O(n²)</code> breaks down ~10⁴, <code>O(2ⁿ)</code> ~25–30, <code>O(n!)</code> ~12.</li>
+    <li><strong>Amortized</strong> = average cost per op over a long sequence: dynamic-array push is <code>O(1)</code> amortized (N pushes do ~3N total work). Different from average-case (random input).</li>
+    <li><strong>Worst vs average matters:</strong> quicksort is <code>O(n log n)</code> average but <code>O(n²)</code> worst; hash lookup is <code>O(1)</code> average but <code>O(n)</code> worst — quote both when meaningful.</li>
+    <li><strong>Master Theorem</strong> for <code>T(n) = aT(n/b) + f(n)</code>: merge sort <code>2T(n/2)+O(n)</code> → <code>O(n log n)</code>; binary search <code>T(n/2)+O(1)</code> → <code>O(log n)</code>.</li>
+    <li>Log base is a constant → <code>log₂ n</code>, <code>log₁₀ n</code>, <code>ln n</code> are all <code>O(log n)</code>.</li>
+    <li><strong>Keep multiple variables split:</strong> <code>O(a + b)</code> and graph <code>O(V + E)</code> are more informative than collapsing to <code>O(n)</code>.</li>
+    <li><strong>Memoization</strong> turns naive Fibonacci <code>O(2ⁿ)</code> into <code>O(n)</code> time but adds <code>O(n)</code> space — an explicit time-space tradeoff.</li>
+    <li><strong>Constants still decide absolute speed:</strong> a simple <code>O(n²)</code> loop can beat <code>O(n log n)</code> for small n (insertion sort beats merge sort for n &lt; ~20).</li>
+    <li><strong>JS gotchas:</strong> <code>shift</code>/<code>unshift</code>/<code>splice</code> are <code>O(n)</code>; <code>s += x</code> in a loop is <code>O(n²)</code>; <code>Set.has</code>/<code>Map.get</code> are <code>O(1)</code> average; <code>arr.includes</code> in a loop is <code>O(n²)</code>.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Read time off the structure:</strong> single loop → <code>O(n)</code>; nested loops over the same n → <code>O(n²)</code>; halving each step → <code>O(log n)</code>; divide-and-conquer with a linear merge → <code>O(n log n)</code>; branching recursion without memoization → <code>O(2ⁿ)</code>.</li>
+    <li><strong>Space:</strong> count auxiliary structures PLUS recursion-stack depth (<code>O(h)</code> for a tree — <code>O(log n)</code> balanced, <code>O(n)</code> skewed).</li>
+    <li><strong>Signal → reach for it:</strong> "how does it scale?" → Big O · "usually fast, occasionally slow" → amortized analysis · recurrence <code>aT(n/b) + f(n)</code> → Master Theorem · repeated subproblems → memoize for <code>O(n)</code>.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Big O is the growth shape as input scales — I drop constants and lower-order terms and keep the dominant one."</div>
+  <div class="revision-say">"I always state time AND space, and I include recursion stack depth in the space cost since JS doesn't tail-call-optimize."</div>
+  <div class="revision-say">"I distinguish worst, average, and amortized — quicksort is O(n log n) average but O(n²) worst, and dynamic-array push is O(1) amortized."</div>
+</div>
 `}
 
 ]

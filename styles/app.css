@@ -908,6 +908,33 @@ html[data-theme="light"] .icon-moon { display: block; }
 .callout.danger .callout-title  { color: var(--red); }
 .callout.success .callout-title { color: var(--green); }
 
+/* Revision — Points to Remember (glance-and-memorize block) */
+.revision-card {
+  border: 1px solid var(--border-strong);
+  border-left: 4px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+  padding: 4px 20px 10px;
+}
+.revision-card h4 {
+  color: var(--accent-strong);
+  margin: 16px 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+.revision-card ul { margin: 0; }
+.revision-card li { margin-bottom: 6px; }
+.revision-say {
+  border-left: 3px solid var(--green);
+  background: var(--green-soft);
+  border-radius: var(--radius-sm);
+  padding: 9px 15px;
+  margin: 8px 0;
+  font-style: italic;
+}
+.revision-say:last-child { margin-bottom: 0; }
+
 /* Tables */
 .section table {
   width: 100%;

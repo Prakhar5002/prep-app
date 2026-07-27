@@ -754,6 +754,35 @@ function Box&lt;T extends React.ElementType = 'div'&gt;({ as, ...rest }: BoxProp
     <li>You use exhaustiveness checks with <code>never</code>.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The real value is structural correctness at component boundaries</strong> — props, events, refs, and context all have known shapes checked at compile time.</li>
+    <li><strong>Type props with a plain function signature</strong> <code>function Button(props: Props)</code>, NOT <code>React.FC</code> (legacy: it used to inject <code>children</code>, doesn't do generics cleanly).</li>
+    <li><strong>Declare <code>children</code> explicitly</strong> as <code>React.ReactNode</code> — React 18 types removed the implicit children from <code>FC</code>.</li>
+    <li><strong>children types:</strong> <code>ReactNode</code> = anything renderable (most permissive, use for children); <code>ReactElement</code> = one concrete element; <code>JSX.Element</code> = return type of JSX, ~interchangeable with ReactElement.</li>
+    <li><strong>Discriminated unions over boolean soup</strong> — 3 flags = 8 combinations but only ~3 valid; a union with a <code>status</code>/<code>kind</code> tag makes invalid states unrepresentable and narrows fields per case.</li>
+    <li><strong>Exhaustiveness check:</strong> in the <code>default</code> branch, <code>const _: never = state</code> — adding an unhandled union case becomes a compile error.</li>
+    <li><strong>Event handler types:</strong> <code>React.ChangeEvent&lt;HTMLInputElement&gt;</code>, <code>React.FormEvent&lt;HTMLFormElement&gt;</code>, <code>React.MouseEvent&lt;HTMLButtonElement&gt;</code> — these are React's synthetic events, not the native ones.</li>
+    <li><strong>Refs:</strong> <code>useRef&lt;HTMLInputElement&gt;(null)</code> → <code>current</code> is <code>HTMLInputElement | null</code>, use <code>?.</code>. (React 19: <code>ref</code> is a normal prop; <code>forwardRef</code> deprecated.)</li>
+    <li><strong>useState:</strong> let inference handle primitives; use an explicit generic when the initial value doesn't describe the full shape — <code>useState&lt;User | null&gt;(null)</code>, <code>useState&lt;Item[]&gt;([])</code>.</li>
+    <li><strong>Context pattern:</strong> <code>createContext&lt;T | null&gt;(null)</code> + a custom hook that throws if null → callers get a non-null type and never see a fake default.</li>
+    <li><strong>Generic components:</strong> <code>function Select&lt;T,&gt;(props)</code> — the trailing comma <code>&lt;T,&gt;</code> disambiguates from a JSX tag in .tsx files.</li>
+    <li><strong>Borrow DOM props with <code>React.ComponentProps&lt;'button'&gt;</code></strong> (and <code>ComponentProps&lt;typeof X&gt;</code> to steal a component's props) instead of re-declaring HTML attributes.</li>
+    <li><strong>Polymorphic <code>as</code> prop:</strong> <code>&lt;T extends React.ElementType&gt;</code> + <code>Omit&lt;ComponentProps&lt;T&gt;, 'as'&gt;</code> so element-specific props (<code>href</code>, <code>onClick</code>) autocomplete.</li>
+    <li><strong>Types are erased at runtime</strong> — they do NOT validate API/form/localStorage data. Validate at boundaries with Zod/Valibot and bridge with <code>z.infer</code>.</li>
+    <li><strong>Prefer <code>unknown</code> over <code>any</code></strong> — <code>unknown</code> forces narrowing before use; every <code>any</code> and every <code>as</code> cast is a bug waiting to happen. Use <code>@ts-expect-error</code> (not <code>@ts-ignore</code>) with a linked reason.</li>
+    <li><strong>TypeScript is structural</strong> (same shape = interchangeable) — use branded types (<code>string &amp; { __brand }</code>) for nominal typing. Turn on <code>strict</code> and <code>noUncheckedIndexedAccess</code> (<code>arr[i]</code> → <code>T | undefined</code>).</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I type props with a plain function signature, not React.FC, and let TypeScript infer what it can — I only annotate exported signatures and cases where inference is too wide."</div>
+  <div class="revision-say">"For loading/error/success I use a discriminated union instead of separate booleans, so invalid states are unrepresentable and I get exhaustiveness checking with never."</div>
+  <div class="revision-say">"Types are erased at runtime, so I validate API and form data at the boundary with Zod and derive the TS type via z.infer — and I prefer unknown over any everywhere."</div>
+</div>
 `}
 
 ]

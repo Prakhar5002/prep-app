@@ -892,6 +892,44 @@ function go(n) { return { depth, sum, isValid }; }
   <li>"I'd cache subtree heights per node so diameter / balanced-BST checks become O(n) on repeated queries."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Trees are recursive structures</strong> — every subtree is a tree, so recursion is the natural fit. Mantra: "Recurse on subtrees. Decide the work order. Pick BFS only if you need level-by-level."</li>
+    <li><strong>The subtree-solver skeleton:</strong> null → BASE; <code>L = solve(left)</code>, <code>R = solve(right)</code>; <code>return COMBINE(node.val, L, R)</code>. The whole problem is choosing BASE, what L/R return, and COMBINE.</li>
+    <li><strong>Two traversal families:</strong> DFS (preorder visit→L→R, inorder L→visit→R, postorder L→R→visit) and BFS (level-order via queue).</li>
+    <li><strong>Order picks the job:</strong> preorder → serialize/copy; inorder → BST sorted output; postorder → aggregate from leaves up (height, sum, validation, deletion).</li>
+    <li><strong>Carry-down vs carry-up:</strong> pass state <em>into</em> the call for path-from-root problems (path sum, validate BST); let children <em>return</em> and combine for subtree aggregates (max depth, diameter).</li>
+    <li><strong>Inorder traversal of a BST yields sorted output</strong> — memorize this.</li>
+    <li><strong>Validate BST with min/max bounds passed down, NOT adjacent-child comparisons</strong> — the invariant covers <em>all</em> descendants, not just immediate children.</li>
+    <li><strong>Never seed BST bounds with 0</strong> — use <code>-Infinity</code>/<code>Infinity</code>, since values may be negative.</li>
+    <li><strong>Diameter passes THROUGH a node → <code>L + R</code>, not <code>max(L, R)</code></strong> (that's just depth).</li>
+    <li><strong>Null must return the right base</strong> (0 for depth/sum, true for validate, [] for lists) — returning <code>undefined</code> poisons <code>Math.max</code> into NaN.</li>
+    <li><strong>BFS trick: snapshot <code>levelSize = queue.length</code></strong> at the top of each level to separate this level from the next (level averages, zig-zag, right-side view).</li>
+    <li><strong>Don't use <code>Array.shift()</code> for the BFS queue</strong> — it's O(n), making BFS O(n²); use an index head pointer (<code>q[head++]</code>).</li>
+    <li><strong>Recursion depth ≈ tree height:</strong> O(log n) balanced but O(n) on a skewed tree, which overflows V8's stack around ~10,000 frames — iterate for very deep/large trees.</li>
+    <li><strong>Standard nodes have no parent pointer</strong> — build a parent map, pass parent down, or keep the DFS path stack when you need ancestors.</li>
+    <li><strong>Iterative postorder is the tricky one</strong> — do reversed-preorder (root→right→left) then reverse, or use a visited marker.</li>
+    <li><strong>Always handle empty tree (null) and single node first;</strong> clarify duplicate handling in a BST before coding.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> traversal (DFS or BFS) visits each node once → O(n). BST search/insert/delete is O(h): O(log n) balanced, O(n) worst-case skewed.</li>
+    <li><strong>Space:</strong> O(h) for the recursion/DFS stack (O(log n) balanced, O(n) skewed); BFS holds up to a full level, O(w) which can be O(n).</li>
+    <li><strong>Signal → reach for it:</strong> "hierarchy / nested structure" → tree · "aggregate a value from subtrees" → postorder DFS · "path from root" → carry state down (preorder) · "ordered set / sorted output" → BST + inorder · "level-by-level / shortest depth / views" → BFS · "lowest common ancestor / path" → recursive DFS returning found-subtrees.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Every tree solution is the same skeleton: base case for null, recurse on left and right, then combine — I just decide what each call returns and how I merge it."</div>
+  <div class="revision-say">"To validate a BST I pass min/max bounds down, because the invariant is over all descendants, not just the immediate children."</div>
+  <div class="revision-say">"I use postorder when I aggregate from the leaves up, and BFS with a level-size snapshot when the problem is genuinely level-by-level."</div>
+</div>
+`
     }
   ]
 });

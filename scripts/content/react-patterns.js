@@ -802,6 +802,34 @@ function Panel({ value, children }) {
     <li>You keep patterns proportional to complexity — not every component deserves one.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Patterns are vocabulary for composition</strong>, not best-practices to memorize. Prefer <strong>composition over configuration</strong> and start simple (props + children); reach for a pattern when a reuse concern appears.</li>
+    <li><strong>Compound components:</strong> the parent owns state and puts it in <em>context</em>; children (<code>&lt;Tab&gt;</code>, <code>&lt;Panel&gt;</code>) read it implicitly so callers compose freely. Coordinate via context — don't inspect children.</li>
+    <li><strong>Render props / function-as-child:</strong> output is driven by a passed function; a pre-hooks way to share stateful logic, now mostly superseded.</li>
+    <li><strong>HOCs</strong> wrap a component and return a new one (<code>withAuth(Comp)</code>) — prone to wrapper hell and prop collisions. Keep them for route guards, feature flags, and legacy class components.</li>
+    <li><strong>Custom hooks are the modern way to share stateful logic</strong> — no wrapper fibers, composable, easy to type; they beat HOCs and render props for new code.</li>
+    <li><strong>Controlled = parent owns the value</strong> (<code>value</code>+<code>onChange</code>); <strong>uncontrolled = the component/DOM owns it</strong> (read via ref or <code>defaultValue</code>). Library components should support both: treat <code>value !== undefined</code> as controlled.</li>
+    <li>Switching a component from uncontrolled to controlled warns — pass <code>value</code> from the first render or never. <code>defaultValue</code> only seeds at mount.</li>
+    <li><strong>Headless components</strong> (Radix, Headless UI, React Aria) ship behavior, state, and accessibility with zero styling — you provide the JSX and CSS.</li>
+    <li><strong>State reducer pattern:</strong> the caller passes a reducer that can intercept and override any state transition, giving customization without forking (popularized by Downshift).</li>
+    <li><strong>Slot pattern:</strong> named regions (<code>header</code>, <code>sidebar</code>, <code>footer</code>) via props, because <code>children</code> is a single slot.</li>
+    <li><code>forwardRef</code> passes a ref through a custom component to a DOM node or imperative handle; <strong>React 19 makes <code>ref</code> a normal prop, so <code>forwardRef</code> is deprecated</strong>.</li>
+    <li><code>useImperativeHandle</code> exposes an imperative API — use sparingly, and include deps or the handle captures stale values.</li>
+    <li><strong>Error boundaries are class components</strong> (<code>getDerivedStateFromError</code> / <code>componentDidCatch</code>). They catch render, lifecycle, and constructor errors — NOT event handlers, async code, SSR, or errors in the boundary itself.</li>
+    <li><strong>Portals</strong> change only the DOM location — context and event bubbling still follow the React tree, not the DOM parent.</li>
+    <li><strong>Patterns have a cost</strong> (API surface, learning curve). Use one when it fits; don't stack compound + render prop + HOC for a one-off component.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"For new logic sharing I reach for custom hooks over HOCs and render props — same power, no wrapper hell or extra fibers."</div>
+  <div class="revision-say">"Compound components share state through context and let callers compose the children; I never inspect children to make them work."</div>
+  <div class="revision-say">"Complex widgets support both controlled and uncontrolled modes — if <code>value</code> is passed it's controlled, otherwise it falls back to internal state."</div>
+</div>
 `}
 
 ]

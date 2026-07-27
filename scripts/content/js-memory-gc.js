@@ -736,6 +736,31 @@ close() {
     <li>You warn against relying on <code>FinalizationRegistry</code> for correctness.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>JS is memory-managed</strong> — no <code>malloc</code>/<code>free</code>; the GC reclaims memory based on <strong>reachability</strong>, not on whether you're "done with" an object.</li>
+    <li><strong>Roots</strong> = the global object, the call stack, closures over live functions, the DOM tree, registered timers/listeners, and internal engine slots. Anything reachable from a root is <em>live</em>; everything else is garbage.</li>
+    <li><strong>A leak is a reference you forgot:</strong> closures over big state, detached DOM nodes still referenced, intervals/timeouts never cleared, listeners never removed, ever-growing global or module-level collections.</li>
+    <li>Primitives are value-typed (often stack-resident/interned); objects live on the heap and you hold <em>references</em> — assignment copies the pointer, not the object.</li>
+    <li>Modern engines use <strong>generational, tracing GC</strong>: most objects die young in a nursery (fast, frequent scavenge); survivors are promoted to the old generation (mark-sweep-compact, infrequent).</li>
+    <li>Tracing GC handles <strong>cycles</strong> naturally because it starts from roots; naive reference counting can't free a cycle.</li>
+    <li><strong>You cannot force GC from user code</strong> (security, determinism, performance) — you can only stop holding references. <code>--expose-gc</code> / DevTools "Collect garbage" are for debugging only.</li>
+    <li>Closures <strong>capture by reference and pin</strong> their captured variables for as long as the closure is reachable — return only what you need, not a closure over a huge array.</li>
+    <li><code>WeakMap</code>/<code>WeakSet</code> hold keys <strong>weakly</strong> → entries vanish once the key is otherwise unreachable; ideal for caches and per-object metadata. Keys must be objects; no <code>.size</code>/iteration by design.</li>
+    <li>Uncapped caches (a <code>Map</code> that never evicts) grow forever — use an LRU or a size cap.</li>
+    <li><strong>Always clean up:</strong> <code>clearInterval</code>/<code>clearTimeout</code>, <code>removeEventListener</code>, unsubscribe on unmount (React effect cleanup return).</li>
+    <li>Don't rely on <code>FinalizationRegistry</code> for correctness — its callback may never run; use explicit <code>.close()</code> in <code>try/finally</code>. Avoid <code>delete</code> on hot objects (invalidates the hidden class) — set to <code>null</code>.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The garbage collector doesn't free objects you're done with — it frees objects unreachable from any root, so a leak is always a reference you forgot to drop."</div>
+  <div class="revision-say">"Modern engines use generational tracing GC: most objects die young in the nursery, and tracing naturally reclaims reference cycles that plain reference counting can't."</div>
+  <div class="revision-say">"Reach for <code>WeakMap</code> when you want metadata that dies with its key, and always clean up timers and listeners so their closures don't pin everything they captured."</div>
+</div>
 `}
 
 ]

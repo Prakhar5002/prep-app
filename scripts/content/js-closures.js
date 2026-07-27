@@ -840,6 +840,31 @@ c.get();    // 5 (initial)</code></pre>
     <li>Can you reason about when a closure's captured scope is garbage collected?</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Closure = function + a reference to the lexical environment it was born in</strong> — captured at creation time, kept alive as long as the function reference exists.</li>
+    <li>Every function is technically a closure; the term <em>matters</em> only when the inner function <strong>escapes</strong> its birthplace (returned, passed to a handler, put on a timer) and still uses outer variables.</li>
+    <li><strong>Scope is decided by the definition site, not the call site.</strong> A function inherits scope from where it was written, not where it's invoked.</li>
+    <li>Engine mechanism: on creation the function stores the current environment in <code>[[Environment]]</code>; on call, its outer-env reference = that stored environment — not the caller's.</li>
+    <li><strong>Closures capture the binding (reference), NOT the value.</strong> Reassign the variable and the closure sees the latest value.</li>
+    <li>Each call to a factory creates a <strong>new</strong> environment → every returned closure gets its own private state (two counters don't share <code>count</code>).</li>
+    <li><code>var</code> in a loop = <strong>one shared binding</strong> → all closures see the final value; <code>let</code> = a new binding per iteration → fixes it.</li>
+    <li>Powers: data privacy/encapsulation, memoization, currying/partial application, the module pattern, <code>once</code>, debounce/throttle, React hooks.</li>
+    <li><strong>React hooks are closures:</strong> <code>useState</code>'s setter closes over the fiber; a <code>useEffect</code> callback closes over the props/state of the render it was created in.</li>
+    <li><strong>Stale-closure bug:</strong> an effect with empty deps captures the first render's state → fix with a functional updater <code>setCount(c =&gt; c + 1)</code> (or add the value to deps).</li>
+    <li>Captured scope is GC'd only when <strong>every</strong> reference to the inner function is gone — the closure keeps its environment reachable.</li>
+    <li>Keep caches/state <strong>inside</strong> the factory; a shared outer variable leaks state across "separate" closures.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A closure is a function bundled with references to its surrounding lexical environment — it remembers where it was defined, not where it's called."</div>
+  <div class="revision-say">"Closures capture the binding, not the value — that's exactly why <code>var</code> in a loop logs the final number and <code>let</code> fixes it."</div>
+  <div class="revision-say">"React hooks are built on closures; a stale closure is a callback still referencing state from the render it was created in — the fix is a functional updater or the correct dependency array."</div>
+</div>
 `}
 
 ]});

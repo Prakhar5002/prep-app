@@ -892,6 +892,37 @@ if (cond) { l++; r--; }
     <li>You sort first when the algorithm requires it.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Two indices moved by intentional logic</strong> — turns many <code>O(n²)</code> brute forces into <code>O(n)</code>, usually with <code>O(1)</code> space.</li>
+    <li><strong>Opposite ends converging:</strong> sorted arrays, palindromes, container/water. Move the pointer the comparison dictates.</li>
+    <li><strong>Same direction (slow + fast):</strong> dedup, move zeros, partition — <code>slow</code> is the write position, <code>fast</code> is the scan index.</li>
+    <li><strong>Fast/slow at different speeds (Floyd's tortoise-and-hare):</strong> cycle detection, middle of a list, nth-from-end — <code>O(1)</code> space vs a hash set's <code>O(n)</code>.</li>
+    <li><strong>Opposite-ends needs monotonicity → sort first;</strong> but sorting destroys original indices, so use a hash map for two-sum on an unsorted array.</li>
+    <li><strong>Skip duplicates for unique tuples</strong> (3-sum): skip <code>nums[i] === nums[i-1]</code> on the outer loop, and skip both inner pointers past equal neighbors after a match.</li>
+    <li><strong>Container with most water: move the shorter side</strong> — moving the taller side can only keep or shrink the area.</li>
+    <li><strong>Trapping rain water:</strong> process the side with the smaller current max; water there is bounded by that max. <code>O(n)</code> time, <code>O(1)</code> space.</li>
+    <li><strong>Dutch flag</strong> (3 pointers, sort 0/1/2): on a swap with <code>high</code>, do NOT advance <code>mid</code> — re-check the swapped-in value.</li>
+    <li><strong>Floyd's setup:</strong> both pointers start at <code>head</code>, guard the loop with <code>fast &amp;&amp; fast.next</code>; to find the cycle start, reset one pointer to head and step both by 1.</li>
+    <li><strong>Squares of a sorted array:</strong> fill the result back-to-front comparing absolute values from both ends → <code>O(n)</code> instead of an <code>O(n log n)</code> sort.</li>
+    <li><strong><code>l &lt; r</code> stops at the meeting point (middle not processed); <code>l &lt;= r</code> processes it</strong> — pick per problem. A dummy node makes linked-list head removal uniform.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> <code>O(n)</code> for single-pass variants; <code>O(n²)</code> for 3-sum (outer loop × inner two-pointer scan); <code>O(n log n)</code> when a sort is required first.</li>
+    <li><strong>Space:</strong> <code>O(1)</code> in-place — <code>O(n)</code> only when you build an output array (e.g. sorted-squares).</li>
+    <li><strong>Signal → reach for it:</strong> sorted + pair/triplet with a target → opposite ends · palindrome/symmetry → opposite ends · in-place dedup/partition/move → slow + fast · linked-list cycle/midpoint/nth-from-end → fast + slow · sort 0/1/2 → Dutch flag (3 pointers).</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Two pointers exploits structure — sortedness, symmetry, or a monotonic constraint — to replace nested loops with a single linear scan, usually in O(1) space."</div>
+  <div class="revision-say">"In container-with-most-water I always move the shorter pointer, because moving the taller one can only keep the min the same or lower it while the width shrinks."</div>
+  <div class="revision-say">"For linked-list cycles I use Floyd's tortoise-and-hare — both start at head, and it detects the cycle in O(1) space instead of an O(n) hash set."</div>
+</div>
 `}
 
 ]

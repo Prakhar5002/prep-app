@@ -387,43 +387,10 @@
     teardownSectionProgress();
 
     content.innerHTML = `
-      <div class="home-hero">
-        <span class="home-greeting">Welcome back</span>
-        <h1>Frontend Interview Prep <span class="grad">·</span> <span class="grad">at depth</span></h1>
-        <p class="home-sub">Extreme-depth notes for FAANG and mid-size product companies, mobile-focused. ${totalReady} of ${totalTopics} topics ready, ${totalStudied} studied — pick up where you left off, or jump to a module.</p>
-      </div>
-
-      <div class="home-stats">
-        <div class="home-stat">
-          <div class="home-stat-label">Studied</div>
-          <div class="home-stat-value">${totalStudied}<span class="pct">/${totalTopics}</span></div>
-        </div>
-        <div class="home-stat">
-          <div class="home-stat-label">Progress</div>
-          <div class="home-stat-value">${overallPct}<span class="pct">%</span></div>
-        </div>
-        <div class="home-stat">
-          <div class="home-stat-label">Modules in&nbsp;progress</div>
-          <div class="home-stat-value">${modulesInProgress}</div>
-        </div>
-        <div class="home-stat">
-          <div class="home-stat-label">Topics ready</div>
-          <div class="home-stat-value">${totalReady}</div>
-        </div>
-      </div>
-
-      ${heroCardsHtml ? `<div class="home-hero-cards">${heroCardsHtml}</div>` : ''}
-
-      ${recentsHtml ? `
-        <div class="home-section-title">Recent <span class="count">last ${Math.min(6, state.recents.filter(id => topicsById[id] && id !== lastReadId).length)}</span></div>
-        <div class="recent-list">${recentsHtml}</div>
-      ` : ''}
-
-      <div class="home-section-title">All modules <span class="count">${reg.modules.length}</span></div>
       <div class="home-grid">${moduleCards}</div>
     `;
     $('#tocList').innerHTML = '';
-    document.title = 'Prep · FAANG + Mobile Frontend';
+    document.title = 'Docs';
   }
 
   // ==========================================================
@@ -445,7 +412,7 @@
         </div>
       `;
       $('#tocList').innerHTML = '';
-      document.title = 'Not ready · Prep';
+      document.title = 'Docs';
       return;
     }
 
@@ -544,7 +511,7 @@
     const pt = $('#progressToggle');
     pt.classList.toggle('active', state.studied.has(topicId));
 
-    document.title = `${topic.title} · Prep`;
+    document.title = `${topic.title} · Docs`;
 
     // Jump to anchor if provided
     if (anchor) {

@@ -830,6 +830,34 @@ nav.navigate('Post', { id: '1' });  // typed
     <li>You pick Expo Router when file-based routing fits and you're on Expo.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Navigation is a library, not part of RN.</strong> Default to <strong>React Navigation (v7)</strong>; <strong>Expo Router</strong> for file-based routes on Expo; <strong>Wix RNN</strong> only for a hard fully-native requirement.</li>
+    <li><strong>React Navigation is native under the hood</strong> via <code>react-native-screens</code> — each screen is a native primitive (UINavigationController / Fragment) so transitions and gestures are native 60fps.</li>
+    <li><strong>Core concepts:</strong> Navigators (Stack / Tab / Drawer / Modal), Screens, Navigation state (a serializable JSON tree), Params, Linking, and typed navigation via a per-navigator ParamList.</li>
+    <li><strong>Keep params small and JSON-serializable</strong> — state is serialized for persistence and deep links. Functions, class instances, and big objects break persistence; store complex data in a cache and pass the id.</li>
+    <li><strong>navigate</strong> = go to a screen (if already in the stack, pop back to it and update params); <strong>push</strong> = always add a new instance; <strong>replace</strong> = swap the current screen (no back); <strong>reset</strong> = replace the whole navigation tree (nuclear).</li>
+    <li><code>goBack</code> = one back, <code>popToTop</code> = back to the stack root, <code>reset</code> = whole tree — prefer the least drastic that fits.</li>
+    <li><strong>Deep linking</strong> via the <code>linking</code> prop maps URLs → state (<code>prefixes</code> + <code>config.screens</code>). iOS uses Universal Links (apple-app-site-association + associated-domains entitlement); Android uses App Links (intent filters + Digital Asset Links). Cold-start links are handled automatically.</li>
+    <li><strong>Auth flow:</strong> swap the root screen based on auth status — the navigator re-renders and history is implicitly reset. Cleaner than manual reset.</li>
+    <li><strong>Screen lifecycle:</strong> screens stay <em>mounted</em> while in the stack (even underneath, unfocused); pushing does NOT unmount the screen below; popping unmounts. Use <code>useFocusEffect</code> to pause/resume work on focus.</li>
+    <li><strong>Prefer native stack</strong> (<code>createNativeStackNavigator</code>) over the legacy JS stack — faster and more platform-native; use JS stack only for custom animated transitions.</li>
+    <li><strong>Modals belong in the ROOT stack</strong>, not inside a tab's stack — otherwise the tab bar stays visible.</li>
+    <li>Always <strong>unsubscribe navigation listeners</strong> (<code>nav.addListener</code> returns the unsubscribe); <code>beforeRemove</code> guards dirty forms against back/swipe.</li>
+    <li><strong>Centralize screen analytics</strong> via <code>onStateChange</code> on NavigationContainer rather than per-screen logging.</li>
+    <li><strong>Expo Router file conventions:</strong> <code>(group)</code> (no URL impact), <code>[param]</code> (dynamic), <code>[...slug]</code> (catch-all), <code>_layout.tsx</code> (layout), <code>+not-found.tsx</code> (404).</li>
+    <li>Tab screens are kept mounted by default; <code>lazy: true</code> / <code>unmountOnBlur</code> trade memory against preserved state.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I default to React Navigation with the native stack, type the ParamList from day one, and keep params small and serializable — big data goes in a store and I pass an id."</div>
+  <div class="revision-say">"navigate reuses an existing screen and updates params, push always adds a new one, replace swaps with no back, and reset rebuilds the whole tree — I use reset only for auth transitions."</div>
+  <div class="revision-say">"Deep linking is the linking prop mapping URLs to state, backed by Universal Links on iOS and App Links on Android; cold-start links are handled by the NavigationContainer automatically."</div>
+</div>
 `}
 
 ]

@@ -1074,6 +1074,35 @@ createPortal(node, container ?? document.body)
 </ul>
 <p>Together: 60–90 minute live builds where you ship a working, reusable, accessible piece. Recognise the prompt → name the pattern → build the skeleton → demo all states → close with what's missing.</p>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>"Build a reusable X"</strong> — the grader watches props API, composition, accessibility, theming, edge cases, and TypeScript.</li>
+    <li><strong>Props API rules:</strong> variants as string-literal unions (not booleans), sizes as enums, states as booleans (<code>isLoading</code>, <code>disabled</code>), events as <code>onSomething</code>, default everything, and always accept <code>className</code> / <code>style</code> / <code>...rest</code> / <code>ref</code> escape hatches.</li>
+    <li><strong>5 layers:</strong> theme provider → tokens/CSS variables → primitives → composed components → patterns/recipes; naming all five is the senior signal.</li>
+    <li><strong>Tokens before colours:</strong> components reference CSS custom properties, never raw values; dark mode = toggle <code>data-theme</code> on <code>&lt;html&gt;</code>, no re-render.</li>
+    <li><strong>Composition ladder:</strong> plain props → children → compound (shared context, e.g. <code>Tabs</code> + <code>Tabs.List</code>) → render props/slots → polymorphic <code>as</code> → headless + styled.</li>
+    <li><strong>Support controlled AND uncontrolled</strong> via a <code>useControllableState</code> hook (treat an <code>undefined</code> value as uncontrolled).</li>
+    <li><strong>forwardRef</strong> every DOM-mapped component and set <code>displayName</code> so <code>focus()</code>/measure work and DevTools reads right.</li>
+    <li><strong>Native semantics:</strong> a real <code>&lt;button&gt;</code> (never <code>div onClick</code>); extend <code>...HTMLAttributes</code> so consumers get native props free; Button must default <code>type="button"</code>.</li>
+    <li><strong>A11y per component:</strong> Modal = <code>role="dialog"</code> + <code>aria-modal</code> + focus trap + ESC + return focus; Tabs = tablist/tab/tabpanel + arrow keys; Input = <code>&lt;label&gt;</code> + <code>aria-describedby</code> + <code>aria-invalid</code>; <code>useId</code> for SSR-safe ids.</li>
+    <li><strong>TypeScript for correctness:</strong> discriminated unions forbid invalid prop combos; generics preserve the consumer's value type (<code>Select&lt;UserId&gt;</code>).</li>
+    <li><strong>Restraint:</strong> don't add a prop until two consumers need it; prefer children + composition over four content props; variant unions over prop explosion.</li>
+    <li><strong>Edge cases:</strong> SSR (no <code>window</code> in render, <code>useId</code>, portals mounted in effect), RTL (logical CSS properties), <code>prefers-reduced-motion</code>, <code>:focus-visible</code> not <code>outline:none</code>.</li>
+    <li><strong>Close with:</strong> Storybook stories, RTL behaviour tests, <code>jest-axe</code>, visual regression, a semantic token layer.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Sensible defaults, composable parts, escape hatches everywhere, and accessibility is non-negotiable."</div>
+  <div class="revision-say">"Variants are string-literal unions, not boolean flags — it closes the set and makes refactors safe."</div>
+  <div class="revision-say">"Every component is controllable — <code>value</code> for controlled, <code>defaultValue</code> for uncontrolled — and it's a native element underneath, so keyboard, focus, and screen readers come free."</div>
+</div>
+`
     }
   ]
 });

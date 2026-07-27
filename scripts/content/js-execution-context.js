@@ -636,6 +636,32 @@ outer();</code></pre>
     <li>Can you explain why function declarations "win" over <code>var</code> in memory phase?</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Execution Context = the environment the engine builds to run code</strong> (global, function, eval, or module). It bundles a Variable Environment, a scope chain (outer-environment reference), and a <code>this</code> binding.</li>
+    <li><strong>Every EC is created in two phases:</strong> Memory/Creation (scan the source, allocate, hoist) then Execution (run line by line).</li>
+    <li>Memory phase: <code>var</code> → hoisted as <code>undefined</code>; <strong>function declarations → fully hoisted</strong> (callable above their definition); <code>let</code>/<code>const</code>/<code>class</code> → hoisted but <em>uninitialized</em> in the TDZ.</li>
+    <li>A Function EC is created on every <strong>call</strong>, not on definition — defining a function pushes nothing onto the stack.</li>
+    <li>ECs live on the <strong>Call Stack (LIFO)</strong>: global at the bottom, each call pushes, each return pops; runaway recursion = stack overflow.</li>
+    <li><strong>Hoisting vs initialization are separate:</strong> the declaration is known before execution, but the assignment only happens when its line runs.</li>
+    <li>Name collision: in the memory phase a <strong>function declaration wins</strong>, but a later <code>var x = ...</code> assignment overwrites it during execution.</li>
+    <li><code>var</code> is <strong>function-scoped</strong> (ignores blocks); <code>let</code>/<code>const</code> are <strong>block-scoped</strong> (each <code>{ }</code> creates a lexical environment).</li>
+    <li>Loop trap: <code>var i</code> is <strong>one shared binding</strong> → deferred callbacks log the final value; <code>let i</code> creates a new binding per iteration and fixes it.</li>
+    <li><strong>TDZ is real:</strong> accessing a <code>let</code>/<code>const</code> before its declaration line throws <code>ReferenceError</code> — even <code>typeof</code>.</li>
+    <li>In sloppy mode, assigning to an undeclared identifier creates a <strong>global</strong>; strict mode (and ES modules, which are always strict) makes it a ReferenceError.</li>
+    <li>Top-level <code>this</code> in an ES module is <code>undefined</code> (NOT <code>window</code>/<code>globalThis</code>).</li>
+    <li>Closures work <em>because</em> the EC stores a reference to its outer lexical environment.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The engine builds every execution context in two phases — it prepares memory and hoists declarations first, then runs the code line by line."</div>
+  <div class="revision-say">"That two-phase model is exactly why <code>var</code> hoists to <code>undefined</code>, function declarations are callable above their definition, and <code>let</code>/<code>const</code> throw in the temporal dead zone."</div>
+  <div class="revision-say">"A function's context is created when it's called, not when it's defined, and those contexts stack up LIFO on the call stack."</div>
+</div>
 `}
 
 ]});

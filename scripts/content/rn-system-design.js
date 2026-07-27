@@ -1007,6 +1007,34 @@ NON-FUNCTIONAL
     <li>You scope down when time-pressed and call out open questions at the end.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Mobile system design = standard frontend framework + mobile lenses:</strong> offline-first, sync, lifecycle, battery/data, threading, and cross-platform. Cover these and you read senior.</li>
+    <li><strong>Offline-first is the default mental model</strong> — run the same 10 steps (clarify → scale → architecture → data model → API → components → state → performance → edge cases → deep dive) but assume the network can vanish: cache locally for instant cold start, queue writes, use optimistic mutations, and show sync state (banner, "saving…").</li>
+    <li><strong>Decompose storage by data shape:</strong> memory (Zustand/React Query) → MMKV (settings, tokens, small caches, sync sub-ms) → SQLite (queryable, &gt;1k rows) → file system (blobs) → server (source of truth). Tokens go in SecureStore (hardware-backed).</li>
+    <li><strong>Sync protocols:</strong> last-writer-wins (simplest, often broken), op-log/event sourcing, CRDT (Yjs/Automerge, for collaborative editing), 3-way merge, or manual reconciliation. Pick per data shape.</li>
+    <li><strong>Offline sync flow:</strong> optimistic UI → mutation queued (SQLite) with an idempotency key → drain in order on reconnect → server returns canonical state; 4xx rolls back, 5xx/network retries with backoff.</li>
+    <li><strong>Real-time is a hybrid:</strong> WebSocket/SSE in foreground, push (silent or visible) in background (OS suspends sockets within seconds), then re-establish WS + delta-fetch since last cursor on resume.</li>
+    <li><strong>Three-thread model is a constant constraint:</strong> heavy work on JS lags state; heavy work on UI stutters animation. Reanimated worklets keep gestures/animations smooth while JS is busy.</li>
+    <li><strong>Mobile-aware API:</strong> cursor pagination (not offset — retry-safe on drops), batch endpoints, idempotency keys on every mutation, ETags for conditional fetch, a <code>GET /sync?since=cursor</code> delta, compressed payloads, and per-DPR image variants.</li>
+    <li><strong>Never trust the client clock</strong> — use server timestamps + sequence numbers for ordering and expirations; display in the user's locale.</li>
+    <li><strong>Lifecycle:</strong> cold start (from killed), warm resume (background→active), and kill (OS jetsam/OOM). Persist state to MMKV/SQLite so relaunch restores real state, not just a splash.</li>
+    <li><strong>Battery/data:</strong> throttle location updates (and drop tracking when done), prefer significant-location-change on iOS, defer big downloads and lower image quality on cellular, and pause heavy work on low battery.</li>
+    <li><strong>Background upload pipeline:</strong> compress off-main-thread → strip EXIF GPS → chunked upload via presigned URLs → track chunks in SQLite to resume. iOS background <code>URLSession</code>, Android WorkManager + foreground service (<code>react-native-background-upload</code>).</li>
+    <li><strong>Performance defaults:</strong> Hermes + New Architecture, FlashList for long lists, Reanimated, expo-image, MMKV, inlineRequires + lazy routes; target cold start &lt; 2s on mid-range Android.</li>
+    <li><strong>Banking vs social:</strong> banking needs SecureStore + biometric gating + certificate pinning + jailbreak detection + screenshot blocking, NO optimistic mutations (transfers await server confirmation), read-only offline, and forced-upgrade support (server 426).</li>
+    <li><strong>Have a rollout/hotfix story:</strong> staged rollout, OTA (EAS Update/CodePush) for JS-only fixes, feature flags, and kill switches. Plus observability: Sentry (with native symbols), RUM, analytics.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Mobile system design is the standard 10-step framework plus mobile lenses: offline-first, sync, lifecycle, battery, threading, and cross-platform — I design how the system degrades on bad networks, not just perfect ones."</div>
+  <div class="revision-say">"I decompose storage by data shape — SecureStore for tokens, MMKV for small sync reads, SQLite for queryable history, file system for blobs — and queue writes with idempotency keys for offline sync."</div>
+  <div class="revision-say">"Real-time on mobile is a hybrid: WebSocket in the foreground, push in the background since the OS suspends sockets, and a delta-fetch from the last cursor on resume."</div>
+</div>
 `}
 
 ]

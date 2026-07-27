@@ -882,6 +882,39 @@ function longestOnes(nums, k) {
     <li>You recognize when sliding window fails (negatives, non-contiguous) and switch patterns.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Use it for "best contiguous subarray/substring with property X."</strong> Maintain a window <code>[l, r]</code>: expand <code>r</code> to grow, contract <code>l</code> when the invariant breaks.</li>
+    <li><strong>Two flavours:</strong> <em>fixed-size</em> (window of length k slides once through) vs <em>variable-size</em> (grows/shrinks against a constraint).</li>
+    <li><strong>It's O(n), not O(n²)</strong>, despite the nested while — <code>l</code> and <code>r</code> each only move right, so total inner iterations are bounded by n. Amortized O(n).</li>
+    <li><strong>Fixed window = roll the state:</strong> <code>newSum = oldSum - leaving + entering</code>. Never recompute the window from scratch (that's the O(n²) trap).</li>
+    <li><strong>"At most k" is the easy shape:</strong> expand <code>r</code>, contract <code>l</code> while the constraint is exceeded, record <code>r - l + 1</code>.</li>
+    <li><strong>"Exactly k" = atMost(k) − atMost(k−1)</strong> — but only for <em>counting</em> subarrays; it does NOT extend to longest/shortest-with-exactly-k.</li>
+    <li><strong>Where you record the answer matters:</strong> max-length → record <em>after</em> contracting; min-length → record <em>inside</em> the contract loop (while the constraint still holds), then advance <code>l</code>.</li>
+    <li><strong>Window length is <code>r - l + 1</code></strong> (inclusive both ends) — forgetting the <code>+1</code> is the classic off-by-one.</li>
+    <li><strong>Count of valid subarrays ending at r:</strong> <code>total += r - l + 1</code>.</li>
+    <li><strong>Track distinct correctly:</strong> when a count hits 0, delete the key (or decrement a manual <code>distinct</code>), else <code>map.size</code> overstates distinct count.</li>
+    <li><strong>Window state:</strong> fixed 26-letter charset → plain array; arbitrary keys → Map. Treat missing keys as 0 with <code>(count.get(c) || 0)</code>.</li>
+    <li><strong>Sliding window max/min → monotonic deque</strong> holding indices; front is the window's extreme, pop the front once its index slides out.</li>
+    <li><strong>It fails on negatives</strong> (contracting <code>l</code> no longer moves the sum monotonically) and on non-contiguous problems — switch to prefix-sum + binary search, Kadane, DP, or a heap.</li>
+    <li><strong>Sorted-array two-sum is two-pointers-from-ends, not sliding window</strong> — sliding window is contiguous-only.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> O(n) — each element enters and leaves the window at most once.</li>
+    <li><strong>Space:</strong> O(1) for sum/count windows; O(k) or O(charset) when the window state is a Map/set of distinct keys.</li>
+    <li><strong>Signal → reach for it:</strong> "contiguous subarray / substring" + "longest / shortest / max-sum / count" + a monotone constraint ("at most k distinct", "sum ≥ target", "no repeats", anagram/permutation of length k) → sliding window. Non-contiguous, or negatives breaking monotonicity → different pattern.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I'll keep a window <code>[l, r]</code>: expand <code>r</code> to include elements, and contract <code>l</code> whenever the invariant breaks — recording the best window as I go."</div>
+  <div class="revision-say">"It's O(n) even with the inner while, because <code>l</code> only ever moves right, so the total work across the whole run is bounded by n."</div>
+  <div class="revision-say">"'Exactly k' I reduce to atMost(k) minus atMost(k−1); and if the array has negatives I drop sliding window for prefix sums, since shrinking no longer changes the sum monotonically."</div>
+</div>
 `}
 
 ]

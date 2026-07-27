@@ -788,6 +788,33 @@ AppState.addEventListener('change', (status) =&gt; {
     <li>You reach for SQLite only when data scale and relations justify it.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Default stack:</strong> Zustand for client state + TanStack Query (React Query) for server state + MMKV for persistence. Reach for SQLite only when scale and relations justify it.</li>
+    <li><strong>Four kinds of state:</strong> server (TanStack Query), client (Zustand / Redux), persistent (MMKV small, SQLite large), and route/URL (React Navigation or Expo Router params).</li>
+    <li><strong>Zustand</strong>: selector subscriptions (a component re-renders only when its selected slice changes), no provider tree, small API, middleware (persist / devtools / immer). Use <strong>Context</strong> only for rarely-changing ambient values (theme, locale).</li>
+    <li><strong>TanStack Query</strong> handles caching, revalidation, retries, optimistic mutations, offline queues, and pagination. Mobile wins: focus refetch (foreground), network-aware reconnect refetch, and a persistable cache.</li>
+    <li><strong>MMKV over AsyncStorage:</strong> JSI-based direct C++ via mmap, <em>synchronous</em>, ~30× faster (~0.01ms vs ~1–5ms per op), multiple named instances, built-in AES encryption. AsyncStorage is bridge-based and async.</li>
+    <li><strong>Never store auth tokens in AsyncStorage or plain MMKV</strong> — use OS-level secure storage (<code>expo-secure-store</code> / <code>react-native-keychain</code>, backed by iOS Keychain / Android Keystore, hardware-bound).</li>
+    <li><strong>Offline-first pattern:</strong> TanStack Query Persist to MMKV + NetInfo/<code>onlineManager</code> + a mutation queue replayed on reconnect with idempotency keys + optimistic updates.</li>
+    <li><strong>Optimistic update recipe:</strong> <code>onMutate</code> cancel in-flight queries → snapshot previous → <code>setQueryData</code> optimistic → <code>onError</code> rollback → <code>onSettled</code> invalidate to reconcile.</li>
+    <li><strong>SQLite / WatermelonDB</strong> only for thousands of records, relational queries (join/filter/sort), or reactive queries. Options: WatermelonDB (reactive + sync), expo-sqlite / op-sqlite, Drizzle ORM for typed SQL.</li>
+    <li><strong>Split Zustand stores by domain</strong> (auth / settings / cart / ui); each persists independently and components subscribe only to what they need.</li>
+    <li><strong>focusManager</strong>: wire <code>AppState</code> 'active' → focused so <code>refetchOnWindowFocus</code> gives fresh data when the app resumes.</li>
+    <li><strong>staleTime vs gcTime:</strong> staleTime = how long data is considered fresh (default 0, no refetch during it); gcTime (formerly cacheTime) = how long inactive data stays cached before GC (default 5 min).</li>
+    <li><strong>Centralize logout</strong>: clear the auth store, call <code>qc.clear()</code>, delete secure-store tokens, and <code>clearAll()</code> the user-data MMKV instance — prevents one user's data leaking into the next session.</li>
+    <li><strong>Version persisted cache keys</strong> (include app version) so an API-shape change on upgrade doesn't crash rehydration.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"My default is Zustand for client state, TanStack Query for server state, and MMKV for persistence — SQLite or WatermelonDB only when I have lots of relational data."</div>
+  <div class="revision-say">"MMKV beats AsyncStorage because it's JSI-based and synchronous — roughly 30× faster — but tokens go in secure storage like expo-secure-store, never plain MMKV."</div>
+  <div class="revision-say">"For offline I persist the Query cache to MMKV, watch the network with NetInfo, and queue mutations with idempotency keys to replay on reconnect, with optimistic updates in the meantime."</div>
+</div>
 `}
 
 ]

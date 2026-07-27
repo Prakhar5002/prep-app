@@ -679,6 +679,34 @@ rm -rf $TMPDIR/metro-*</code></pre>
     <li>You cleanup listeners, timers, and requests in useEffect.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Most RN "bugs" are cross-platform differences</strong> your JS didn't handle — learn the pitfalls early or they surface in production on a device you don't own.</li>
+    <li><strong>Text rules:</strong> raw strings must live inside <code>&lt;Text&gt;</code> (bare string in a <code>&lt;View&gt;</code> crashes); only Text inherits font styles, and only to nested Text — nothing else cascades.</li>
+    <li><strong>Flexbox defaults differ from web:</strong> <code>flexDirection: 'column'</code> and <code>alignItems: 'stretch'</code>. Every horizontal layout needs <code>flexDirection: 'row'</code>. There is no CSS Grid — only Flexbox.</li>
+    <li><strong>Use <code>useWindowDimensions()</code>, not <code>Dimensions.get()</code></strong> — the hook is reactive to rotation; the static read isn't.</li>
+    <li><strong>ScrollView mounts all children</strong> — never use it for long lists. FlatList virtualizes; FlashList recycles native views (v2 dropped the required <code>estimatedItemSize</code>). Always give a stable <code>keyExtractor</code> and memoize <code>renderItem</code>.</li>
+    <li><strong>FlatList unmounts off-screen items (local state lost); FlashList recycles cells</strong> (local state may bleed across items) — design accordingly.</li>
+    <li><strong>Images have no intrinsic size</strong> — always give width/height or one dimension + <code>aspectRatio</code>. Prefer <code>expo-image</code> / <code>react-native-fast-image</code> over built-in Image for caching, placeholders, and async decode.</li>
+    <li><strong>Animate <code>transform</code> / <code>opacity</code>, never layout props</strong> (<code>width</code>/<code>height</code>/<code>top</code>) which re-run Yoga each frame. Old Animated needs <code>useNativeDriver: true</code>; Reanimated worklets run arbitrary logic on the UI thread.</li>
+    <li><strong>Reanimated setup gotchas:</strong> plugin must be LAST in babel.config.js, wrap the app in <code>&lt;GestureHandlerRootView&gt;</code>, worklets need the <code>'worklet'</code> directive and can't read React state (use shared values + <code>runOnJS</code>).</li>
+    <li><strong>Shadows:</strong> iOS uses <code>shadow*</code> props on any view; Android uses <code>elevation</code> (needs a non-transparent background and also affects z-order).</li>
+    <li><strong>Safe area:</strong> use <code>react-native-safe-area-context</code> (<code>useSafeAreaInsets</code>) — the built-in SafeAreaView is iOS-focused and doesn't cover Android.</li>
+    <li><strong>Keyboard:</strong> <code>KeyboardAvoidingView</code> is flaky (iOS wants <code>padding</code>, Android varies with <code>windowSoftInputMode</code>); <code>react-native-keyboard-controller</code> is more reliable. Set <code>keyboardShouldPersistTaps="handled"</code> on scrollers with inputs.</li>
+    <li><strong>Storage:</strong> AsyncStorage is slow (bridge, ~1–5ms/op, 6MB Android limit) — use MMKV (JSI, sync, sub-ms) for hot data and SecureStore for tokens. MMKV needs a native rebuild.</li>
+    <li><strong>State traps:</strong> function-component <code>setState</code> replaces (no merge — spread manually); pass a lazy initializer for expensive init; object deps in <code>useEffect</code> fire every render (depend on primitives or <code>useMemo</code>); <code>useEffect</code> runs twice in StrictMode dev.</li>
+    <li><strong>Build/runtime:</strong> keep Hermes + New Architecture (Fabric + TurboModules, default since 0.76) on and test release on Hermes (<code>Intl</code>/regex edge cases); run <code>pod install</code> after native deps; bump versionCode / CFBundleVersion each upload; back up the Android keystore; always smoke-test release builds on a physical mid-range Android.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Most RN bugs aren't bugs — they're cross-platform differences the JS code didn't handle, so I learn the platform pitfalls up front and test on real devices."</div>
+  <div class="revision-say">"My modern defaults are FlashList, Reanimated, expo-image, and MMKV, with Hermes and the New Architecture on."</div>
+  <div class="revision-say">"I animate transform and opacity — never layout props — and push heavy animation work onto the UI thread with Reanimated worklets."</div>
+</div>
 `}
 
 ]

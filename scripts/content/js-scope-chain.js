@@ -667,6 +667,30 @@ f();   // ?</code></pre>
     <li>Can you draw the scope chain diagram for any function?</li>
   </ul>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Scope</strong> = the region where an identifier is accessible; <strong>scope chain</strong> = the ordered list of nested scopes the engine searches on lookup.</li>
+    <li><strong>JavaScript uses lexical (static) scope</strong> — a function's chain is fixed by where it is <em>written</em>, not where it is called.</li>
+    <li>Lookup walks <strong>innermost → outward</strong> until the name is found; if it reaches global/module and still misses, it throws <code>ReferenceError</code>.</li>
+    <li>Scope types: <strong>global, module, function, block</strong> (<code>let</code>/<code>const</code>/<code>class</code>), and <strong>catch</strong>.</li>
+    <li><strong><code>var</code> is function-scoped and ignores blocks</strong>; <code>let</code>/<code>const</code>/<code>class</code> are block-scoped.</li>
+    <li>The scope chain is fixed at definition — a function called elsewhere still sees its birth scope, not the call site's variables.</li>
+    <li><strong>Shadowing:</strong> an inner binding of the same name is found first; the outer one becomes unreachable directly.</li>
+    <li>Reading an undeclared name → <code>ReferenceError</code>; writing one in sloppy mode creates an accidental global, while strict mode / modules throw.</li>
+    <li><code>for (let i ...)</code> creates a <strong>new binding per iteration</strong> → closures capture <code>0, 1, 2</code>; <code>var</code> shares one binding → <code>3, 3, 3</code>.</li>
+    <li>Closures capture the <strong>binding (the scope record), not a value copy</strong> — they read the current value at call time.</li>
+    <li>Each ES module has its own isolated top-level scope (nothing leaks; <code>this</code> is <code>undefined</code>).</li>
+    <li><strong>Scope vs Execution Context:</strong> an EC bundles the scope chain PLUS <code>this</code> PLUS <code>arguments</code>. A named function expression's name is visible only inside its own body.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"JavaScript uses lexical scope — a function's variable access is fixed by where it's written, not where it's called."</div>
+  <div class="revision-say">"Identifier lookup walks the scope chain from innermost outward until it finds the name or throws a <code>ReferenceError</code>."</div>
+  <div class="revision-say">"<code>var</code> is function-scoped and ignores blocks; <code>let</code>/<code>const</code> are block-scoped, which is why <code>for (let)</code> gives a fresh binding each iteration."</div>
+</div>
 `}
 
 ]});

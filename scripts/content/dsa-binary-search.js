@@ -895,6 +895,40 @@ const ok = predicate(mid);
   <li>"For BS-on-answer, I'd verify the answer's feasibility post-loop in case the predicate had a bug or the bounds were too tight."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Halve the search space each step</strong> → O(log n) on a sorted sequence. n = 1B → ~30 comparisons.</li>
+    <li><strong>State the invariant, then stick to ONE template.</strong> ~80% of off-by-one bugs come from switching templates mid-solve.</li>
+    <li><strong>Prefer the half-open template</strong> <code>[lo, hi)</code>: <code>lo = 0, hi = arr.length</code>; <code>while (lo &lt; hi)</code>; <code>hi = mid</code> or <code>lo = mid + 1</code>. After the loop, <code>lo</code> is the answer position (or <code>arr.length</code> if no match).</li>
+    <li><strong>Three shapes, and every question is one of them:</strong> exact-match, lower bound (first index with <code>arr[i] ≥ target</code>), upper bound (first index with <code>arr[i] &gt; target</code>).</li>
+    <li><strong>Frame it as a monotone predicate:</strong> "smallest index where <code>pred(arr[i])</code> is true." The predicate must be monotone — once true, true for all larger indices.</li>
+    <li><strong>Exact match via lower bound:</strong> after the loop, <code>return lo &lt; n &amp;&amp; arr[lo] === target ? lo : -1;</code></li>
+    <li><strong>Binary search on the answer</strong> when input isn't sorted but the answer space is monotone (Koko, capacity-to-ship, split-array): search the answer range, predicate = feasibility.</li>
+    <li><strong>Infinite-loop trap:</strong> <code>lo = mid</code> can fail to advance → always use <code>lo = mid + 1</code>, or round mid up with <code>(lo + hi + 1) &gt;&gt; 1</code> when shrinking via <code>lo = mid</code>.</li>
+    <li>Compute mid as <code>lo + ((hi - lo) &gt;&gt; 1)</code> to dodge overflow (a non-issue in JS under ~1B elements, but expected in interviews).</li>
+    <li><strong>Rotated sorted array:</strong> each step, find which half is sorted, then check if the target lies inside it.</li>
+    <li><strong>Floating-point answer:</strong> terminate on <code>hi - lo &gt; epsilon</code>, not <code>lo &lt; hi</code>.</li>
+    <li><strong>Always test n = 0, 1, 2</strong> and target before / after / equal to everything.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> O(log n) for the search. BS-on-answer is O(n log A), where A is the size of the answer range (each feasibility check is O(n)).</li>
+    <li><strong>Space:</strong> O(1) iterative.</li>
+    <li><strong>Signal → reach for it:</strong> sorted array + "find / insert" → lower bound · "first / last occurrence" → lower + upper bound · "smallest / largest x such that pred(x)" → BS on answer · rotated array → modified BS comparing halves.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I'll use the half-open template: <code>lo</code> is the smallest index that could be the answer, <code>hi</code> is one past the largest — one loop condition, one update rule, predictable termination."</div>
+  <div class="revision-say">"I frame binary search as 'find the smallest index where a monotone predicate is true' — that one abstraction covers exact match, lower/upper bound, and binary-search-on-the-answer."</div>
+  <div class="revision-say">"Even when the array isn't sorted, if feasibility is monotone in the answer I binary-search the answer space — that's Koko, capacity-to-ship, and split-array."</div>
+</div>
+`
     }
   ]
 });

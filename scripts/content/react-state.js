@@ -730,6 +730,34 @@ useEffect(() =&gt; setQ(params.get('q')), [params]);
     <li>You can implement optimistic updates with rollback.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>State management is a classification problem, not a tool choice.</strong> Ask: who owns this data, and who needs to know when it changes?</li>
+    <li><strong>Default to <code>useState</code>; lift up when siblings share; add Context for ambient values; add a store only for real cross-cutting concerns.</strong> Don't start with Redux.</li>
+    <li><strong>Five kinds of state:</strong> server (React Query/SWR), URL (search params), form (React Hook Form), UI/local (<code>useState</code>), and cross-cutting domain (Zustand/Redux/Jotai). Mis-classifying is the #1 cause of bad state architecture.</li>
+    <li><strong>Context is NOT a store</strong> — every consumer re-renders when the value changes. Fine for rarely-updating read-mostly data (theme, user, locale); a perf disaster for frequently-updating data.</li>
+    <li><strong>Server data does NOT belong in Redux/<code>useState</code></strong> — you'd re-implement caching, dedup, revalidation, retries, and optimistic updates badly. Use React Query/SWR/RTK Query.</li>
+    <li><strong>Derived state is a trap</strong> — don't store it in <code>useState</code> + sync with an effect (extra render, stale risk). Derive during render with <code>useMemo</code> or a plain expression. Only put data with its own identity in state.</li>
+    <li><strong><code>useState</code>'s setter replaces, it does NOT merge</strong> (unlike class <code>setState</code>). Use <code>setUser(u =&gt; ({ ...u, name }))</code>.</li>
+    <li><strong>Never mutate state</strong> — <code>items.push(x); setItems(items)</code> keeps the same reference → no re-render. Produce a new array/object (or use Immer, which RTK bundles).</li>
+    <li><strong>Prefer normalized state</strong> (ids + lookup-by-id) over deep nesting → O(1) updates, trivial selectors. RTK's <code>createEntityAdapter</code> generates the helpers.</li>
+    <li><strong>External stores earn their keep via</strong> selector-based subscriptions (subscribe to a slice, skip unrelated re-renders), DevTools/time-travel, middleware, and pure-reducer predictability.</li>
+    <li><strong>Zustand vs Redux Toolkit:</strong> Zustand = minimal API, no provider, selectors built-in → default for small/medium apps; RTK = richer ecosystem (RTK Query, patterns, DevTools) → large teams needing consistency.</li>
+    <li><strong>Reducers must be pure</strong> — side effects (network, logging, localStorage) go in middleware/thunks/handlers, or time-travel breaks. Never <code>dispatch</code> during render (infinite loop).</li>
+    <li><strong>Zustand selector returning a new object each call</strong> re-renders every time → add <code>shallow</code> equality or select primitives separately.</li>
+    <li><strong>URL state</strong> (filters/sort/tabs) is shareable, refresh-safe, and back-button-safe; prefer individual primitive params over base64-JSON blobs.</li>
+    <li><strong>Optimistic update pattern (React Query):</strong> <code>onMutate</code> cancels queries, snapshots previous, writes optimistic value; <code>onError</code> rolls back; <code>onSettled</code> invalidates.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"For each piece of state I ask who owns it, who reads it, and how often it changes — that decides between local state, lifting up, Context, a store, or a server-state library."</div>
+  <div class="revision-say">"Context is not a store — it re-renders every consumer on change, so I keep it for ambient read-mostly values and use a store with selectors when data updates often."</div>
+  <div class="revision-say">"Server data goes in React Query, not Redux — otherwise you re-implement caching, revalidation, and optimistic updates by hand. And I derive during render instead of storing derived state."</div>
+</div>
 `}
 
 ]

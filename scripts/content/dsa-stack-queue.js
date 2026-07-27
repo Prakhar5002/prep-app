@@ -1019,6 +1019,40 @@ if (stack.length === 0 || stack.pop() !== expected) return false;</code></pre>
     <li>You handle empty stack pops gracefully.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Stack = LIFO</strong> ("match the most recent"): parens/tags, undo-redo, monotonic, DFS. <strong>Queue = FIFO</strong> ("process in arrival order"): BFS, scheduling.</li>
+    <li><strong>JS stack is a plain array:</strong> <code>push</code> / <code>pop</code> / <code>arr.at(-1)</code> peek — all O(1) amortized.</li>
+    <li><strong>Never use <code>arr.shift()</code> as a dequeue</strong> — it's O(n). For an O(1) queue use a linked list, the two-stack trick, or an index-based head pointer.</li>
+    <li><strong>Two-stack queue is amortized O(1):</strong> a single transfer from the in-stack to the out-stack can be O(n), but total work over n ops is O(n).</li>
+    <li><strong>Deque = O(1) at both ends;</strong> JS has none native (<code>unshift</code>/<code>shift</code> are O(n)), so build one from a doubly linked list or two index-tracked arrays.</li>
+    <li><strong>Monotonic stack solves "next greater / smaller" in O(n)</strong> — each element is pushed and popped at most once. "Next greater" → decreasing stack; "next smaller" → increasing stack.</li>
+    <li><strong>Store indices, not values, in a monotonic stack</strong> — you need them for width/distance (histogram, daily temperatures).</li>
+    <li><strong>Recursion = stack:</strong> any recursive DFS converts to iterative with an explicit array-stack. JS has no TCO, so convert deep recursion to avoid call-stack overflow (the array-stack lives on the heap).</li>
+    <li><strong>Iterative DFS push order is right-then-left</strong> so the left child pops first (preorder), because the stack is LIFO.</li>
+    <li><strong>BFS: mark visited on ENQUEUE, not dequeue</strong> — otherwise the same node gets enqueued from multiple paths and the queue can blow up.</li>
+    <li><strong>BFS gives shortest path only on unweighted graphs</strong> (O(V+E)); weighted → Dijkstra (heap), 0-1 weights → 0-1 BFS with a deque (push front for 0, back for 1).</li>
+    <li><strong>Sliding-window max = monotonic deque of indices;</strong> the front holds the window's max — pop the front once its index has slid out of the window.</li>
+    <li><strong>Always empty-check before pop:</strong> <code>[].pop()</code> is <code>undefined</code>. Guard with <code>stack.length === 0 || stack.pop() !== expected</code>.</li>
+    <li><strong>Empty string is a valid (vacuously balanced) parens input;</strong> a leftover non-empty stack at the end means unbalanced.</li>
+    <li><strong>Min stack:</strong> use <code>≤</code> (or value+count pairs) so duplicates of the minimum are tracked correctly.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> stack/queue push/pop/enqueue O(1); monotonic stack &amp; sliding-window deque O(n) total; BFS O(V+E).</li>
+    <li><strong>Space:</strong> O(n) for the structure; BFS holds up to a full level in the queue plus an O(V) visited set.</li>
+    <li><strong>Signal → reach for it:</strong> "most recent" / nesting / balanced symbols / next-greater-or-smaller → stack (monotonic if brute force loops backward for a match) · level-order / shortest path on unweighted graph / flood fill → BFS queue · window max/min → monotonic deque · deep recursion risk → iterative explicit stack.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Stack for 'match the most recent', queue for 'process in order' — and when a brute force scans backward to find a match, a monotonic stack usually collapses it to O(n)."</div>
+  <div class="revision-say">"In JS I avoid <code>arr.shift()</code> for a queue because it's O(n); I use an index head pointer or a two-stack queue for amortized O(1)."</div>
+  <div class="revision-say">"For BFS I mark nodes visited on enqueue, not dequeue, so the same node isn't queued from multiple paths."</div>
+</div>
 `}
 
 ]

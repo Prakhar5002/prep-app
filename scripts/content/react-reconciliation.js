@@ -717,6 +717,34 @@ return &lt;button onClick={() =&gt; countRef.current++}&gt;{countRef.current}&lt
     <li>You can name lanes and explain how <code>startTransition</code> uses them.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>React Elements are immutable descriptors</strong> (<code>{ type, props, key, ref }</code>) created fresh each render; <strong>Fiber is the internal work unit</strong> that spans renders and carries hooks, flags, and lanes.</li>
+    <li><strong>Reconciliation</strong> = diff the new Element tree against the current one and emit the <em>minimal</em> DOM ops; DOM nodes are reused wherever identity is "the same," preserving focus/scroll/input state.</li>
+    <li>The diff is <strong>O(n)</strong> via two heuristics: (1) a different <em>type</em> at a position destroys and rebuilds the whole subtree; (2) siblings are matched by <code>key</code> (fallback: position).</li>
+    <li><strong>Same type + same key = same fiber, state preserved. Different type OR different key = destroy + re-create</strong> (state lost, effects re-run).</li>
+    <li><strong>Two phases:</strong> Render (pure, interruptible, no DOM writes) and Commit (synchronous, atomic, applies DOM mutations + effects).</li>
+    <li>Never <code>setState</code> or mutate the DOM during render — it causes "Too many re-renders." That work belongs in effects or event handlers.</li>
+    <li><strong>Double buffering:</strong> a <em>current</em> tree and a <em>work-in-progress</em> tree linked via <code>alternate</code>; commit swaps the pointer atomically so the user never sees an intermediate state.</li>
+    <li><strong>Keys are a diffing hint scoped to siblings</strong>, not a global id. <code>key={index}</code> is wrong for reorderable / insert-in-middle lists — state migrates to the wrong item; fine only for append-only/static lists.</li>
+    <li>Changing a component's <code>key</code> <strong>forces a remount</strong> — the built-in escape hatch to reset a subtree's state (<code>&lt;EditForm key={recordId} /&gt;</code>).</li>
+    <li><strong>Commit subphases:</strong> before-mutation (<code>getSnapshotBeforeUpdate</code>) → mutation (DOM + refs) → layout (<code>useLayoutEffect</code>, cDM/cDU) → browser paint → passive (<code>useEffect</code>, async).</li>
+    <li><strong>Lanes</strong> are a 31-bit priority bitmask (React 17); <code>setState</code> assigns a lane, the scheduler renders the highest-priority lane, and high-priority work can preempt a low-priority render.</li>
+    <li><strong>Batching is automatic in React 18 everywhere</strong> — event handlers, promises, <code>setTimeout</code>, native events. <code>flushSync</code> opts out for a mid-sequence render.</li>
+    <li>Re-render triggers: <code>setState</code>/<code>useReducer</code>, a parent re-rendering, a context value change, or <code>forceUpdate</code>. <code>React.memo</code> shallow-compares props, but a <strong>context change bypasses memo</strong>.</li>
+    <li>Fiber <strong>iterates a linked list rather than recursing</strong> — constant JS stack depth regardless of tree depth — which is what unlocks time-slicing, Suspense, and error boundaries.</li>
+    <li><strong>Commit is synchronous</strong>, so <code>startTransition</code> only helps the <em>render</em> phase — it won't speed up a heavy commit (big DOM/layout).</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"React Elements are the diff target; Fiber is the scheduler's work unit that spans renders."</div>
+  <div class="revision-say">"Same type and same key means the same fiber with preserved state — a different type or key destroys and re-creates it."</div>
+  <div class="revision-say">"Render is pure and interruptible, commit is synchronous and atomic — that's why <code>setState</code> belongs in effects or handlers, never during render."</div>
+</div>
 `}
 
 ]

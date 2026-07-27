@@ -787,6 +787,34 @@ useState.prototype.set = ...; // makes no sense</code></pre>
     <li>You reach for useSyncExternalStore for external-store subscriptions.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A hook is a slot in a per-fiber singly-linked list</strong> stored in <code>fiber.memoizedState</code>, matched by <strong>call order</strong> — not by name. That single fact is the reason for every other rule.</li>
+    <li><strong>Rules of Hooks:</strong> call them only (1) at the top level (no conditions/loops/early returns) and (2) only from components or other hooks. Breaking either shifts the slot indices and corrupts state.</li>
+    <li><code>useState</code>'s record holds <code>memoizedState</code> (committed value), <code>baseState</code>, and a <code>queue</code> of pending updates; the <strong>setter has a stable identity</strong> per fiber, so it's safe in deps.</li>
+    <li><code>useState</code> is internally a reducer that just replaces state; <code>useReducer</code> exposes the reducer and returns a stable <code>dispatch</code>.</li>
+    <li><strong><code>useEffect</code> runs async after paint; <code>useLayoutEffect</code> runs sync after DOM mutation, before paint.</strong> Default to <code>useEffect</code>; escalate only when you measure layout.</li>
+    <li>Deps are <strong>shallow-compared with <code>Object.is</code></strong> per element — unchanged → effect is skipped. Cleanup order for a changed dep is old <code>destroy</code> → new <code>create</code>; on unmount, only cleanup runs.</li>
+    <li><code>useRef</code> returns the <strong>same object every render</strong>; mutating <code>.current</code> does NOT trigger a re-render. Use it for DOM nodes, ids, and "latest value" reads.</li>
+    <li><strong><code>useMemo</code>/<code>useCallback</code> are perf hints, not guarantees</strong> — React may discard the cache. <code>useCallback(fn, deps)</code> is literally <code>useMemo(() =&gt; fn, deps)</code>.</li>
+    <li><code>useContext</code> re-renders <strong>every</strong> consumer when the provider's value changes (by <code>Object.is</code>) — it <strong>bypasses <code>React.memo</code></strong>.</li>
+    <li><strong>Stale closure:</strong> a callback captures render-time values; fix with correct deps, a functional updater <code>setN(p =&gt; p + 1)</code>, or a ref for the latest value.</li>
+    <li>Functional updater matters: three <code>setN(n + 1)</code> calls give +1 (captured <code>n</code>); three <code>setN(p =&gt; p + 1)</code> give +3.</li>
+    <li><strong>Custom-hook state is per-caller fiber</strong>, never shared between components; a custom hook is just composition of other hooks — no runtime magic.</li>
+    <li>Lazy init: <code>useState(() =&gt; expensive())</code> runs once; <code>useState(expensive())</code> runs every render (result discarded after mount).</li>
+    <li><code>useSyncExternalStore</code> is the concurrent-safe way to subscribe to an external store — it prevents tearing that <code>useState</code>+<code>useEffect</code> could exhibit.</li>
+    <li>Dev <code>StrictMode</code> double-invokes render/initializers and mounts→unmounts→mounts effects to surface impurity and missing cleanup; production is untouched.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Hooks are slots in a per-fiber linked list matched by call order — that's the entire reason for the top-level rule."</div>
+  <div class="revision-say">"<code>useEffect</code> is async after paint, <code>useLayoutEffect</code> is sync before paint — I default to <code>useEffect</code> and only escalate when I need to measure layout without a flicker."</div>
+  <div class="revision-say">"A stale closure is a callback still holding state from the render it was created in; I fix it with the right deps, a functional updater, or a ref."</div>
+</div>
 `}
 
 ]

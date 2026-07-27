@@ -753,6 +753,33 @@ npx source-map-explorer main.jsbundle main.jsbundle.map</code></pre>
     <li>You know memoization is not free — profile first.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Four targets, four playbooks:</strong> startup (bundle size + parse), render (memoize + virtualize), frame rate (move work to the UI thread), memory (kill leaks + retain cycles).</li>
+    <li><strong>Three threads:</strong> JS (components, handlers, network), UI (native views, gestures, Reanimated worklets), Shadow (Yoga layout). Blocking JS → state lags but scroll still works; blocking UI → everything freezes.</li>
+    <li><strong>Profile before optimizing</strong> — intuition fails more on mobile. Many cheap renders often cost more than one expensive one; a 3MB hero image beats a fancy animation for jank.</li>
+    <li><strong>Profile on a physical mid-range Android</strong> — simulators and flagship iPhones hide problems.</li>
+    <li><strong>Hermes</strong> (default since 0.70): pre-compiled bytecode → 30–50% faster startup, smaller binary, lower heap. Keep it on.</li>
+    <li><strong>New Architecture</strong> (Fabric + TurboModules + JSI, default since 0.76): synchronous native calls (no JSON bridge), lazy TurboModules, bridgeless, real Concurrent React.</li>
+    <li><strong>FlashList over FlatList</strong> for long lists — recycles native views (like RecyclerView/UITableView) instead of unmounting. v2 (2025) dropped the required <code>estimatedItemSize</code>.</li>
+    <li><strong>Reanimated + Gesture Handler:</strong> worklets run on the UI thread via JSI → animations stay smooth even when the JS thread is busy.</li>
+    <li><strong>expo-image / FastImage</strong> for caching, placeholders (blurhash), and automatic memory management. Never ship full-res images for thumbnails.</li>
+    <li><strong>inlineRequires: true</strong> in Metro defers module loading to first use → faster startup.</li>
+    <li><strong>What breaks memoization:</strong> inline functions (<code>onPress={() =&gt; …}</code>), inline objects, and inline style arrays create new references every render. Stabilize with <code>useCallback</code>/<code>useMemo</code>/pre-declared constants.</li>
+    <li><strong>Memoization is not free</strong> — for cheap components the comparison cost exceeds the saving. Profile first.</li>
+    <li><strong>JS FPS vs UI FPS:</strong> low JS + high UI → JS-thread bottleneck (fix renders/offload work); low UI + high JS → native-side (fewer views, simpler layouts).</li>
+    <li><strong>Heavy JS work</strong> (filter/sort/parse) locking the app → <code>startTransition</code>, debounce input, <code>InteractionManager.runAfterInteractions</code>, or a worker/native module.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I profile first on a physical mid-range Android, then read JS FPS vs UI FPS — that tells me whether the bottleneck is the JS thread or the native side before I change anything."</div>
+  <div class="revision-say">"My defaults are Hermes and the New Architecture on, FlashList for long lists, Reanimated for animations and gestures, and expo-image for images."</div>
+  <div class="revision-say">"Animation jank usually means work on the wrong thread — I move it to the UI thread with Reanimated worklets so it's decoupled from a busy JS thread."</div>
+</div>
 `}
 
 ]

@@ -628,6 +628,35 @@ I switched to (c). FastImage + a smarter prefetch strategy gave us bounded memor
   <li>"I'd prepare 2 backup stories per major competency for late-loop loops where the obvious story has already been used."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>STAR = Situation, Task, Action, Result</strong> — a scaffold that turns a vague work memory into a crisp, gradeable answer. Add <strong>L (Learnings)</strong> for FAANG; STAR-L is the safe default and you're never penalized for the extra L.</li>
+    <li><strong>S — brief:</strong> 1&ndash;2 sentences of context (who/what/when, the stakes). Cap it at ~30 seconds; a 90-second setup is the #1 bug.</li>
+    <li><strong>T — sharp:</strong> one sentence on the slice <em>you</em> owned. This is where you separate "I" from "we"; don't merge it into S.</li>
+    <li><strong>A — long and specific:</strong> 60&ndash;70% of the answer. What <em>you</em> did, with decisions, rationale, and tradeoffs. This is what's being graded.</li>
+    <li><strong>R — quantified:</strong> 1&ndash;2 sentences with a real number (or a relative change like "halved") plus one line of reflection.</li>
+    <li>Spoken-time ratio for a 3-min answer: <strong>S+T ~30s, A ~110s, R+L ~40s</strong> (roughly 70/20/10). Target 2&ndash;3 min: under 90s is thin, over 4 min rambles.</li>
+    <li><strong>Speak in "I," not "we."</strong> Use "we" only for context; aim for ~5&times; more "I" than "we" in the Action section.</li>
+    <li><strong>Specific or it didn't happen:</strong> name the numbers, tools, roles, and decisions ("p95 from 1.4s to 800ms," not "made it faster").</li>
+    <li>Use <strong>judgment verbs</strong> &mdash; diagnosed, instrumented, drove, owned, negotiated, scoped &mdash; not weak ones like helped, worked on, was involved in.</li>
+    <li>Make Action a <strong>tree of decisions</strong>: state the options you considered and why you chose one. The "considered alternatives" beat lifts perceived seniority.</li>
+    <li>Answer the question's <strong>intent (the competency probed)</strong>, not just its words &mdash; and always volunteer a learning even if not asked.</li>
+    <li>Pick a <strong>real failure</strong>, not a humblebrag ("I worked too hard" fails). Own the bad call and tie the lesson to a habit change.</li>
+    <li>You need <strong>5&ndash;8 well-crafted stories</strong>, each tagged to multiple competencies &mdash; not 30. Treat STAR as a flexible scaffold, not a script; let the interviewer interrupt and steer.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"S: At [company] I was on a 4-person team rebuilding checkout, two months from launch on a flat perf budget. T: I owned the mobile side and was worried a new client would blow our cold-start budget."</div>
+  <div class="revision-say">"Let me give you the result and the lesson: we launched on time and kept cold-start under target; what I'd do differently is bring the measurement to the disagreement within 24&ndash;48 hours instead of debating opinions."</div>
+  <div class="revision-say">"I considered three options &mdash; A, B, and C &mdash; and chose B because [reason tied to the constraint]. Here's specifically what I did next."</div>
+</div>
+`
     }
   ]
 });

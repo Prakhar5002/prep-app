@@ -719,6 +719,33 @@ const refresh = useCallback(async () =&gt; {
     <li>You know FlatList unmounts off-screen items; FlashList recycles.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Core primitives wrap native views:</strong> View (<code>UIView</code> / <code>android.view.View</code>), Text, Image, ScrollView, FlatList / SectionList, TextInput, Pressable, Modal, SafeAreaView, KeyboardAvoidingView. View + Text + Image + FlatList + TextInput + Pressable covers ~90% of screens.</li>
+    <li><strong>No web primitives</strong> — no <code>div</code> / <code>span</code> / <code>button</code> / HTML. A button is a <code>&lt;Pressable&gt;</code> with a <code>&lt;Text&gt;</code> inside.</li>
+    <li><strong>Text is special:</strong> only <code>&lt;Text&gt;</code> can render text; a raw string in a <code>&lt;View&gt;</code> throws. Only nested <code>&lt;Text&gt;</code> (and inline <code>&lt;Image&gt;</code>) are valid children, and font styles inherit to child Text — the one place a "cascade" applies.</li>
+    <li><strong>Flexbox differs from web:</strong> every component is flex by default and <code>flexDirection</code> defaults to <code>column</code> (not row). <code>flex: 1</code> = <code>flexGrow:1, flexShrink:1, flexBasis:0%</code>.</li>
+    <li><strong>ScrollView mounts ALL children</strong> (short content only); <strong>FlatList / SectionList virtualize</strong> (only visible + a small buffer). Beyond ~20 items, use a list.</li>
+    <li><strong>FlashList recycles native cells</strong> (like RecyclerView / UITableView) instead of unmounting → big win on long, scroll-heavy lists. v2 (2025) dropped the once-required <code>estimatedItemSize</code>.</li>
+    <li><strong>FlatList unmounts off-screen items</strong> (per-item local state is lost); <strong>FlashList recycles</strong> the instance and only updates props — matters for things like in-row media playback state.</li>
+    <li><strong>Optimize FlatList:</strong> stable <code>keyExtractor</code> id (never index), <code>renderItem</code> in <code>useCallback</code>, Row in <code>React.memo</code>, <code>getItemLayout</code> for fixed-height rows, and tune <code>initialNumToRender</code> / <code>maxToRenderPerBatch</code> / <code>windowSize</code> / <code>removeClippedSubviews</code> (Android).</li>
+    <li><strong>Pressable</strong> is the modern touch API (replaces the Touchable* family): press/hover/focus states via function-as-child or style-function, plus <code>hitSlop</code>, <code>android_ripple</code>, <code>onPressIn/Out/LongPress</code>. <code>onPress</code> fires on release.</li>
+    <li><strong>Image doesn't auto-size</strong> — give width/height or aspectRatio. For production use <code>expo-image</code> or <code>react-native-fast-image</code> (disk/memory caching, placeholders/blurhash); built-in Image has only a weak cache.</li>
+    <li><strong>Cross-platform shadow:</strong> iOS uses <code>shadowColor/Offset/Opacity/Radius</code>; Android uses <code>elevation</code> — set all to cover both.</li>
+    <li><strong>Safe area:</strong> wrap in <code>SafeAreaProvider</code> and use <code>useSafeAreaInsets</code> from <code>react-native-safe-area-context</code> (the built-in <code>SafeAreaView</code> is iOS-only). Apply insets as padding so backgrounds fill under the notch.</li>
+    <li><strong>Keyboard:</strong> prefer <code>react-native-keyboard-controller</code> over the flaky <code>KeyboardAvoidingView</code>; set <code>keyboardShouldPersistTaps="handled"</code> on scroll containers.</li>
+    <li><strong>Modals:</strong> prefer the navigation library's <code>presentation: 'modal'</code> for native transitions; reserve the built-in <code>Modal</code> for simple cases.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"RN gives you a small set of primitives that map to native views — View, Text, Image, FlatList, TextInput, Pressable — and everything else is composition; there's no DOM."</div>
+  <div class="revision-say">"ScrollView mounts everything, FlatList virtualizes, and FlashList recycles cells instead of unmounting — I reach for FlashList on long, scroll-heavy lists."</div>
+  <div class="revision-say">"I optimize FlatList with stable id keys, a memoized Row and useCallback renderItem, and getItemLayout for fixed-height rows; Pressable is my default touch handler and safe area comes from react-native-safe-area-context."</div>
+</div>
 `}
 
 ]

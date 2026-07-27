@@ -1041,6 +1041,35 @@ You: "Good question. For tweets: eventual is fine (people don't notice 100ms lag
   <li>"Build one of the systems (URL shortener, rate limiter) end-to-end as a personal project."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>6-step framework:</strong> clarify scope (5-10m) → estimate scale (5m) → high-level design (10-15m) → deep dive 2-3 hard parts (15-20m) → scale + reliability + observability (10-15m) → wrap-up (2-5m).</li>
+    <li><strong>Structure beats knowledge</strong> — the structured candidate consistently passes over the equally-knowledgeable rambler.</li>
+    <li><strong>Clarify first:</strong> features (in/out), users (total + DAU), traffic shape (read:write, peak), data shape, constraints (latency, consistency, compliance), availability target. Confirm scope back.</li>
+    <li><strong>Estimate aloud:</strong> RPS ≈ DAU × actions/day ÷ 86400; peak ≈ 3× average; reads often ~100× writes; then storage and bandwidth. Order-of-magnitude is what counts.</li>
+    <li><strong>Latency numbers:</strong> memory ~100ns, SSD ~100μs, datacenter RTT ~500μs, cross-continent RTT ~50-150ms.</li>
+    <li><strong>Capacity ceilings:</strong> single Postgres ~10K-50K writes/sec, single Redis ~100K ops/sec, single Kafka broker ~1M msg/sec.</li>
+    <li><strong>High-level = 5-7 boxes with a narrative;</strong> walk one key flow end-to-end. Every box needs a rationale.</li>
+    <li><strong>7 building blocks:</strong> load balancer, stateless app servers, SQL DB, NoSQL DB, cache (Redis/Valkey), queue/stream (Kafka/SQS), object storage (S3), CDN (+ search index, vector DB).</li>
+    <li><strong>Consistency per operation, not per system:</strong> strong for money/inventory/auth, eventual for feeds/counts/search.</li>
+    <li><strong>Fan-out:</strong> push (O(1) read, costly write) vs pull (cheap write, costly read) vs hybrid (push for normal users, pull for celebrities) — solve the <strong>hot key</strong>.</li>
+    <li><strong>Tradeoffs out loud</strong> ("X over Y because Z; cost is W"); restraint over completeness — no tool soup.</li>
+    <li><strong>Last third is non-functional:</strong> bottleneck at 10×, sharding, read replicas, multi-region + failover (RTO/RPO), observability (RED/USE metrics, logs, traces, SLOs + error budget).</li>
+    <li><strong>Always name the failure case</strong> ("primary fails → replica promoted via Patroni, RTO ~30s, RPO ~seconds") and wrap up with strong / deferred / next.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Clarify scope, estimate scale, high-level shape, deep-dive what's hard, then scale + reliability — tradeoffs out loud, restraint over completeness."</div>
+  <div class="revision-say">"I estimate aloud from DAU × actions ÷ 86400, peak roughly 3× average — order-of-magnitude right is what anchors every downstream decision."</div>
+  <div class="revision-say">"In every design I find the hot key and name the failure case — that's exactly where average-case designs break."</div>
+</div>
+`
     }
   ]
 });

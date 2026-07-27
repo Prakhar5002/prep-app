@@ -677,6 +677,34 @@ const sub = emitter.addListener('change', (e: NetworkEvent) =&gt; { /* e is type
     <li>You handle platform fallbacks when a module isn't available.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Prefer community libraries first.</strong> A native module doubles your maintenance surface (iOS AND Android, two languages, testing) — write one only for an unwrapped platform API, an SDK without JS bindings, performance-critical work, or background execution.</li>
+    <li><strong>TurboModules are the path forward</strong> (new arch): typed via codegen from a TypeScript spec, JSI-based, sync-capable, and lazy-loaded on first use.</li>
+    <li><strong>Legacy NativeModules (old arch):</strong> eager at startup, async-only over the JSON bridge, untyped — supported as a fallback during migration.</li>
+    <li><strong>Codegen</strong> takes a TS interface extending <code>TurboModule</code> and generates native headers (ObjC protocol on iOS, abstract Kotlin class on Android); your impl extends them → compile-time errors on mismatch. Runs during pod install / gradle build.</li>
+    <li><strong>Three-file model:</strong> the TS spec is the source of truth → codegen output → your <code>.mm</code> (iOS) and <code>.kt</code> (Android) implementations.</li>
+    <li><strong>Build the spec + config:</strong> <code>TurboModuleRegistry.getEnforcing&lt;Spec&gt;('Name')</code> (throws if missing; use <code>.get</code> for a fallback), plus a <code>codegenConfig</code> block in package.json pointing at the specs dir.</li>
+    <li><strong>Sync methods block the JS thread</strong> — use only for cheap, fast calls (device constants, MMKV reads, small getters). Use Promises for network, DB, file I/O, or UIKit work.</li>
+    <li><strong>Events (native → JS):</strong> emit via <code>RCTDeviceEventEmitter</code> and consume with <code>NativeEventEmitter</code> + <code>addListener</code>; every <code>addListener</code> needs a matching <code>remove()</code> in useEffect cleanup or you leak.</li>
+    <li><strong>MMKV is a JSI HostObject, not a TurboModule</strong> — installed directly on the JS global, so calls skip the bridge (sync C++, no JSON) — under ~100μs/op, ~30× faster than AsyncStorage. Skia and Reanimated's worklet runtime also use HostObjects.</li>
+    <li><strong>Crossable types:</strong> primitives, arrays, maps/objects, Promise, callbacks. NOT class instances, functions, Maps/Sets, Dates (use ISO strings), or binary (base64 / events / files).</li>
+    <li><strong>Threading:</strong> module methods run on a queue — dispatch UIKit work to the main thread on iOS or you crash.</li>
+    <li><strong>Error handling:</strong> reject Promises with real <code>NSError</code>/<code>Error</code> objects (not strings), wrap native calls in try/catch, and ship crash reporting with native symbols since native crashes don't appear in JS stack traces.</li>
+    <li><strong>Lifecycle:</strong> a TurboModule is a lazily-created singleton per RN instance; on Android check <code>hasActiveReactInstance()</code> before emitting so late callbacks after teardown don't crash.</li>
+    <li><strong>Setup gotchas:</strong> run <code>pod install</code> after adding a module, clean stale codegen (<code>pod install</code> / <code>./gradlew clean</code>) after spec changes, don't put huge data in constants (computed at registration → slow startup), and use unique module-name prefixes to avoid silent collisions.</li>
+    <li><strong>Same codegen pipeline exposes native views</strong> (Fabric components) with <code>type: 'components'</code>; and Expo Go can't load arbitrary native modules — use a Dev Client / custom build (config plugins help but don't bypass the native build).</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I check for a community library first — a custom native module means owning iOS and Android in two languages. When I must, I use a TurboModule with a TypeScript spec and codegen for type safety."</div>
+  <div class="revision-say">"TurboModules are JSI-based, lazily loaded, and sync-capable; legacy NativeModules are eager and async over the JSON bridge. Sync is only for fast getters because it blocks the JS thread."</div>
+  <div class="revision-say">"MMKV isn't a TurboModule — it's a JSI HostObject installed on the JS global, so reads are synchronous C++ with no bridge, roughly 30 times faster than AsyncStorage."</div>
+</div>
 `}
 
 ]

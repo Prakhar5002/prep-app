@@ -629,6 +629,34 @@ const derived = useMemo(() =&gt; compute(a,b), [a,b]);</code></pre>
     <li>You mention React Compiler as the emerging direction.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Performance work is mostly not doing unnecessary work:</strong> skip renders (memo, stable identity, context split), do less per render (virtualize, <code>startTransition</code>), ship/paint less (code-split, tree-shake).</li>
+    <li><strong>Measure first with the React DevTools Profiler</strong> — commit times, self vs total, "why did this render?" Optimizing on intuition wastes time and often adds memo overhead.</li>
+    <li><strong>A re-render is cheap when output is unchanged</strong> (a few μs + a diff with zero DOM ops). It only matters for many instances, heavy per-component work, huge subtrees, or effects re-firing.</li>
+    <li><strong>Memoization isn't free</strong> — each <code>useMemo</code>/<code>useCallback</code> costs a hook slot + a deps shallow-compare every render. It pays off only for expensive factories, props to memoized children, or effect deps.</li>
+    <li><strong>Stable identity matters:</strong> inline objects/arrays/functions are new every render → they defeat <code>React.memo</code> and re-fire effects. Stabilize with <code>useMemo</code>/<code>useCallback</code> or hoist constants outside the component.</li>
+    <li><code>React.memo</code> shallow-compares props with <code>Object.is</code>; a <strong>context change re-renders a consumer regardless of memo</strong>.</li>
+    <li><strong>Split context by update cadence</strong>, and <strong>move state down</strong> to the lowest common ancestor of its consumers so hot updates don't re-render the whole subtree.</li>
+    <li><strong>Virtualize lists beyond ~100–200 rows</strong> (<code>react-window</code>, <code>@tanstack/virtual</code>, FlashList in RN) — render only visible rows plus a small overscan, recycling DOM nodes.</li>
+    <li><strong>Code-split</strong> with <code>lazy</code> + <code>Suspense</code>; <strong>tree-shake</strong> via named ES imports and <code>"sideEffects": false</code>.</li>
+    <li><code>startTransition</code> tags an update low-priority so urgent input stays responsive — same wall-clock time, better <em>perceived</em> perf; <code>useDeferredValue</code> lags a value you don't control setting of.</li>
+    <li>Lazy initializer: <code>useState(() =&gt; heavy())</code> runs once; <code>useState(heavy())</code> runs every render (result discarded after mount).</li>
+    <li>Profiler <strong>actual time vs base time</strong>: a big gap means memoization is working; similar values mean the component isn't benefiting from memo.</li>
+    <li><strong>Commit is sync but the browser paints on the next frame</strong> — a big DOM makes paint feel slow even when React work is cheap. Audit DOM complexity, not just render calls.</li>
+    <li>Hidden content via <code>display: none</code> <strong>still renders and runs effects</strong> — unmount conditionally (<code>{show &amp;&amp; &lt;Heavy/&gt;}</code>) instead.</li>
+    <li><strong>React Compiler 1.0 shipped stable Oct 7 2025</strong> (Babel + SWC); in compiler-enabled projects manual <code>useMemo</code>/<code>useCallback</code>/<code>React.memo</code> are largely unnecessary.</li>
+  </ul>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I measure first — open the Profiler, find the top components by time, and classify unexpected re-renders vs expensive renders vs big commits before changing anything."</div>
+  <div class="revision-say">"Memoization isn't free, so I stabilize identity and scope state correctly before wrapping things in <code>React.memo</code>."</div>
+  <div class="revision-say">"State should live at the lowest common ancestor of its consumers — moving state down often beats memoizing everything above it."</div>
+</div>
 `}
 
 ]
