@@ -864,6 +864,8 @@ If step 4 fails:
       collapsible: true,
       html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Every backend case is <strong>the same six-step walk</strong> — clarify, estimate, high-level, deep dive, scale, wrap — where you win by pattern-matching the tradeoffs and, in each one, solving the hot key and planning the failure case.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Eight cases:</strong> URL shortener, rate limiter, Twitter feed, chat, Uber dispatch, notification system, distributed counter, payment system.</li>
@@ -880,12 +882,31 @@ If step 4 fails:
     <li><strong>Name the failure mode</strong> per component: DB → replica + auto-failover; cache → fall through to DB; queue → backpressure/load-shed; external API → circuit breaker; region → multi-region; WS → reconnect + replay.</li>
     <li><strong>Reframings:</strong> Pinterest/Facebook feed = Twitter; Yelp/Tinder = Uber geo; Slack = chat; Stripe = payment; TinyURL = URL shortener; trends = counter + ranking.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is designing only for the average user and missing the <strong>hot key</strong> — the celebrity tweet, popular-post likes, large chat group, viral link, or broadcast campaign that saturates one shard. Fix: in every problem, name the skewed entity and its mitigation (shard the counter, pull instead of push for celebs, sub-partition the group, or let the CDN absorb the viral link).</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"I recognize the pattern first — Pinterest is the feed case, Tinder is the geo/dispatch case, Stripe is the payment case — then apply the technique."</div>
   <div class="revision-say">"In every case I solve the hot key and plan the failure case, because that's what separates a working design from a hand-wave."</div>
   <div class="revision-say">"At-least-once delivery plus idempotent consumers is my pragmatic 'exactly once' — I use it for payments, notifications, and any queue."</div>
 </div>
 `
-    }
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you walk any prompt through the six steps — clarify, estimate, high-level, deep dive, scale, wrap — without skipping clarification or back-of-envelope numbers?</li>
+    <li>Can you name the hot key in each of the eight cases (celebrity tweet, popular-post likes, large chat group, viral link, broadcast campaign, event hotspot, top merchant) and its mitigation?</li>
+    <li>Can you justify hybrid fan-out for a Twitter-style feed — push under 10K followers, pull for celebrities at read time, then merge?</li>
+    <li>Can you explain how at-least-once delivery plus idempotent consumers (dedupe by message_id / notification_id, idempotency key) gives you pragmatic exactly-once for chat, notifications, and payments?</li>
+    <li>Can you state the failure mode and mitigation for each component — DB primary, cache, queue, external API, region, and WebSocket?</li>
+    <li>Can you shard a hot counter into N keys (random increment, SUM on read) and explain why a double-entry ledger needs a single-key exact path instead?</li>
+  </ul>
+</div>
+`}
   ]
 });

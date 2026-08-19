@@ -890,6 +890,48 @@ const safe = (r &amp; 0xFF) &lt;&lt; 16;
 </ul>
 <p>16 topics total. Together they cover ~95% of FAANG-style interview questions. Recognize the pattern → reach for the right tool → execute cleanly.</p>
 `
-    }
-  ]
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Bit manipulation operates on integers <strong>bit by bit</strong>; master a handful of operators plus the XOR identities and whole problem classes — find-the-unique, power-of-two, subset enumeration — <strong>collapse to a few O(1)-per-element tricks</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Six operators:</strong> AND <code>&amp;</code> (test/clear), OR <code>|</code> (set), XOR <code>^</code> (toggle/find-unique), NOT <code>~</code>, and shifts <code>&lt;&lt;</code> / <code>&gt;&gt;</code> (signed) / <code>&gt;&gt;&gt;</code> (unsigned, JS-only).</li>
+    <li><strong>Single-bit recipes:</strong> get <code>(n &gt;&gt; i) &amp; 1</code>, set <code>n |= (1 &lt;&lt; i)</code>, clear <code>n &amp;= ~(1 &lt;&lt; i)</code>, toggle <code>n ^= (1 &lt;&lt; i)</code>.</li>
+    <li><strong>The two magic tricks:</strong> <code>n &amp; (n - 1)</code> clears the lowest set bit (Brian Kernighan popcount, and power-of-two check when the result is 0); <code>n &amp; -n</code> isolates the lowest set bit.</li>
+    <li><strong>XOR identities</strong> — <code>a ^ a = 0</code>, <code>a ^ 0 = a</code>, commutative + associative — power Single Number (XOR everything, pairs cancel), Missing Number, and swap-without-temp.</li>
+    <li><strong>Subset bitmask for small N (≤ 20):</strong> represent any subset of N items as an N-bit integer and iterate <code>mask</code> from 0 to <code>2^N - 1</code>; iterate submasks with <code>sub = (sub - 1) &amp; mask</code>.</li>
+    <li><strong>Bitmask DP</strong> (TSP, smallest sufficient team): state = which subset is visited/covered; 2^N states must fit in memory — comfortable at N=20 (~1M), borderline at 25, too big at 30.</li>
+    <li><strong>JS specifics:</strong> bitwise operators coerce to <strong>32-bit signed</strong> integers (<code>1 &lt;&lt; 31</code> is negative, <code>0xFFFFFFFF | 0</code> is -1); use <strong>BigInt</strong> for more than 32 bits (no <code>&gt;&gt;&gt;</code> on BigInt).</li>
+    <li>XOR is addition-without-carry (<code>^</code> is the sum bit, <code>&amp;</code> shifted left is the carry) — the basis of Sum of Two Integers without <code>+</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Power-of-two check without the <code>n &gt; 0</code> guard, and shift counts wrapping mod 32.</strong> <code>(n &amp; (n - 1)) === 0</code> is also true for <code>n = 0</code>, so it wrongly reports 0 as a power of two — always write <code>n &gt; 0 &amp;&amp; (n &amp; (n - 1)) === 0</code>. Likewise <code>1 &lt;&lt; 32</code> is 1 (not the next bit) because JS masks the shift count to 5 bits, and building a mask of more than 31 bits overflows the 32-bit signed range — reach for BigInt. Also parenthesize: <code>n &amp; 1 == 1</code> parses as <code>n &amp; (1 == 1)</code> since <code>==</code> binds tighter than <code>&amp;</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"For find-the-unique I'd XOR every element — pairs cancel to zero and the lone element remains, O(n) time and O(1) space."</div>
+  <div class="revision-say">"<code>n &amp; (n - 1)</code> clears the lowest set bit, so it gives me both an O(set-bits) popcount and a clean power-of-two check — with an <code>n &gt; 0</code> guard."</div>
+  <div class="revision-say">"For subsets of up to about 20 items I'll represent each subset as a bitmask and iterate 0 to 2^N, and I'd note JS coerces bitwise ops to 32-bit signed, so I'd switch to BigInt beyond that."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you list AND, OR, XOR, and the shifts and what each is used for?</li>
+    <li>Can you use XOR to find the single non-duplicated number?</li>
+    <li>Can you set, clear, and toggle a specific bit from memory?</li>
+    <li>Can you use a bitmask to represent subsets and iterate 0 to 2^N?</li>
+    <li>Can you name the JS 32-bit-signed coercion trap for bitwise ops?</li>
+    <li>Can you name 2 problems bit manipulation solves?</li>
+  </ul>
+</div>
+`}
+]
 });

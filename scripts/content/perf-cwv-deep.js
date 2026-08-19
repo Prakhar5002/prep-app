@@ -696,6 +696,46 @@ self.onmessage = (e) =&gt; self.postMessage(JSON.parse(e.data));</code></pre>
     <li>You know third-party scripts often dominate INP; Partytown / async are tools.</li>
   </ul>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>LCP is how fast the big thing shows up, INP is how responsive every interaction feels, CLS is how much the page jumps</strong> — three distinct problems, each with its own playbook, all judged at the 75th percentile of real users.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>LCP (Largest Contentful Paint)</strong> — time until the largest above-the-fold element paints. Good &lt; 2.5s. Fix: cut TTFB, remove render-blocking resources, <code>fetchpriority="high"</code> + preload the hero, modern formats + responsive <code>srcset</code>.</li>
+    <li><strong>INP (Interaction to Next Paint)</strong> — worst-case input-to-paint latency across the session; <strong>replaced FID in March 2024</strong>. Good &lt; 200ms. Fix: break up long tasks, yield, <code>startTransition</code>, move work to a Worker, ship less JS.</li>
+    <li><strong>CLS (Cumulative Layout Shift)</strong> — sum of unexpected shifts, each = impact fraction × distance fraction. Good &lt; 0.1. Fix: dimensions/aspect-ratio on media, reserve space for ads/embeds/skeletons, <code>font-display: optional</code> or matched fallback metrics, animate with <code>transform</code>.</li>
+    <li><strong>The p75 rule:</strong> a page passes only if 75% of real sessions are "good" — you can't median your way through, so cutting tail latency (slowest devices/networks) is usually higher-leverage than shaving 50ms off an already-fast path.</li>
+    <li><strong>Lab ≠ field.</strong> Lighthouse is one synthetic run on one device; search ranking uses Chrome UX Report field data (CrUX/RUM). Track both — field to know what to fix, lab to debug it.</li>
+    <li>Why INP replaced FID: FID only measured the <strong>first</strong> input; INP catches ongoing responsiveness (crucial for SPAs where users interact many times without a hard navigation).</li>
+    <li>INP has three phases — <strong>input delay</strong> (main thread busy), <strong>processing</strong> (your handlers), <strong>presentation</strong> (render + paint). Diagnose which phase is slow before fixing.</li>
+    <li>CLS excludes shifts within ~500ms of user input (<code>hadRecentInput</code>), so opening a modal or infinite-scroll doesn't count against you.</li>
+    <li><strong>Third-party scripts often dominate INP</strong> — audit them, defer/async, or relocate to a Worker with Partytown.</li>
+    <li>Instrument with the <strong>web-vitals</strong> library (~2KB): <code>onLCP/onINP/onCLS</code> → <code>sendBeacon</code> to your RUM endpoint with context (URL, connection, device), aggregate p75 per page.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Optimizing the lab score while real users still suffer — and lazy-loading the LCP image.</strong> Teams push Lighthouse to 100 on a fast machine while field p75 LCP stays at 3.5s; the two often diverge sharply. The classic concrete regression: <code>loading="lazy"</code> on the hero image (or a CSS <code>background-image</code> hero the preload scanner can't see) delays the LCP fetch. Fix: trust CrUX/RUM over lab, keep the hero eager with <code>fetchpriority="high"</code> + preload as an <code>&lt;img&gt;</code>, and optimize for the slowest 25%, not the median.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"LCP, INP, CLS — measured at p75 of real users. INP replaced FID in March 2024 because FID only saw the first interaction; INP catches worst-case responsiveness across the whole session."</div>
+  <div class="revision-say">"Lab and field diverge — Lighthouse is one synthetic run, ranking uses CrUX field data. I optimize what RUM says is bad and use the lab to debug it."</div>
+  <div class="revision-say">"Each metric has its own playbook: preload and prioritize the hero for LCP, break up long tasks and use startTransition for INP, reserve space and match font metrics for CLS."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name each Core Web Vital, its threshold, and its most common cause?</li>
+    <li>Can you preload and prioritize the LCP element and explain why it helps?</li>
+    <li>Can you break INP into input delay, processing time, and presentation delay?</li>
+    <li>Can you name the components of a CLS score and how to eliminate each shift?</li>
+    <li>Can you contrast lab data with field/RUM data and explain the 75th-percentile rule?</li>
+    <li>Can you measure LCP or INP in code with a <code>PerformanceObserver</code>?</li>
+  </ul>
+</div>
 `}
 
 ]

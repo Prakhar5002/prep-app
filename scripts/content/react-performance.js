@@ -634,6 +634,8 @@ const derived = useMemo(() =&gt; compute(a,b), [a,b]);</code></pre>
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Performance is mostly <strong>not doing unnecessary work</strong> — <strong>measure with the Profiler first</strong>; a re-render is cheap when output is unchanged, and memoization has its own cost.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Performance work is mostly not doing unnecessary work:</strong> skip renders (memo, stable identity, context split), do less per render (virtualize, <code>startTransition</code>), ship/paint less (code-split, tree-shake).</li>
@@ -652,10 +654,26 @@ const derived = useMemo(() =&gt; compute(a,b), [a,b]);</code></pre>
     <li>Hidden content via <code>display: none</code> <strong>still renders and runs effects</strong> — unmount conditionally (<code>{show &amp;&amp; &lt;Heavy/&gt;}</code>) instead.</li>
     <li><strong>React Compiler 1.0 shipped stable Oct 7 2025</strong> (Babel + SWC); in compiler-enabled projects manual <code>useMemo</code>/<code>useCallback</code>/<code>React.memo</code> are largely unnecessary.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Sprinkling <code>useMemo</code>/<code>useCallback</code> everywhere on intuition — each costs a hook slot + a deps compare, and an inline object/array prop still defeats a memoized child. Stabilize identity and scope state down first, and <strong>measure before wrapping</strong>. (React Compiler makes most of this manual work unnecessary.)</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"I measure first — open the Profiler, find the top components by time, and classify unexpected re-renders vs expensive renders vs big commits before changing anything."</div>
   <div class="revision-say">"Memoization isn't free, so I stabilize identity and scope state correctly before wrapping things in <code>React.memo</code>."</div>
   <div class="revision-say">"State should live at the lowest common ancestor of its consumers — moving state down often beats memoizing everything above it."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you describe how you'd measure with the Profiler before changing any code?</li>
+    <li>Can you distinguish an unexpected re-render from an expensive render from a large commit?</li>
+    <li>Can you explain why <code>React.memo</code> isn't free and how an unstable prop silently defeats it?</li>
+    <li>Can you explain why a Context change bypasses <code>React.memo</code> for its consumers?</li>
+    <li>Can you explain how moving state down or lifting it correctly can beat memoizing everything above it?</li>
+    <li>Can you say when you'd reach for <code>useMemo</code>/<code>useCallback</code> versus list virtualization?</li>
+  </ul>
 </div>
 `}
 

@@ -1224,6 +1224,52 @@ app.post('/expensive', async (req, res) =&gt; {
   <li>"Set up an Argo Rollouts canary in a real cluster; trigger an auto-rollback."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Resilience isn't "how do I prevent failure" but <strong>"how do I keep serving users when a piece fails"</strong> — because a slow upstream, left unchecked, takes down your whole service.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Timeouts are the foundational primitive</strong> — every external call needs one. Without them, slow upstream = blocked workers = total outage.</li>
+    <li><strong>Retries with exponential backoff + jitter</strong> handle transient failures — cap max attempts, and only retry transient errors (5xx, network); <strong>fail fast on 4xx</strong> (except 429), where a retry won't help.</li>
+    <li><strong>Jitter is not optional</strong> — synchronized retries cause a thundering herd; spread them out.</li>
+    <li><strong>Circuit breaker</strong> stops sending to a failing upstream — fail fast instead of cascading.</li>
+    <li><strong>Bulkhead</strong> isolates failure domains so one bad downstream can't exhaust the threads healthy ones need; <strong>backpressure</strong> protects against overload with bounded queues + load shedding (return 503).</li>
+    <li><strong>Idempotency keys make retries safe</strong> — required on every mutation, or a retry becomes a duplicate.</li>
+    <li><strong>Fallback</strong> degrades gracefully (cached data, defaults, shed feature) — but <strong>instrument it</strong>; a silent fallback can be broken for a week and nobody notices.</li>
+    <li>Operational safety: <strong>liveness checks process internals only</strong> (never downstream deps, or a DB blip triggers a restart loop) while readiness can check deps; <strong>graceful shutdown</strong> drains in-flight on SIGTERM; deploy via <strong>canary/rolling</strong>, not big-bang; and <strong>chaos-test failure paths</strong> before prod does.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Two lethal mistakes: (1) <strong>no timeout on an external call</strong> — a slow upstream blocks workers indefinitely and takes the whole service down; and (2) <strong>retrying on 4xx</strong> (or retrying with no jitter) — it won't help, it amplifies bad behavior, and synchronized retries create a thundering herd. Runner-up: a <strong>liveness check that hits a downstream dependency</strong>, turning a DB blip into a container restart loop.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Timeout everything — a call with no deadline is the single fastest way to turn one slow upstream into a full outage."</div>
+  <div class="revision-say">"I retry only transient failures with exponential backoff and jitter, and only when the operation is idempotent — retrying a 4xx just amplifies a client mistake."</div>
+  <div class="revision-say">"Liveness checks process internals only; readiness checks dependencies — mixing them means a dependency blip restarts healthy containers in a loop."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why timeouts are the foundational resilience primitive and what happens without them?</li>
+    <li>Can you describe a correct retry strategy — backoff, jitter, transient-only, idempotent — and why 4xx should fail fast?</li>
+    <li>Can you explain how a circuit breaker prevents cascading failure?</li>
+    <li>Can you distinguish bulkhead, backpressure, and load shedding, and when each applies?</li>
+    <li>Can you explain why idempotency keys make retries safe, and why fallbacks must be instrumented?</li>
+    <li>Can you explain the liveness-vs-readiness distinction and the restart-loop trap of getting it wrong?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

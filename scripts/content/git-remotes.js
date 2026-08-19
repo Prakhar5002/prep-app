@@ -312,6 +312,49 @@ git checkout feature/oops-was-on-main</code></pre>
 <p><code>git push --force</code> unconditionally overwrites the remote branch to match your local one, discarding any commits on the remote that aren't in your history — including a teammate's work you may not even know exists, if they pushed between your last fetch and now. <code>git push --force-with-lease</code> is the safer version: it only proceeds if the remote branch still points where your local remote-tracking branch (<code>origin/&lt;branch&gt;</code>) last saw it, and aborts instead of overwriting if someone else has pushed in the meantime. It's still only appropriate on branches you're sure aren't being actively shared (typically your own feature branch after a local rebase) — never on a shared branch like <code>main</code>. The mechanics of rewriting history safely are covered in depth in the advanced Rebase vs Merge topic.</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A remote is just a <strong>named URL for another copy of the repo</strong> — <strong>fetch only looks, pull mutates your branch, and push shares your work only when it's a fast-forward</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A remote is just a name + URL</strong> pointing at another copy of the repo; <code>origin</code> is only the conventional name for the one you cloned from, nothing magical.</li>
+    <li><strong><code>git fetch</code> is download-only and always safe</strong> — it updates remote-tracking branches like <code>origin/main</code> and never touches your working tree or local branches, so fetch freely.</li>
+    <li><strong><code>git pull</code> = fetch + integrate</strong> into your current branch (a merge, or a rebase with <code>--rebase</code>) — unlike fetch, it changes your branch and can conflict.</li>
+    <li><strong><code>git push</code> uploads your commits only if it's a fast-forward</strong> — if the remote has commits you don't, it's rejected rather than overwriting anyone.</li>
+    <li><strong>Think in three copies of main:</strong> your local branch, the <code>origin/main</code> remote-tracking bookmark (moves only on network ops), and the actual branch on the server.</li>
+    <li>First push of a new branch needs <code>-u</code> (<code>git push -u origin &lt;branch&gt;</code>) to set the upstream/tracking link; after that plain <code>push</code>/<code>pull</code> just work. <code>git branch -vv</code> shows the links and ahead/behind counts.</li>
+    <li><strong>The PR/MR workflow is how teams collaborate:</strong> branch → push → open PR → review + CI → merge; nobody pushes straight to a shared <code>main</code>.</li>
+    <li><strong>A rejected push means the remote is ahead of you</strong> — fetch and integrate (merge or rebase), then push again; the rejection is the safety mechanism working, not a bug.</li>
+    <li><strong>Never fix a rejected push with a blind <code>--force</code></strong> — it discards whatever's on the remote; to overwrite your own feature branch, use <code>--force-with-lease</code>, which aborts if the remote moved.</li>
+    <li>A fork uses two remotes: <code>origin</code> (your fork) and <code>upstream</code> (the original project).</li>
+    <li><code>git log main..origin/main</code> shows what the remote has that you don't — computed offline from your last fetch, no network call.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Answering a rejected non-fast-forward push with <code>git push --force</code>:</strong> that unconditionally overwrites the remote and can silently erase a teammate's commits. Fix: fetch, integrate (merge/rebase or <code>git pull</code>), then push; reserve <code>--force-with-lease</code> for your own unshared branch after a rebase.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Fetch is free and safe — it only updates remote-tracking branches; pull mutates your current branch; push shares your work, but only as a fast-forward."</div>
+  <div class="revision-say">"There are three copies of main in play: my local branch, my origin/main bookmark, and the real branch on the server — fetch, pull, and push sync between them."</div>
+  <div class="revision-say">"A rejected push means the remote moved — I fetch and integrate first, and never reach for a blind force."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the exact difference between <code>git fetch</code> and <code>git pull</code>?</li>
+    <li>Can you describe what <code>origin</code> is and what a remote-tracking branch like <code>origin/main</code> represents?</li>
+    <li>Can you explain what an upstream/tracking branch is and how <code>git push -u</code> sets it?</li>
+    <li>Can you walk through the PR/MR workflow end to end?</li>
+    <li>Can you explain why a push gets rejected and the safe way to resolve it?</li>
+    <li>Can you say why <code>--force</code> is dangerous and when <code>--force-with-lease</code> is appropriate?</li>
+  </ul>
+</div>
 `}
 
 ]});

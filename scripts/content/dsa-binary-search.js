@@ -902,6 +902,8 @@ const ok = predicate(mid);
       collapsible: true,
       html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>State the invariant, then stick to ONE template</strong> — binary search is trivial in theory but where ~80% of engineers ship off-by-one bugs, and switching templates mid-solve is the cause.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Halve the search space each step</strong> → O(log n) on a sorted sequence. n = 1B → ~30 comparisons.</li>
@@ -923,12 +925,28 @@ const ok = predicate(mid);
     <li><strong>Space:</strong> O(1) iterative.</li>
     <li><strong>Signal → reach for it:</strong> sorted array + "find / insert" → lower bound · "first / last occurrence" → lower + upper bound · "smallest / largest x such that pred(x)" → BS on answer · rotated array → modified BS comparing halves.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>The infinite loop from <code>lo = mid</code>:</strong> when the search shrinks with <code>lo = mid</code>, a floored mid never advances past <code>lo</code> and the loop spins forever — use <code>lo = mid + 1</code>, or round mid <em>up</em> with <code>(lo + hi + 1) &gt;&gt; 1</code>. The other perennial slips are mixing <code>&lt;</code> vs <code>&lt;=</code> against the wrong <code>hi</code> initialization, and the wrong return on a miss — pin down your invariant ("what do <code>lo</code> and <code>hi</code> mean?") and test n = 0, 1, 2.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"I'll use the half-open template: <code>lo</code> is the smallest index that could be the answer, <code>hi</code> is one past the largest — one loop condition, one update rule, predictable termination."</div>
   <div class="revision-say">"I frame binary search as 'find the smallest index where a monotone predicate is true' — that one abstraction covers exact match, lower/upper bound, and binary-search-on-the-answer."</div>
   <div class="revision-say">"Even when the array isn't sorted, if feasibility is monotone in the answer I binary-search the answer space — that's Koko, capacity-to-ship, and split-array."</div>
 </div>
 `
-    }
-  ]
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you code the standard binary-search template from memory?</li>
+    <li>Can you name the classic off-by-one / infinite-loop trap in the bounds?</li>
+    <li>Can you recognize &quot;binary search on the answer&quot; when the array isn't sorted?</li>
+    <li>Can you state its time and space complexity?</li>
+    <li>Can you find the leftmost / rightmost boundary (lower/upper bound)?</li>
+    <li>Can you name 2 problems it solves?</li>
+  </ul>
+</div>
+`}
+]
 });

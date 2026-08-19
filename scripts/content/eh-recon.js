@@ -365,6 +365,49 @@ echo "$(date -u): active recon (AXFR test, amass -active, fierce) run against &l
 <p>Shodan and Censys continuously scan the public internet themselves and index what they find — open ports, service banners, TLS certificates, geolocation — so querying either one is passive from the tester's side: you're reading a database someone else already built, and the target sees no traffic from you at all. Running your own scan (covered in the next topic, Scanning &amp; Enumeration) sends live probes directly to the target's hosts, is active, and will appear in the target's own logs. Shodan/Censys data can also be stale — a service the index shows as open might have since changed — so a pentest typically uses it to build an initial hypothesis about exposure, then confirms it with an authorized active scan.</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Reconnaissance builds the target's attack-surface map from mostly-public OSINT — exhausting passive sources that never touch the target before any in-scope active queries — and produces the asset inventory every later phase depends on.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Recon is the information-gathering phase after pre-engagement; its output is a verified asset inventory (domains, subdomains, IPs, services, emails, leaked metadata) that feeds directly into Scanning &amp; Enumeration.</li>
+    <li>The core split is passive versus active: passive queries third parties (WHOIS, Shodan/Censys, search caches) and is effectively undetectable; active queries the target's own infrastructure and can show in their logs.</li>
+    <li>Exhaust passive sources first for zero-footprint coverage; use active techniques (zone transfers, subdomain brute-forcing, direct nameserver queries) only when explicitly named in scope.</li>
+    <li>Domain and DNS intel: <code>whois</code> for registration data; <code>dig</code>/<code>nslookup</code> for individual record types; <code>dnsrecon</code>/<code>dnsenum</code>/<code>fierce</code> automate sweeps and subdomain brute-forcing.</li>
+    <li>A DNS zone transfer (AXFR) answered to anyone hands over the entire internal zone in one unauthenticated request — a real, reportable misconfiguration; correct config restricts AXFR to known secondary-server IPs.</li>
+    <li>Subdomain discovery: <code>amass</code> (passive 80+ sources, or active brute-force), <code>subfinder</code>, <code>sublist3r</code>, <code>assetfinder</code> — run several and merge/dedupe because coverage varies noticeably between them.</li>
+    <li>Google dorking and the GHDB (via Exploit-DB) use operators — <code>site:</code>, <code>filetype:</code>/<code>ext:</code>, <code>intitle:</code>, <code>inurl:</code>, <code>intext:</code> — to surface indexed content never meant to be found.</li>
+    <li><code>theHarvester</code> collects emails, employee names, and subdomains from search/OSINT sources; <code>exiftool</code> reads (and can strip) metadata leaked inside published documents and images.</li>
+    <li>Shodan and Censys are passive from the tester's side — you're reading a database someone else already built, so no traffic reaches the target, though that indexed data can be stale.</li>
+    <li>Maltego is GUI link analysis (entities + transforms); <code>recon-ng</code> and SpiderFoot are orchestration frameworks that wrap and automatically correlate many of the individual techniques.</li>
+    <li>MITRE ATT&amp;CK maps all of this to the Reconnaissance tactic (TA0043), gathering info before access — not the post-compromise Discovery tactic (TA0007), a common mix-up.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Treating recon as exempt from authorization because it's "just public information." It isn't — run it only against your own assets, a lab, or an authorized scope, and active techniques (AXFR attempts, brute-forcing, direct nameserver queries) unambiguously touch someone else's infrastructure and must be in scope first. A second trap: confusing Reconnaissance (TA0043, pre-access) with Discovery (TA0007, post-compromise).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Passive recon never touches the target and is undetectable, so I exhaust it first, then use active techniques like zone transfers or brute-forcing only when they're explicitly named in scope."</div>
+  <div class="revision-say">"A successful AXFR against a random tester is a serious finding on its own — it hands over the whole internal DNS zone in a single unauthenticated request."</div>
+  <div class="revision-say">"I run several subdomain tools and merge with sort -u, because no single source has full coverage — the same subdomain routinely shows from one tool and is missed by another."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the difference between passive and active recon, with examples of each?</li>
+    <li>Can you explain what a DNS zone transfer (AXFR) is and why a successful one is a serious finding?</li>
+    <li>Can you describe how you'd enumerate subdomains and why you'd run more than one tool?</li>
+    <li>Can you name the core Google dork operators and the kind of exposure each one surfaces?</li>
+    <li>Can you explain why querying Shodan/Censys is passive but running your own scan is active?</li>
+    <li>Can you place recon in MITRE ATT&amp;CK and explain why it's TA0043 and not Discovery (TA0007)?</li>
+  </ul>
+</div>
 `}
 
 ]});

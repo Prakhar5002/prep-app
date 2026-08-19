@@ -185,6 +185,45 @@ const gateways: Record&lt;PaymentMethod, PaymentGateway&gt; = {
 <p>No. A switch over a genuinely fixed, closed set of values — the seven days of the week, the four suits in a deck of cards — isn't an OCP problem, because there is no "new case" ever coming; there's nothing to keep the switch open <em>for</em>. The violation is specifically an open-ended, business-driven set of cases (payment methods, shape types, notification channels) being handled with a closed-ended mechanism that has to be edited every time the business adds one. The question to ask isn't "is this a switch statement" — it's "will someone need to add a new case to this list, and if so, does adding it mean editing this function."</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A module should be <strong>open for extension but closed for modification</strong> — a new requirement should be met by <strong>adding new code</strong> (a new class, a new file), not by reopening and editing code that already works and is already relied on.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Bertrand Meyer coined OCP in 1988 and achieved it through <strong>inheritance</strong> (ship a closed base class, subclass to extend). Martin later reinterpreted it through <strong>polymorphism against an explicit interface</strong> — the version almost everyone means today.</li>
+    <li>Martin's version is stronger: it closes the interface <em>and</em> every caller of it, which is why it scales to codebases with many independent call sites.</li>
+    <li>The mechanism is the <strong>Strategy pattern</strong>: define a small interface for the one behavior that varies, give each variant its own class, and have callers hold the <em>interface</em> type — never a concrete class.</li>
+    <li>The tell is structural: a <code>switch(type)</code> or <code>if-else</code> chain keyed on a type discriminator that must be reopened for every new case — often with a <code>default: throw new Error('unknown ...')</code> that all but announces more cases are coming.</li>
+    <li>Damage: <strong>regression risk compounds</strong> (each edit risks every existing case), <strong>complexity only grows</strong>, the <strong>same switch multiplies</strong> across invoicing/reporting/validation, and it <strong>compounds with SRP</strong> (a shared switch is a multi-actor magnet).</li>
+    <li>"Closed" means <strong>stable and trusted, not frozen forever</strong> — bugs still get fixed; what shouldn't require reopening is adding a new variant the code already anticipates.</li>
+    <li>The fix makes new cases <strong>purely additive</strong>: write one new class implementing the interface, and at most add one <em>data</em> entry to a lookup table at the edge — the dispatch logic never changes.</li>
+    <li>Caveat (YAGNI): apply OCP to the axis that <strong>actually varies today</strong>, not every axis you can imagine varying. Abstracting a dimension that never gets a second implementation is pure indirection cost.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Thinking <strong>every switch statement is an OCP violation</strong>. A switch over a genuinely fixed, closed set (the seven days of the week, the four card suits) is fine — there's no new case coming. The violation is specifically an <strong>open-ended, business-driven</strong> set of cases handled with a <strong>closed-ended</strong> mechanism that must be edited every time the business adds one. The opposite trap is over-applying OCP to a field that has exactly one value today.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Open for extension, closed for modification — I should be able to add a new case by writing a new class, not by reopening a working function."</div>
+  <div class="revision-say">"The tell is a switch on a type discriminator that grows over time; the fix is Strategy — one class per case, dispatched through an interface the caller never edits again."</div>
+  <div class="revision-say">"It's in real tension with YAGNI, so I only abstract the axis that's demonstrably varying — a switch over a fixed set like the days of the week isn't an OCP problem at all."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state OCP precisely and distinguish Meyer's inheritance-based version from Martin's polymorphism-based one?</li>
+    <li>Can you explain why Martin's version "closes" the interface <em>and</em> every caller, and why that scales better?</li>
+    <li>Can you spot an OCP violation in a review — a growing <code>switch(type)</code> with a <code>default: throw</code> — and show the Strategy-pattern fix?</li>
+    <li>Can you explain why "closed for modification" doesn't mean the class can never change?</li>
+    <li>Can you say why <em>not</em> every switch statement is a violation, and what distinguishes the ones that are?</li>
+    <li>Can you articulate the YAGNI tension — when applying OCP would be premature abstraction?</li>
+  </ul>
+</div>
 `}
 
 ]});

@@ -893,6 +893,51 @@ Access-Control-Allow-Credentials: true   ← rejected by browser
   <li>"I'd run penetration tests on a quarterly basis or after major architecture changes."</li>
 </ul>
 `
-    }
-  ]
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Escape on output, validate at the boundary, restrict cookies, lock down with CSP, audit dependencies — and never trust the client.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>XSS = attacker script running in your origin.</strong> Three flavors: reflected (payload in the URL), stored (saved server-side, served to all), DOM-based (client JS reads an attacker value into a sink).</li>
+    <li><strong>Prevent XSS by escaping on output:</strong> use <code>textContent</code> or React's auto-escaping, never <code>innerHTML</code> / <code>dangerouslySetInnerHTML</code> with raw user content. If you must render HTML, sanitize with <strong>DOMPurify</strong> and a strict allowlist.</li>
+    <li><strong>CSP is defense-in-depth</strong> — a header that whitelists script sources so an injected script won't run even if sanitization fails. The modern recipe is a strict CSP with per-request <strong>nonces</strong> + <code>strict-dynamic</code>; avoid <code>unsafe-inline</code> / <code>unsafe-eval</code>.</li>
+    <li><strong>CSRF = the browser auto-attaches the session cookie</strong> to a forged cross-site request. Defenses: <code>SameSite=Lax/Strict</code> cookies, CSRF tokens, double-submit cookie, custom header + CORS.</li>
+    <li><strong>Cookie flags are non-negotiable:</strong> <code>Secure</code> + <code>HttpOnly</code> + <code>SameSite</code>, and the <code>__Host-</code> prefix for critical cookies. <code>HttpOnly</code> is what makes XSS unable to read the session.</li>
+    <li><strong>Where to store auth tokens:</strong> <code>HttpOnly</code> cookie (immune to XSS read) beats localStorage (any XSS exfiltrates it); the modern SPA pattern is a short-lived access token in memory + a refresh token in an <code>HttpOnly</code> cookie.</li>
+    <li><strong>SRI</strong> (integrity hash) protects against a compromised CDN; <strong>clickjacking</strong> is blocked with CSP <code>frame-ancestors</code> (or legacy <code>X-Frame-Options</code>).</li>
+    <li><strong>Open redirect:</strong> an unsanitized <code>?next=</code> lets attackers bounce users to evil sites from your domain — allowlist destinations or accept relative paths only.</li>
+    <li><strong>Validate on the server, always.</strong> Client-side validation is UX; anyone can bypass JS. Same for authorization (IDOR: verify the user owns the requested resource).</li>
+    <li>Verify <code>postMessage</code> origin on every handler; supply-chain hygiene = lockfiles + <code>npm audit</code> + pinned versions + minimal deps.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Storing the auth token in <code>localStorage</code> (or rendering user content via <code>innerHTML</code> / <code>dangerouslySetInnerHTML</code>).</strong> localStorage is readable by any JavaScript, so a single XSS bug anywhere on the origin exfiltrates the token. Fix: keep session state in an <code>HttpOnly</code> cookie the JS can't read, and render user content with <code>textContent</code> or DOMPurify — with CSP as the backstop. Sibling trap: <code>SameSite=None</code> without <code>Secure</code> is silently rejected, and <code>Access-Control-Allow-Origin: *</code> with credentials is invalid.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"XSS prevention is escape-on-output — <code>textContent</code> or React auto-escaping by default, DOMPurify when I truly need to render HTML, and a strict nonce-based CSP as defense-in-depth."</div>
+  <div class="revision-say">"I never put auth tokens in localStorage — any XSS reads them. Sessions go in an <code>HttpOnly</code> + <code>Secure</code> + <code>SameSite</code> cookie the JavaScript can't touch."</div>
+  <div class="revision-say">"CSRF works because the browser auto-sends cookies cross-site, so I lean on <code>SameSite</code> cookies plus a CSRF token or custom header — and I always re-validate on the server, because the client is just a hint."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the XSS variants — stored, reflected, DOM-based — and where each injection lands?</li>
+    <li>Can you say why escaping on output beats sanitizing on input?</li>
+    <li>Can you explain why CSRF works, and how <code>SameSite</code> cookies plus a token stop it?</li>
+    <li>Can you write a CSP that blocks inline scripts and name what it defends against?</li>
+    <li>Can you explain why an auth token in <code>localStorage</code> is an XSS liability?</li>
+    <li>Can you say why the server must re-validate even when the client already checked?</li>
+  </ul>
+</div>
+`}
+
+]
 });

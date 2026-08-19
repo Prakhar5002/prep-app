@@ -764,6 +764,50 @@ queryObjects($0.constructor);</code></pre>
     <li>You ship hidden source maps for prod debugging via Sentry.</li>
   </ul>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Map the symptom to the right panel, reach for breakpoints and logpoints over console.log, and record a Performance trace instead of guessing</strong> — the fastest debug is the one that never restarts the app.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Symptom → panel:</strong> wrong element = Elements, JS error = Console + Sources, failed/slow request = Network, jank/INP = Performance, memory growth = Memory, storage/cookies/service worker = Application, unused JS = Coverage, holistic perf + a11y = Lighthouse.</li>
+    <li><strong>Breakpoints beat console.log:</strong> they pause execution so you can inspect every variable, the scope, and the call stack, then step forward — no edit-reload cycle.</li>
+    <li><strong>Conditional breakpoints</strong> fire only when an expression is true; <strong>logpoints</strong> log an expression each time a line runs <em>without pausing and without editing code</em> — console.log added from DevTools.</li>
+    <li>Console superpowers: <code>$0</code> (selected element), <code>$_</code> (last expression), <code>$$()</code> / <code>$x()</code>, <code>copy()</code>, <code>monitor(fn)</code>, <code>getEventListeners($0)</code>, <code>queryObjects(Constructor)</code>.</li>
+    <li><strong>DOM breakpoints</strong> — Break on attribute modifications answers "what is setting this element's class?"; also subtree and node-removal breakpoints. Check the call stack when it pauses.</li>
+    <li><strong>Network Timing</strong> splits a request into DNS, connect, TLS, request sent, <strong>Waiting (TTFB)</strong>, download — high TTFB = server, high stalled = connection contention. Throttle, block a URL, override responses, Copy as cURL, export HAR.</li>
+    <li><strong>Performance</strong>: record a trace, find <strong>long tasks</strong> (red-bordered, &gt;50ms) blocking input, drill the flame graph, use Bottom-Up for the hottest cumulative functions.</li>
+    <li><strong>Memory</strong>: heap snapshot → interact → snapshot → <strong>Comparison</strong> view; filter <code>Detached</code> for DOM leaks; trace retainers. Force GC first.</li>
+    <li><strong>Coverage</strong> reports used vs unused bytes per file — candidates for code-splitting; caveat: only counts what ran this session.</li>
+    <li>Emulate mobile with the <strong>device toolbar</strong>: pick a phone, Slow 4G, and 4× CPU throttle for a realistic mid-range experience.</li>
+    <li><strong>Workspaces</strong> map disk to domain (edit-and-save); <strong>Local Overrides</strong> serve your edited resource without touching the server.</li>
+    <li>Blackbox library files via the <strong>Ignore List</strong> so stepping and stack traces skip framework internals.</li>
+    <li><code>Cmd+Shift+P</code> command palette reaches every feature — Show Coverage, Show Rendering, Disable JavaScript, Show Issues.</li>
+    <li>DevTools adds overhead — trace numbers run slower than reality; trust RUM for absolute numbers, DevTools for relative diffing.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Debugging with console.log + reload, and shipping no source maps.</strong> console.log means edit → reload → repeat and risks shipping the log; and without hidden source maps production stack traces are unreadable minified gibberish (<code>main.a1b2.js:1:5283</code>). Fix: use conditional breakpoints and logpoints for a no-reload loop, and always ship hidden source maps (upload to Sentry) so prod stacks map back to real files.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I map the symptom to a panel — Performance for jank, Network for slow requests, Memory for leaks — then I reach for conditional breakpoints and logpoints instead of console.log so I never edit-and-reload."</div>
+  <div class="revision-say">"To debug perf I record a Performance trace, find the long tasks over 50ms, and drill the flame graph — I don't guess, and I re-record to verify the fix."</div>
+  <div class="revision-say">"For a memory leak I take a heap snapshot, reproduce, snapshot again, use the Comparison view, filter Detached, and trace the retainer chain to the holder."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you map a symptom to the right panel — jank to Performance, a leak to Memory, a slow request to Network?</li>
+    <li>Can you use <code>$0</code>, <code>$_</code>, and <code>copy()</code> in the Console without reloading the page?</li>
+    <li>Can you set a conditional breakpoint or a logpoint in Sources instead of littering the code with <code>console.log</code>?</li>
+    <li>Can you record a Performance trace and read long tasks and the layout / paint / composite phases?</li>
+    <li>Can you explain what Coverage and the Rendering tab (paint flashing, layer borders, FPS meter) reveal?</li>
+    <li>Can you override a network response or throttle the connection without touching server code?</li>
+  </ul>
+</div>
 `}
 
 ]

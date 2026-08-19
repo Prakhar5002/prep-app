@@ -1081,6 +1081,8 @@ createPortal(node, container ?? document.body)
       collapsible: true,
       html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A component-library round is "build a <strong>reusable</strong> X" — the grader scores props API, composition, accessibility, theming, and edge-case fluency, not whether the pixels render.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>"Build a reusable X"</strong> — the grader watches props API, composition, accessibility, theming, edge cases, and TypeScript.</li>
@@ -1097,12 +1099,31 @@ createPortal(node, container ?? document.body)
     <li><strong>Edge cases:</strong> SSR (no <code>window</code> in render, <code>useId</code>, portals mounted in effect), RTL (logical CSS properties), <code>prefers-reduced-motion</code>, <code>:focus-visible</code> not <code>outline:none</code>.</li>
     <li><strong>Close with:</strong> Storybook stories, RTL behaviour tests, <code>jest-axe</code>, visual regression, a semantic token layer.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is prop explosion — shipping 30 boolean flags (<code>isPrimary</code>, <code>isSecondary</code>, <code>isDanger</code>) that allow contradictory combinations. The fix: collapse them into closed string-literal unions (<code>variant="primary|secondary|danger"</code>, <code>size="sm|md|lg"</code>), which makes refactors safe and invalid states unrepresentable.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Sensible defaults, composable parts, escape hatches everywhere, and accessibility is non-negotiable."</div>
   <div class="revision-say">"Variants are string-literal unions, not boolean flags — it closes the set and makes refactors safe."</div>
   <div class="revision-say">"Every component is controllable — <code>value</code> for controlled, <code>defaultValue</code> for uncontrolled — and it's a native element underneath, so keyboard, focus, and screen readers come free."</div>
 </div>
 `
-    }
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you design a Button's props API — variant/size unions, boolean states, slots, and the <code>className</code> / <code>style</code> / <code>...rest</code> / <code>ref</code> escape hatches — before typing any JSX?</li>
+    <li>Can you write the <code>useControllableState</code> hook so one component works controlled (<code>value</code>) and uncontrolled (<code>defaultValue</code>), treating <code>undefined</code> as uncontrolled?</li>
+    <li>Can you build a compound <code>Tabs</code> with shared context (<code>Tabs.List</code> / <code>Tabs.Trigger</code> / <code>Tabs.Panel</code>) and the correct <code>tablist</code>/<code>tab</code>/<code>tabpanel</code> roles plus arrow-key nav?</li>
+    <li>Can you build a Modal with a portal, focus trap, ESC-to-close, scroll lock, and focus returned to the trigger — using <code>forwardRef</code> and <code>displayName</code> where they matter?</li>
+    <li>Can you set up a token layer of CSS custom properties and switch dark mode by toggling <code>data-theme</code> on <code>&lt;html&gt;</code> without a re-render?</li>
+    <li>Can you name the SSR, RTL, and a11y edge cases — <code>useId</code>, no <code>window</code> in render, logical CSS properties, <code>:focus-visible</code> — and close with Storybook, RTL tests, and <code>jest-axe</code>?</li>
+  </ul>
+</div>
+`}
   ]
 });

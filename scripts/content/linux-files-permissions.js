@@ -434,6 +434,41 @@ find . -name "*.log" | xargs gzip</code></pre>
 <p><code>777</code> grants read, write, and execute to owner, group, <em>and</em> other — every single account on the machine (or, on a misconfigured internet-facing service, potentially every remote request that reaches the file) gets full read/write/execute access. It reliably "fixes" permission-denied errors because it removes all access control, not because it identifies the actual cause — the real fix is almost always to grant access to just the specific bucket (owner, or a specific group) that genuinely needs it, which is why <code>777</code> in a codebase or server configuration is a near-universal red flag during a security review.</p>
 </div>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Every file has an <strong>owner</strong>, a <strong>group</strong>, and three <strong>read/write/execute</strong> sets (owner / group / other) — nine bits that decide almost all access, with <strong>root</strong> (and <code>sudo</code>) as the escape hatch.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Three "who"s (owner, group, other) times three "what"s (read, write, execute) = <strong>nine permission bits</strong>.</li>
+    <li>Read them as three octal digits (<code>chmod 755</code>) or three letter-triplets in <code>ls -l</code> (<code>-rwxr-xr-x</code>).</li>
+    <li><code>chown</code> changes the owner, <code>chgrp</code> changes the group, <code>chmod</code> changes what each who-category is allowed to do.</li>
+    <li><strong>root (UID 0) bypasses permission checks;</strong> <code>sudo &lt;command&gt;</code> borrows root's power for one command with an audit trail — safer than a standing root shell.</li>
+    <li><code>sudo &lt;command&gt;</code> elevates and logs one command; <code>su</code> / <code>sudo -i</code> opens a standing root shell with no per-command audit — prefer <code>sudo</code> per action.</li>
+    <li>A <strong>symlink</strong> stores only a path, so moving or deleting its target leaves a "dangling" link; a <strong>hard link</strong> points at the inode and survives renames.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong><code>chmod 777</code> is almost never the right fix.</strong> It makes a file readable, writable, and executable by anyone on the machine — removing all access control, a real security hole on a shared or internet-facing box. Grant only the specific bucket that needs access instead (e.g. <code>chmod 770</code> for a team).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Permissions are nine bits — read/write/execute for owner, group, and other — chmod sets them and chown/chgrp set who owns them."</div>
+  <div class="revision-say">"Root bypasses the checks; sudo lets a normal user borrow that power for one command with an audit trail."</div>
+  <div class="revision-say">"chmod 777 isn't a fix, it's removing the lock — I grant only the bucket that actually needs access."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you read <code>-rwxr-xr-x</code> and give its octal equivalent?</li>
+    <li>Can you name what <code>chmod</code>, <code>chown</code>, and <code>chgrp</code> each change?</li>
+    <li>Can you explain why <code>sudo &lt;command&gt;</code> is preferred over a standing root shell?</li>
+    <li>Can you explain why <code>chmod 777</code> is a red flag and what to do instead?</li>
+    <li>Can you explain the difference between a symlink and a hard link when the target is moved?</li>
+  </ul>
+</div>
 `}
 
 ]});

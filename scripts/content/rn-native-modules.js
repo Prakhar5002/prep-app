@@ -682,6 +682,8 @@ const sub = emitter.addListener('change', (e: NetworkEvent) =&gt; { /* e is type
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Reach for a community library first — a custom native module means <strong>owning iOS and Android in two languages</strong>; when you truly must, write a TurboModule with a TypeScript spec and codegen for type safety.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Prefer community libraries first.</strong> A native module doubles your maintenance surface (iOS AND Android, two languages, testing) — write one only for an unwrapped platform API, an SDK without JS bindings, performance-critical work, or background execution.</li>
@@ -700,10 +702,26 @@ const sub = emitter.addListener('change', (e: NetworkEvent) =&gt; { /* e is type
     <li><strong>Setup gotchas:</strong> run <code>pod install</code> after adding a module, clean stale codegen (<code>pod install</code> / <code>./gradlew clean</code>) after spec changes, don't put huge data in constants (computed at registration → slow startup), and use unique module-name prefixes to avoid silent collisions.</li>
     <li><strong>Same codegen pipeline exposes native views</strong> (Fabric components) with <code>type: 'components'</code>; and Expo Go can't load arbitrary native modules — use a Dev Client / custom build (config plugins help but don't bypass the native build).</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Making a native method synchronous for convenience — it blocks the JS thread</strong> for the whole call and freezes the UI on anything slow. Fix: expose sync methods only for cheap getters (device constants, MMKV reads); return a Promise for network, DB, file I/O, or UIKit work. (And every <code>NativeEventEmitter</code> <code>addListener</code> needs a matching <code>remove()</code> in cleanup, or you leak.)</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"I check for a community library first — a custom native module means owning iOS and Android in two languages. When I must, I use a TurboModule with a TypeScript spec and codegen for type safety."</div>
   <div class="revision-say">"TurboModules are JSI-based, lazily loaded, and sync-capable; legacy NativeModules are eager and async over the JSON bridge. Sync is only for fast getters because it blocks the JS thread."</div>
   <div class="revision-say">"MMKV isn't a TurboModule — it's a JSI HostObject installed on the JS global, so reads are synchronous C++ with no bridge, roughly 30 times faster than AsyncStorage."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why MMKV is a JSI HostObject rather than a TurboModule, and why its reads are synchronous?</li>
+    <li>Can you walk through the steps to write a TurboModule and expose it to JS?</li>
+    <li>Can you contrast a JSI HostObject with the old bridge-based NativeModule?</li>
+    <li>Can you explain how data crosses native and JS, and why serialization used to be the bottleneck?</li>
+    <li>Can you say when you would write a native module yourself vs use an existing library?</li>
+    <li>Can you explain how a native event emitter delivers callbacks back into JS?</li>
+  </ul>
 </div>
 `}
 

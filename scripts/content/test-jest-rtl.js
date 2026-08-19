@@ -855,6 +855,54 @@ test('something', () =&gt; {
   <li>"Profile a real codebase's test suite; write down the top 5 wins."</li>
 </ul>
 `
-    }
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Jest/Vitest run and assert; RTL renders and queries accessibility-first</strong> — query by role, interact via <code>userEvent</code>, mock at the network, and wait by condition, not by time.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Split of duties:</strong> Jest/Vitest = runner + assertions + mocks + snapshots + JSDOM/Node env; RTL = render + accessibility-first queries + auto-cleanup, and it deliberately hides internal state.</li>
+    <li><strong>RTL philosophy:</strong> "the more your tests resemble the way your software is used, the more confidence they can give you."</li>
+    <li><strong>Query priority:</strong> <code>getByRole</code> &gt; <code>getByLabelText</code> &gt; <code>getByPlaceholderText</code> &gt; <code>getByText</code> &gt; <code>getByDisplayValue</code>, then <code>getByAltText</code>/<code>getByTitle</code>, and <code>getByTestId</code> as last resort. Semantic queries test accessibility for free.</li>
+    <li><strong>Three suffixes:</strong> <code>get*</code> (must exist now, throws), <code>query*</code> (returns null — use to assert absence), <code>find*</code> (async, retries ~1s — use for elements that appear later).</li>
+    <li><strong>userEvent over fireEvent:</strong> <code>userEvent</code> fires the full sequence (focus + mousedown/mouseup + click; keydown/keypress/input/keyup per char); <code>fireEvent</code> dispatches one event — reach for it only for events userEvent can't model.</li>
+    <li><strong>Mock at the network with MSW</strong> (<code>setupServer</code>, per-test <code>server.use</code> override) — your real fetcher/parser/cache run; never <code>fetch.mockResolvedValue</code> at every call site.</li>
+    <li><strong>Async, three tools:</strong> <code>findBy</code> for an element that appears; <code>waitFor</code> for a non-query assertion; <code>waitForElementToBeRemoved</code> for disappearance.</li>
+    <li><strong>jest-dom matchers</strong> (<code>toBeInTheDocument</code>, <code>toBeVisible</code>, <code>toBeDisabled</code>, <code>toHaveValue</code>, <code>toHaveTextContent</code>, <code>toHaveFocus</code>, <code>toBeChecked</code>) for DOM-aware assertions instead of raw DOM.</li>
+    <li><strong>renderHook + act</strong> for custom hooks: read <code>result.current</code> (rebuilt each render), wrap state changes in <code>act</code>, pass a <code>wrapper</code> for context-dependent hooks.</li>
+    <li><strong>Fake timers</strong> for debounce/throttle — you MUST pass <code>userEvent.setup({ advanceTimers })</code> or typing hangs forever; <code>advanceTimersByTimeAsync</code> also flushes microtasks.</li>
+    <li><strong>Custom renderWithProviders</strong> wraps theme/router/query-client — use a <strong>fresh QueryClient per test</strong>; sharing one leaks cache and causes flake.</li>
+    <li><strong>Reset between tests:</strong> <code>cleanup</code>, <code>server.resetHandlers()</code>, <code>restoreAllMocks()</code>; set <code>onUnhandledRequest: 'error'</code> to catch drift.</li>
+    <li><strong>Vitest is the modern default for web</strong> (native ESM, instant watch); <strong>Jest for RN</strong> (ships with its preset). Same API, <code>vi.fn()</code> vs <code>jest.fn()</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><code>getBy</code> + <code>not.toBeInTheDocument()</code> never runs — <code>getBy</code> throws the moment the element is missing, so the assertion is unreachable. Use <code>queryBy</code> (returns null) to assert absence. Second classic: fake timers without <code>userEvent.setup({ advanceTimers })</code> makes typing hang forever.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I query by role with the accessible name — the same selectors a screen reader uses — and use userEvent over fireEvent because it models the full interaction sequence."</div>
+  <div class="revision-say">"MSW for the network so the real fetcher, parser, and cache run; findBy for async UI and queryBy to assert absence."</div>
+  <div class="revision-say">"Fresh QueryClient and reset MSW handlers per test, jest-dom matchers for assertions, Vitest for web and Jest for RN."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why you query by role with the accessible name rather than by test id or class?</li>
+    <li>Can you say why <code>userEvent</code> is preferred over <code>fireEvent</code>?</li>
+    <li>Can you explain why <code>getBy</code> + <code>not.toBeInTheDocument()</code> never runs, and which query asserts absence?</li>
+    <li>Can you choose between <code>findBy</code>, <code>getBy</code>, and <code>queryBy</code> for async vs present vs absent elements?</li>
+    <li>Can you justify MSW at the network boundary so the real fetcher, parser, and cache still run?</li>
+    <li>Can you explain the fake-timers-with-<code>userEvent</code> hang and how <code>advanceTimers</code> fixes it?</li>
+  </ul>
+</div>
+`}
+
   ]
 });

@@ -170,6 +170,45 @@ test('placeOrder charges the gateway and returns a paid order', async () => {
 <p>Ownership determines who gets to dictate the interface's shape. If <code>PaymentGateway</code> is defined alongside <code>OrderService</code> and shaped around exactly what checkout needs, then any payment vendor has to conform to <em>that</em> shape to plug in — Stripe's SDK vocabulary never leaks into the domain. If instead the "abstraction" were just Stripe's own SDK interface re-exported, the high-level module would still be shaped by a low-level vendor's design choices, and swapping vendors would still ripple back into the domain layer. That's why "depend on abstractions" alone isn't the full principle — the abstraction has to be designed by and for the high-level side; the detail is what bends to fit it, which is exactly the inversion the principle's name refers to.</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>High-level modules should not depend on low-level modules — both depend on abstractions; abstractions don't depend on details, details depend on abstractions.</strong> It's a rule about which direction the dependency <em>arrow</em> points.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>DIP is not Dependency Injection.</strong> DIP is the <em>principle</em> (depend on an abstraction, not a concretion); DI is a <em>technique</em> (pass a dependency in instead of constructing it). This is the single most common mix-up.</li>
+    <li>You can do <strong>DI and still violate DIP</strong> (inject a concrete class and you're still coupled to it), and you can <strong>satisfy DIP without any DI framework</strong> (a plain factory or manual wiring). DI is just the most convenient way to satisfy DIP.</li>
+    <li><strong>"High-level" vs "low-level" = policy vs mechanism</strong>, not architectural layers or folders. Policy is your business rules (stable, specific to you); mechanism is a replaceable technical detail — a payment SDK, DB driver, HTTP client (volatile, generic).</li>
+    <li>The naive direction causes <strong>rigidity</strong> (swapping a vendor means editing business logic) and <strong>untestability</strong> (no seam to substitute a fake).</li>
+    <li>The immediate payoff is <strong>testability</strong>: a class depending on an injected abstraction is tested against a fake in milliseconds, with zero network and zero real infrastructure.</li>
+    <li><strong>What's actually "inverted": who owns the abstraction.</strong> The interface belongs to the high-level module, shaped around what <em>it</em> needs — the low-level detail is what bends to fit, the opposite of letting the vendor's SDK dictate the shape.</li>
+    <li>The fix is a sequence: <strong>(1)</strong> define the interface next to the policy, shaped around its needs; <strong>(2)</strong> make the low-level class implement it; <strong>(3)</strong> inject the abstraction (usually via constructor); <strong>(4)</strong> wire the concretion at a single <strong>composition root</strong> — nowhere else imports the concrete class.</li>
+    <li>Mental picture: the high-level module defines the <strong>socket</strong>; any low-level detail is a <strong>plug</strong> built to fit it.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Conflating DIP with Dependency Injection.</strong> Injecting a dependency via the constructor is DI, but if the injected type is a concrete class (<code>constructor(private stripe: StripeClient)</code>), you've done DI and still violated DIP — the high-level module is still coupled to the vendor's exact shape. DIP is only satisfied when the dependency is an <em>abstraction the high-level module owns</em>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"DIP is about dependency direction — depend on an abstraction you own, not a concretion someone else wrote. DI is just a technique for satisfying it, not a synonym."</div>
+  <div class="revision-say">"High-level and low-level mean policy versus mechanism, not layers — a domain class that hard-codes a vendor SDK is coupling policy to mechanism no matter which folder it lives in."</div>
+  <div class="revision-say">"The inversion is about ownership: the interface is shaped by and for the high-level side, so the vendor's SDK vocabulary never leaks into the domain — and the payoff shows up immediately as testability."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state DIP's two parts and explain how it differs from Dependency Injection?</li>
+    <li>Can you give an example of doing DI while still violating DIP?</li>
+    <li>Can you explain "high-level" vs "low-level" as policy vs mechanism, not layers or folders?</li>
+    <li>Can you say what is actually "inverted" — and why abstraction ownership by the high-level side is the crux?</li>
+    <li>Can you walk the four-step fix, including wiring the concretion at a single composition root?</li>
+    <li>Can you explain why DIP's immediate payoff is testability, with a fake standing in for a real SDK?</li>
+  </ul>
+</div>
 `}
 
 ]});

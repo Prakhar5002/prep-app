@@ -1142,6 +1142,56 @@ reduceMotion ? withTiming(target, { duration: 0 }) : withSpring(target);
 </ul>
 <p>4 topics. Together they cover the platform-design literacy that separates "RN engineer who's used a phone" from "RN engineer who builds for everyone on iOS and Android."</p>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Mobile a11y in RN is a <strong>thin layer of well-named props</strong> (<code>accessibilityLabel</code> / <code>Role</code> / <code>State</code> / <code>Actions</code>) that map to native VoiceOver and TalkBack — cheap to do right, expensive to retrofit, and increasingly a legal requirement.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A screen reader announces in order: Label, Value, Role, State, Hint</strong> — e.g. "Like, 14, button, selected. Double-tap to unlike." (hint comes last, after a pause).</li>
+    <li><strong>The five props that matter most:</strong> <code>accessibilityLabel</code> (what it is), <code>accessibilityRole</code> (what type), <code>accessibilityState</code> (selected/disabled/busy/expanded), <code>accessibilityHint</code> (what happens next), <code>accessibilityActions</code> (alternatives to gestures).</li>
+    <li><strong>A generic <code>View</code> is invisible to screen readers</strong> — you opt in with <code>accessible={true}</code>; that also merges children into one announcement, so only mark the outermost card/row.</li>
+    <li><strong>Icon buttons need a label</strong> or VoiceOver reads "image button"; set the wrapping <code>Pressable</code>'s label and mark the image <code>accessible={false}</code>.</li>
+    <li><strong>Custom gestures must expose <code>accessibilityActions</code></strong> — swipe-to-delete should be reachable via the VoiceOver rotor / TalkBack menu, not swipe-only.</li>
+    <li><strong>Errors: <code>accessibilityRole="alert"</code> + <code>accessibilityLiveRegion</code> + <code>setAccessibilityFocus</code></strong> so the screen reader announces and moves to the message.</li>
+    <li><strong>Modals trap focus</strong> with <code>accessibilityViewIsModal</code> (iOS) + <code>importantForAccessibility</code> (Android), initial focus on the title, and <code>onAccessibilityEscape</code> to close.</li>
+    <li><strong>Touch targets ≥ 44pt (iOS) / 48dp (Android)</strong>; use <code>hitSlop</code> to expand the touchable area without growing visible bounds.</li>
+    <li><strong>Contrast (WCAG 2.2 AA): 4.5:1 body text, 3:1 large text and UI components.</strong> Color is never the only signal — pair with icon + text.</li>
+    <li><strong>Dynamic Type must reflow</strong> — <code>Text</code> respects <code>allowFontScaling</code> by default; cap runaway growth with <code>maxFontSizeMultiplier</code>; test at AX5 (iOS) / 200% (Android).</li>
+    <li><strong>Respect Reduce Motion</strong> via <code>useReducedMotion</code> — vestibular conditions are real; fall back to instant transitions.</li>
+    <li><strong>Test with real VoiceOver + TalkBack every release</strong> — static lint (eslint-plugin-react-native-a11y) and jest-axe catch some, but the manual pass on critical flows is mandatory.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Building an interactive element out of a plain <code>View</code> with an <code>onPress</code> (or an unlabeled icon <code>Pressable</code>). It's either invisible to screen readers or announced as "button" with no context. <strong>Fix:</strong> use a <code>Pressable</code> with the correct <code>accessibilityRole</code> and a real <code>accessibilityLabel</code>, and mark decorative children <code>accessible={false}</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A screen reader reads label, value, role, state, then hint — so I label everything interactive, set the right role, and communicate dynamic state via accessibilityState."</div>
+  <div class="revision-say">"Custom gestures always expose accessibilityActions so swipe-to-delete works from the VoiceOver rotor — a gesture-only flow locks out switch and screen-reader users."</div>
+  <div class="revision-say">"My test matrix is VoiceOver on, TalkBack on, AX5 text, Reduce Motion, Bold Text, smallest device — most layouts break at that intersection."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you recite the order a screen reader announces an element and name the prop behind each part?</li>
+    <li>Can you make an unlabeled icon button and a grouped card accessible from scratch?</li>
+    <li>Can you expose a screen-reader alternative for a swipe-only gesture?</li>
+    <li>Can you announce a form error and move focus to it for VoiceOver / TalkBack?</li>
+    <li>Can you state the minimum touch targets and the WCAG 2.2 AA contrast ratios?</li>
+    <li>Can you list your Dynamic Type + Reduce Motion + screen-reader testing matrix?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

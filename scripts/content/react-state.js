@@ -735,6 +735,8 @@ useEffect(() =&gt; setQ(params.get('q')), [params]);
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">State management is a <strong>classification problem</strong> — decide who owns the data and who needs to know it changed: default to <code>useState</code>, lift up when siblings share, add Context for ambient values, a store only for real cross-cutting state.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>State management is a classification problem, not a tool choice.</strong> Ask: who owns this data, and who needs to know when it changes?</li>
@@ -753,10 +755,26 @@ useEffect(() =&gt; setQ(params.get('q')), [params]);
     <li><strong>URL state</strong> (filters/sort/tabs) is shareable, refresh-safe, and back-button-safe; prefer individual primitive params over base64-JSON blobs.</li>
     <li><strong>Optimistic update pattern (React Query):</strong> <code>onMutate</code> cancels queries, snapshots previous, writes optimistic value; <code>onError</code> rolls back; <code>onSettled</code> invalidates.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Putting <strong>server data in Redux/<code>useState</code></strong> (you'll re-implement caching, dedup, and revalidation badly — use React Query/SWR), or <strong>storing derived state</strong> and syncing it with an effect (derive during render instead). And remember Context is not a store — it re-renders every consumer on change.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"For each piece of state I ask who owns it, who reads it, and how often it changes — that decides between local state, lifting up, Context, a store, or a server-state library."</div>
   <div class="revision-say">"Context is not a store — it re-renders every consumer on change, so I keep it for ambient read-mostly values and use a store with selectors when data updates often."</div>
   <div class="revision-say">"Server data goes in React Query, not Redux — otherwise you re-implement caching, revalidation, and optimistic updates by hand. And I derive during render instead of storing derived state."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you decide where a piece of state should live by asking who owns it, who reads it, and how often it changes?</li>
+    <li>Can you explain why Context is not a store and when it causes an avalanche of consumer re-renders?</li>
+    <li>Can you explain why server data belongs in something like React Query instead of Redux?</li>
+    <li>Can you explain why you derive values during render rather than storing derived state?</li>
+    <li>Can you compare Context against a store with selectors, and say when each wins?</li>
+    <li>Can you explain when to lift state up versus colocate it at the lowest common ancestor?</li>
+  </ul>
 </div>
 `}
 

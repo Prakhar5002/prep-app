@@ -952,6 +952,55 @@ migration the following quarter, which had zero incidents."
   <li>"Ask a senior peer to review your draft self-eval before submission."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Promotions are a <strong>narrative-construction exercise against a rubric, decided in calibration rooms you're not in</strong> — build the scope, document the impact in numbers, align early, and give your manager the ammo to win.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Calibration is where the decision happens,</strong> not your manager alone — a room of managers comparing packets across the org. Your manager advocates; your packet is their ammo.</li>
+    <li><strong>The bar is "already doing the job at the next level," not "ready for it".</strong> If you haven't operated at that scope visibly for 6-12 months, you won't promote.</li>
+    <li><strong>Scope beats effort.</strong> Hours, lines of code, and tickets closed don't promote you; cross-team / cross-quarter impact does.</li>
+    <li>The packet is a <strong>written argument:</strong> 3-5 highlight projects (one anchor + breadth + one forward-looking), each with concrete numbers — users, revenue, latency, cost, time saved.</li>
+    <li><strong>Frame outcomes, not effort:</strong> "reduced p99 from 800ms to 150ms and saved $300K/yr" beats "worked on infra improvements".</li>
+    <li>Promotion needs <strong>technical impact AND behaviors</strong> — technical leadership, mentorship, collaboration, communication — shown through specific examples, not claimed in adjectives.</li>
+    <li><strong>Build the packet across the year</strong> with quarterly snippets; year-end reconstruction misses metrics, mentorship outcomes, and artifacts.</li>
+    <li><strong>Align with your manager throughout, not at year-end</strong> — quarterly "am I on track?" and a mid-year "what's the strongest objection?" prevent calibration surprises.</li>
+    <li><strong>Nominate peers strategically:</strong> mix in-team, cross-team, mentee, and partner-team; brief them with specific projects so their feedback is credible, not vague.</li>
+    <li><strong>Acknowledge what went wrong</strong> (the outage, the miss) — self-awareness in writing builds credibility for the rest of the packet.</li>
+    <li><strong>"Not ready" usually means 6-12 months, not "never".</strong> Get the specific gap (scope, behaviors, impact, peer signal) and build a dated plan to close it.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>"The work speaks for itself."</strong> It doesn't — the narrative ships alongside the work. Writing the self-eval in two days at year-end, listing 12 small projects, using effort framing with no numbers, and inflating your role (which peers contradict in calibration) all sink strong work. Build snippets year-round and frame in outcomes.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I frame impact in business terms — 'p99 800ms to 150ms, $300K/yr saved, used by 5M users' — because calibration peers can hold concrete numbers, not 'improved performance'."</div>
+  <div class="revision-say">"I align with my manager quarterly on promo trajectory, not at year-end — I ask what the strongest calibration objection would be today and close that specific gap. Surprises are how packets fail."</div>
+  <div class="revision-say">"When I got 'not promo'd' once, I treated it as feedback not a verdict — got the specific gap, built a six-month plan with my manager, and closed it."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why promotions are decided in calibration and what "doing the job at the next level" means versus "ready"?</li>
+    <li>Can you tell a concise STAR story about your most impactful project — scope, your role, and quantified business outcome?</li>
+    <li>Can you reframe an effort-based accomplishment ("worked on X") into an outcome-based one with numbers?</li>
+    <li>Can you describe how you build a promo packet across the year and align with your manager to avoid calibration surprises?</li>
+    <li>Can you explain how you would nominate and brief peers so their feedback is specific and credible?</li>
+    <li>Can you describe how you would respond to a "not yet ready" outcome — extracting the gap and building a plan?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

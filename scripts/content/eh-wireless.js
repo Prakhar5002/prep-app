@@ -370,6 +370,50 @@ lf search</code></pre>
 <p>All three are convenience features that trade authentication strength for ease of use, and all three have a documented history of that trade going too far: WPS's PIN design and common "pixie dust" implementation flaws can recover a WPA2 PSK regardless of how strong the passphrase is (which is why tools like <code>wifite</code> attack WPS by default); many Bluetooth devices ship discoverable and accept pairing with weak or no user confirmation; and low-frequency 125 kHz prox cards typically carry no cryptography at all, while HF MIFARE Classic relies on the long-broken Crypto1 cipher, making both readable and cloneable with a tool like a Proxmark3. The common lesson across all three: disable the convenience feature (WPS) or the weak protocol/card type where a stronger alternative exists, rather than assuming "it's proprietary" or "it's short-range" makes it secure.</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Wi-Fi security is the story of one evolving handshake — WEP broken by design, WPA2's capturable 4-way handshake crackable offline, and WPA3's SAE closing the offline door — tested from physical radio proximity, plus the sibling short-range radios Bluetooth and RFID/NFC.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Encryption generations:</strong> WEP (RC4 + reused IVs, broken by design), WPA (TKIP interim fix), WPA2 (AES-CCMP — sound crypto but the handshake is <em>capturable</em>), WPA3 (AES-GCMP + SAE, resists offline dictionary attacks).</li>
+    <li><strong>The WPA2 4-way handshake is the whole game:</strong> messages 1–2 carry both nonces, both MAC addresses, and a MIC unencrypted (they can't be encrypted — they're establishing the keys), which is everything needed to test passphrases offline. The crypto isn't broken; the passphrase's search space is the target.</li>
+    <li><strong>The WPA/WPA2-PSK attack chain:</strong> monitor mode (<code>airmon-ng</code>) → recon/capture (<code>airodump-ng</code>) → optional deauth to force a fresh handshake (<code>aireplay-ng</code>) → offline crack (<code>aircrack-ng</code> or <code>hashcat -m 22000</code>).</li>
+    <li><strong>PMKID is the clientless shortcut:</strong> <code>hcxdumptool</code> requests it directly from an AP that caches it, <code>hcxpcapngtool</code> converts, hashcat cracks — no client, no deauth, no waiting, and no deauth traffic for a WIDS to flag.</li>
+    <li><strong>hashcat WPA mode is 22000</strong> — unified, handles both PMKID and full-handshake hashes; it replaced the deprecated modes 2500 (handshake-only) and 16800 (PMKID-only). Citing 2500 in 2026 is outdated material.</li>
+    <li><strong>Deauth works</strong> because 802.11 management frames were unauthenticated until 802.11w (Protected Management Frames); a forged deauth impersonating the AP kicks a client off. WPA3 requires PMF, which rejects forged deauth frames.</li>
+    <li><strong>SAE (Dragonfly)</strong> is a password-authenticated key exchange: every guess needs a live, rate-limitable interaction with the real AP (no offline shortcut), plus forward secrecy — but WPA3/WPA2 <em>transition mode</em> reopens the WPA2 offline-crack path.</li>
+    <li><strong>Tooling shortcuts:</strong> <code>wifite</code> automates PMKID → handshake+deauth → WPS against every visible target; <code>airgeddon</code> orchestrates an evil twin (rogue <code>hostapd</code> AP + captive portal).</li>
+    <li><strong>Evil twin attacks the human, not the crypto:</strong> a rogue AP clones the SSID, lures/forces clients on, and harvests a re-entered password or unencrypted traffic.</li>
+    <li><strong>WPS is a standalone weakness:</strong> its PIN design and "pixie dust" flaws can recover the PSK regardless of passphrase strength — disable it.</li>
+    <li><strong>Bluetooth (<code>bluetoothctl</code>) and RFID/NFC (<code>proxmark3</code>)</strong> share the same nearby-radio, weak-default-auth threat model: LF 125 kHz prox cards typically have no crypto, and HF MIFARE Classic relies on the long-broken Crypto1 cipher.</li>
+    <li><strong>Defenses:</strong> WPA3-SAE with no transition mode, a long (16+ char) high-entropy PSK, 802.1X/EAP (Enterprise) instead of a shared secret, WIDS/rogue-AP detection, and disabling WPS.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Thinking "hiding" an SSID or making a network "harder to find" protects it, or citing hashcat mode 2500. For WPA2 the passphrase's entropy is the only real defense — the crypto is sound and the handshake is always capturable — and modes 2500/16800 are deprecated in favor of the unified 22000. Also: leaving WPA3 in transition mode "for old devices" quietly hands the WPA2 offline-crack path right back.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"WPA2's crypto is sound — the problem is the 4-way handshake is capturable, so messages 1 and 2 hand an attacker both nonces, both MACs, and a MIC to crack the PSK offline at full GPU speed; the only real defense is a long, high-entropy passphrase."</div>
+  <div class="revision-say">"PMKID is the modern shortcut — clientless, no deauth needed, and no deauth traffic for a WIDS to flag — hcxdumptool to hashcat mode 22000, not the deprecated 2500."</div>
+  <div class="revision-say">"WPA3's SAE closes the offline door because every password guess needs a live, rate-limitable interaction with the real AP — but leaving it in transition mode for old devices reopens the WPA2 crack path entirely."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you walk through the WPA2 4-way handshake and explain why capturing messages 1 and 2 is enough to crack the PSK offline?</li>
+    <li>Can you list the WPA/WPA2-PSK attack chain from monitor mode to offline crack, naming the aircrack-ng-suite tool at each step?</li>
+    <li>Can you explain what a PMKID attack is and why it's often preferred over classic handshake capture?</li>
+    <li>Can you say which hashcat mode cracks WPA today and which two deprecated modes it replaced?</li>
+    <li>Can you explain why a deauthentication attack works and what 802.11w/WPA3 does to stop it?</li>
+    <li>Can you name the main defenses — WPA3-SAE, strong PSK, 802.1X/EAP, WIDS, disabling WPS — and what each one closes off?</li>
+  </ul>
+</div>
 `}
 
 ]});

@@ -635,6 +635,8 @@ I switched to (c). FastImage + a smarter prefetch strategy gave us bounded memor
       collapsible: true,
       html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">STAR turns a vague work memory into a gradeable story &mdash; keep <strong>S brief, T sharp, A long and specific in "I," and R quantified</strong> (add L for FAANG).</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>STAR = Situation, Task, Action, Result</strong> — a scaffold that turns a vague work memory into a crisp, gradeable answer. Add <strong>L (Learnings)</strong> for FAANG; STAR-L is the safe default and you're never penalized for the extra L.</li>
@@ -651,10 +653,30 @@ I switched to (c). FastImage + a smarter prefetch strategy gave us bounded memor
     <li>Pick a <strong>real failure</strong>, not a humblebrag ("I worked too hard" fails). Own the bad call and tie the lesson to a habit change.</li>
     <li>You need <strong>5&ndash;8 well-crafted stories</strong>, each tagged to multiple competencies &mdash; not 30. Treat STAR as a flexible scaffold, not a script; let the interviewer interrupt and steer.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is burning 90 seconds on Situation and then narrating the whole thing in "we" &mdash; so the interviewer never learns what <em>you</em> did. Fix: cap S+T at ~30 seconds, then spend 60&ndash;70% of the answer on your Actions in "I," built as a tree of decisions with the tradeoffs you weighed.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"S: At [company] I was on a 4-person team rebuilding checkout, two months from launch on a flat perf budget. T: I owned the mobile side and was worried a new client would blow our cold-start budget."</div>
   <div class="revision-say">"Let me give you the result and the lesson: we launched on time and kept cold-start under target; what I'd do differently is bring the measurement to the disagreement within 24&ndash;48 hours instead of debating opinions."</div>
   <div class="revision-say">"I considered three options &mdash; A, B, and C &mdash; and chose B because [reason tied to the constraint]. Here's specifically what I did next."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you tell a STAR story where S+T stays under ~30 seconds and the Action section is 60&ndash;70% of the answer?</li>
+    <li>Can you articulate the difference between "I" and "we" in your story, keeping actions in "I" and only context in "we"?</li>
+    <li>Can you tell a real-failure story (not a humblebrag) that owns a bad call and ties the lesson to a habit change?</li>
+    <li>Can you land a quantified Result &mdash; a real number or a relative change like "halved" &mdash; plus one line of reflection?</li>
+    <li>Can you make your Action a tree of decisions, naming the alternatives you considered and why you chose one?</li>
+    <li>Can you map one story to multiple competencies and have 3&ndash;5 follow-up answers ready for each?</li>
+  </ul>
 </div>
 `
     }

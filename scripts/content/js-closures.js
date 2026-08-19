@@ -828,23 +828,13 @@ c.get();    // 5 (initial)</code></pre>
   <li>"How do closures enable currying?"<br>(Each partial call returns a new closure over the accumulated args.)</li>
   <li>"What's the performance cost of a closure?"<br>(Minimal — creating the function object + environment reference. Calling it is the same as any function call.)</li>
 </ul>
-
-<div class="callout success">
-  <div class="callout-title">✅ Master closures checklist</div>
-  <ul>
-    <li>Can you trace what variables a function "sees" by looking at where it's defined (not called)?</li>
-    <li>Can you explain the <code>var</code>-vs-<code>let</code>-in-a-loop trap in terms of bindings?</li>
-    <li>Can you implement debounce, throttle, once, memoize, curry from scratch?</li>
-    <li>Can you spot a stale-closure bug in React useEffect code?</li>
-    <li>Do you know how module scope is a closure?</li>
-    <li>Can you reason about when a closure's captured scope is garbage collected?</li>
-  </ul>
-</div>
 `},
 
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A closure = a <strong>function bundled with a reference to the lexical environment it was born in</strong> — it remembers where it was <em>defined</em>, not where it's called, and captures the binding, not the value.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Closure = function + a reference to the lexical environment it was born in</strong> — captured at creation time, kept alive as long as the function reference exists.</li>
@@ -860,10 +850,28 @@ c.get();    // 5 (initial)</code></pre>
     <li>Captured scope is GC'd only when <strong>every</strong> reference to the inner function is gone — the closure keeps its environment reachable.</li>
     <li>Keep caches/state <strong>inside</strong> the factory; a shared outer variable leaks state across "separate" closures.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Stale closure:</strong> a callback/effect with empty deps captures the first render's state, so <code>setCount(count + 1)</code> keeps adding to the old value. Fix with a functional updater <code>setCount(c =&gt; c + 1)</code> (or correct the deps) — same root cause as <code>var</code> in a loop logging the final number.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"A closure is a function bundled with references to its surrounding lexical environment — it remembers where it was defined, not where it's called."</div>
   <div class="revision-say">"Closures capture the binding, not the value — that's exactly why <code>var</code> in a loop logs the final number and <code>let</code> fixes it."</div>
   <div class="revision-say">"React hooks are built on closures; a stale closure is a callback still referencing state from the render it was created in — the fix is a functional updater or the correct dependency array."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you define a closure in one sentence — and say what it captures (binding vs value)?</li>
+    <li>Can you trace what variables a function "sees" from where it's <em>defined</em>, not where it's called?</li>
+    <li>Can you explain the <code>var</code>-vs-<code>let</code>-in-a-loop trap in terms of bindings?</li>
+    <li>Can you write a counter factory where two counters keep <em>separate</em> private state?</li>
+    <li>Can you implement debounce, throttle, once, memoize, and curry from scratch?</li>
+    <li>Can you spot a stale-closure bug in a React <code>useEffect</code> and fix it two ways?</li>
+    <li>Do you know how the module pattern is itself a closure?</li>
+    <li>Can you say when a closure's captured scope becomes eligible for garbage collection?</li>
+  </ul>
 </div>
 `}
 

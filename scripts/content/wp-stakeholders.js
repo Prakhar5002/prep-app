@@ -984,6 +984,55 @@ cross-org stakeholder management."</code></pre>
 <p><em>"Map stakeholders. Tier the touch. One canonical source. No surprises. Document decisions. Invest hardest in PM and design."</em></p>
 <p>Most projects fail at the seams between people, not within the code. Stakeholder management is the work that holds the seams together. It's not overhead — it's the job.</p>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Stakeholder management is making sure the <strong>right thing gets built, gets known, and surprises no one</strong> — map stakeholders early, tier the touch, keep one source of truth, and treat it as a deliverable, not overhead.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A stakeholder is anyone who can affect or is affected by your work</strong> — not just users. They can block you (security, legal), accelerate you (infra, design), or judge you (manager, skip, exec).</li>
+    <li><strong>Map them before you code</strong> and apply lightweight RACI: exactly one Accountable, clear Responsibles, limited Consulted (3-5), broad Informed. Most failures trace to no A, too many Cs, or Cs not actually consulted.</li>
+    <li><strong>Communication budget is finite</strong> — tier stakeholders high-touch / medium-touch / async-only / FYI, and spend calendar time accordingly.</li>
+    <li><strong>"Surprise" is the enemy.</strong> Stakeholders accept bad news 10x better than being blindsided; news should reach them from you, before anyone else.</li>
+    <li><strong>The PM relationship is your highest-leverage one</strong> — treat the PM as your closest collaborator, not "the person who writes the spec." <strong>Design is usually under-invested</strong> — co-design from week 1.</li>
+    <li><strong>One canonical source of truth</strong> (goal, status RAG, timeline, risks, updated weekly, linked everywhere). Point stakeholders to it and they learn to self-serve; meeting load drops.</li>
+    <li><strong>Translate, don't simplify.</strong> Same fact, different vocabulary and depth per audience (engineer vs PM vs skip vs exec vs customer).</li>
+    <li><strong>Communicate slippage the moment you know</strong> — lead with the new estimate, one-sentence cause, mitigation, impact on dependents, and what you need. Day-1 notice is recoverable; week-3 notice is damage.</li>
+    <li><strong>Async status; meetings for decisions.</strong> Pre-read plus a 15-min decision beats a 60-min walkthrough. Every decision gets written down within 24 hours.</li>
+    <li><strong>Engage "low-tier" stakeholders early</strong> — security review at design freeze, a11y at first prototype, not the day before launch.</li>
+    <li><strong>Mobile / RN angle:</strong> educate partners on release cycles, version coverage, and OS testing as "the constraints we work within" plus an alternative (e.g. server-driven UI) — not "no, mobile can't."</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Optimistic status.</strong> Reporting "🟢 on track" right up until the week you slip, then jumping to "🔴 delayed 4 weeks", teaches stakeholders your green isn't real green and they discount all future status. Report honest yellow early. (The other classic: bypassing the PM and blindsiding them.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"On a cross-functional launch I built a stakeholder map and tiered engagement, kept one canonical doc updated weekly, and documented every decision in writing within 24 hours — no implicit consensus. We shipped on date with no surprise blockers because privacy and a11y were engaged early."</div>
+  <div class="revision-say">"My rule is no surprises. Bad news, scope changes, slips — the relevant stakeholder hears it from me first, with the new estimate up front, a one-line cause, and a recovery plan. Stakeholders accept bad news far better than being blindsided."</div>
+  <div class="revision-say">"With non-technical stakeholders I translate rather than simplify — same depth, different vocabulary. 'We're cleaning up how the app remembers things between screens — fewer bugs, faster UI' instead of the reactive-store version. And I default to writing, because spoken updates get lost."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you tell a concise STAR story about a cross-functional project where stakeholder alignment — not the code — was the hard part?</li>
+    <li>Can you explain how you map and tier stakeholders (RACI plus a touch model) at the start of a project?</li>
+    <li>Can you describe exactly how you'd communicate a launch slip — what you lead with and what you include?</li>
+    <li>Can you explain how you'd handle a stakeholder who blocks your work, distinguishing the different reasons they might block?</li>
+    <li>Can you show how you'd communicate the same status to an engineer, a PM, and an exec — translating rather than simplifying?</li>
+    <li>Can you explain the "no surprises" rule and how a single source of truth reduces your meeting load?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

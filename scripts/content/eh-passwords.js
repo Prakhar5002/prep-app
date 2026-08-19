@@ -386,6 +386,49 @@ hydra -l svc-test-account -P common-200.txt -t 2 -f ssh://&lt;target&gt;</code><
 <p>Layered defenses, not any single control: storing passwords with a slow, memory-hard hash (Argon2id preferred, bcrypt as a widely-supported fallback, scrypt as an alternative, PBKDF2 where FIPS-140 is required) makes offline cracking expensive even after a full database leak; MFA means a correctly cracked or guessed password alone still isn't enough to log in, which also neutralizes spraying and stuffing even though no cracking was involved there at all; sane password policy (favoring length and breach-corpus screening over forced complexity and rotation) removes the predictable patterns that mask/hybrid attacks and dictionaries are built to catch; and lockout/rate-limiting (ideally with exponential backoff and CAPTCHA rather than a hard lockout alone, to avoid enabling a lockout-based denial-of-service) makes online guessing at scale impractical. None of it substitutes for the others — a single missing layer is often exactly the gap a real attacker finds.</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Password attacks are one big guess-and-compare loop — online guessing against a live login versus offline cracking of a stolen hash — and their whole difficulty hinges on hashing choices, salting, and the quality of your wordlists, rules, and masks.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Hashing is one-way, encryption is reversible — passwords are stored as salted hashes, never decrypted, so every attack here guesses candidates and compares hashes rather than reversing anything.</li>
+    <li>A salt is random per-password data (not secret) that makes identical passwords hash differently and defeats rainbow tables; a pepper is a single secret value kept outside the database, applied to every password.</li>
+    <li>Identify the hash first with <code>hashid</code> (the maintained replacement for <code>hash-identifier</code>) — it prints the candidate algorithm plus the exact hashcat mode and John format to use next.</li>
+    <li>Online attacks (<code>hydra</code>, <code>medusa</code>, <code>ncrack</code>, <code>patator</code>) hit a live endpoint — bounded by account lockout and rate-limiting, loud in the target's logs, and risk locking the very account being tested.</li>
+    <li>Offline attacks (<code>john</code> on CPU, GPU-accelerated <code>hashcat</code>) hit a stolen hash — no lockout, no detectability, limited only by hardware and the quality of wordlist/rules/mask.</li>
+    <li>hashcat's five core attack modes: 0 straight/dictionary, 1 combinator, 3 mask/brute-force, 6 hybrid wordlist+mask, 7 hybrid mask+wordlist; <code>-m</code> picks the hash type, <code>-a</code> picks the attack mode.</li>
+    <li>Masks build candidates position-by-position from charsets (<code>?l</code> lower, <code>?u</code> upper, <code>?d</code> digit, <code>?s</code> special, <code>?a</code> all) — a policy-aware mask is far smaller than a generic same-length brute force.</li>
+    <li>Fast general-purpose digests (MD5, SHA-1, SHA-256/512, NTLM) are bad for passwords because GPUs compute billions per second; slow, memory-hard hashes (Argon2id, bcrypt, scrypt, PBKDF2) are what correct storage looks like.</li>
+    <li>Wordlists and mutation rules do the real work: <code>rockyou.txt</code> and SecLists supply real candidates, <code>crunch</code> generates charset-based lists, <code>cewl</code> scrapes a target's own site, and rules model human habits (capitalize, append digits, leetspeak).</li>
+    <li>Spraying (one common password across many usernames) and stuffing (replaying breach credential pairs) are online credential-reuse attacks, not cracking — both evade per-account lockout because each account sees only one or a few attempts.</li>
+    <li>Layered defenses neutralize the whole topic: memory-hard hashing, MFA, length-over-complexity policy with breach-corpus screening, and lockout/rate-limiting (ideally with backoff/CAPTCHA to avoid a lockout-based denial of service).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Believing cracking "decrypts" the hash, or that rainbow tables still threaten modern systems. Nothing is ever reversed — candidates are hashed and compared — and salting collapses the precompute-once economics that made rainbow tables worthwhile, so correctly salted, slow hashes are not meaningfully vulnerable to them.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Online attacks guess against a live login and are throttled by lockout; offline attacks crack a stolen hash with no rate limit at all — that split drives every tool and pacing choice."</div>
+  <div class="revision-say">"I identify the hash with hashid first so I point hashcat or John at the correct mode, then run dictionary-plus-rules before ever reaching for a mask or pure brute force."</div>
+  <div class="revision-say">"Salting defeats rainbow tables because it forces a separate precomputed table per salt, which kills the precompute-once-reuse-forever economics the whole technique depends on."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why a correctly stored password is never "decrypted," and what a cracker actually does instead?</li>
+    <li>Can you explain how salting defeats rainbow tables, and how a pepper differs from a salt?</li>
+    <li>Can you name hashcat's five core attack modes (0/1/3/6/7) and when you'd choose each?</li>
+    <li>Can you contrast online versus offline attacks in terms of speed limit, lockout risk, and detectability?</li>
+    <li>Can you distinguish password spraying from credential stuffing and explain why both evade per-account lockout?</li>
+    <li>Can you list the layered defenses — memory-hard hashing, MFA, length-first policy with breach screening, rate-limiting — that make these attacks impractical?</li>
+  </ul>
+</div>
 `}
 
 ]});

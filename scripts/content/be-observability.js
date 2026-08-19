@@ -1237,6 +1237,52 @@ export const usersLogger = root.child({ module: 'users' });
   <li>"Practice debugging a known-slow distributed system using only telemetry."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Observability is <strong>how you debug production</strong> — the three pillars (logs, metrics, traces) answer different questions, and the worst time to wire telemetry is during an outage.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Logs</strong> = narrative: structured (JSON) per-event records, searchable in an aggregator — "what happened to this one request." Cheapest per event, but volume balloons; sample at high traffic.</li>
+    <li><strong>Metrics</strong> = trends: numerical time-series (rate, error rate, latency percentiles, saturation) — "what's the aggregate doing." Constant cost regardless of traffic; <strong>cardinality</strong> is the cost driver.</li>
+    <li><strong>Traces</strong> = distribution: per-request timeline across services — "where did this request spend time." OpenTelemetry is the standard; usually sampled (1-10%) at scale.</li>
+    <li>Together they compose: <strong>metric detects the spike → trace finds the slow span → log pinpoints the cause.</strong></li>
+    <li><strong>SLI / SLO / SLA:</strong> SLI is the indicator metric, SLO your internal target, SLA the customer contract. <strong>Error budget = 100% − SLO</strong>, spent on outages or risky deploys; when burned, freeze risk.</li>
+    <li>Two frameworks: <strong>RED</strong> for services (Rate / Errors / Duration), <strong>USE</strong> for resources (Utilization / Saturation / Errors).</li>
+    <li><strong>Alert on symptoms, not causes</strong> — "error rate &gt; X%" beats "CPU &gt; 90%."</li>
+    <li><strong>Correlation IDs</strong> flowing through every log and span are mandatory — they're what makes cross-service debugging possible; and report latency as <strong>percentiles (P50/P95/P99), not averages.</strong></li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Two recurring mistakes: (1) <strong>alerting on infra causes</strong> (CPU, memory) instead of user-facing symptoms — you page on benign noise and miss real problems; and (2) reporting <strong>averages instead of percentiles</strong>, which masks tail latency (an average hides the P99 that's actually hurting users). Add the silent killer: <strong>no correlation IDs</strong>, which turns cross-service debugging into hours of guesswork.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Logs, metrics, and traces answer different questions — the metric tells me something's wrong, the trace tells me where, the log tells me why."</div>
+  <div class="revision-say">"I alert on user-facing symptoms like error rate and latency, not on CPU — a cause-based alert pages on noise and misses the real thing."</div>
+  <div class="revision-say">"I track latency as P95/P99, never averages, and thread a correlation ID through every log and span so I can follow one request across services."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the three pillars and the distinct question each one answers?</li>
+    <li>Can you walk the debug flow — metric detects, trace locates, log explains?</li>
+    <li>Can you distinguish SLI, SLO, and SLA, and define an error budget?</li>
+    <li>Can you explain RED versus USE and what each applies to?</li>
+    <li>Can you explain why you alert on symptoms rather than causes, with an example?</li>
+    <li>Can you explain why percentiles beat averages, and why correlation IDs are mandatory?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

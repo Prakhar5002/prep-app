@@ -231,6 +231,40 @@ window.PREP_SITE.registerTopic({
     <tr><td><code>hostnamectl</code></td><td>Show/set the system hostname and OS info</td><td>systemd-based; replaces plain <code>hostname</code></td><td><code>hostnamectl</code></td></tr>
   </tbody>
 </table>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A single scannable <strong>lookup</strong> of every command from the six Linux teaching topics — organized by <strong>category, not by lesson</strong>; nothing here is new.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>It's a <strong>reference, not a lesson</strong> — the same commands, flags, and examples from the teaching topics, aggregated in one place.</li>
+    <li>Six categories, one table each: File &amp; Navigation, Permissions &amp; Users, Text &amp; Pipelines, Processes &amp; Services, Shell Scripting, Networking &amp; Packages.</li>
+    <li><strong>How to use it:</strong> scan the category table for the command you half-remember, check its <em>Key flags</em> column, and copy the <em>Example</em> column as a starting point.</li>
+    <li>Placeholders like <code>&lt;file&gt;</code>, <code>&lt;dir&gt;</code>, <code>&lt;pid&gt;</code>, <code>&lt;pattern&gt;</code> stand in for whatever you'd actually type.</li>
+    <li>The "why" — the mental model, the edge cases, the interview framing — lives in the corresponding teaching topic, not here.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Don't try to memorize a reference page.</strong> Memorize where to find it. The lookup gives you the <em>what</em>; the reasoning and the gotchas that make an answer sound senior live in the six teaching topics, not in the table.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"This is a lookup organized by category — I scan for the command I half-remember and copy the example."</div>
+  <div class="revision-say">"The reference has the what; the why and the edge cases live in the six teaching topics."</div>
+  <div class="revision-say">"I don't memorize the page, I memorize where to find it."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the six command categories the reference is organized into?</li>
+    <li>Can you find a half-remembered command by scanning its category table?</li>
+    <li>Can you say what the <em>Key flags</em> and <em>Example</em> columns are for?</li>
+    <li>Can you say what the <code>&lt;file&gt;</code> / <code>&lt;pid&gt;</code> / <code>&lt;pattern&gt;</code> placeholders stand for?</li>
+    <li>Can you say where the reasoning and edge cases live when the table isn't enough?</li>
+  </ul>
+</div>
 `}
 
 ]});

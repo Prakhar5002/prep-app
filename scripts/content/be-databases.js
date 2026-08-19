@@ -1242,6 +1242,52 @@ async function updateWithRetry(id, title, maxAttempts = 3) {
   <li>"Practice EXPLAIN reading on a real production-shaped dataset."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Postgres unless you have a reason.</strong> Index for the queries you run, use transactions for invariants, read query plans, and migrate carefully — schema decisions are forever.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>SQL by default — Postgres specifically:</strong> strong ACID, JSON/JSONB for document-style flexibility inside a relational store, built-in full-text search, extensions (PostGIS, pgvector, Timescale), mature optimizer with readable EXPLAIN.</li>
+    <li><strong>Schema design:</strong> normalize for write integrity (one source of truth per fact), denormalize selectively for hot reads — real apps do both.</li>
+    <li><strong>Indexes are the single biggest perf lever</strong> — wrong index (or none) = full table scan; right index = millisecond lookup. Always index FK and common query columns.</li>
+    <li><strong>Transactions give ACID;</strong> isolation levels (READ COMMITTED, REPEATABLE READ, SERIALIZABLE) trade consistency for concurrency.</li>
+    <li><strong>Query plans (<code>EXPLAIN ANALYZE</code>) are your debugger</strong> — read them to find the bottleneck in a slow endpoint.</li>
+    <li><strong>NoSQL families each solve a specific shape:</strong> document (Mongo/Firestore), key-value (DynamoDB/Redis), wide-column (Cassandra), graph (Neo4j), search (Elastic), time-series, vector (pgvector/Pinecone). Pick one only when you can name the access pattern.</li>
+    <li>Standard scaling levers: <strong>connection pooling, prepared statements, read replicas, partitioning</strong>.</li>
+    <li>Good hygiene: sensible types (<code>NUMERIC</code> for money, never <code>FLOAT</code>; <code>UUID</code> for ids), <code>NOT NULL</code>/<code>CHECK</code>/<code>UNIQUE</code> constraints, <code>created_at</code>/<code>updated_at</code> on every table, and every change as a versioned, reversible migration.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Picking NoSQL prematurely</strong> — "it scales better" (true only at huge scale) or "schema-less iterates faster" (until you're six months in and need to query something the schema doesn't support). The senior signal is "Postgres unless I can name the access pattern that justifies the alternative." Runner-up traps: money as <code>FLOAT</code> (rounding errors compound) and no index on FK / common query columns (silent full scans).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Postgres unless I can name the specific access pattern that justifies something else — its JSONB gives me document flexibility without giving up transactions."</div>
+  <div class="revision-say">"When an endpoint is slow I run EXPLAIN ANALYZE first — the plan tells me whether it's a missing index, a full scan, or a bad join before I guess."</div>
+  <div class="revision-say">"I normalize for write correctness and denormalize deliberately for hot reads — and I store money as NUMERIC, never FLOAT."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you justify "Postgres by default" and name the access patterns that justify a NoSQL alternative?</li>
+    <li>Can you explain when to normalize versus denormalize, and why real apps do both?</li>
+    <li>Can you explain why indexes are the biggest perf lever, and which columns always need one?</li>
+    <li>Can you name the isolation levels and the consistency-vs-concurrency tradeoff they represent?</li>
+    <li>Can you read an <code>EXPLAIN ANALYZE</code> plan to find the bottleneck in a slow query?</li>
+    <li>Can you name the scaling levers — pooling, prepared statements, read replicas, partitioning — and a bad-schema smell like money as <code>FLOAT</code>?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

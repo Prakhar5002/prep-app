@@ -640,6 +640,8 @@ I now write a 'cost of ownership' analysis on every infra proposal — runtime, 
       collapsible: true,
       html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Big tech hires against published cultural principles, so <strong>read the values, tag your stories, use the language naturally, and ask reverse questions that show you've done the work</strong>.</div>
   <h4>Key points</h4>
   <ul>
     <li>Big tech publishes <strong>cultural principles</strong> and interviewers literally map your answers to them &mdash; culture fit is a graded rubric, not decoration.</li>
@@ -656,12 +658,31 @@ I now write a 'cost of ownership' analysis on every infra proposal — runtime, 
     <li>Make <strong>reverse questions value-anchored</strong> and about lived practice ("how does a disagree-and-commit moment actually play out here?"); prepare 3 per round. Never quiz, brown-nose, or aggressively challenge.</li>
     <li>Read the <strong>current</strong> versions (Meta changed in 2022, Amazon added two LPs in 2021); do a separate per-company tag pass; and don't fake fit &mdash; honest engagement beats manufactured alignment.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is <strong>quoting the principles verbatim</strong> &mdash; "This is a great example of Customer Obsession because..." &mdash; which sounds rehearsed and gets graded down. The fix: embody the value through your behavior and its native vocabulary ("the user reports made the real problem clear"), and never name the principle unless the interviewer asks.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"I traced it all the way back to the root cause before proposing a fix &mdash; I sat with the data for two days first." (embodies Dive Deep without naming it)</div>
   <div class="revision-say">"Are Right A Lot resonates most with me &mdash; specifically the 'seek diverse perspectives' clause; last quarter I was sure the answer was X, but sitting with our backend lead got me to Y, which was right."</div>
   <div class="revision-say">"You talk about disagree-and-commit &mdash; when that happens on your team, is the disagreement documented, and do you revisit it after committing?"</div>
 </div>
 `
-    }
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name a target company's published values from memory and describe how interviewers grade your stories against them?</li>
+    <li>Can you recite Amazon's 16 Leadership Principles and confirm every one is covered by at least one story in your bank?</li>
+    <li>Can you tell a STAR story that embodies a value through your behavior without ever naming the principle?</li>
+    <li>Can you retell one signature story three ways &mdash; Amazon-direct, Apple-understated, Google-humble &mdash; shifting the emphasis and tone for each?</li>
+    <li>Can you articulate which value resonates with you most, picking a non-obvious one and defending it with a specific story?</li>
+    <li>Can you pose 3 value-anchored reverse questions per round that probe how the values are actually lived, without quizzing or brown-nosing?</li>
+  </ul>
+</div>
+`}
   ]
 });

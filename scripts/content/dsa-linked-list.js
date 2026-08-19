@@ -829,6 +829,8 @@ values.reverse();
       collapsible: true,
       html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Draw the pointers, save <code>next</code> before you mutate, and add a dummy head whenever the head can change</strong> — that mantra kills nearly every linked-list bug and edge case.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>A linked list trades random access for cheap splicing:</strong> index lookup is O(n), but insert/delete at a node you already hold is O(1).</li>
@@ -853,12 +855,28 @@ values.reverse();
     <li><strong>Space:</strong> O(1) for the iterative two-pointer patterns; O(n) call stack for recursive variants.</li>
     <li><strong>Signal → reach for it:</strong> "reverse / reorder in place" → save-next iterate · "detect / find start of cycle" or "find middle" → slow-fast · "nth from end" → gap pointer · "head may change / merge two lists" → dummy node · "O(1) get + put with eviction" → doubly linked list + hash map (LRU).</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Reseating <code>curr.next</code> before you've saved the old <code>next</code> orphans the rest of the list</strong> — always stash <code>const next = curr.next</code> first. Right behind it: forgetting the <code>fast &amp;&amp; fast.next</code> null-guard in slow/fast loops (TypeErrors on even-length lists and cycles), and not using a dummy head when the head node itself can be removed or inserted before.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Before I mutate any pointer I save <code>next</code>, and I add a dummy head whenever the head node can change — that kills most edge cases."</div>
   <div class="revision-say">"For cycles I use Floyd's tortoise and hare: O(n) time, O(1) space, and it also locates the cycle's entry by restarting one pointer from the head."</div>
   <div class="revision-say">"LRU is a doubly linked list for O(1) reordering plus a hash map for O(1) lookup — the prev pointer is what makes arbitrary-node deletion O(1)."</div>
 </div>
 `
-    }
-  ]
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you code in-place reversal of a linked list from memory?</li>
+    <li>Can you use a dummy-head node to simplify edge cases?</li>
+    <li>Can you detect a cycle with fast/slow pointers?</li>
+    <li>Can you explain why a doubly linked list gives O(1) arbitrary-node deletion?</li>
+    <li>Can you name the classic null-pointer / off-by-one trap?</li>
+    <li>Can you explain the LRU-cache design (doubly linked list + hash map)?</li>
+  </ul>
+</div>
+`}
+]
 });

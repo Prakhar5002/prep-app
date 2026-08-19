@@ -689,6 +689,8 @@ Adaptations:
       collapsible: true,
       html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A story bank is <strong>8&ndash;12 career incidents drafted in STAR-L and tagged to multiple competencies</strong>, so every behavioral question is answered by recall rather than real-time invention.</div>
   <h4>Key points</h4>
   <ul>
     <li>A <strong>story bank</strong> is 8&ndash;12 career incidents, each drafted in STAR-L and tagged to multiple competencies &mdash; you recall stories cued by competency, you don't memorize 60 answers.</li>
@@ -706,10 +708,30 @@ Adaptations:
     <li><strong>Preview and close:</strong> offer the 30-second version first, and land the plane with Result + Learning &mdash; don't trail off.</li>
     <li>Behavioral is often <strong>1/3 of the loop</strong> (decisive at staff+); prep it over ~2 weeks with out-loud rehearsal and mocks, not the night before.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is telling a smooth project description with no Act 2 &mdash; no surprise, pivot, or pushback &mdash; and narrating it as "we" throughout. Fix it: add a real complication ("I expected X but discovered Y"), keep 70&ndash;80% of the Action as "I-lines" so your slice is unambiguous, and close on a concrete lesson instead of trailing off.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Before I dive in &mdash; would it help if I gave you the 30-second version first, then went deeper wherever you'd like?"</div>
   <div class="revision-say">"I expected the leak to be event listeners, but the heap dump showed it was uncached images &mdash; that surprise is what reframed my whole approach."</div>
   <div class="revision-say">"The result was a crash rate cut from 2.1% to 0.4%; what stuck with me is to measure before optimizing. Happy to go deeper on any part."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you tell a STAR-L story for each of the 10 archetype themes &mdash; complex tech, disagreement with a senior, a real failure, spotting a problem early, influencing without authority, deciding under ambiguity, mentorship, a long migration, a mid-project pivot, and incident response?</li>
+    <li>Can you point to a tag matrix where every competency column &mdash; especially conflict and failure &mdash; has at least 2 strong stories so you never repeat one incident across a note-sharing loop?</li>
+    <li>Can you name the 3-act arc (setup &rarr; complication &rarr; resolution) and the 2&ndash;3 decision points in each of your stories, and confirm 70&ndash;80% of the Action is "I-lines"?</li>
+    <li>Can you articulate a concrete lesson for each story &mdash; tactical or strategic &mdash; and how you still apply it today, without falling back on "communication is important"?</li>
+    <li>Can you quote your results with a baseline (from-what-to-what), and say honestly when you don't remember an exact number instead of fabricating?</li>
+    <li>Can you deliver your signature story at 90 seconds, 3 minutes, and 5 minutes, previewing with the 30-second version and closing on Result + Learning?</li>
+  </ul>
 </div>
 `
     }

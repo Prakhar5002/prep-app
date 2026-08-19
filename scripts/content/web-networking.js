@@ -895,6 +895,51 @@ const data = await r.json();
   <li>"I'd add a Save-Data-aware asset path for users with data saver enabled."</li>
 </ul>
 `
-    }
-  ]
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Serve everything over a CDN with HTTP/3 + TLS 1.3, correct cache headers, and locked-down cookies — then optimize the slowest hop by measuring RTT and TTFB, not bandwidth.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>HTTP versions:</strong> 1.1 = sequential per connection (needs 6 parallel sockets); 2 = multiplexed over one TCP connection (but TCP head-of-line blocking remains); 3 = over QUIC/UDP, so a dropped packet only stalls its own stream — a big win on lossy mobile networks.</li>
+    <li><strong>RTT, not bandwidth, dominates for small assets.</strong> An unconnected origin costs 3+ round trips (DNS → TCP/QUIC → TLS) before any data flows; CDNs cut RTT by serving from a nearby edge, and <code>preconnect</code> warms DNS + TCP + TLS ahead of time.</li>
+    <li><strong>TLS 1.3</strong> is a 1-RTT handshake (0-RTT for repeat visitors, idempotent requests only).</li>
+    <li><strong>Cache-Control:</strong> hashed assets → <code>public, max-age=31536000, immutable</code>; HTML → <code>no-cache</code> (cache but always revalidate); per-user JSON → <code>private, max-age=N</code>; sensitive → <code>no-store</code>. <code>s-maxage</code> targets shared caches, <code>stale-while-revalidate</code> serves stale while refreshing.</li>
+    <li><strong>ETag / Last-Modified</strong> drive conditional requests → a <code>304 Not Modified</code> saves bytes but still costs an RTT; long <code>max-age</code> + <code>immutable</code> beats revalidation for static assets.</li>
+    <li><strong>CORS</strong> = the same-origin policy plus an opt-in via response headers. Non-simple requests (custom headers, JSON content-type, PUT/DELETE) trigger an <code>OPTIONS</code> preflight; cache it with <code>Access-Control-Max-Age</code>. Credentialed requests need a specific <code>Allow-Origin</code>, never <code>*</code>.</li>
+    <li><strong>Cookie security:</strong> <code>Secure</code> (HTTPS only), <code>HttpOnly</code> (no JS access — XSS defense), <code>SameSite=Lax</code> default, and the <code>__Host-</code> prefix for the strongest scoping. Store session tokens in HttpOnly cookies, never <code>localStorage</code>.</li>
+    <li>Use <code>Vary</code> so caches don't serve the wrong variant; a per-user response must be <code>private</code> (or <code>Vary: Cookie</code>) or a shared CDN cache leaks one user's data to another.</li>
+    <li><strong>Real-time:</strong> HTTP polling (simplest), SSE (one-way server push, auto-reconnect), WebSocket (bidirectional), WebTransport (over QUIC). Pick by direction and latency needs.</li>
+    <li>Wrap fetches with <code>AbortController</code>, timeout, and exponential backoff for idempotent retries; a WebSocket must reconnect with backoff or it can DDoS your own server.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong><code>fetch</code> only rejects on network-level failures (DNS, CORS, abort) — an HTTP 4xx/5xx still RESOLVES.</strong> So <code>fetch(url).then(r =&gt; r.json())</code> silently parses an error body as if it succeeded. Always check <code>response.ok</code> (or <code>response.status</code>) and throw before reading the body. Sibling traps: <code>no-cache</code> means "revalidate," not "don't cache" (use <code>no-store</code> for that), and credentialed CORS can't use <code>Access-Control-Allow-Origin: *</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"For small payloads, latency is round trips, not bandwidth — so I put assets on a CDN edge, use HTTP/3 and TLS 1.3, and preconnect to upcoming origins to kill dead RTTs."</div>
+  <div class="revision-say">"fetch doesn't throw on a 500 — it only rejects on network errors — so I always check response.ok before reading the body."</div>
+  <div class="revision-say">"Hashed assets get a one-year immutable cache; HTML gets no-cache so it always revalidates; session tokens live in HttpOnly, Secure, SameSite cookies, never localStorage."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain what HTTP/2 multiplexing fixed over HTTP/1.1, and what HTTP/3 adds?</li>
+    <li>Can you set <code>Cache-Control</code> for a hashed asset versus an HTML document?</li>
+    <li>Can you walk through a CORS preflight and say what triggers one?</li>
+    <li>Can you name the cookie flags that protect a session token and why each matters?</li>
+    <li>Can you break TTFB down into DNS, TCP, TLS, and round-trip time?</li>
+    <li>Can you explain when to push work to the CDN edge versus the origin?</li>
+  </ul>
+</div>
+`}
+
+]
 });

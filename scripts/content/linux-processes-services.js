@@ -452,6 +452,42 @@ crontab -l
 <p><code>systemctl start &lt;svc&gt;</code> runs the service immediately, for the current uptime only — it does not persist across a reboot. <code>systemctl enable &lt;svc&gt;</code> configures the service to start automatically on every <em>future</em> boot, but by itself doesn't start it right now. They're independent: a service can be running-but-not-enabled (won't survive a reboot) or enabled-but-not-running (will come up next boot, but isn't up yet). When setting up a new service for real (not just testing), you typically want both, which is exactly what the combined shortcut <code>systemctl enable --now &lt;svc&gt;</code> does in one step.</p>
 </div>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Every running program is a <strong>process</strong> with a <strong>PID</strong> and a parent <strong>PPID</strong>; <strong>signals</strong> are how you talk to it, and <strong>systemd</strong> is how you keep it running without babysitting.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Inspect with <code>ps</code>/<code>top</code>/<code>htop</code>, find by name with <code>pgrep</code>; control by sending signals via <code>kill</code>/<code>killall</code>/<code>pkill</code>.</li>
+    <li><strong>SIGTERM</strong> = "please stop, clean up"; <strong>SIGKILL</strong> = "die now, no cleanup" — and SIGKILL can never be trapped, blocked, or cleaned up after.</li>
+    <li>Job control: <code>&amp;</code> backgrounds, <code>Ctrl-Z</code> suspends, <code>jobs</code>/<code>fg</code>/<code>bg</code> manage; <code>nohup</code> (at launch) and <code>disown</code> (after the fact) protect a job from SIGHUP on logout.</li>
+    <li><code>nice</code>/<code>renice</code> hint the scheduler at priority — lower niceness means higher priority.</li>
+    <li><strong>systemd</strong> is PID 1 on modern distros; <code>systemctl</code> starts/stops/restarts/enables services and <code>journalctl</code> reads their logs.</li>
+    <li>Scheduling: <code>cron</code> (<code>crontab -e</code>) for recurring jobs, <code>at</code> for a one-off future run, systemd <strong>timers</strong> as the modern alternative.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong><code>systemctl start</code> and <code>systemctl enable</code> are independent.</strong> <code>start</code> runs the service now (gone after a reboot); <code>enable</code> makes it start on every future boot but does <em>not</em> start it now. Use <code>systemctl enable --now</code> to do both — which is what you want almost every time.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Every process has a PID and a parent, and I control it by sending signals — SIGTERM to ask nicely, SIGKILL as the last resort."</div>
+  <div class="revision-say">"SIGKILL can't be trapped, so a database killed with it never flushes its cache — I always try SIGTERM first."</div>
+  <div class="revision-say">"enable and start are orthogonal: start is 'now', enable is 'on boot' — enable --now does both."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the difference between SIGTERM and SIGKILL and why SIGKILL is a last resort?</li>
+    <li>Can you background, suspend, and resume a job with <code>&amp;</code>, <code>Ctrl-Z</code>, and <code>fg</code>/<code>bg</code>?</li>
+    <li>Can you explain the difference between <code>nohup</code> and <code>disown</code>?</li>
+    <li>Can you tell a zombie process from an orphan?</li>
+    <li>Can you explain how <code>systemctl enable</code> differs from <code>systemctl start</code>?</li>
+    <li>Can you pick between <code>cron</code>, <code>at</code>, and a systemd timer for a scheduled job?</li>
+  </ul>
+</div>
 `}
 
 ]});

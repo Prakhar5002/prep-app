@@ -874,6 +874,55 @@ type FormState = Step1 | Step2 | Step3;</code></pre>
   <li>"I'd convert legacy <code>enum</code>s gradually with a codemod, keeping public API stable via re-exports."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Model with <strong>shape, not optionality</strong> — make illegal states unrepresentable with discriminated unions, narrow at the boundary, and validate every value crossing in.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Shape vs flag:</strong> states with different fields should be different shapes (a discriminated union), not one shape with optional fields and booleans — TS narrows by discriminator, not by flag.</li>
+    <li>Give each variant a <strong>literal-typed discriminator</strong> (<code>kind</code>/<code>tag</code>/<code>state</code>); a plain <code>string</code> discriminator can't narrow. Close switches with <code>default: { const _: never = x }</code> for exhaustiveness.</li>
+    <li><strong>Branded types</strong> (<code>string &amp; { __brand }</code>) distinguish structurally-equal types (<code>UserId</code> vs <code>OrderId</code>); always provide a constructor so call sites don't scatter <code>as</code>, and re-brand after serialization (JSON drops the brand).</li>
+    <li><strong>Const-as-union</strong> (<code>["a","b"] as const</code> → <code>typeof[number]</code>) replaces <code>enum</code>: zero runtime cost, tree-shakable, no const-enum / isolatedModules footgun.</li>
+    <li><strong>Result / Either</strong> returns errors as values for <em>expected</em> failures; <code>throw</code> only for truly exceptional cases — and a Result-returning function must never throw.</li>
+    <li><strong>State machines as discriminated unions:</strong> type transitions by narrowing the parameter (<code>ship(o: Order &amp; { state: "submitted" })</code>) so illegal transitions are compile errors; treat states as immutable.</li>
+    <li><strong>Typed event emitter / router:</strong> <code>keyof</code> + indexed access checks payloads by event key — always discriminate on the key, not the payload shape.</li>
+    <li><strong>Boundary validation:</strong> cast to <code>unknown</code> and narrow with a full guard or a <code>zod</code> schema — never trust <code>JSON.parse</code> with <code>as</code>, and never half-validate.</li>
+    <li><strong><code>satisfies</code> + <code>as const</code></strong> validates shape without widening — it keeps literal types for autocomplete, where a plain annotation would widen.</li>
+    <li><strong>Type predicates</strong> (<code>x is T</code>) create real narrowing; assertions (<code>as</code>) are statements of belief. A predicate with <code>any</code> input or a lying body poisons the type system — take <code>unknown</code>.</li>
+    <li>Patterns earn their cost at 3+ uses; past ~6–8 states, reach for a real FSM library (XState).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Modeling state as optional fields plus booleans</strong> (<code>loading?</code> / <code>data?</code> / <code>error?</code>) instead of a discriminated union — every read then needs guards, and illegal combinations (loading <em>and</em> error) are representable. Fix: one literal-typed discriminator per variant plus an exhaustive switch closed with <code>const _: never = x</code>, so adding a variant is a compile error until you handle it.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I make illegal states unrepresentable — a discriminated union with a literal discriminator instead of a bag of optional fields and booleans."</div>
+  <div class="revision-say">"Types are lies at the boundary: I cast network and JSON responses to unknown and narrow with a guard or a zod schema before trusting anything."</div>
+  <div class="revision-say">"satisfies is my default for config and token objects — it checks the shape without widening, so I keep the literal types for autocomplete."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain "model with shape, not optionality" and why a discriminated union beats optional-field flags?</li>
+    <li>Can you explain why a discriminator must be literal-typed, and how to enforce exhaustiveness with a <code>never</code> check?</li>
+    <li>Can you explain what branded types solve and why you must re-brand after serialization?</li>
+    <li>Can you explain when to return a <code>Result</code>/<code>Either</code> instead of throwing?</li>
+    <li>Can you explain how <code>satisfies</code> + <code>as const</code> validates shape without widening?</li>
+    <li>Can you explain the difference between a type predicate (<code>x is T</code>) and an <code>as</code> assertion?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

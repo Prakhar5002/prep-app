@@ -918,6 +918,49 @@ function stop() { cancelAnimationFrame(rafId); }
   <li>"I'd add a feature flag to disable heavy animations in low-power mode."</li>
 </ul>
 `
-    }
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">CSS vs JS is the wrong axis — the real question is <strong>which thread runs the work: animate <code>transform</code> and <code>opacity</code> to stay on the compositor/GPU, and everything else fights your JS on the main thread.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The 60fps budget is 16.67ms per frame.</strong> Every stage — JS, style recalc, layout, paint, composite — must fit, or the frame drops (visible jank).</li>
+    <li><strong>Only <code>transform</code> and <code>opacity</code> are composite-only</strong> — they skip layout AND paint and run on the compositor thread, so they animate smoothly even when your JS is busy. <code>filter</code> sometimes qualifies (browser-dependent).</li>
+    <li><strong>Animating <code>top</code>/<code>left</code>/<code>width</code>/<code>height</code> re-layouts every frame; color/background re-paints every frame</strong> — both on the main thread, competing with JS. Express moves as <code>translate</code>, resizes as <code>scale</code>, fades as <code>opacity</code>.</li>
+    <li><strong>"JS is slower" is a myth.</strong> rAF-driven <code>transform</code> goes through the same compositor as CSS — same speed. CSS is declarative (browser can prepare ahead); JS is imperative and needed for dynamic values, scrubbing, gestures, and orchestration.</li>
+    <li>Use CSS <strong>transitions</strong> for state changes (hover, class toggle), CSS <strong>keyframes</strong> for loops/named sequences, and <strong>rAF/WAAPI/libraries</strong> for dynamic or choreographed motion.</li>
+    <li><strong><code>will-change</code> is a promote-to-layer hint, not a fix</strong> — promote just before animating and remove after; blanket usage causes a layer explosion that eats GPU memory and can hurt performance.</li>
+    <li><strong>Schedule animation work with <code>requestAnimationFrame</code>, never <code>setInterval</code>/<code>setTimeout</code></strong> (which drift and aren't frame-synced), and always <code>cancelAnimationFrame</code> on cleanup.</li>
+    <li>Respect <strong><code>prefers-reduced-motion</code></strong> as a baseline, and profile on real low-end devices — not your dev machine.</li>
+    <li><strong>React Native has no CSS:</strong> the same principles map onto the Animated API (<code>useNativeDriver: true</code> = run on the native/UI thread), Reanimated worklets (UI thread), and LayoutAnimation.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Animating layout properties like <code>left</code>/<code>top</code>/<code>width</code> instead of <code>transform</code>.</strong> It looks identical but forces a re-layout + re-paint every frame on the main thread, squeezing JS and dropping frames. Fix: swap to <code>transform: translate</code>/<code>scale</code> so the change is composite-only. The related trap is the first-frame jump — applying the target and the transition in the same paint skips the animation; force layout (read <code>offsetHeight</code>) or use the double-rAF trick.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I default to animating transform and opacity because they're composite-only — no layout, no paint, and they run on the compositor thread even when the main thread is busy."</div>
+  <div class="revision-say">"CSS vs JS isn't a speed question — both go through the compositor for transform/opacity. CSS is declarative for state changes; I reach for rAF or a library when values are dynamic, gesture-driven, or need a timeline."</div>
+  <div class="revision-say">"will-change is a hint to promote a layer, not a fix — I add it right before animating and remove it after, otherwise a layer explosion eats GPU memory."</div>
+</div>
+`
+    },
+
+    { id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you say what the 60fps frame budget is in milliseconds and what happens when a frame blows past it?</li>
+    <li>Can you explain why only <code>transform</code> and <code>opacity</code> get compositor-thread acceleration, while <code>top</code>/<code>left</code>/<code>width</code>/<code>color</code> stay on the main thread?</li>
+    <li>Can you decide between a CSS transition, CSS keyframes, and JS/rAF animation for a given requirement?</li>
+    <li>Can you debunk the "JS animation is slower than CSS" myth and explain why both hit the compositor?</li>
+    <li>Can you explain what <code>will-change</code> actually does and why overusing it hurts memory?</li>
+    <li>Can you say what changes about your animation approach when you move from web to React Native?</li>
+  </ul>
+</div>
+`}
   ]
 });

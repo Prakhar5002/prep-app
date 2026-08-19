@@ -973,6 +973,53 @@ button:focus-visible {
   <li>"I'd build a design-system component library where every component is a11y-tested by default."</li>
 </ul>
 `
-    }
-  ]
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Semantic HTML first</strong> — a native element gives you focus, keyboard operation, and the correct screen-reader role for free; <strong>ARIA is the fallback, never the first tool</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Reach for native elements first:</strong> <code>&lt;button&gt;</code>, <code>&lt;a href&gt;</code>, <code>&lt;label&gt;</code>, <code>&lt;input&gt;</code> ship built-in a11y — focusable, keyboard-operable, correct role. ARIA is the second tool, not the first.</li>
+    <li><strong>The 3 rules of ARIA:</strong> don't use ARIA when HTML has an equivalent; don't override native semantics; every interactive element must be keyboard-operable.</li>
+    <li><strong>Keyboard is non-negotiable:</strong> Tab / Shift+Tab move, Enter / Space activate, Escape dismisses, arrow keys drive menus / tabs / radios.</li>
+    <li><strong>Focus management, three cases:</strong> modal → move focus in, trap it, restore to the trigger on close; SPA route change → focus the new page's heading / <code>&lt;main&gt;</code> and announce it; async update → use a live region, don't yank focus mid-task.</li>
+    <li><strong>Never kill focus with <code>outline: none</code></strong> — use <code>:focus-visible</code> for a keyboard-only focus ring.</li>
+    <li><strong>Contrast (AA):</strong> 4.5:1 for normal text, 3:1 for large text and UI components — and never convey information by color alone.</li>
+    <li><strong>The accessibility tree</strong> is what assistive tech reads — a derived tree of meaningful elements. Semantic markup maps cleanly; div-soup loses the information.</li>
+    <li><strong>Live regions must already be in the DOM before content changes</strong> — polite by default, assertive only for critical messages like errors.</li>
+    <li>Always include <code>alt</code>: <code>alt=""</code> for decorative images (a missing <code>alt</code> makes the reader announce the filename).</li>
+    <li>One <code>&lt;h1&gt;</code>, don't skip heading levels; landmarks (<code>header</code>, <code>nav</code>, <code>main</code>, <code>footer</code>) let screen-reader users jump around.</li>
+    <li>Honor <code>prefers-reduced-motion</code>; WCAG 2.2 target size is ≥ 24×24px; <code>aria-disabled</code> stays focusable (so users can discover why) while <code>disabled</code> does not.</li>
+    <li><strong>Test with real screen readers</strong> (VoiceOver, NVDA) plus axe / Lighthouse in CI — automation catches only about a third of issues.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Building an interactive control from <code>&lt;div onClick&gt;</code></strong> (or slapping <code>role</code> / <code>aria-label</code> onto a div) instead of a native <code>&lt;button&gt;</code>. The div isn't focusable, has no Enter / Space activation, and isn't announced as interactive. Fix: use <code>&lt;button&gt;</code>; if you truly can't, add <code>role="button"</code>, <code>tabindex="0"</code>, and an <code>onKeyDown</code> for Enter and Space. Sibling trap: <code>outline: none</code> with no <code>:focus-visible</code> replacement.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Semantic HTML first — a native <code>&lt;button&gt;</code> gives me focus, keyboard activation, and the right role for free; I only reach for ARIA when no HTML element fits."</div>
+  <div class="revision-say">"The first rule of ARIA is don't use ARIA — and anything interactive I build has to work with the keyboard, not just the mouse."</div>
+  <div class="revision-say">"For a modal I move focus in, trap it, and restore focus to the trigger on close; for an SPA route change I focus the new page's heading and announce it through a live region."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain when to reach for a native element versus an ARIA role — and why "no ARIA is better than bad ARIA"?</li>
+    <li>Can you build a modal that traps focus, moves focus in on open, and restores it to the trigger on close?</li>
+    <li>Can you make an SPA route change announce the new page to a screen reader?</li>
+    <li>Can you say what WCAG AA requires for contrast — and why meaning can never rely on color alone?</li>
+    <li>Can you test a flow keyboard-only and name every action that must work without a mouse?</li>
+    <li>Can you wire up a live region and explain <code>aria-live</code> polite versus assertive?</li>
+  </ul>
+</div>
+`}
+
+]
 });

@@ -1082,6 +1082,53 @@ pnpm turbo run dev --filter=@org/web...
   <li>"Audit a real monorepo's turbo.json — find missing outputs / env declarations."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A monorepo is <strong>one repo for code that actually shares state — types, a design system, or a release lifecycle</strong> — made fast by workspace links, a cached task pipeline, and affected-only CI, not by "one repo for everything" dogma.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Monorepo when packages genuinely share state</strong> (shared types, atomic cross-package refactors, one design system, coordinated releases); <strong>polyrepo when teams have independent release cadence</strong>. "Same company" is not a reason.</li>
+    <li><strong>The 2026 JS/TS stack: pnpm workspaces (layout) + Turborepo or Nx (task orchestration + caching) + Changesets (versioning + publish).</strong> Sweet spot is roughly 3–30 packages in one org.</li>
+    <li><strong>Internal deps use the workspace protocol <code>workspace:*</code></strong>, never npm-style version pinning — the package manager symlinks it so edits show up live, and replaces it with the real version on publish.</li>
+    <li><strong>The task pipeline runs in dependency order:</strong> <code>^build</code> means "build all deps first"; declare <code>outputs</code> so Turbo can actually cache the result.</li>
+    <li><strong>Two levers keep CI fast: remote cache</strong> (same input hash hits cache across CI and dev machines) <strong>and affected-only detection</strong> (<code>turbo run build --filter='...[origin/main]'</code> builds only changed packages + their consumers).</li>
+    <li><strong>Cache key = source + dep tree + tool versions + declared env vars.</strong> Every build-time env var must be declared in <code>env</code>/<code>globalEnv</code> or you get stale-cache "hits."</li>
+    <li><strong>Changesets = PR-based versioning:</strong> engineer writes a changeset (packages + semver bump + note); CI runs <code>changeset version</code> to bump + changelog, then <code>changeset publish</code> to npm. Mark apps <code>"private": true</code> / list them in <code>ignore</code> so they're never published.</li>
+    <li><strong>pnpm's strict resolution kills phantom deps</strong> (npm/yarn hoist, so a package can import a transitive dep that isn't in its own package.json — works locally, breaks when published).</li>
+    <li>Share config from the root: <code>tsconfig.base.json</code> that packages extend, one ESLint preset — otherwise the same code lints differently per package.</li>
+    <li><strong>Bazel / Buck2 / Pants are the polyglot heavyweights</strong> — reach for them only at multi-language or 1000+ package scale, not for ordinary JS/TS.</li>
+    <li><strong>RN angle:</strong> Metro + pnpm work without extra config on RN 0.72+ / Metro 0.76+; older setups need <code>watchFolders</code> + <code>nodeModulesPaths</code>. Shared TS types between web and mobile is the highest-leverage win.</li>
+    <li>Migrate polyrepo → monorepo with <code>git subtree</code> / <code>read-tree</code> to preserve history, then convert deps to <code>workspace:*</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Undeclared build-time env vars poisoning the cache.</strong> Turbo hashes source + deps + declared env; if a var used at build time isn't listed in <code>env</code>/<code>globalEnv</code>, two different builds share one cache key — you get a "cache hit" that restores the wrong output and a build that "passes" with stale results. Fix: declare every build-time env var explicitly (and keep secrets out of the hash — configure them at deploy time, not build time). Sibling trap: reaching for <code>--shamefully-hoist</code> to silence a missing-dep error instead of declaring the dep in that package's package.json.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Monorepo when packages actually share state — types, a design system, a release lifecycle; polyrepo when teams ship on independent cadence. 'Same company' isn't the test."</div>
+  <div class="revision-say">"My default JS/TS stack is pnpm workspaces plus Turborepo plus Changesets: pnpm's strict resolution prevents phantom deps, Turbo's remote cache and affected filter keep CI under five minutes, and Changesets handles versioning PR-by-PR."</div>
+  <div class="revision-say">"Internal deps go through <code>workspace:*</code> so edits are live and the real version is stamped on publish; I reach for Bazel only when JS/TS tooling isn't the bottleneck — multi-language or very large scale."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state the real test for monorepo vs polyrepo — shared state, not "same company"?</li>
+    <li>Can you defend the pnpm + Turborepo + Changesets stack piece by piece?</li>
+    <li>Can you explain <code>workspace:*</code> — why edits stay live and what version gets stamped on publish?</li>
+    <li>Can you explain how Turbo's remote cache and affected filter keep CI under five minutes?</li>
+    <li>Can you say when you'd reach for Bazel / Buck2 instead of JS/TS tooling?</li>
+    <li>Can you name the Expo + Metro gotchas — symlink resolution and transformer config — in an RN workspace?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

@@ -912,6 +912,57 @@ Alert.alert('Title', 'Message', actions);
   <li>"Build a clone of one Apple app's screen in RN; aim for indistinguishable from native."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The HIG is the <strong>design contract iOS users expect</strong> — lean on system primitives, respect safe area, honor Dynamic Type, and don't reinvent the navigation patterns users already know.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three pillars — Clarity, Deference, Depth.</strong> Legible focused UI; chrome recedes so content shines; layers + motion convey hierarchy. Liquid Glass (iOS 26) leans hard on Deference + Depth.</li>
+    <li><strong>Three navigation patterns:</strong> tab bar (3–5 top-level destinations), navigation stack (drill-down with back-swipe), modal/sheet (self-contained task). Match the user's mental model.</li>
+    <li><strong>Native-stack over the JS stack</strong> — it bridges to UIKit's UINavigationController, so back-swipe, transitions, large titles, and sheet detents are all native and free.</li>
+    <li><strong>Safe area via <code>useSafeAreaInsets</code>, never hard-coded 34/44.</strong> SafeAreaProvider once at root; raw insets where you position over content; don't nest <code>SafeAreaView</code> — it double-pads against native headers.</li>
+    <li><strong>SF Symbols (~6,900+, SF Symbols 7) scale with Dynamic Type and flip color in dark mode</strong> — render via <code>SymbolView</code>/<code>SFSymbol</code>; never rasterize them to PNG.</li>
+    <li><strong>Semantic colors, not hex.</strong> System tokens (<code>label</code>, <code>systemBackground</code>, <code>separator</code>) flip in dark mode; <code>#fff</code>/<code>#000</code> don't. Define a theme object and switch it on <code>useColorScheme</code>.</li>
+    <li><strong>Dynamic Type is a first-class constraint</strong> — text scales up to AX5 (2.5–3×). Use variable-height rows; truncate only non-essential meta; test at the largest accessibility size.</li>
+    <li><strong>44 × 44pt minimum tap target; 8pt grid; 16pt edge margins.</strong> Tab bar 49pt + inset; nav bar 44pt (96pt with large title).</li>
+    <li><strong>Gestures users expect:</strong> edge-swipe back, pull-to-refresh, swipe-down to dismiss modals, long-press context menus, swipe-left row actions, tap status bar to scroll to top.</li>
+    <li><strong>Use the system, not a clone:</strong> <code>Alert</code> for destructive confirms, <code>Share</code> (UIActivityViewController) for sharing, <code>ActionSheetIOS</code> for choices — a custom look-alike alert is uncanny and a review risk.</li>
+    <li><strong>Haptics are deliberate, not gratuitous</strong> — medium impact on commit, success notification on save, nothing on ordinary taps.</li>
+    <li><strong>Cross-platform: shared logic, platform-specific UI primitives.</strong> Swap <code>Touchable*</code> for <code>Pressable</code> + <code>Platform.select</code>; iOS tab bar vs Android drawer. One component for both pleases neither.</li>
+    <li><strong>App Store Guideline 4.0 (Design) rejects "doesn't feel native"</strong> — plus ATT, guest browsing, Sign in with Apple parity, and IAP for digital goods.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Hard-coded colors + missing safe area:</strong> a white background that stays white in dark mode and content sitting under the notch / home indicator. Fix with semantic theme tokens switched on <code>useColorScheme</code> and <code>useSafeAreaInsets</code> at the screen root — the same discipline that also kills the "custom alert instead of system <code>Alert</code>" smell.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Use system primitives, respect safe area, honor Dynamic Type, and don't reinvent navigation patterns users already know — that's what closes the gap between 'runs on iOS' and 'feels like iOS.'"</div>
+  <div class="revision-say">"Native-stack via react-navigation gives back-swipe, large titles, and sheet detents for free because it bridges to UIKit; the JS stack reimplements them and looks subtly off."</div>
+  <div class="revision-say">"Semantic colors in a theme object plus useSafeAreaInsets and SF Symbols mean dark mode, notch handling, and Dynamic Type all come for free — custom-drawn equivalents can't."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the three HIG pillars and the three iOS navigation patterns, and say when to use each?</li>
+    <li>Can you explain why native-stack beats the JS stack for a native iOS feel?</li>
+    <li>Can you handle safe area correctly — insets at the root without nesting <code>SafeAreaView</code> — on notch and home-indicator phones?</li>
+    <li>Can you ship dark mode and Dynamic Type: semantic tokens over hex, variable-height rows tested at AX5?</li>
+    <li>Can you say when to use the system <code>Alert</code>, <code>Share</code>, and action sheet instead of a custom clone — and why a look-alike alert is a review risk?</li>
+    <li>Can you explain the cross-platform tradeoff: shared logic but platform-specific UI primitives, not one component for both?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

@@ -356,6 +356,50 @@ wpscan --url http://&lt;target&gt; --enumerate vp,vt,u --api-token &lt;token&gt;
 <p>No — not under laws like the US CFAA and its international equivalents, which criminalize unauthorized <em>access</em>, not just unauthorized exploitation. A vulnerability scan sends real traffic to a real system and can be logged, alerted on, and in some cases destabilize a fragile service, so it requires exactly the same explicit, written, in-scope authorization as any other testing technique covered in this module. In practice, authorized engagements typically get the scanning source IPs allow-listed with the client's security team in advance, both to avoid tripping an unnecessary incident response and to make clear the activity is expected and authorized.</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Vulnerability assessment takes the hosts/ports/service-versions from scanning and answers, largely automatically and for coverage, which known CVEs apply and how severe each is — the scanner finds candidates, CVSS ranks them, searchsploit checks for a weapon, and a human still confirms it's real.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Assessment aims for breadth/coverage and runs frequently (often continuously); a penetration test aims for depth by actually exploiting to prove impact, and runs periodically.</li>
+    <li>Scanners do the matching, humans do the thinking — every scanner produces false positives, so every finding needs triage before it's trusted or reported.</li>
+    <li>Scanner families by target: Nessus (Tenable, NASL plugins, UI/API) and OpenVAS/GVM (open-source, NVTs) for network services; Nikto for web servers; nuclei for fast YAML-template checks; wpscan for WordPress.</li>
+    <li>CVE is MITRE's identifier for one disclosed flaw and carries no score; NVD (NIST) enriches it with a CVSS score, CPE (affected software) and CWE (weakness type); searchsploit/Exploit-DB answers "does working exploit code exist?"</li>
+    <li>CVSS has three metric groups: Base (always scored, intrinsic, never changes), Temporal/Threat (optional — exploit maturity now), Environmental (optional — this org's context); score is 0.0–10.0.</li>
+    <li>CVSS v3.1 Base metrics: AV, AC, PR, UI, S, C, I, A — a vector like AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H scores 9.8 Critical.</li>
+    <li>CVSS v4.0 (Nov 2023) restructures: Scope is replaced by Vulnerable-System (VC/VI/VA) + Subsequent-System (SC/SI/SA) impact; adds Attack Requirements (AT); UI gets three values (None/Passive/Active); Temporal collapses to a single Threat metric; adds a Supplemental group; nomenclature CVSS-B/BT/BE/BTE.</li>
+    <li>Severity scale (shared by v3.x and v4.0): 0.0 None, 0.1–3.9 Low, 4.0–6.9 Medium, 7.0–8.9 High, 9.0–10.0 Critical.</li>
+    <li>Authenticated (credentialed) scans read the OS's own package manager/registry for accurate installed versions — far fewer false positives/negatives than unauthenticated banner-guessing.</li>
+    <li>A false positive is a reported flaw that isn't really there; a false negative — worse and harder to notice — is a real flaw the scanner missed.</li>
+    <li>Prioritize by more than raw CVSS: business criticality, exploit availability (searchsploit), EPSS (probability of exploitation in 30 days) and the CISA KEV catalog (confirmed actively exploited).</li>
+    <li>Scanning is legally "access" under the CFAA — it needs the same written authorization as exploitation; aggressive scans can crash fragile services, so agree timing, rate limits and stop conditions in the RoE.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Forwarding raw scanner output as a "finding." A scanner result is a candidate — false positives are routine, so you must verify the version/config on the host (preferring authenticated results) before it goes in a report. That verification is the difference between running a tool and doing a vulnerability assessment.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A vulnerability assessment is broad, automated and frequent for coverage; a pentest is narrow, manual and periodic to prove real impact — neither replaces the other."</div>
+  <div class="revision-say">"CVE is just an identifier with no score; the NVD adds the CVSS score, CPE and CWE, and searchsploit tells me whether a working exploit already exists."</div>
+  <div class="revision-say">"A CVSS 9.8 with no known exploit and no KEV listing is a different priority than a 7.5 that's on CISA's actively-exploited list."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the concrete differences between a vulnerability assessment and a penetration test — goal, method, output, cadence?</li>
+    <li>Can you walk through the CVSS v3.1 Base metrics and read a vector string in plain English without a calculator?</li>
+    <li>Can you summarize what changed in CVSS v4.0 versus v3.1?</li>
+    <li>Can you explain the difference between authenticated and unauthenticated scanning and why authenticated is more accurate?</li>
+    <li>Can you distinguish CVE, NVD, CPE, CWE, and searchsploit/Exploit-DB and how they chain together?</li>
+    <li>Can you describe what you do with a Critical 9.8 finding before it goes in a report, including EPSS and CISA KEV?</li>
+  </ul>
+</div>
 `}
 
 ]});

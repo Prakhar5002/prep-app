@@ -1090,6 +1090,52 @@ users-svc, orders-svc, billing-svc, search-svc; each ownable independently
   <li>"Audit a real codebase — identify bounded contexts; would you draw the boundaries differently?"</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Architecture is about <strong>team size, deploy independence, and ownership boundaries</strong> — not technology fashion. Default to a <strong>modular monolith; extract services only when teams genuinely need independent deploys.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li>The spectrum: <strong>monolith</strong> (one deploy, one DB, one process) → <strong>modular monolith</strong> (one deploy, enforced module boundaries) → <strong>microservices</strong> (independent deploys, independent DBs, network between) → functions.</li>
+    <li><strong>Modular monolith wins by default:</strong> one deploy = simpler ops, one DB = trivial cross-module transactions, cross-module refactor = one PR, boundaries enforced by lint + review rather than the network.</li>
+    <li><strong>Microservices win at org scale:</strong> teams ship independently many times/day, different scaling profiles and stacks are justified, independent failure domains, clear per-team ownership. Real wins, real ops cost.</li>
+    <li>Decision factors that actually matter: team size, deploy independence, domain coupling, tech-stack fit, operational maturity, and scaling profile.</li>
+    <li><strong>BFF (Backend For Frontend):</strong> a thin server tailored to one client that composes microservice data into screen-shaped responses — shields the frontend from composition complexity.</li>
+    <li><strong>Event-driven</strong> decouples via events instead of RPC, at the cost of eventual consistency and harder debugging; <strong>CQRS</strong> splits write model from read model, used selectively for high-throughput reads.</li>
+    <li><strong>Hexagonal / clean / DDD</strong> are code-level patterns to keep business logic independent of infra (DB, HTTP) — explicit layers: HTTP routes → application services → domain → DB.</li>
+    <li>The wrong pattern is the one that <strong>mismatches your team size + deploy cadence + ownership model</strong>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>"Microservices first."</strong> A team of 5 builds 8 services, nobody owns end-to-end, debugging takes weeks, and deploy coordination is harder than a monolith would have been. Worst of all is the <strong>"distributed monolith"</strong> — "microservices" that all share one database, so you pay every distributed-systems cost while getting none of the deploy-independence benefit.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I'd start with a modular monolith and extract a service only when a clear seam emerges and a team genuinely needs an independent deploy cadence — not because the codebase feels big."</div>
+  <div class="revision-say">"Microservices sharing one database is a distributed monolith — the worst of both worlds. The database boundary is what makes a service independent."</div>
+  <div class="revision-say">"Architecture decisions track team size, deploy independence, and ownership — I pick the shape that lets teams ship without stepping on each other."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you place monolith, modular monolith, and microservices on a spectrum and say what each trades off?</li>
+    <li>Can you argue why a modular monolith is the default, and name the signals that justify extracting a service?</li>
+    <li>Can you explain what a "distributed monolith" is and why it's the worst outcome?</li>
+    <li>Can you explain what a BFF does and when it's worth adding versus pure proxy overhead?</li>
+    <li>Can you contrast event-driven and CQRS with their consistency and debugging costs?</li>
+    <li>Can you name the decision factors — team size, deploy independence, domain coupling, ops maturity — that drive the choice?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

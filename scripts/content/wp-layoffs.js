@@ -1189,6 +1189,55 @@ the work or talk about what I'd want to do next."
   <li>"Build a relationship with an employment lawyer pre-need; you don't want to be searching for one in crisis."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Layoffs are <strong>structural, not personal</strong> — most of the outcome is decided by the buffer, network, and readiness you built <em>before</em> the announcement; after it, run the whole thing as an operational process.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three roles, three playbooks:</strong> cut (negotiate + recover + search), survivor (recalibrate workload, decide stay-vs-go deliberately), and pre-layoff (build buffer, warm network, update materials, reduce vulnerability).</li>
+    <li><strong>Pre-layoff prep is the highest-leverage work:</strong> a 6-month financial buffer, a warm network kept warm year-round, resume + LinkedIn refreshed quarterly, confirmed references.</li>
+    <li>On cut day: <strong>pause — do not sign or accept on the spot.</strong> Take 24-48 hours, get everything in writing, do not badmouth anywhere.</li>
+    <li><strong>Severance is negotiable</strong> — length, COBRA, vesting acceleration, bonus proration, a written reference. Anchor high, give rationale, get it in writing.</li>
+    <li>A <strong>$300-500 employment-lawyer consult</strong> routinely pays for itself many times over — non-compete, non-solicit, mutual non-disparagement, RSU timing, state protections.</li>
+    <li><strong>Take a 1-2 week recovery</strong> before serious searching; job-searching from panic produces bad applications, weak interviews, and suboptimal offers.</li>
+    <li><strong>Run the job search as a project:</strong> pipeline of 5-10 processes, targeted outreach, weekly retros, sustainable cadence — not a daily spray of cold applications.</li>
+    <li><strong>Warm intros beat cold applications</strong> by a wide margin — send specific, personal messages to named contacts, not a mass "let me know if you hear of anything".</li>
+    <li>Handle <strong>time-sensitive items first:</strong> H-1B 60-day clock, COBRA / marketplace enrollment, RSU exercise window.</li>
+    <li>Keep the <strong>interview narrative factual, brief, and forward-looking</strong> — "structural, not performance-based" — never bitter; bitterness signals risk.</li>
+    <li><strong>Don't burn bridges:</strong> tech is small; today's manager who cut you is tomorrow's reference, hiring manager, or intro.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Treating the cut as an emergency instead of a process.</strong> Signing severance on the spot, skipping the lawyer, panic-applying Day 2, letting healthcare lapse, and venting bitterly online all cost real money and options — and a bitter interview narrative reads as a risk signal that sends offers elsewhere.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"My team was impacted in a restructuring — it was structural, not performance-based. I took a couple of weeks to reset and I'm looking deliberately for the right next role rather than scrambling."</div>
+  <div class="revision-say">"I treated the cut as a process: paused 24-48 hours, had a lawyer review the terms, negotiated the severance, then ran the search like a project with a pipeline and weekly retros."</div>
+  <div class="revision-say">"As a survivor I had the explicit workload conversation with my manager — I brought the before/after hours and options rather than silently absorbing two people's work into burnout."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you deliver a factual, forward-looking 30-second answer to "how did your last role end?" without bitterness?</li>
+    <li>Can you walk through the cut-day playbook — pause, get it in writing, lawyer review, negotiate severance — as a calm process?</li>
+    <li>Can you explain which severance levers are negotiable and how you would anchor and justify an ask?</li>
+    <li>Can you describe how you would run a job search as a project rather than a panic, and why the recovery week matters first?</li>
+    <li>Can you tell a STAR story about being a layoff survivor and renegotiating workload instead of silently absorbing it?</li>
+    <li>Can you explain the pre-layoff preparation (buffer, network, references, visa/healthcare awareness) you would put in place before cuts are announced?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

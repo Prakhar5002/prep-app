@@ -956,6 +956,8 @@ renderItem={({ item }) =&gt; &lt;Row item={item} onPress={() =&gt; doThing(item.
       collapsible: true,
       html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Working &gt; pretty &gt; clever — narrate every tradeoff</strong>: hardcode data first, budget the 60 minutes across 5 phases, and demo loading, error, empty, golden-path, and one edge case.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Mantra:</strong> "Working &gt; pretty &gt; clever — narrate every tradeoff." The interviewer grades whether you ship a working thing, make principled calls under pressure, and talk while typing.</li>
@@ -974,12 +976,29 @@ renderItem={({ item }) =&gt; &lt;Row item={item} onPress={() =&gt; doThing(item.
     <li><strong>Scale-up answers:</strong> FlashList for 10k+ rows (same API, ~5× perf), thumbnails not full-res images, FastImage/expo-image for caching + off-JS-thread decode, and profile with the React DevTools Profiler.</li>
     <li><strong>Anti-patterns:</strong> reaching for Redux on day one, a 500-line single component (extract past ~150 lines), inventing a half-built data layer, cleverness over readability, "it's the same as web React," and silent failures.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Over-spending on layout and pixel-perfect polish, then running out of time for state and edge cases</strong> — and if you never render a state, the interviewer assumes it doesn't work. Fix: hardcode 5 fake items to build the UI shell fast, spend the saved time wiring state/data and handling loading/error/empty, and demo each state out loud.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Let me confirm scope first — hardcoded data to start, monochrome unless there's a design, and I'll handle loading, error, and empty states; tests, theming, and a11y I'd add for prod."</div>
   <div class="revision-say">"I'll use FlatList for virtualization, guard onEndReached against double-paginating, and put an AbortController in the cleanup so the search doesn't race."</div>
   <div class="revision-say">"Working beats pretty beats clever — I'll get the golden path running, then narrate what I'd do with more time: FlashList at scale, MMKV for persistence, Reanimated worklets for smooth animation."</div>
 </div>
 `
-    }
-  ]
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you get a golden-path feature working first, then narrate the trade-offs you would improve with more time?</li>
+    <li>Can you build a debounced search-with-results screen from scratch under time pressure?</li>
+    <li>Can you separate component, state, and data layers so the interviewer sees a clean structure?</li>
+    <li>Can you explain when you would swap FlatList for FlashList and AsyncStorage for MMKV at scale?</li>
+    <li>Can you handle loading, empty, and error states without being reminded?</li>
+    <li>Can you talk through what you would test and refactor if given another twenty minutes?</li>
+  </ul>
+</div>
+`}
+
+]
 });

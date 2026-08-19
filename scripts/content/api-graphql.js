@@ -950,6 +950,51 @@ schema = applyDirectiveTransforms(schema, { auth: authDirectiveTransformer });
   <li>"Read GitHub's GraphQL API docs end to end."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>The client picks the shape, the server batches the fetch with DataLoader, and the schema is the contract you evolve by deprecation — never by cutting a v2.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>One endpoint, three operations</strong> — almost always <code>POST /graphql</code>; Query reads (parallel fields), Mutation writes (sequential top-level fields), Subscription pushes over WebSocket.</li>
+    <li><strong>Resolvers are one function per field</strong> — <code>(parent, args, context, info)</code> — and they form a tree, so each nested field can become its own DB hit.</li>
+    <li><strong>N+1 is the default surprise; DataLoader is the fix</strong> — it coalesces concurrent <code>load(id)</code> calls into one batch per tick, batches by ID, returns results in input order, returns <code>null</code> for misses, and lives one-per-request.</li>
+    <li><strong>Pagination = Relay cursor connections</strong> — edges + node + cursor + pageInfo — because it paginates both ways, hides the sort position in an opaque cursor, and composes with Apollo/Relay caches.</li>
+    <li><strong>Nullability is a contract</strong> — bias toward nullable for forward-compatibility, keep IDs non-null; a non-null field that throws nullifies its whole parent branch.</li>
+    <li><strong>Two error paths</strong> — top-level <code>errors</code> array for system failures (with a <code>code</code> in <code>extensions</code>), result-union types for expected domain failures so clients switch exhaustively.</li>
+    <li><strong>Evolve additively</strong> — add fields, mark old ones <code>@deprecated(reason)</code>, monitor usage, remove only at zero.</li>
+    <li><strong>Guard public surface</strong> — persisted queries (smaller payloads, GET-able, whitelist-only), depth + complexity limits, capped list sizes, disabled introspection, per-client rate limits.</li>
+    <li><strong>Federation when multiple teams own slices</strong> — subgraphs compose into a supergraph via <code>@key</code> and <code>__resolveReference</code>; otherwise a single graph is simpler to evolve.</li>
+    <li><strong>Cache in layers</strong> — CDN (persisted GET), server per-resolver, DataLoader per-request, client normalized by <code>__typename</code> + <code>id</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Caching DataLoader results by ID alone across viewers — viewer A sees data fetched for viewer B.</strong> DataLoader must be per-request (never shared, or you cross-pollinate auth contexts), and any per-field auth cache must be keyed by ID <em>plus</em> viewer scope.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"DataLoader per request, batched by ID, returns null for misses — that's what keeps N+1 from creeping in."</div>
+  <div class="revision-say">"Cursor pagination via Relay connections, result unions for mutation outcomes, and I version by deprecation — never a /v2."</div>
+  <div class="revision-say">"For a public API I go persisted-queries-only with depth and complexity limits, so unknown clients can't DoS the graph with arbitrary nesting."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why a list of 50 users with author info fires 51 DB calls — and how DataLoader kills the N+1?</li>
+    <li>Can you design a mutation that returns a result union instead of throwing, and say when the top-level <code>errors</code> array is the right place?</li>
+    <li>Can you evolve a schema without ever shipping a v2 — adding fields and marking old ones <code>@deprecated(reason)</code>?</li>
+    <li>Can you describe Relay-style cursor connections (edges + pageInfo) and why they beat offset pagination?</li>
+    <li>Can you lock down a public graph against DoS with persisted queries plus depth and complexity limits?</li>
+    <li>Can you say when federation (subgraphs composing into a supergraph) is worth the tooling overhead?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

@@ -887,6 +887,8 @@ function longestOnes(nums, k) {
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">For the <strong>best contiguous subarray/substring with a monotone property, keep a window <code>[l, r]</code>: expand <code>r</code> to grow, contract <code>l</code> when the invariant breaks</strong>, and record the best as you go — <code>O(n)</code> because each pointer only moves right.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Use it for "best contiguous subarray/substring with property X."</strong> Maintain a window <code>[l, r]</code>: expand <code>r</code> to grow, contract <code>l</code> when the invariant breaks.</li>
@@ -910,12 +912,27 @@ function longestOnes(nums, k) {
     <li><strong>Space:</strong> O(1) for sum/count windows; O(k) or O(charset) when the window state is a Map/set of distinct keys.</li>
     <li><strong>Signal → reach for it:</strong> "contiguous subarray / substring" + "longest / shortest / max-sum / count" + a monotone constraint ("at most k distinct", "sum ≥ target", "no repeats", anagram/permutation of length k) → sliding window. Non-contiguous, or negatives breaking monotonicity → different pattern.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Recording the answer in the wrong place and the <code>r - l + 1</code> off-by-one.</strong> Window length is <code>r - l + 1</code> (both ends inclusive) — dropping the <code>+1</code> is the classic error. For <em>max</em>-length record <em>after</em> contracting; for <em>min</em>-length record <em>inside</em> the contract loop while the constraint still holds. The deeper trap: reaching for sliding window when it doesn't apply — it breaks on <strong>negatives</strong> (shrinking no longer changes the sum monotonically) and on non-contiguous problems, so switch to prefix-sum + binary search, Kadane, or DP. Also delete a map key when its count hits 0, or <code>map.size</code> overstates the distinct count.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"I'll keep a window <code>[l, r]</code>: expand <code>r</code> to include elements, and contract <code>l</code> whenever the invariant breaks — recording the best window as I go."</div>
   <div class="revision-say">"It's O(n) even with the inner while, because <code>l</code> only ever moves right, so the total work across the whole run is bounded by n."</div>
   <div class="revision-say">"'Exactly k' I reduce to atMost(k) minus atMost(k−1); and if the array has negatives I drop sliding window for prefix sums, since shrinking no longer changes the sum monotonically."</div>
 </div>
-`}
+`},
 
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you recognize when a problem is a sliding-window problem?</li>
+    <li>Can you code the variable-size grow/shrink window template from memory?</li>
+    <li>Can you state the window's time and space complexity?</li>
+    <li>Can you reduce &quot;exactly k&quot; to atMost(k) minus atMost(k&minus;1)?</li>
+    <li>Can you name the trap that breaks sliding window when the array has negatives?</li>
+    <li>Can you name 2 problems it solves?</li>
+  </ul>
+</div>
+`}
 ]
 });

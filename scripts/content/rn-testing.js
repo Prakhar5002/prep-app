@@ -801,6 +801,48 @@ beforeEach(() =&gt; new MMKV().clearAll());</code></pre>
     <li>You avoid testing implementation details and over-snapshotting.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Unit-test pure functions, <strong>RNTL-test components the way users interact</strong>, and reserve slow, flaky E2E (Detox/Maestro) for the 3–5 critical flows — mocking native modules because Jest runs on Node, not a device.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Layered strategy (testing trophy):</strong> static (TS + ESLint) → Jest unit (functions, hooks, reducers) → RNTL integration (most effort) → a thin E2E cap for the money paths. E2E is slow and flaky, so keep it to 5–15 tests.</li>
+    <li><strong>@testing-library/react-native (RNTL)</strong> tests rendered output via accessibility queries — resilient to refactors. Prefer <code>getByRole</code>/<code>getByText</code> over <code>testID</code>; drive interactions with <code>fireEvent</code>.</li>
+    <li><strong>Test behavior, not implementation details</strong> — asserting internal state or method calls breaks on every refactor.</li>
+    <li><strong>Jest runs on Node, so native modules must be mocked</strong> (ObjC/Swift/Kotlin don't exist in the test env): manual mocks in <code>__mocks__/</code>, inline <code>jest.mock</code>, or a <code>jest-setup</code> global. Mock only at boundaries (native modules, network, third-party SDKs) — never your own components.</li>
+    <li><strong>Reanimated and Gesture Handler need setup mocks</strong> (<code>require('react-native-reanimated/mock')</code>) or worklet code throws parse errors; <code>transformIgnorePatterns</code> must list every untranspiled ESM lib.</li>
+    <li><strong>Async UI: never <code>sleep()</code></strong> — use <code>findBy*</code> / <code>waitFor</code>. The "not wrapped in act" warning means you didn't await an async state update; awaiting it is the fix.</li>
+    <li><strong>Mock the network at the boundary</strong> with MSW (or <code>jest.spyOn(global, 'fetch')</code>) so components exercise real fetch logic against fixtures.</li>
+    <li><strong>Detox = gray-box</strong>: talks to the app's internal sync to auto-wait for animations/network — faster and more deterministic, but needs a special instrumented native build. <strong>Maestro = black-box</strong> YAML flows over XCUITest/UIAutomator — no native build, simpler, cross-platform, but relies on accessibility labels.</li>
+    <li><strong>Reset shared state between tests:</strong> Zustand/Redux stores are modules that persist, and a singleton QueryClient carries cache across tests — create a fresh QueryClient per test and reset stores in <code>afterEach</code>.</li>
+    <li><strong>Simulators ≠ real devices</strong> for camera, biometrics, keyboard, and geolocation — run a device subset via Firebase Test Lab / BrowserStack.</li>
+    <li><strong>Snapshots sparingly:</strong> they approve whatever changes and drift on dates/IDs/random values — write explicit assertions instead. Target ~60–75% coverage (80%+ on auth/checkout/data), not 100%.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Leaning on E2E and snapshots as the primary defense.</strong> "E2E catches everything so skip unit tests" produces a slow, flaky suite that rots without CI, while snapshot-only tests rubber-stamp any change with no semantic assertion. Most bugs live at the component/hook/reducer level where RNTL and Jest are fast and reliable — use E2E for last-mile confirmation of critical flows, and write explicit expectations, not toMatchSnapshot, as the real check.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I follow the testing trophy — most effort in RNTL integration tests that query by role and label, a thin E2E cap for critical flows, because E2E is slow and flaky."</div>
+  <div class="revision-say">"Jest runs on Node, so I mock native modules at the boundary via __mocks__, and set up the Reanimated and Gesture Handler mocks or worklet code breaks the parser."</div>
+  <div class="revision-say">"I never sleep in tests — findBy and waitFor — and I reset stores and create a fresh QueryClient per test so state doesn't leak between them."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why you use <code>findBy</code> and <code>waitFor</code> instead of sleeping in a test?</li>
+    <li>Can you set up a fresh <code>QueryClient</code> and reset stores per test so state never leaks?</li>
+    <li>Can you contrast unit, component (RNTL), and end-to-end (Detox) tests and when each earns its place?</li>
+    <li>Can you mock a native module or a network call cleanly?</li>
+    <li>Can you test user behavior rather than implementation details, and say why that is more robust?</li>
+    <li>Can you explain how you would test an async flow with its loading and error states?</li>
+  </ul>
+</div>
 `}
 
 ]

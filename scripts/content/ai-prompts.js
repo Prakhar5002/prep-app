@@ -1457,6 +1457,52 @@ async function classify(text) {
   <li>"Ship something LLM-powered to a real user; nothing teaches like production traffic."</li>
 </ul>
 `
+    },
+
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Prompt engineering is designing LLM inputs so outputs are reliable and shippable — <strong>a prompt is a contract</strong>: structure outputs, few-shot for shape, chain-of-thought for reasoning, evals for confidence.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Three pillars: the system prompt (role + rules + tools), the user message (task + data), and the assistant response (ideally structured) — plus tools/function calls in modern APIs.</li>
+    <li><strong>Structured output beats free-form text:</strong> JSON schema, function calling, or structured-output mode make reliability jump dramatically.</li>
+    <li>Few-shot (2 to 5 examples) steers the model toward your shape; chain-of-thought helps reasoning tasks — a think step you don't render to the user.</li>
+    <li>Tool use / function calling turns the LLM into an orchestrator that calls your APIs.</li>
+    <li><strong>Evals are mandatory:</strong> without a golden dataset and automated scoring you can't tell if a prompt change improved or regressed.</li>
+    <li>Cost and latency: input tokens are cheap, output is expensive, cached prompts are cheaper; streaming drops perceived latency from a full response in seconds to a first token in about 200ms.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Regexing free text breaks on every model update</strong> — use structured output instead. And trusting output blindly (letting a tool fire on "delete all users") is a disaster; validate before acting. Don't route every task to the biggest model when a smaller one is cheaper and faster.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Prompts are contracts — I structure the output with a schema or function call instead of regexing free text."</div>
+  <div class="revision-say">"Few-shot for shape, chain-of-thought for reasoning, and evals so I actually know whether a prompt change helped or regressed."</div>
+  <div class="revision-say">"I never let tool output fire blindly, and I route easy tasks to a cheaper, faster model instead of the biggest one."</div>
+</div>
+`
+    },
+
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the three pillars of a prompt and where tools fit?</li>
+    <li>Can you explain why structured output beats parsing free text?</li>
+    <li>Can you say when to use few-shot versus chain-of-thought?</li>
+    <li>Can you explain why evals are mandatory before shipping a prompt change?</li>
+    <li>Can you describe how streaming changes perceived latency?</li>
+    <li>Can you name two ways to control LLM cost?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

@@ -809,6 +809,8 @@ POST /post              → creates a post referencing mediaId</code></pre>
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Each case walks the same 10-step template so you can <strong>pattern-match a new prompt to a rehearsed case</strong> and recall its decisions and vocabulary on demand.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Six worked cases:</strong> Twitter/News Feed, Chat (WhatsApp/Slack), Collaborative editor (Google Docs), Autocomplete/typeahead, Video streaming (YouTube/Netflix), Photo/video upload (Instagram).</li>
@@ -824,10 +826,27 @@ POST /post              → creates a post referencing mediaId</code></pre>
     <li><strong>Pattern-match new prompts</strong> to a known case ("Pinterest ≈ the feed case") instead of starting from scratch.</li>
     <li>Senior = framework + patterns + tradeoffs; <strong>staff</strong> adds product thinking, tooling/measurement (budgets, RUM), evolution/migration, and explicit downscoping.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Reciting the 10 steps mechanically without naming a pattern or a tradeoff — that reads junior. Fix: state the recurring pattern by name (cursor pagination, optimistic-with-rollback, WebSocket + since-cursor) and justify it for the specific prompt, then add the deepest risk you'd want to prototype.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"I pattern-match the prompt to a case I've rehearsed — most feed prompts are the Twitter case, most editors are the CRDT/Docs case."</div>
   <div class="revision-say">"I lean on the recurring patterns by name: normalized cache, optimistic-with-rollback, WebSocket plus a since-cursor, virtualized infinite list, offline queue."</div>
   <div class="revision-say">"For a feed: SSR the first tweets, virtualize, React Query + normalized cache, WebSocket into a 'N new tweets' pill, optimistic likes — biggest open risk is scaling WebSocket to 10M concurrent."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you virtualize a 500-row feed and pair it with cursor pagination that stays stable under new inserts?</li>
+    <li>Can you push live tweets over a WebSocket, buffer them in a "N new tweets" pill, and reconcile with a "since" cursor after reconnect?</li>
+    <li>Can you guarantee chat message order and dedupe using a server (timestamp, sequence) sort plus a client-generated idempotency key?</li>
+    <li>Can you justify CRDT over OT for a collaborative editor, and describe presence/awareness throttled on the same WebSocket?</li>
+    <li>Can you keep autocomplete responsive with debouncing, AbortController, a sequence guard for out-of-order responses, and an LRU cache?</li>
+    <li>Can you make an upload resumable with chunked multipart, an IndexedDB queue, and a service worker that survives navigation?</li>
+  </ul>
 </div>
 `}
 

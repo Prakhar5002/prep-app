@@ -944,6 +944,50 @@ el.animate({ fontFamily: ['Arial', 'Times'] }, { duration: 1000 });
   <li>"I'd add lint rules to prevent <code>el.animate(...)</code> in render bodies (forces useEffect)."</li>
 </ul>
 `
-    }
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">WAAPI is <strong>CSS keyframes plus a JavaScript control object</strong> — <code>el.animate(keyframes, options)</code> returns an Animation you can play, pause, reverse, scrub, and await, on the same compositor pipeline as CSS.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Shape:</strong> <code>el.animate(keyframes, options)</code> returns an <strong>Animation object</strong> with <code>play()</code>, <code>pause()</code>, <code>reverse()</code>, <code>cancel()</code>, <code>finish()</code>, plus <code>currentTime</code>, <code>playbackRate</code>, and <code>playState</code>.</li>
+    <li><strong>Same compositor benefits as CSS:</strong> animating <code>transform</code>/<code>opacity</code> runs on the compositor thread — WAAPI's win is control and dynamic values, NOT raw speed.</li>
+    <li><strong>Promises:</strong> <code>animation.finished</code> resolves on completion (rejects with AbortError on cancel); <code>animation.ready</code> resolves once committed to the compositor. Compose with <code>await</code> and <code>Promise.all</code>.</li>
+    <li><strong>fill mode</strong> controls what shows before/after: <code>none</code> (default) snaps back to the underlying value; <code>forwards</code> holds the last keyframe; <code>backwards</code> shows the first during delay; <code>both</code> does both ends.</li>
+    <li><strong>Persistence:</strong> even with <code>fill: 'forwards'</code> a finished animation may be GC'd and the style reverts — use <code>persist()</code>, or <code>commitStyles()</code> to bake the end state into inline styles (then <code>cancel()</code>).</li>
+    <li><strong>Use WAAPI</strong> when keyframes are dynamic (drag/scroll/computed), you need pause/reverse/scrub, or you need to await completion; <strong>use CSS</strong> for hover/focus and write-time-known values; <strong>reach for a library</strong> (GSAP/Framer Motion) only for heavy timeline orchestration, layout transitions, or spring physics.</li>
+    <li><strong>Modern timelines:</strong> pass a <code>ScrollTimeline</code> or <code>ViewTimeline</code> instead of time to get native scroll-driven / view-driven animation — feature-detect and fall back to IntersectionObserver where unsupported.</li>
+    <li><strong>composite:</strong> default <code>replace</code> (last-started wins); <code>add</code> stacks values on the same property; <code>accumulate</code> builds across iterations.</li>
+    <li>WAAPI only tweens animatable CSS values — <strong>text content, attributes, and scrollTop need rAF</strong>. In React, run animations in <code>useEffect</code> (not render) and <code>cancel()</code> in cleanup for StrictMode safety.</li>
+    <li><strong>RN has no WAAPI</strong> — use Animated or Reanimated; the imperative-control mental model transfers.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting <code>fill: 'forwards'</code> — the element snaps back to its original style the instant the animation ends.</strong> Add <code>fill: 'forwards'</code>; and if it still reverts later (finished animations can be GC'd off the active list), either <code>persist()</code> it or call <code>commitStyles()</code> then <code>cancel()</code> to bake the end state into inline styles.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"WAAPI is CSS keyframes with a JS control object — <code>el.animate()</code> gives me an Animation I can pause, reverse, scrub, and await, on the same compositor pipeline as CSS."</div>
+  <div class="revision-say">"I reach for WAAPI when CSS isn't enough but a library is overkill — dynamic keyframes, imperative control, or awaiting <code>animation.finished</code> as a Promise."</div>
+  <div class="revision-say">"The classic gotcha is fill mode: without <code>fill: 'forwards'</code> the element snaps back, and even then a finished animation can be GC'd — so I commitStyles or persist when the end state must stick."</div>
+</div>
+`
+    },
+
+    { id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you write an <code>element.animate(keyframes, options)</code> call and say what object it hands back?</li>
+    <li>Can you name the imperative controls WAAPI gives you (<code>pause</code>, <code>play</code>, <code>reverse</code>, <code>currentTime</code>, <code>playbackRate</code>)?</li>
+    <li>Can you explain the difference between the <code>animation.finished</code> and <code>animation.ready</code> promises?</li>
+    <li>Can you say when a WAAPI animation runs on the compositor thread just like CSS?</li>
+    <li>Can you decide when to pick WAAPI over CSS keyframes, and when a library like GSAP is still worth it?</li>
+    <li>Can you explain how <code>animation-timeline</code> enables scroll-driven and view-driven animation?</li>
+  </ul>
+</div>
+`}
   ]
 });

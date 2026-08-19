@@ -1152,6 +1152,50 @@ return dp[m][n];
   <li>"I'd add input validation — the algorithm assumes positive integers; document or reject other shapes."</li>
 </ul>
 `
-    }
-  ]
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">DP is <strong>structured caching of recursive computation</strong> — define the state, write the recurrence, and each overlapping subproblem is solved exactly once instead of exponentially many times.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Two preconditions:</strong> overlapping subproblems (same subproblem recurs many times) AND optimal substructure (the optimum is built from optimal sub-solutions). Miss either and DP is the wrong tool.</li>
+    <li><strong>State = the parameters that fully describe a subproblem.</strong> If you can't write <code>f(state)</code>, you don't have a DP yet — name it explicitly (e.g. "<code>dp[i][j]</code> = min edit distance for prefixes of length i and j").</li>
+    <li><strong>Recurrence = how <code>f(state)</code> depends on smaller states.</strong> Most DPs are a decision at each step: include vs skip, take vs leave, match vs advance.</li>
+    <li><strong>Two styles, same complexity:</strong> top-down (recursion + memo) is easier to derive and computes only needed states; bottom-up (tabulation) has faster constants and no stack-overflow risk.</li>
+    <li><strong>Complexity is O(states × work-per-state).</strong> Quote it precisely; it falls straight out of the table size times the transition cost.</li>
+    <li><strong>Recognition signals:</strong> "how many ways" → counting DP; "min/max" → optimization DP; "can it be done" → boolean DP; "longest/shortest subsequence" → LIS/LCS; "pick a subset under a constraint" → knapsack; grid/two-string/interval/tree/bitmask each have their own shape.</li>
+    <li><strong>Space optimization last:</strong> if <code>dp[i]</code> depends only on <code>dp[i-1]</code>/<code>dp[i-2]</code>, collapse the array into a few rolling variables — but prove correctness on the full table first.</li>
+    <li><strong>Base cases and indexing bite:</strong> use a <code>(n+1)</code>-length table with <code>dp[0]</code> as the base and <code>dp[i]</code> reading <code>nums[i-1]</code>, consistently.</li>
+    <li>Watch the pitfalls: incomplete memo key, wrong initial value (Infinity for min, -Infinity for max, false for boolean), forgetting <code>% (10^9+7)</code> in counting problems, and deep top-down recursion overflowing for large n.</li>
+    <li><strong>Know when NOT to:</strong> greedy beats DP for activity selection, fractional knapsack, and job scheduling; plain recursion beats DP when subproblems don't actually overlap.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Coding before defining the state — and mishandling iteration order.</strong> The classic concrete bug: 0/1 knapsack with O(W) space must iterate capacity <em>descending</em> (ascending silently reuses an item, turning it into unbounded knapsack); coin-change combinations vs permutations flip on loop order. Fix by writing "<code>dp[i][j] = ___</code>" and the base case out loud first, then hand-trace a tiny input to verify indices and direction before trusting the code.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"DP is just structured caching of recursion — it needs overlapping subproblems and optimal substructure, otherwise I'd reach for greedy or plain recursion."</div>
+  <div class="revision-say">"Let me define the state and the recurrence first: <code>dp[i][j]</code> means ___, the answer is at <code>dp[m][n]</code>, and the base cases are ___."</div>
+  <div class="revision-say">"I'll write it top-down with memoization to get the recurrence right, then convert to bottom-up and reduce space to O(one row) since each state only depends on the previous one."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you define the state and the recurrence for a DP problem?</li>
+    <li>Can you convert a top-down memoized solution to bottom-up?</li>
+    <li>Can you reduce space to O(one row) when a state depends only on the previous?</li>
+    <li>Can you recognize overlapping subproblems and optimal substructure?</li>
+    <li>Can you name the base-case / initialization trap?</li>
+    <li>Can you name 2 classic DP problems?</li>
+  </ul>
+</div>
+`}
+]
 });

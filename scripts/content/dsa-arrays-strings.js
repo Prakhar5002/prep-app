@@ -996,6 +996,8 @@ for (let i = 0; i &lt; n; i++) helper(arr[i]);</code></pre>
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Almost every array/string problem is <strong>one of a small pattern set — two pointers, sliding window, prefix sum, hash map, sort-first, cyclic sort, reverse/rotate, Kadane's</strong> — so name the pattern, write its template, then handle the edges.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>A small pattern set covers ~60% of array/string problems:</strong> two pointers, sliding window, prefix sums, hash map, sort-first, cyclic sort, reverse/rotate, Kadane's.</li>
@@ -1017,12 +1019,27 @@ for (let i = 0; i &lt; n; i++) helper(arr[i]);</code></pre>
     <li><strong>Space:</strong> two pointers / Kadane's / rotate are <code>O(1)</code>; hash and prefix-sum approaches are <code>O(n)</code>.</li>
     <li><strong>Signal → reach for it:</strong> sorted + pair/triplet → two pointers · contiguous subarray/substring with a property → sliding window · range-sum queries → prefix sum · presence/frequency/complement → hash map · numbers in <code>[1..n]</code> → cyclic sort · max subarray → Kadane's · in-place rearrange → reverse/rotate.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Hidden <code>O(n²)</code> from immutable strings and linear built-ins, plus unhandled edges.</strong> Candidates build strings with <code>s += x</code> in a loop (<code>O(n²)</code> — use <code>join</code>) and call <code>arr.includes</code> inside a loop (<code>O(n²)</code> — use a Set for <code>O(1)</code> presence). The other classic miss: Kadane's returning 0 on an all-negative array, forgetting <code>k = k % n</code> before rotating, and skipping the empty / single-element / all-same cases and the off-by-one in <code>l</code>/<code>r</code> init and termination.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"I first identify the pattern — two pointers, sliding window, prefix sum, or hash — then write the template and handle empty / single / all-same up front."</div>
   <div class="revision-say">"Two pointers and sliding window both use multiple indices, but sliding window maintains a region with a property while two pointers do pointwise work from the ends or at two speeds."</div>
   <div class="revision-say">"Strings are immutable, so I avoid <code>+=</code> in a loop (that's O(n²)) — I split to a char array or join, and I use a fixed 26-slot count array for lowercase-letter problems."</div>
 </div>
-`}
+`},
 
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why strings are immutable and why <code>+=</code> in a loop is O(n&sup2;)?</li>
+    <li>Can you use a fixed 26-slot count array for lowercase-letter problems?</li>
+    <li>Can you state the time cost of access, insert, and delete on an array?</li>
+    <li>Can you recognize when a prefix-sum array turns an O(n&sup2;) range query into O(1)?</li>
+    <li>Can you reverse an array in place with two pointers from memory?</li>
+    <li>Can you name 2 classic array/string problems and the pattern each uses?</li>
+  </ul>
+</div>
+`}
 ]
 });

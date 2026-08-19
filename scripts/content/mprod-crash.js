@@ -799,6 +799,55 @@ if (process.env.JEST_WORKER_ID) return;   // skip init in test
   <li>"I'd integrate with the support tool so customer complaints auto-link to their Sentry session."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Crash reporting = the production safety net that <strong>captures every fatal (and non-fatal) error, enriches it with context, deduplicates similar crashes into one issue, and symbolicates the stack trace</strong> so humans can act on it.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three pieces:</strong> SDK captures → backend ingests, groups, dedupes → dashboard surfaces issues by frequency, affected users, and trend.</li>
+    <li><strong>Three crash layers:</strong> JS (uncaught throws, unhandled rejections), native iOS (NSException, Mach signals SIGSEGV/SIGBUS/SIGABRT), native Android (Java/Kotlin throwables, JNI/NDK, ANRs). RN needs symbols for all three.</li>
+    <li><strong>Symbolication is mandatory:</strong> dSYM (iOS, matched by UUID), ProGuard/R8 mapping.txt (Android), JS source map (RN) — and Hermes needs the composed bytecode→JS→source map. Automate uploads in CI.</li>
+    <li><strong>Fingerprint</strong> = stable hash (top N frames + exception type) that groups 10,000 identical crashes into one issue; override it to split a generic <code>TypeError</code> or merge same-root-cause stacks.</li>
+    <li><strong>Breadcrumbs</strong> = a ring buffer (~100) of recent navigation/http/taps/actions that tell you <em>what was happening</em> before the crash; capture metadata only, never full bodies/tokens.</li>
+    <li><strong>Never log PII:</strong> strip email/name/tokens in the <code>beforeSend</code> hook and don't dump user objects into <code>setContext</code>; wrap the hook in try/catch so it never breaks the pipeline.</li>
+    <li><strong>Release-aware:</strong> tag every event with version, build number, environment, commit SHA, and JS bundle hash for OTA/CodePush apps — otherwise "did this regress in 2.4.0?" is unanswerable.</li>
+    <li><strong>KPIs:</strong> crash-free user rate (target ≥ 99.5%), crash-free session rate, Google's ANR rate (&lt; 0.47%) and crash threshold (&lt; 1.09%) which gate Play ranking.</li>
+    <li><strong>Init Sentry first</strong> — before UI and any third-party SDK — or early crashes are missed; skip init in Jest and gate test-crash buttons behind <code>__DEV__</code>.</li>
+    <li><strong>Edge crashes need special handling:</strong> OOM kills and iOS watchdog terminations (0x8badf00d) don't fire SDK handlers and often surface only in App Store Connect; wrap the top-level app in a React ErrorBoundary.</li>
+    <li>Pick <strong>one</strong> reporter — Sentry (cross-stack, release-aware) or Crashlytics (free, Firebase-tied, strong Android) — don't run two; always trigger a known crash to validate the symbol pipeline before every release.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Broken release tagging / source-map mismatch:</strong> a release ships with a release tag in <code>Sentry.init</code> that doesn't match the tag used in the upload command (or, on Hermes, only the Metro map was uploaded, not the composed map) — so production traces stay minified and events land under "unknown release." The fix is to trigger a known crash on every release candidate and confirm it appears symbolicated with the correct tag before signing off.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A crash reporter captures, persists to disk, sends on next launch, then symbolicates and fingerprints on the backend to dedupe thousands of stack traces into a handful of actionable issues."</div>
+  <div class="revision-say">"RN is harder because a crash can originate in JS, iOS native, or Android native — so I automate dSYM, ProGuard, and composed Hermes source-map uploads in CI and test a real crash before every release."</div>
+  <div class="revision-say">"I tag every event with version, build, environment, commit SHA, and JS bundle hash, scrub PII in beforeSend, and gate release promotion on crash-free user rate staying above 99.5%."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you trace an event's life from capture → persist → send → symbolicate → fingerprint → dashboard?</li>
+    <li>Can you name the symbolication artifact for iOS, Android, and RN/Hermes and how each is uploaded?</li>
+    <li>Can you explain what a fingerprint is and when you'd override the default grouping?</li>
+    <li>Can you list the crash layers (JS, native iOS, native Android, ANR, OOM, watchdog) and how each is caught?</li>
+    <li>Can you describe how you scrub PII and keep breadcrumbs safe with beforeSend?</li>
+    <li>Can you state your crash KPIs and design a release-promotion gate around crash-free rate and ANR?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

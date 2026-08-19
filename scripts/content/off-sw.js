@@ -1032,6 +1032,52 @@ self.addEventListener('fetch', (event) =&gt; {
   <li>"Audit a real PWA — find versioning, update, kill-switch gaps."</li>
 </ul>
 `
+    },
+
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A Service Worker is a <strong>network proxy running in the browser</strong> — a separate thread with no DOM that intercepts every <code>fetch</code>, so you cache deliberately, version everything, and plan the update flow.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Separate thread, process, and context: no <code>window</code>, no DOM, no synchronous storage; <code>self</code> is the global; promises everywhere.</li>
+    <li>Lifecycle: install then waiting then activate then idle then fetch/message events; a new SW sits in <strong>waiting</strong> until all old tabs close unless you call <code>skipWaiting</code>.</li>
+    <li>Caching strategies: cache-first (assets), network-first (API), stale-while-revalidate (best of both), network-only (mutations), cache-only (offline-only).</li>
+    <li>Storage: the Cache API (a Request-to-Response store) and IndexedDB — no <code>localStorage</code>/<code>sessionStorage</code> in the SW context.</li>
+    <li>Scope is a path-prefix (register at <code>/</code> to control every page); registration is HTTPS-only except on localhost.</li>
+    <li>Workbox ships pre-built strategies, routing, and precaching — the default for new PWAs.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Updates are sticky, and cache-everything is a trap.</strong> A newly deployed SW doesn't activate until the user has zero open tabs of the old one — so you must build an update prompt. And caching HTML/API cache-first strands users on yesterday's shell forever; never cache POST responses.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A Service Worker is a network proxy in the browser — it intercepts fetch so I can serve from cache and work offline."</div>
+  <div class="revision-say">"Updates are sticky: a new SW sits in 'waiting' until every old tab closes, so I ship an update-prompt UX."</div>
+  <div class="revision-say">"I don't cache HTML cache-first — that traps users on a stale shell; HTML wants network-first or stale-while-revalidate."</div>
+</div>
+`
+    },
+
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you walk through the SW lifecycle from install to activate?</li>
+    <li>Can you match cache-first / network-first / stale-while-revalidate to the right kind of request?</li>
+    <li>Can you explain why a newly deployed SW doesn't take effect immediately?</li>
+    <li>Can you explain why HTML shouldn't be cached cache-first?</li>
+    <li>Can you say which storage APIs are and aren't available inside a SW?</li>
+    <li>Can you explain why <code>event.waitUntil</code> matters in a SW handler?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

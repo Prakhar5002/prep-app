@@ -741,6 +741,8 @@ close() {
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The GC frees objects <strong>unreachable from any root</strong> — not the ones you're "done with" — so a leak is always a reference you forgot: timers, listeners, detached DOM, closures over big state, or an uncapped cache.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>JS is memory-managed</strong> — no <code>malloc</code>/<code>free</code>; the GC reclaims memory based on <strong>reachability</strong>, not on whether you're "done with" an object.</li>
@@ -756,10 +758,26 @@ close() {
     <li><strong>Always clean up:</strong> <code>clearInterval</code>/<code>clearTimeout</code>, <code>removeEventListener</code>, unsubscribe on unmount (React effect cleanup return).</li>
     <li>Don't rely on <code>FinalizationRegistry</code> for correctness — its callback may never run; use explicit <code>.close()</code> in <code>try/finally</code>. Avoid <code>delete</code> on hot objects (invalidates the hidden class) — set to <code>null</code>.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Expecting an object to be collected while a <strong>closure, timer, listener, or global collection still references it</strong>. You can't force GC — you can only drop references: <code>clearInterval</code>/<code>clearTimeout</code>, <code>removeEventListener</code>, and return cleanup from React effects.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"The garbage collector doesn't free objects you're done with — it frees objects unreachable from any root, so a leak is always a reference you forgot to drop."</div>
   <div class="revision-say">"Modern engines use generational tracing GC: most objects die young in the nursery, and tracing naturally reclaims reference cycles that plain reference counting can't."</div>
   <div class="revision-say">"Reach for <code>WeakMap</code> when you want metadata that dies with its key, and always clean up timers and listeners so their closures don't pin everything they captured."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why the GC frees by reachability, not by whether you're "done" with an object?</li>
+    <li>Can you list the common leak sources — timers, listeners, detached DOM, closures over big state, uncapped caches?</li>
+    <li>Can you explain why a tracing GC reclaims cycles but naive reference counting cannot?</li>
+    <li>Can you explain how generational GC works — nursery scavenge versus old-generation mark-sweep-compact?</li>
+    <li>Can you explain why you can't force GC from user code and what you can do instead?</li>
+    <li>Can you explain why <code>WeakMap</code> entries vanish with their key and when that beats a plain <code>Map</code> cache?</li>
+  </ul>
 </div>
 `}
 

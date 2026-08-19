@@ -786,6 +786,46 @@ function log(x) { logs.push(x); }   // forever-growing</code></pre>
     <li>You set up automated leak detection (fuite / memlab) in CI.</li>
   </ul>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Leaks are forgotten references, not "objects you no longer need"</strong> — anything still reachable from a root keeps the object alive, so find the retainer, cut the reference, and verify with another snapshot.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Reachability is the rule.</strong> The GC reclaims only what's unreachable from a root (window, call stack, DOM tree, timers, listeners, observers, pending promises). Still referenced = alive, even if you're "done" with it.</li>
+    <li><strong>Five canonical web leaks:</strong> detached DOM held in JS, event listeners never removed, timers/intervals never cleared, observers (Intersection/Resize/Mutation) never disconnected, and closures capturing big state in long-lived functions.</li>
+    <li><strong>Leak ≠ bloat.</strong> Leak = monotonic growth from a forgotten reference (crashes after long use); bloat = high-but-stable usage from over-caching (slow, doesn't crash). Different fixes: cut the retainer vs bound the caches.</li>
+    <li><strong>DevTools workflow:</strong> force GC (trash icon) → baseline snapshot → repeat the suspect action 5-10x → force GC → second snapshot → Comparison view sorted by Δ → expand the growing type → walk the retainer chain to the holder.</li>
+    <li><strong>Filter "Detached"</strong> in the class box to find detached DOM subtrees, then read the Retainers panel — usually an array, a Map, an event-bus subscription, or a closure.</li>
+    <li><strong>Shallow vs retained size:</strong> shallow = the object's own bytes; retained = shallow + everything it exclusively keeps alive. Sort by retained to find the heaviest leak anchors (a 200-byte object can retain 40MB).</li>
+    <li><strong>React cleanup:</strong> return a cleanup from <code>useEffect</code> — <code>clearInterval</code>, <code>removeEventListener</code>, <code>observer.disconnect()</code>, <code>AbortController.abort()</code> — it runs on unmount and before each re-run.</li>
+    <li><strong>WeakMap / WeakRef</strong> hold keys/targets weakly so entries auto-clear when the key is otherwise unreachable — good for metadata keyed by DOM nodes; timing of <code>FinalizationRegistry</code> is non-deterministic, so never rely on it for correctness.</li>
+    <li>Bound module-scope caches (LRU / TTL), virtualize long lists, and store a <strong>named</strong> bound handler so <code>removeEventListener</code> can use the same reference.</li>
+    <li><code>performance.memory</code> is Chrome-only and quantized; <code>performance.measureUserAgentSpecificMemory()</code> is more accurate but rate-limited — sample sparingly to RUM and watch for growth across navigations. Automate detection with fuite/memlab in CI.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>"The GC will eventually clean it up."</strong> A tracing GC only reclaims <em>unreachable</em> objects — if your code still holds any reference (a cache entry, an uncleared interval, an un-removed listener, a closed-over array), its hands are tied and the fix is in your code, not the GC. Concrete version: adding a listener or <code>setInterval</code> on mount without removing it on unmount pins the callback's closure (and the whole component) forever — and an <strong>anonymous</strong> listener can't be removed at all, so store a named reference. Always verify the fix by force-GC + a second snapshot showing the count no longer grows.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A JS memory leak is a logical leak — an object still reachable from a root after you're done with it, so the GC can't reclaim it. The fix is to drop the lingering reference."</div>
+  <div class="revision-say">"The usual suspects are detached DOM, un-removed listeners, uncleared timers, undisconnected observers, and closures over big state — I clean all of them up in the useEffect return."</div>
+  <div class="revision-say">"To find one I force GC, snapshot, repeat the action, force GC, snapshot again, and diff — then sort by retained size and walk the retainer chain to whatever's holding the reference."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the GC roots that keep objects alive?</li>
+    <li>Can you list the usual leak sources — listeners, timers, observers, closures, detached DOM?</li>
+    <li>Can you run the force-GC, snapshot, repeat, snapshot, diff workflow to find a leak?</li>
+    <li>Can you walk a retainer chain back to whatever is holding a reference?</li>
+    <li>Can you tell a real leak apart from GC delay?</li>
+    <li>Can you explain how a closure can pin a detached DOM subtree?</li>
+  </ul>
+</div>
 `}
 
 ]

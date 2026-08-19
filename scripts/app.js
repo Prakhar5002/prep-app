@@ -42,10 +42,10 @@
   }
 
   // ==========================================================
-  // THEME (default: dark)
+  // THEME (default: light)
   // ==========================================================
   function initTheme() {
-    const saved = store.get('theme', 'dark');
+    const saved = store.get('theme', 'light');
     document.documentElement.setAttribute('data-theme', saved);
     $('#themeToggle').addEventListener('click', () => {
       const cur = document.documentElement.getAttribute('data-theme');

@@ -804,6 +804,55 @@ obstructive."</code></pre>
 <p><em>"Default no, justify yes. Name what gets displaced. Always offer an alternative. Recover early."</em></p>
 <p>If you can't articulate why a yes serves your top priorities, the answer is no. If you can't say what gets displaced, you're already over-committed. If you don't have an alternative path, you haven't thought hard enough about the asker's problem. If you've over-committed, surface fast — every day you wait makes recovery harder.</p>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Saying no is a <strong>prioritization skill executed with words</strong> — default no and justify yes, name what each yes displaces, and almost never give a naked no: frame it as a trade-off with an alternative.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Default no, justify yes.</strong> At senior level the question isn't "any reason I can't?" but "why is this the highest-leverage thing I could be doing?" Juniors default yes; seniors default no.</li>
+    <li><strong>The cost of yes is invisible.</strong> Every yes displaces something. If you can't name what got displaced, you're already over-committed and someone else pays for it later.</li>
+    <li><strong>Almost never say a naked "no."</strong> Use the pushback ladder: yes-and, yes-when, yes-if, yes-but-smaller, no-because-instead, no-because-priorities, no-because-bad-idea, hard no. Most engineers under-use levels 1-4 and over-use silence.</li>
+    <li><strong>Buy time.</strong> "Let me look at my plate and get back to you by EOD." The pressure to answer in the moment is fake.</li>
+    <li><strong>Score the ask on 4 axes:</strong> strategic fit, leverage, cost, asker reputation. 0-1/4 = no; 2/4 = yes-if; 3-4/4 = yes.</li>
+    <li><strong>The trade-off framing is the workhorse.</strong> "Sure, here's what it displaces — want that swap?" moves the decision from "will Prakhar do this?" to "are these the right priorities?", which is the manager's / PM's job.</li>
+    <li><strong>Saying no upward = informed consent.</strong> Never refuse without naming the cost of yes; put it in writing; if the manager still says do it, they own the decision.</li>
+    <li><strong>Drive-by exec asks are the most dangerous</strong> — high status, no team commitment. Get the ask in writing, scope it, time-box it, and loop your manager.</li>
+    <li><strong>Recover from over-commitment early:</strong> audit reality, triage by priority x asker, surface to your manager, notify dropped owners with grace, don't hide. Quiet slippage does ~5x the damage of an early honest "I can't."</li>
+    <li>Two failure modes: yes-to-everything (burnout, dropped commitments) and no-to-everything (the "blocker"). The sweet spot is a clear yes to the high-leverage and a framed no to the rest.</li>
+    <li><strong>Mobile / RN context:</strong> most "just add this small thing" asks aren't small — app review, version-gating, both platforms, offline. Educate and offer an alternative rather than just refusing.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>The silent / slow yes.</strong> Not responding, or a vague "I'll try to look at it", reads as a commitment to the asker — then becomes a broken commitment when you slip 4 weeks later. A clear early no is being a good colleague; a slow yes is bad-colleague behavior dressed up as nice.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A director asked me to lead a project that didn't fit my half-goals while I was committed to a firm launch. Instead of saying yes immediately, I mapped the real cost, checked strategic fit, and went back with three options and a recommendation. He picked the advisory route — both things shipped on schedule."</div>
+  <div class="revision-say">"I almost never give a flat no. I say 'I can do this — here's what gets displaced, want to confirm the trade-off?' That puts the prioritization decision back where it belongs, and the relationship survives because I'm transparent about trade-offs, not obstructive."</div>
+  <div class="revision-say">"When I over-committed once, the migration ask had grown to half my time. I surfaced it fast, brought my manager and the peer lead three options, and we landed on a clean handoff. The lesson I took: attach an explicit checkpoint to every open-ended 'help out' yes."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you tell a concise STAR story about a time you said no well — with the ask evaluated, a trade-off named, and an alternative offered instead of a naked refusal?</li>
+    <li>Can you walk through the pushback ladder and pick the right level for a given ask (yes-and / yes-when / yes-if / yes-but-smaller / framed no)?</li>
+    <li>Can you explain how you'd say no upward to a manager as informed consent, and what you'd do if they said "do it anyway"?</li>
+    <li>Can you describe how you'd handle a high-status drive-by ask from an exec without blowing up your roadmap?</li>
+    <li>Can you tell a story about recovering from over-commitment — triaging, surfacing early, and dropping with grace?</li>
+    <li>Can you explain the framework you use to decide what to work on when several stakeholders all want something?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

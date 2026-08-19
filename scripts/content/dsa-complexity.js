@@ -749,6 +749,8 @@ function hasDupSort(arr) {
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Big O is the <strong>growth shape as input scales</strong> — drop constants and lower-order terms, keep the dominant one, and always quote space alongside time.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Big O is a growth rate, not a stopwatch.</strong> It describes how cost scales with input size, not how fast the code runs.</li>
@@ -771,12 +773,27 @@ function hasDupSort(arr) {
     <li><strong>Space:</strong> count auxiliary structures PLUS recursion-stack depth (<code>O(h)</code> for a tree — <code>O(log n)</code> balanced, <code>O(n)</code> skewed).</li>
     <li><strong>Signal → reach for it:</strong> "how does it scale?" → Big O · "usually fast, occasionally slow" → amortized analysis · recurrence <code>aT(n/b) + f(n)</code> → Master Theorem · repeated subproblems → memoize for <code>O(n)</code>.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting the hidden costs and only counting the visible loop.</strong> Candidates call a nested loop <code>O(n²)</code> but miss that <code>arr.includes</code>/<code>shift</code>/<code>splice</code> inside a loop each add another <code>O(n)</code> (making it <code>O(n²)</code>), that <code>s += x</code> in a loop is <code>O(n²)</code>, and that recursion depth costs <code>O(depth)</code> stack space (JS doesn't tail-call-optimize). Fix: count auxiliary structures AND stack depth, and expand the true cost of every built-in call inside your loops.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Big O is the growth shape as input scales — I drop constants and lower-order terms and keep the dominant one."</div>
   <div class="revision-say">"I always state time AND space, and I include recursion stack depth in the space cost since JS doesn't tail-call-optimize."</div>
   <div class="revision-say">"I distinguish worst, average, and amortized — quicksort is O(n log n) average but O(n²) worst, and dynamic-array push is O(1) amortized."</div>
 </div>
-`}
+`},
 
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state Big-O, Big-Theta, and Big-Omega and how they differ?</li>
+    <li>Can you distinguish worst-case, average-case, and amortized complexity?</li>
+    <li>Can you explain why a dynamic-array push is O(1) <em>amortized</em>?</li>
+    <li>Can you rank the common growth rates from O(1) up to O(n!)?</li>
+    <li>Can you account for the recursion call stack when giving space complexity?</li>
+    <li>Can you correctly drop constants and lower-order terms when simplifying?</li>
+  </ul>
+</div>
+`}
 ]
 });

@@ -380,6 +380,49 @@ kube-hunter --remote &lt;cluster-ip&gt; --active
 <p>Because the value of an offensive finding is capped by what the defending organization can actually do with it. A finding reported without any sense of how it would be detected leaves the client only able to fix that one instance, not build lasting capability to catch the next attacker who tries something similar. Understanding that a SIEM centralizes and correlates logs, that detection engineering is the practice of turning a specific technique into a validated alert rule, and that MITRE ATT&amp;CK gives both red and blue teams a shared map of techniques and coverage, lets an offensive practitioner report findings in a way a blue team can directly act on — which is the throughline this entire module has been building toward since its first topic: authorized offensive testing exists specifically to make organizations more resilient against real attackers, not to showcase clever exploitation for its own sake.</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The module's wrap-up: the report is the real deliverable, cloud/container/mobile add a second (provider) authorization layer and a shared-responsibility scope line, and every attack has a blue/purple-team detection counterpart.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>The report is the actual product of a pentest: executive summary (business risk, no jargon), scope/methodology recap, technical findings with reproducible steps + evidence + CVSS + remediation, a risk summary/heatmap, and a retest.</li>
+    <li>The executive summary and technical findings serve two different audiences — translate the same finding twice, business impact and priority up top, exact mechanism and fix further down.</li>
+    <li>Document as you go in Obsidian (markdown vault) or CherryTree (hierarchical tree) — log the command, raw output, and a screenshot the moment a finding is confirmed, so writing the report is assembly, not reconstruction.</li>
+    <li>CVSS v3.1 severity bands to recognize on sight: 0.0 None, 0.1-3.9 Low, 4.0-6.9 Medium, 7.0-8.9 High, 9.0-10.0 Critical.</li>
+    <li>Cloud adds a second authorization layer: AWS, Azure, and GCP each publish their own pentest policy, and some actions (DDoS/C2 simulation, red/blue/purple-team exercises) need the provider's approval even with full client authorization.</li>
+    <li>The shared-responsibility model is also the scope line: the customer secures what's "in" the cloud (IAM, config, data, images, RBAC); the provider's "of the cloud" half (hypervisor, managed-service internals, managed control plane) is never in scope.</li>
+    <li>Cloud tools follow a three-tool pattern: read-only config auditors (<code>ScoutSuite</code>, <code>prowler</code>), active exploitation (<code>pacu</code> for AWS), and compliance/benchmark checking (<code>prowler</code> against CIS).</li>
+    <li>The instance metadata endpoint (<code>169.254.169.254</code>) can leak IAM credentials via an SSRF bug; IMDSv2 requires a PUT-for-token with a custom header most SSRF chains can't forge, plus a default network hop limit of 1.</li>
+    <li>Containers/Kubernetes: <code>trivy</code> (image/cluster vuln + misconfig + secret scan), <code>kube-bench</code> (CIS Kubernetes Benchmark), <code>kube-hunter</code> (active hunting, archived upstream since 2024); <code>MobSF</code> covers mobile static + Frida-based dynamic analysis.</li>
+    <li>Active tools (<code>pacu</code>, <code>kube-hunter --active</code>, MobSF dynamic analysis) carry a higher authorization bar than read-only config auditors.</li>
+    <li>The closing theme is defense: a SIEM ingests logs, a detection engineer turns a technique into a rule, MITRE ATT&amp;CK is the shared map, and a purple team runs the attack-then-detect loop together on purpose.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Assuming the asset owner's authorization is enough on cloud. It's necessary but not sufficient — the specific provider's current published pentest policy must also be checked, and the provider's half of the shared-responsibility line is permanently out of scope no matter how interesting a finding there looks.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The report is the actual product of a pentest — the executive summary and technical findings deliberately translate the same finding twice, for leadership and for engineers."</div>
+  <div class="revision-say">"On cloud I need two authorizations: the asset owner's and the provider's own pentest policy, and I only ever test the customer's half of the shared-responsibility line."</div>
+  <div class="revision-say">"IMDSv2 blocks most SSRF credential theft because it needs a PUT-for-token with a custom header, and a typical SSRF can only issue simple GET requests."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you list what a professional pentest report must contain, and why the executive summary and technical findings target different audiences?</li>
+    <li>Can you explain the shared-responsibility model and how it defines the scope of a cloud pentest?</li>
+    <li>Can you explain how IMDSv2 mitigates SSRF-based cloud credential theft?</li>
+    <li>Can you contrast a read-only auditor (ScoutSuite/prowler) with an active exploitation tool (pacu) and why their authorization differs?</li>
+    <li>Can you distinguish trivy, kube-bench, and kube-hunter?</li>
+    <li>Can you explain purple teaming and how MITRE ATT&amp;CK ties red-team techniques to blue-team detections?</li>
+  </ul>
+</div>
 `}
 
 ]});

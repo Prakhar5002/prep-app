@@ -758,6 +758,8 @@ npx source-map-explorer main.jsbundle main.jsbundle.map</code></pre>
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Profile first on a real mid-range Android, then fix the right thread</strong> — mobile is slower and pickier than web, and intuition about "the slow part" fails more often than not.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Four targets, four playbooks:</strong> startup (bundle size + parse), render (memoize + virtualize), frame rate (move work to the UI thread), memory (kill leaks + retain cycles).</li>
@@ -775,10 +777,26 @@ npx source-map-explorer main.jsbundle main.jsbundle.map</code></pre>
     <li><strong>JS FPS vs UI FPS:</strong> low JS + high UI → JS-thread bottleneck (fix renders/offload work); low UI + high JS → native-side (fewer views, simpler layouts).</li>
     <li><strong>Heavy JS work</strong> (filter/sort/parse) locking the app → <code>startTransition</code>, debounce input, <code>InteractionManager.runAfterInteractions</code>, or a worker/native module.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Optimizing without profiling — and over-memoizing everything.</strong> Wrapping every component in <code>React.memo</code> and every value in <code>useMemo</code>/<code>useCallback</code> isn't free: each one costs a comparison plus the memoized box, and for cheap components that cost exceeds the saving. Worse, memo is silently defeated by inline functions, objects, and style arrays passed as props (a new reference every render). Fix: profile on a physical device to find the actual hot path, then stabilize only those props and memoize only what measurably benefits.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"I profile first on a physical mid-range Android, then read JS FPS vs UI FPS — that tells me whether the bottleneck is the JS thread or the native side before I change anything."</div>
   <div class="revision-say">"My defaults are Hermes and the New Architecture on, FlashList for long lists, Reanimated for animations and gestures, and expo-image for images."</div>
   <div class="revision-say">"Animation jank usually means work on the wrong thread — I move it to the UI thread with Reanimated worklets so it's decoupled from a busy JS thread."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why animation jank usually means work on the wrong thread and how you move it?</li>
+    <li>Can you profile a slow list — which tools and which metrics do you watch?</li>
+    <li>Can you list the common causes of unnecessary re-renders and their fixes?</li>
+    <li>Can you contrast the JS thread, the UI thread, and the native/shadow side for performance?</li>
+    <li>Can you explain how Hermes and inline requires improve startup time?</li>
+    <li>Can you spot a memoization mistake where <code>useMemo</code> or <code>useCallback</code> costs more than it saves?</li>
+  </ul>
 </div>
 `}
 

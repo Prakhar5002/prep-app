@@ -515,6 +515,42 @@ df -h</code></pre>
 <p><code>scp</code> is a straightforward one-shot copy — fine for a single file or a one-time transfer. <code>rsync -avz</code> is the better choice for anything repeated, like deploying updated build output or syncing a backup regularly, because it compares source and destination first and transfers only what's changed, rather than re-sending everything on every run — meaningfully faster for large trees where most files haven't changed. <code>-a</code> bundles recursive copying with preserving permissions, timestamps, and symlinks; <code>-z</code> compresses data in transit, which helps over slower connections. Both ultimately run over the same encrypted SSH channel.</p>
 </div>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Day-2 ops: reach other machines over <strong>SSH</strong>, install software with the same three <strong>package-manager verbs</strong>, and find every problem's trace in a <strong>log</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Networking basics:</strong> <code>ip a</code>/<code>ip r</code> show addresses and routes; <code>ss -tulpn</code> shows what's listening on which ports; <code>ping</code>, <code>curl</code>/<code>wget</code>, and <code>dig</code>/<code>host</code>/<code>nslookup</code> test reachability, fetch HTTP, and query DNS.</li>
+    <li><strong>Remote access:</strong> <code>ssh</code> gives an encrypted shell; <code>scp</code> and <code>rsync -avz</code> copy over it — and <code>rsync</code> only transfers what changed.</li>
+    <li>Package managers do the same three jobs (update the index, install, remove) with different spelling: <code>apt</code> (Debian/Ubuntu), <code>dnf</code>/<code>yum</code> (Fedora/RHEL), <code>pacman</code> (Arch).</li>
+    <li><strong>Storage/logs/archives:</strong> <code>df -h</code> (free), <code>du -sh</code> (used), <code>lsblk</code>/<code>mount</code>; <code>journalctl</code> and <code>/var/log</code>; <code>tar</code>/<code>gzip</code>/<code>zip</code>.</li>
+    <li>Environment: <code>env</code>/<code>export</code>/<code>$PATH</code>, and <code>~/.bashrc</code> vs <code>~/.profile</code> control how the shell is built.</li>
+    <li>Key-based SSH auth beats passwords; a private key must be <code>chmod 600</code> or SSH refuses it.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>"update" means different things.</strong> <code>apt update</code> only refreshes the local index — it upgrades nothing (that's a separate <code>apt upgrade</code>), while <code>pacman -Syu</code> does both at once. And <code>df</code> vs <code>du</code> can legitimately disagree: a deleted file still held open by a running process keeps occupying space in <code>df</code> but is gone from any <code>du</code> total.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Every server is a machine I reach over SSH, and every package manager does the same three things with different spelling."</div>
+  <div class="revision-say">"apt update only refreshes the index — it doesn't upgrade anything; that's a separate apt upgrade."</div>
+  <div class="revision-say">"If df says the disk is full but du doesn't add up, a process is probably still holding a deleted file open."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you find your machine's IP, its routes, and what's listening on which ports?</li>
+    <li>Can you copy files to a remote host with <code>scp</code> and <code>rsync</code>, and say why <code>rsync</code> is cheaper?</li>
+    <li>Can you map <code>apt</code> / <code>dnf</code> / <code>pacman</code> onto update-index, install, and remove?</li>
+    <li>Can you explain why <code>apt update</code> does not upgrade anything?</li>
+    <li>Can you explain how <code>df</code> and <code>du</code> can legitimately disagree?</li>
+    <li>Can you explain why a private SSH key needs <code>chmod 600</code>?</li>
+  </ul>
+</div>
 `}
 
 ]});

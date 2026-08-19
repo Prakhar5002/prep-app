@@ -826,6 +826,55 @@ export {};</code></pre>
   <li>"I'd keep <code>skipLibCheck</code> on in apps but off in the library build to ensure my emitted <code>.d.ts</code> is internally consistent."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A <code>.d.ts</code> file is <strong>pure, ambient, type-only information that emits no JS</strong> — it describes the shape of code that already exists so TypeScript can talk to JavaScript, globals, and your own published library.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong><code>.d.ts</code> contains only type-level statements and emits nothing</strong> — putting runtime code in one is a compile error.</li>
+    <li><strong>Module vs global scope is the key mental model:</strong> any top-level <code>import</code>/<code>export</code> makes the file a <em>module</em> (file-scoped names); with none, it is <em>global</em> (visible everywhere). This explains most "why doesn't TS see my type?" mysteries.</li>
+    <li>To add globals from a module file: <code>export {};</code> then <code>declare global { ... }</code>.</li>
+    <li><code>declare</code> means "this exists at runtime; here's its type, emit nothing" — mandatory for top-level entities in a <code>.d.ts</code>.</li>
+    <li><code>declare module "name"</code> types an untyped import; wildcard <code>declare module "*.png"</code> types asset imports — but the bundler still needs a real loader for it to work at runtime.</li>
+    <li><strong>Module augmentation</strong> reopens a third-party module's types to add fields — augment the module that actually <em>declares</em> the type (Express's <code>Request</code> lives in <code>express-serve-static-core</code>, not <code>express</code>).</li>
+    <li><strong>DefinitelyTyped (<code>@types/*</code>)</strong> provides community types — install those before hand-writing your own; a package with its own <code>"types"</code> field needs no <code>@types</code>.</li>
+    <li><code>import type</code> guarantees zero runtime emission — critical with side-effect-import bundlers.</li>
+    <li><strong>Publishing a TS library:</strong> set <code>declaration: true</code>, point <code>package.json</code> <code>"types"</code> at the emitted <code>.d.ts</code>, list peer deps, and keep the surface narrow (<code>as const</code> / explicit annotations avoid over-wide emit).</li>
+    <li>Key tsconfig knobs: <code>typeRoots</code>, <code>types</code> (whitelist), <code>skipLibCheck</code> (on in apps, off in a library build), <code>declarationMap</code>.</li>
+    <li>Never use <code>declare module "*"</code> (kills all type safety) or edit a <code>node_modules</code> <code>.d.ts</code> directly (augment instead).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>A stray top-level <code>export</code> silently flips a globals file into a module,</strong> so its ambient declarations vanish everywhere — and <strong>augmenting the wrong module name</strong> (e.g. <code>"express"</code> instead of <code>"express-serve-static-core"</code>) does nothing at all. Fix: keep globals files export-free, or wrap them in <code>export {}</code> + <code>declare global</code>, and always augment the module that actually declares the type.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A .d.ts is ambient, type-only, and emits nothing — it describes shapes that already exist at runtime."</div>
+  <div class="revision-say">"The one rule that explains most mysteries: any top-level import or export makes the file a module and scopes its names — so I use export {} plus declare global to add globals from a module file."</div>
+  <div class="revision-say">"I install @types before hand-writing declarations, augment third-party modules instead of forking them, and use import type to keep types out of the runtime bundle."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain what makes a <code>.d.ts</code> file module-scoped versus global?</li>
+    <li>Can you explain what <code>declare</code> means and why runtime code in a <code>.d.ts</code> is a compile error?</li>
+    <li>Can you write the <code>export {}</code> + <code>declare global</code> pattern to add a global from a module file?</li>
+    <li>Can you explain module augmentation and why you augment <code>express-serve-static-core</code>, not <code>express</code>?</li>
+    <li>Can you explain when you need <code>@types/*</code> and when a package needs none?</li>
+    <li>Can you explain why <code>import type</code> matters and why <code>declare module "*"</code> is dangerous?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

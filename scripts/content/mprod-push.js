@@ -818,6 +818,55 @@ Creepy. Round to "a few days."
   <li>"I'd build an in-app inbox so users who turned off pushes don't miss key activity."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Earn the opt-in, send rarely, personalize precisely, measure conversion, respect the off switch</strong> — push is the highest-leverage retention lever and the fastest way to lose a user if abused.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Two carriers:</strong> iOS uses APNs, Android uses FCM; both speak HTTP/2 from your server. <strong>Two payload types:</strong> visible (banner/sound/badge) and silent (data-only, wakes the app for background work).</li>
+    <li><strong>Pipeline:</strong> device gets a token from APNs/FCM → app sends token + user_id to backend → backend posts payload to the carrier → carrier delivers → OS displays or wakes the app.</li>
+    <li><strong>Permission timing is everything.</strong> Show a <strong>soft pre-prompt</strong> with context after the user has felt value; only fire the OS prompt on a soft-yes. Once the OS prompt is denied, the only way back is Settings — most users never go.</li>
+    <li><strong>Token lifecycle:</strong> tokens rotate — update on every launch, listen for <code>onTokenRefresh</code>, delete on logout (so the next user doesn't get the previous user's pushes), and prune tokens that return InvalidToken/NotRegistered.</li>
+    <li><strong>Android channels are mandatory on 8+</strong> — without a matching channel the OS silently drops your notification; group channels so users can mute "promotions" while keeping "messages."</li>
+    <li><strong>Silent push is OS-throttled and opportunistic</strong> (~2–3/hr on iOS, batched under Doze on Android) — never depend on it for correctness; always reconcile state on foreground.</li>
+    <li><strong>Segment, don't broadcast.</strong> Gate on per-user category prefs, throttle marketing per user, and respect quiet hours <strong>in the user's timezone</strong> (not the server's / UTC).</li>
+    <li><strong>Measure the whole funnel:</strong> sent → delivered → displayed → opened → converted. "Delivered" only means the carrier accepted it, not that the user saw it — conversion is the KPI, opens are vanity.</li>
+    <li><strong>iOS rich pushes</strong> need a Notification Service Extension and <code>mutable-content: 1</code> in the payload, or the extension never runs; iOS 15+ Focus is broken through only with <code>interruption-level: time-sensitive</code>, used sparingly.</li>
+    <li><strong>Privacy:</strong> redact sensitive content from lock-screen previews, get GDPR consent for marketing pushes (transactional usually exempt), keep PII out of payloads, and separate transactional from marketing.</li>
+    <li>Keep a <strong>kill switch</strong> for outbound campaigns and reset the badge on the relevant action.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Requesting the OS permission on first launch — denial is permanent for the install lifetime, so opt-in craters. Always soft-prompt first and fire the OS prompt only on a soft-yes. Second trap: trusting "delivered" as "seen" — DND, Focus, muted channels, and unpruned dead tokens make 100% delivered read as 10% displayed.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I never fire the OS permission prompt on launch — I show a soft pre-prompt with context after the user has felt value, and only trigger the OS prompt if they say yes, because a denial locks you out for the whole install."</div>
+  <div class="revision-say">"I treat silent push as opportunistic and OS-throttled, so I never rely on it for correctness — I reconcile state like badge counts on foreground as well."</div>
+  <div class="revision-say">"I measure the full funnel — sent, delivered, displayed, opened, converted — and optimize for conversion, because 'delivered' just means the carrier accepted it, not that the user ever saw it."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you walk push end-to-end for both APNs and FCM, including token registration and the visible-vs-silent distinction?</li>
+    <li>Can you explain the soft-prompt-then-OS-prompt permission strategy and why timing determines opt-in rate?</li>
+    <li>Can you describe token lifecycle hygiene — refresh on launch, delete on logout, prune dead tokens?</li>
+    <li>Do you know why Android channels are mandatory and how you'd design granular per-category opt-in and throttling?</li>
+    <li>Can you explain why silent push can't be trusted for state and how you'd reconcile on foreground?</li>
+    <li>Can you define the sent→delivered→displayed→opened→converted funnel and debug "my pushes aren't arriving"?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

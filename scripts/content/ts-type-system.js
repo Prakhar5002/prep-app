@@ -875,6 +875,56 @@ type ProductId = Brand&lt;string, "ProductId"&gt;;</code></pre>
   <li>"<code>noUncheckedIndexedAccess</code> is the single highest-leverage flag for catching null-deref bugs in real codebases."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">TypeScript is a <strong>structural, gradual, erased</strong> type system where <strong>types are sets of values</strong> — model the data, narrow the unknowns, refuse <code>any</code>, and never trust the network at runtime.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Structural:</strong> compatibility is by shape, not name — anything with a string <code>name</code> matches <code>{ name: string }</code>; a nominal feel needs branding or a private member.</li>
+    <li><strong>Gradual:</strong> <code>any</code> opts out of checking (and infects everything downstream); <code>unknown</code> is the safe escape hatch that forces narrowing. Use them on purpose.</li>
+    <li><strong>Erased:</strong> types vanish at compile time with zero runtime cost — they cannot validate input; that's <code>zod</code>/<code>io-ts</code>'s job.</li>
+    <li><strong>Types are sets:</strong> <code>never</code> = ∅, <code>unknown</code> = the universal set, union = set union (wider), intersection = set intersection (narrower / merged object shape), subtype = subset, and a value is assignable iff its set is a subset.</li>
+    <li><strong>The trio:</strong> <code>any</code> = trust me (banned by default), <code>unknown</code> = narrow before use, <code>never</code> = impossible / exhaustiveness (<code>const _: never = s</code>).</li>
+    <li><strong>Narrow with</strong> <code>typeof</code>, <code>instanceof</code>, <code>in</code>, equality, discriminated unions, and user-defined predicates (<code>x is T</code>).</li>
+    <li><strong>Literal types + <code>as const</code></strong> express domain rules for free; <code>let</code> widens (<code>"hi"</code> → <code>string</code>), <code>const</code> preserves the literal.</li>
+    <li><strong>Inference:</strong> annotate function parameters and exported APIs (they're contracts); let locals infer — inference is often narrower than your annotation.</li>
+    <li><strong>Excess-property checks fire only on fresh object literals</strong> and are bypassed once the value is in a variable — use <code>satisfies</code> to keep the check downstream.</li>
+    <li><strong><code>satisfies</code> vs annotation vs <code>as</code>:</strong> <code>satisfies</code> checks shape without widening (keeps literals); an annotation widens; <code>as</code> asserts without checking and can lie.</li>
+    <li><strong><code>type</code> vs <code>interface</code>:</strong> interfaces merge/extend and suit object shapes and public API; <code>type</code> aliases handle unions, tuples, and mapped/conditional types.</li>
+    <li><strong>Strict baseline:</strong> <code>strict</code> + <code>noUncheckedIndexedAccess</code> (which makes <code>arr[i]</code> return <code>T | undefined</code>) is the highest-leverage flag for catching null-deref bugs.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Using <code>as</code> to trust untyped data</strong> — <code>JSON.parse(raw) as User</code> is a runtime lie because the cast is erased, so a bad field crashes later; and <strong>one <code>any</code> at a boundary infects every downstream value</strong>. Fix: cast to <code>unknown</code> and narrow with a guard or a schema, and reach for <code>unknown</code> — never <code>any</code> — to stop the bleeding.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"TypeScript is structural, gradual, and erased — compatibility is by shape, and types disappear at runtime, so they can't validate input."</div>
+  <div class="revision-say">"The clearest model is types-as-sets: never is the empty set, unknown is everything, union is set union, and intersection is set intersection."</div>
+  <div class="revision-say">"At the boundary I cast to unknown and narrow with a guard or zod — never any, and never JSON.parse as SomeType, because the cast is a runtime lie."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the three pillars — structural, gradual, and erased — and one consequence of each?</li>
+    <li>Can you explain the "types are sets" model (<code>never</code> = empty, <code>unknown</code> = universe, union = wider, intersection = narrower)?</li>
+    <li>Can you contrast <code>any</code>, <code>unknown</code>, and <code>never</code> and say when to use each?</li>
+    <li>Can you list the narrowing techniques — <code>typeof</code>, <code>instanceof</code>, <code>in</code>, equality, discriminated unions, user-defined predicates?</li>
+    <li>Can you explain why excess-property checks fire only on fresh object literals and how <code>satisfies</code> keeps the check?</li>
+    <li>Can you explain the difference between <code>satisfies</code>, a type annotation, and <code>as</code>?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

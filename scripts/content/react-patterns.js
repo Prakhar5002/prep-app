@@ -807,6 +807,8 @@ function Panel({ value, children }) {
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Patterns are <strong>vocabulary for composition</strong>, not rules to memorize — start with props + children, reach for a pattern only when a real reuse concern appears, and for sharing logic <strong>custom hooks beat HOCs and render props</strong>.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Patterns are vocabulary for composition</strong>, not best-practices to memorize. Prefer <strong>composition over configuration</strong> and start simple (props + children); reach for a pattern when a reuse concern appears.</li>
@@ -825,10 +827,26 @@ function Panel({ value, children }) {
     <li><strong>Portals</strong> change only the DOM location — context and event bubbling still follow the React tree, not the DOM parent.</li>
     <li><strong>Patterns have a cost</strong> (API surface, learning curve). Use one when it fits; don't stack compound + render prop + HOC for a one-off component.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Switching an input from <strong>uncontrolled to controlled</strong> mid-life (passing <code>value</code> after starting <code>undefined</code>) warns and loses state — pick one at mount (<code>value !== undefined</code> ⇒ controlled). And error boundaries <strong>don't</strong> catch event-handler, async, or SSR errors — only render/lifecycle/constructor.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"For new logic sharing I reach for custom hooks over HOCs and render props — same power, no wrapper hell or extra fibers."</div>
   <div class="revision-say">"Compound components share state through context and let callers compose the children; I never inspect children to make them work."</div>
   <div class="revision-say">"Complex widgets support both controlled and uncontrolled modes — if <code>value</code> is passed it's controlled, otherwise it falls back to internal state."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why custom hooks are preferred over HOCs and render props for sharing logic?</li>
+    <li>Can you explain how compound components share state through context without inspecting their children?</li>
+    <li>Can you implement a component that supports both controlled and uncontrolled modes based on whether <code>value</code> is passed?</li>
+    <li>Can you explain the wrapper-hell and extra-fiber problems that HOCs introduce?</li>
+    <li>Can you say when a render prop or the state-reducer pattern is still the right tool?</li>
+    <li>Can you explain what a headless component is and why libraries like Radix ship logic without styling?</li>
+  </ul>
 </div>
 `}
 

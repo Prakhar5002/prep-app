@@ -687,6 +687,45 @@ export default function Posts() {
     <li>You understand Server Actions as a bridge between client UI and server mutations.</li>
   </ul>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">React can render in three places — <strong>client (CSR)</strong>, <strong>server per request (SSR)</strong>, or <strong>build time (SSG)</strong> — and modern frameworks mix all three per route; you pick by <em>data-freshness need</em>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>CSR</strong>: ship JS, render into an empty root → slow first paint, weak SEO. <strong>SSR</strong>: HTML per request + <em>hydration</em> → fast paint, fresh data, heavier server. <strong>SSG</strong>: prerender at build → fastest (CDN) but frozen until the next build.</li>
+    <li><strong>ISR</strong>: serve cached static HTML and regenerate in the background (on a schedule or on demand) → SSG speed with near-SSR freshness for most content.</li>
+    <li><strong>RSC (Server Components)</strong> run <em>only</em> on the server, can read the DB directly, and send a <strong>serialized tree (not HTML)</strong>; client components are the interactive parts → radically smaller client bundle.</li>
+    <li><strong>RSC is not SSR:</strong> SSR still ships a client bundle to hydrate; RSC ships <em>zero</em> client JS for the server-only parts.</li>
+    <li><strong>Hydration</strong> = attach JS / event handlers to server-rendered HTML. A <strong>hydration mismatch</strong> (server HTML ≠ client render) throws.</li>
+    <li><strong>Streaming SSR + Suspense</strong>: the server flushes the shell immediately and streams slow regions when their data arrives; <strong>selective hydration</strong> brings interactive parts alive progressively and prioritizes what the user touches.</li>
+    <li><strong>Server Actions</strong> bridge client UI and server mutations without hand-writing an API route.</li>
+    <li><strong>Decision:</strong> static → SSG; personalized/always-fresh → SSR; mostly-static with periodic updates → ISR; mix them within one page via RSC + streaming.</li>
+    <li><strong>Caching + invalidation is the hard part</strong> (request / data / full-route caches) — stale content usually means a missed revalidation.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Hydration mismatch</strong> from non-deterministic or browser-only code in render — <code>Date.now()</code>, <code>Math.random()</code>, <code>window</code>/<code>localStorage</code>, or timezone/locale differences make server and client HTML disagree. Gate browser-only work to effects (or <code>suppressHydrationWarning</code> for genuinely dynamic bits). And don't confuse <strong>RSC (no client JS)</strong> with <strong>SSR (bundle still ships)</strong>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I pick by data freshness — SSG for static, SSR for personalized, ISR for mostly-static-with-updates — and mix them per route with RSC and streaming."</div>
+  <div class="revision-say">"Hydration attaches JS to server-rendered HTML; a mismatch comes from non-deterministic or browser-only code running during render."</div>
+  <div class="revision-say">"RSC runs only on the server and ships a serialized tree with zero client JS for those parts — unlike SSR, which still sends a hydration bundle."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you pick between SSG, SSR, and ISR for a given route based on data freshness?</li>
+    <li>Can you explain what hydration is and what causes a hydration mismatch?</li>
+    <li>Can you explain how a React Server Component differs from SSR in terms of client JS shipped?</li>
+    <li>Can you explain how streaming SSR with Suspense boundaries improves perceived load and TTFB?</li>
+    <li>Can you explain why browser-only code breaks during server render and how you'd guard it?</li>
+    <li>Can you explain the tradeoffs of ISR revalidation versus rebuilding the whole site?</li>
+  </ul>
+</div>
 `}
 
 ]

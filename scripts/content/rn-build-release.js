@@ -787,6 +787,48 @@ jobs:
     <li>You have a rollback plan.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A release build is the <strong>signed native binary</strong> (.ipa / .aab); you can patch its JS bundle post-release via OTA — but <strong>OTA can never touch native code</strong>, and every store upload needs a monotonically increasing build number.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Two workflows:</strong> Expo + EAS Build/Update (cloud builds, managed signing, OTA) for most teams; bare RN + Fastlane + CI (Match for iOS signing, supply for Play) when you need full native control.</li>
+    <li><strong>A build has two halves:</strong> the Metro-bundled JS (a .hbc bytecode blob with Hermes) plus the native binary that embeds it. OTA replaces only the JS half.</li>
+    <li><strong>Signing is mandatory and unforgiving:</strong> iOS = Apple cert + provisioning profile matching the bundle id; Android = a keystore (.jks). <strong>Lose the Android keystore and you can never update the app</strong> — back it up, or use Play App Signing so Google holds the key and you rotate a separate upload key.</li>
+    <li><strong>Android ships AABs</strong> (App Bundles, required since 2021); Play serves per-device APKs from it.</li>
+    <li><strong>OTA (EAS Update; CodePush is deprecated) is JS/asset-only</strong> — native module changes need a full rebuild + store review. Apple allows bug-fix OTA, not major feature swaps.</li>
+    <li><strong>runtimeVersion binds a JS bundle to a native version</strong> — devices only pull OTA updates matching their runtimeVersion, preventing new JS from crashing against old native. Bump it whenever native changes.</li>
+    <li><strong>Version = user-facing semver (1.2.3) + monotonic build number (42).</strong> The build number (CFBundleVersion / versionCode) MUST increase every upload; iOS and Android numbering need not match each other.</li>
+    <li><strong>Always stage the rollout:</strong> TestFlight / Play internal for beta, then production at 5% → 25% → 100% with Sentry watching — halt if crashes spike.</li>
+    <li><strong>Sentry is non-negotiable</strong> — init with release + environment, and upload source maps (JS) plus dSYM (iOS) / mapping.txt (Android) per build or stacks are useless. (sentry-expo is deprecated; use @sentry/react-native.)</li>
+    <li>Separate environments (dev/staging/prod) via <code>app.config.ts</code> extra (Expo) or react-native-config .env (bare): different API URLs, Sentry DSNs, and bundle IDs so staging installs beside production.</li>
+    <li>Keep secrets out of git (CI secrets / Match), test the actual release binary before shipping, and have a documented rollback plan.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Assuming OTA can hotfix anything, and pushing JS that depends on native changes not in the installed binary.</strong> OTA replaces only the JS bundle — a bundle calling a new native method crashes every device on the old binary. Fix: bump <code>runtimeVersion</code> whenever native code changes so incompatible JS never reaches an old binary, and ship native changes through a full store build, not OTA. (Second classic: forgetting to bump the build number, which makes the store reject the upload.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A release is the signed native binary; OTA lets me push JS-only fixes without store review, but native changes always need a full rebuild — and I bind bundles to a runtimeVersion so incompatible JS never reaches an old binary."</div>
+  <div class="revision-say">"I'd use EAS Build and Update on Expo, or Fastlane with Match on bare RN, and always stage the rollout — TestFlight or Play internal, then 5% to 100% while watching Sentry."</div>
+  <div class="revision-say">"The Android keystore is the thing you cannot lose — I back it up or enable Play App Signing — and I always upload source maps plus dSYM/mapping.txt so production stacks are symbolicated."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why the Android upload keystore is irreplaceable and how Play App Signing protects you?</li>
+    <li>Can you contrast a debug build, a release build, an AAB, and an APK?</li>
+    <li>Can you explain why you upload source maps plus dSYM and mapping.txt on every release?</li>
+    <li>Can you walk through iOS code signing — certificates, provisioning profiles, and entitlements?</li>
+    <li>Can you describe how you would ship a JS-only fix without a full store review?</li>
+    <li>Can you explain versionCode/versionName vs iOS version/build and why stores reject duplicate builds?</li>
+  </ul>
+</div>
 `}
 
 ]

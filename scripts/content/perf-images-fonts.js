@@ -792,6 +792,46 @@ npx glyphhanger --whitelist=US_ASCII,latin,latin-ext --formats=woff2 fonts/Inter
     <li>You consider variable fonts and system fonts as alternatives.</li>
   </ul>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Serve the right format, the right size, at the right priority</strong> — for images that's <code>&lt;picture&gt;</code> + <code>srcset</code> + <code>fetchpriority</code> + <code>loading</code>; for fonts it's WOFF2, subsetted, preloaded, with <code>font-display: swap</code>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Images + fonts are 70-90% of page bytes</strong> — the highest-leverage perf work after server response time.</li>
+    <li><strong>Format pyramid:</strong> AVIF (smallest) → WebP (broad support) → JPEG/PNG (universal). Use <code>&lt;picture&gt;</code> with <code>type</code> fallbacks (or a CDN with content negotiation) so the browser picks the first it supports.</li>
+    <li><strong>Responsive images:</strong> <code>srcset</code> (candidate widths) + <code>sizes</code> (display slot) let the browser pick the smallest sharp variant per viewport × DPR — don't ship desktop pixels to mobile.</li>
+    <li><strong>Always specify dimensions</strong> (<code>width</code>/<code>height</code> or <code>aspect-ratio</code>) — an image with no intrinsic size reflows the page when it loads (CLS).</li>
+    <li><strong>Priority splits by position:</strong> the LCP hero is eager (default) + <code>fetchpriority="high"</code> + preloaded; below-the-fold is <code>loading="lazy"</code> + <code>fetchpriority="low"</code>; add <code>decoding="async"</code> to avoid blocking on decode.</li>
+    <li>Placeholders (LQIP / blurhash / thumbhash) give instant feedback and reserve space while the real image loads.</li>
+    <li><strong>Fonts:</strong> WOFF2 only; the naive Google-Font-via-CDN path costs DNS + TLS + CSS + font download (200-800ms) before text renders right, causing FOUT or FOIT.</li>
+    <li><strong><code>font-display</code>:</strong> <code>swap</code> = fallback then swap (accept FOUT, the default choice); <code>optional</code> = fallback for the session if not loaded fast (best LCP, no swap reflow); avoid <code>block</code>/<code>auto</code>.</li>
+    <li><strong>Preload critical fonts</strong> with <code>&lt;link rel="preload" as="font" crossorigin&gt;</code> — <code>crossorigin</code> is required even same-origin (fonts use anonymous CORS).</li>
+    <li><strong>Subset</strong> (Latin-1 + ext for English) turns a ~400-800KB file into ~50-80KB; <strong>variable fonts</strong> serve many weights from one file; <strong>self-host</strong> to skip third-party connection overhead; match fallback metrics (<code>size-adjust</code>, <code>ascent-override</code>) to minimize swap CLS.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Lazy-loading the LCP hero image.</strong> "Lazy-load everything" feels right, but <code>loading="lazy"</code> on the above-the-fold hero defers its fetch and directly hurts LCP. <code>loading="lazy"</code> is for below-the-fold only — the hero should be eager (default) and explicitly marked <code>fetchpriority="high"</code>, ideally preloaded. Companion trap: shipping AVIF without a <code>&lt;picture&gt;</code> WebP/JPEG fallback (broken image on older Safari), and preloading a font without <code>crossorigin</code> (double-fetched, preload ignored).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"For images: <code>&lt;picture&gt;</code> with AVIF/WebP/JPEG, <code>srcset</code> + <code>sizes</code> for responsive sizing, dimensions to prevent CLS, and <code>fetchpriority=&quot;high&quot;</code> + preload on the LCP hero — lazy only below the fold."</div>
+  <div class="revision-say">"For fonts: self-host WOFF2, subset to the characters I use, preload with crossorigin, and <code>font-display: swap</code> — or <code>optional</code> when the font is dominating LCP."</div>
+  <div class="revision-say">"To kill swap-induced CLS I match fallback metrics with size-adjust and ascent-override, and I reach for variable or system fonts to cut bytes."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain FOUT versus FOIT and what each <code>font-display</code> value does?</li>
+    <li>Can you kill swap-induced CLS with <code>size-adjust</code> and <code>ascent-override</code> on a fallback font?</li>
+    <li>Can you use <code>srcset</code>/<code>sizes</code> and <code>picture</code> to serve the right image per viewport and DPR?</li>
+    <li>Can you choose between AVIF, WebP, and a fallback format?</li>
+    <li>Can you say when a variable font or a system-font stack is the right call?</li>
+    <li>Can you preload a critical font and explain the CORS gotcha?</li>
+  </ul>
+</div>
 `}
 
 ]

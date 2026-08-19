@@ -852,6 +852,52 @@ const { data } = useQuery({
 </ul>
 <p>Master the categorization habit and the rest follows: each library becomes a tool with a clear job rather than a religion to subscribe to.</p>
 `
-    }
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The real question is never "which library?" but <strong>"what kind of state is this?"</strong> — categorize first (server, URL, local UI, cross-feature client, behavioral), then the tool follows almost mechanically.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Five categories of state:</strong> server, URL, local UI, cross-feature client, and behavioral (state machines). Categorize before you reach for any tool.</li>
+    <li><strong>Server state → React Query / TanStack Query / RTK Query / SWR. Always.</strong> Never put fetched data in Redux/Zustand with manual loading flags.</li>
+    <li><strong>URL state → the URL itself</strong> (search params, path). Use it for filters/sort/tab/selected-id — anything that should be shareable, refresh-safe, and back-button-safe.</li>
+    <li><strong>Local UI state → <code>useState</code></strong> (or <code>useReducer</code> for &gt;3 related fields): modal open, hover, focus, typing draft, animation.</li>
+    <li><strong>Cross-feature client state → Zustand (default)</strong>; Jotai for atomic/derived shape; Redux+RTK for large enterprise apps with audit needs; Context only for rare-change values (theme, locale, auth).</li>
+    <li><strong>Behavioral state with discrete modes → XState:</strong> checkout flows, payment/3DS, WebSocket lifecycle, retry logic, drag-drop — anywhere transitions follow specific rules you'd draw on a whiteboard.</li>
+    <li><strong>Most real apps use 3-4 tools at once</strong>, each with a small, clear surface — never just one. "Everything in Redux" is the #1 anti-pattern.</li>
+    <li><strong>Context is a transport mechanism, not a store</strong> — high-frequency updates cause re-render fan-out across all consumers. Pair it with useState for low-change values only.</li>
+    <li><strong>Auth token is client state → Zustand</strong> (persisted to Keychain/httpOnly cookie), not React Query — it isn't "fetched." Queries read the token via a base-query interceptor.</li>
+    <li><strong>Promote, don't predict:</strong> start with <code>useState</code> → lift to a common parent → Zustand/Jotai/Context → XState → Redux, only when justified. Demoting global-but-actually-local state back down is fine too.</li>
+    <li><strong>Migration is incremental</strong> — one feature at a time; coexistence with legacy Redux for years is fine. Never big-bang.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Skipping the categorization step and defaulting to "everything in Redux"</strong> — server data with manual <code>useEffect</code> loading flags, form values dispatched per keystroke, modal booleans in the store. The fix: name the category first (it's usually ~80% server state), then server→React Query, form/modal→<code>useState</code>, filters→URL. After that, Redux is often nearly empty.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The 'best state library' is the wrong question. I categorize first — server, URL, local UI, cross-feature client, behavioral — and the category tells me the tool."</div>
+  <div class="revision-say">"Most apps run 3-4 state tools side by side: React Query for server data, URL params for filters, useState for local UI, Zustand for cross-feature client state, and XState for complex flows."</div>
+  <div class="revision-say">"Context is transport, not a store — I keep it for rarely-changing values like theme, and reach for Zustand with selectors the moment updates get frequent, to avoid re-render fan-out."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the five state categories (server, URL, local UI, cross-feature client, behavioral)?</li>
+    <li>Can you explain why "which library?" is the wrong first question?</li>
+    <li>Can you map each category to its default tool almost mechanically?</li>
+    <li>Can you explain why Context is transport, not a store, and when to switch to Zustand with selectors?</li>
+    <li>Can you spot the "everything in Redux" anti-pattern and re-home server data, forms, and modals?</li>
+    <li>Can you justify running 3-4 state tools side by side in one app?</li>
+  </ul>
+</div>
+`}
+
   ]
 });

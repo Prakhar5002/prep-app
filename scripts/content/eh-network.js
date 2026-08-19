@@ -373,6 +373,50 @@ proxychains nmap -sT -Pn 192.168.90.0/24
 
 <h3>Authorization is the constant</h3>
 <p>None of the defenses above change the core rule from Foundations, Ethics &amp; Legal: only run any technique from this topic against systems you own, or that you have explicit, written, in-scope authorization to test — with network-wide MITM/poisoning techniques named specifically, given how far their effects reach beyond a single "target."</p>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Post-foothold Layer 2/3 attacks abuse trust-based LAN protocols following one pattern — gain position, gain visibility, take action — and every one of them touches every host on the segment, not just your target.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>These abuse protocols that assume a trusted LAN: ARP has no authentication at all, and LLMNR/NBT-NS are legacy Windows broadcast name-resolution fallbacks where whoever answers first is believed.</li>
+    <li>On a switched network, passive sniffing shows almost nothing beyond broadcasts (ARP, DHCP, LLMNR/NBT-NS) — to see another host's unicast traffic you must actively insert yourself into its path.</li>
+    <li>ARP spoofing (cache poisoning) forges ARP replies to both the victim and the gateway to become man-in-the-middle; IP forwarding must be enabled or the MITM becomes an accidental denial-of-service.</li>
+    <li>Sniffing tools: Wireshark (GUI), tcpdump and tshark (CLI); capture filters use BPF syntax (<code>-f</code>) and discard before disk, display filters use Wireshark syntax (<code>-Y</code>) after capture.</li>
+    <li>MITM tools: arpspoof (dsniff suite, needs both directions), ettercap (one command, both directions), and bettercap (modern, modular, caplet-driven).</li>
+    <li>DNS spoofing is a follow-on from an existing MITM position: answer the victim's DNS queries with an attacker-controlled address.</li>
+    <li>Responder needs no MITM position — it answers LLMNR/NBT-NS/mDNS broadcast fallbacks and its rogue servers capture NTLMv2 hashes (crack with <code>hashcat -m 5600</code>); often the fastest win on an internal Windows/AD assessment.</li>
+    <li>SSL-stripping downgrades HTTPS to HTTP from a MITM position but is largely defeated by HSTS preload — it only works against non-preloaded, first-visit, or internal-only domains now.</li>
+    <li>VLAN hopping breaks segmentation via switch misconfig: switch spoofing (DTP trunk negotiation, bidirectional) or double tagging (stacked 802.1Q tags, one-way, needs the trunk's native VLAN).</li>
+    <li>Pivoting uses a controlled host with a foot in an unreachable segment as a relay — <code>ssh -D</code> + proxychains, Metasploit <code>autoroute</code>/<code>socks_proxy</code>, or chisel reverse tunnels.</li>
+    <li>These sit in the Exploitation and early Post-Exploitation stages and put availability (a leg of the CIA triad) at real risk across the whole segment — which is why RoE documents name them specifically.</li>
+    <li>Defenses: Dynamic ARP Inspection (with DHCP snooping), port security, disabling LLMNR/NBT-NS via GPO, network segmentation and disabling DTP, and SMB signing to defeat NTLM relay.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Responder does not need a MITM position — unlike ARP/DNS spoofing it just answers broadcast fallback queries. And capturing an NTLMv2 hash is not the same as relaying it: SMB signing stops a captured hash from being relayed into a live session even when the capture itself succeeds.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Nearly every network attack here is one step of the same pattern: gain position, gain visibility, take action."</div>
+  <div class="revision-say">"On a switched network passive sniffing shows nothing useful — ARP spoofing exists to manufacture the position that lets you see other hosts' traffic."</div>
+  <div class="revision-say">"Responder is usually the fastest win on an internal Windows network because LLMNR and NBT-NS are on by default and typos trigger the broadcast fallback constantly."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain how ARP spoofing creates a man-in-the-middle position and why IP forwarding matters?</li>
+    <li>Can you say why you can't passively sniff another host's traffic on a switched network?</li>
+    <li>Can you explain LLMNR/NBT-NS poisoning and why Responder is so effective without any MITM position?</li>
+    <li>Can you assess whether SSL-stripping is still a practical attack in the HSTS era?</li>
+    <li>Can you contrast the two VLAN hopping techniques, switch spoofing and double tagging?</li>
+    <li>Can you describe what pivoting is and name the common ways to do it?</li>
+  </ul>
+</div>
 `}
 
 ]});

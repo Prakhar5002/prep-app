@@ -864,6 +864,55 @@ type LB&lt;K extends keyof LookupBetter&gt; = LookupBetter[K];
   <li>"I'd export a named alias instead of the conditional expression so consumer tooltips stay readable."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Conditional types are a <strong>type-level ternary</strong> and mapped types are a <strong>type-level map</strong> — with <code>infer</code> as pattern-matching and template literals as string computation, you <em>derive</em> types from other types instead of duplicating them.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Conditional type = ternary:</strong> <code>T extends U ? A : B</code>.</li>
+    <li><strong>Distribution</strong> is the big surprise: when the checked type is a <em>naked</em> type parameter and a union, the conditional applies to each member (<code>ToArray&lt;string | number&gt;</code> = <code>string[] | number[]</code>). Suppress it by wrapping in a tuple: <code>[T] extends [U]</code>.</li>
+    <li><code>never</code> is the empty union, so it <strong>distributes to nothing</strong>: <code>ToArray&lt;never&gt;</code> = <code>never</code>, not <code>never[]</code>. And <code>boolean</code> is <code>true | false</code> internally, so it distributes into two branches.</li>
+    <li><strong><code>infer</code></strong> appears only in the <code>extends</code> clause; it binds a matched sub-type for use in the true branch — the basis of element-of, return-of, and params-of.</li>
+    <li><strong>Mapped type:</strong> <code>{ [K in keyof T]: ... }</code> produces one property per key, with the value usually computed from <code>T[K]</code>.</li>
+    <li><strong>Modifiers</strong> <code>+/-</code> on <code>readonly</code> and <code>?</code>: <code>-readonly</code> makes properties mutable, <code>-?</code> makes them required.</li>
+    <li><strong>Key remapping with <code>as</code></strong> (4.1) renames keys (turning fields into <code>getName</code>-style getters) or <em>filters</em> them by remapping unwanted keys to <code>never</code>.</li>
+    <li><strong>Template literal types</strong> do string-level computation for routes, event names, and CSS properties; the four built-ins are <code>Uppercase</code>/<code>Lowercase</code>/<code>Capitalize</code>/<code>Uncapitalize</code>.</li>
+    <li>The <strong>built-in utilities</strong> (<code>Pick</code>, <code>Omit</code>, <code>Partial</code>, <code>ReturnType</code>, <code>Parameters</code>, <code>Awaited</code>...) are just these primitives — use them before hand-rolling.</li>
+    <li><strong>The narrower type extends the wider one:</strong> <code>{ a: 1 } extends { a: number }</code> is true, not the reverse.</li>
+    <li>Watch perf and resolution: cartesian products of large unions explode the IDE, and a conditional <em>return</em> type may not narrow while the input is still generic (use overloads).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting distribution.</strong> A naked type parameter over a union silently maps each member separately (<code>ToArray&lt;string | number&gt;</code> becomes <code>string[] | number[]</code>, not <code>(string | number)[]</code>), and <code>ToArray&lt;never&gt;</code> collapses to <code>never</code>. Fix: if you want the union kept whole, wrap the check in a tuple — <code>[T] extends [U] ? ...</code> — which suppresses distribution.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Conditional types are a type-level ternary, mapped types are a type-level map, and infer is destructuring inside the extends clause."</div>
+  <div class="revision-say">"Distribution is the gotcha: a naked type parameter over a union applies per-member, and never distributes to nothing — I wrap in a tuple to suppress it."</div>
+  <div class="revision-say">"I reach for the built-in utility types first — they're all just conditional plus mapped plus infer under the hood, and they keep tooltips readable."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain distribution over unions in a conditional type and how to suppress it with a tuple wrap?</li>
+    <li>Can you explain why <code>ToArray&lt;never&gt;</code> is <code>never</code>, not <code>never[]</code>?</li>
+    <li>Can you explain where <code>infer</code> may appear and what it binds?</li>
+    <li>Can you write a mapped type that strips <code>readonly</code> and optional modifiers with <code>-readonly</code> and <code>-?</code>?</li>
+    <li>Can you explain key remapping with <code>as</code> to rename or filter keys?</li>
+    <li>Can you name the built-in utility types that are just conditional + mapped + <code>infer</code> under the hood?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

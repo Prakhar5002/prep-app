@@ -1012,6 +1012,8 @@ NON-FUNCTIONAL
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Run the standard 10-step framework, then apply the mobile lenses</strong> — offline-first, sync, lifecycle, battery/data, threading, and cross-platform — designing how the system degrades on bad networks, not just perfect ones.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Mobile system design = standard frontend framework + mobile lenses:</strong> offline-first, sync, lifecycle, battery/data, threading, and cross-platform. Cover these and you read senior.</li>
@@ -1030,10 +1032,26 @@ NON-FUNCTIONAL
     <li><strong>Banking vs social:</strong> banking needs SecureStore + biometric gating + certificate pinning + jailbreak detection + screenshot blocking, NO optimistic mutations (transfers await server confirmation), read-only offline, and forced-upgrade support (server 426).</li>
     <li><strong>Have a rollout/hotfix story:</strong> staged rollout, OTA (EAS Update/CodePush) for JS-only fixes, feature flags, and kill switches. Plus observability: Sentry (with native symbols), RUM, analytics.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Designing only the happy path — a perfect network, an always-alive process, and a trusted client clock.</strong> On mobile the network vanishes, the OS suspends sockets within seconds and can jetsam/OOM-kill the app, and device clocks are wrong. Fix: make offline-first the default (cache locally for instant cold start, queue writes with idempotency keys, optimistic UI with visible sync state), treat real-time as a hybrid (WebSocket in foreground, push in background, delta-fetch from the last cursor on resume), persist state to MMKV/SQLite so relaunch restores real state, and order events by server timestamps + sequence numbers — never the client clock.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Mobile system design is the standard 10-step framework plus mobile lenses: offline-first, sync, lifecycle, battery, threading, and cross-platform — I design how the system degrades on bad networks, not just perfect ones."</div>
   <div class="revision-say">"I decompose storage by data shape — SecureStore for tokens, MMKV for small sync reads, SQLite for queryable history, file system for blobs — and queue writes with idempotency keys for offline sync."</div>
   <div class="revision-say">"Real-time on mobile is a hybrid: WebSocket in the foreground, push in the background since the OS suspends sockets, and a delta-fetch from the last cursor on resume."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you design a real-time feature that survives the OS suspending sockets in the background?</li>
+    <li>Can you explain the WebSocket-in-foreground, push-in-background, delta-fetch-on-resume pattern?</li>
+    <li>Can you design an offline-first sync layer and reason about conflict resolution?</li>
+    <li>Can you argue cursor pagination vs offset and why cursor wins on mobile?</li>
+    <li>Can you talk through image delivery, caching, and CDN strategy for a media-heavy app?</li>
+    <li>Can you scope an MVP, state your assumptions, and defend the trade-offs out loud?</li>
+  </ul>
 </div>
 `}
 

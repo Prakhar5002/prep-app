@@ -1071,6 +1071,8 @@ obs.observe(sentinelEl);
       collapsible: true,
       html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Machine coding is a 60–90 minute live build where you <strong>recognise the pattern, drop in your skeleton, and demo every state</strong> — the grader is scoring whether you ship a working thing, reach for the right primitives, and narrate tradeoffs while typing.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>60–90 min live build</strong> — the grader watches three things at once: ship a working thing, reach for the right primitives, narrate tradeoffs while typing.</li>
@@ -1087,12 +1089,31 @@ obs.observe(sentinelEl);
     <li><strong>The #1 bug is the async race</strong> — abort the previous fetch on cleanup (or use a sequence guard) so stale responses don't overwrite fresh.</li>
     <li><strong>Hygiene:</strong> clean up every effect (timers/listeners/observers), never mutate state directly, no array-index keys in dynamic lists, don't mirror props in state, derive instead of store; virtualize beyond ~200 items.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is spending 15 minutes on CSS while typing in silence before any state is wired — the grader can't score reasoning they can't hear, and assumes untested states don't work. Fix: name the pattern out loud in the first minute, render a runnable skeleton (empty state on screen) by ~minute 7, then narrate each tradeoff and demo all five states — empty, loading, error, golden, edge.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Working beats pretty beats clever — skeleton in five minutes, and I narrate every tradeoff so the grader can follow my reasoning."</div>
   <div class="revision-say">"I name the pattern first, build the skeleton, then demo all five states: empty, loading, error, golden, and edge."</div>
   <div class="revision-say">"The classic bug here is the async race — I abort the previous request on cleanup so a stale response can't overwrite the fresh one."</div>
 </div>
 `
-    }
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the pattern behind a prompt in the first 60 seconds and get a runnable skeleton on screen by ~minute 7?</li>
+    <li>Can you write <code>useDebounce</code>, <code>useFetch</code> (with AbortController), and <code>useOnClickOutside</code> from memory in under a minute each?</li>
+    <li>Can you prevent the async race so "ab" results never overwrite "abc" results — and explain why cleanup/abort fixes it?</li>
+    <li>Can you decide debounce vs throttle, and controlled vs uncontrolled inputs, and say the tradeoff out loud?</li>
+    <li>Can you build a modal with portal, focus trap, ESC, backdrop click, body scroll lock, and return focus?</li>
+    <li>Can you demo all five states — empty, loading, error, golden path, edge — and name three "if I had more time" closers?</li>
+  </ul>
+</div>
+`}
   ]
 });

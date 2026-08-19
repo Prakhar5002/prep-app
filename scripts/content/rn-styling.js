@@ -712,6 +712,48 @@ const styles = StyleSheet.create({
     <li>You handle font scaling and dark mode from day 1.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">RN styles are <strong>plain JS objects plus Flexbox (via Yoga)</strong> — no CSS cascade, no selectors, no media queries; master the differences from web and reach for tokens + a library for a design system.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Styles are JavaScript objects, not CSS</strong> — no parser, no cascade, no selectors. The style array (<code>style={[a, cond &amp;&amp; b, {...}]}</code>) is your cascade substitute: later values win, and <code>false</code>/<code>null</code>/<code>undefined</code> are ignored.</li>
+    <li><strong>The three web differences that bite:</strong> <code>flexDirection</code> defaults to <code>column</code> (web is row); <strong>nothing inherits except font styles Text→Text</strong> (a parent View's color/background doesn't paint through); and <strong>there are no media queries</strong> — use <code>useWindowDimensions()</code> for responsive logic.</li>
+    <li><strong>Flexbox is the only layout engine</strong> (Yoga): <code>alignItems: 'stretch'</code> by default, <code>flex: 1</code> fills the main axis, percentages/gap/aspectRatio supported — but <strong>no CSS Grid, no float, no position: fixed</strong>.</li>
+    <li><strong><code>StyleSheet.create</code></strong> gives stable references (safer for <code>React.memo</code>) and dev-time validation; Fabric removed the old bridge-ID optimization but the organizational win remains.</li>
+    <li><strong>Platform differences need <code>Platform.select</code></strong>: iOS uses <code>shadow*</code>, Android uses <code>elevation</code> (which needs a non-transparent background); Android text needs <code>includeFontPadding: false</code> for vertical centering. Deeper splits go in <code>.ios.tsx</code>/<code>.android.tsx</code> files.</li>
+    <li><strong>Values are DPI-independent points, not pixels;</strong> use <code>StyleSheet.hairlineWidth</code> for crisp 1-physical-pixel dividers.</li>
+    <li><strong>Theme with semantic tokens</strong> (bg.primary, space.md) via a ThemeContext reading <code>useColorScheme()</code>, so a light/dark switch updates every color coherently — hard-coded colors mean dark mode touches dozens of files.</li>
+    <li><strong>Responsive = <code>useWindowDimensions()</code></strong> (reactive to rotation and iPad split view), not <code>Dimensions.get('window')</code> (static at read time).</li>
+    <li><strong>Design-system libraries:</strong> NativeWind (Tailwind classes, compiled at build time), Tamagui (compile-time-optimized design system), Unistyles, Restyle — pick one and stay consistent.</li>
+    <li>Always handle the <strong>safe area</strong> (insets / SafeAreaView) so content clears the notch and home indicator, and design for <strong>accessibility font scaling</strong> (cap with <code>maxFontSizeMultiplier</code>) instead of pixel-perfect fixed sizes.</li>
+    <li>Flatten deep View trees — each View is a native view and adds layout cost; prefer <code>gap</code> and padding over wrapper-and-margin hacks.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Assuming styles inherit and cascade like CSS.</strong> Setting <code>color</code> or a background on a parent View does nothing to its children — only font styles inherit, and only from a <code>&lt;Text&gt;</code> parent to child <code>&lt;Text&gt;</code>. The runner-up trap is expecting a horizontal row by default and getting a vertical stack because <code>flexDirection</code> defaults to <code>column</code>. Fix: pass styles explicitly (or via a theme/helper component) and be deliberate about <code>flexDirection</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"RN styles are JS objects with Flexbox — no cascade or selectors, and the only inheritance is font styles from Text to Text."</div>
+  <div class="revision-say">"flexDirection defaults to column, there are no media queries so I use useWindowDimensions, and platform shadow vs elevation goes through Platform.select."</div>
+  <div class="revision-say">"For a design system I drive everything off semantic theme tokens with a ThemeContext on useColorScheme, so dark mode is one switch, not a hundred edits."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you drive an app's colors off semantic theme tokens so dark mode is one switch, not a hundred edits?</li>
+    <li>Can you explain how RN flexbox differs from the web — default column, no CSS units?</li>
+    <li>Can you build a responsive layout without media queries using <code>useWindowDimensions</code> and percentages?</li>
+    <li>Can you contrast <code>StyleSheet.create</code> with inline styles and say why the difference matters?</li>
+    <li>Can you theme with <code>useColorScheme</code> and a <code>ThemeContext</code>?</li>
+    <li>Can you handle platform-specific styling and hairline borders across pixel densities?</li>
+  </ul>
+</div>
 `}
 
 ]

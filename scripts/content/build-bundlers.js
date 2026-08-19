@@ -866,6 +866,47 @@ build: {
     <li>You use bundle visualizers to find size bloat.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A bundler <strong>walks your import graph, transforms each module, tree-shakes and code-splits, then emits content-hashed chunks</strong> — and the modern game is picking the right tool: <strong>Vite for SPAs, built-in Turbopack for Next.js, tsup/Rollup for libraries, Metro for React Native</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>What a bundler does:</strong> resolve modules → build the dependency graph → transform (TS/JSX/SCSS) → optimize (tree-shake, dead-code-eliminate, minify, scope-hoist) → code-split → emit content-hashed files + source maps + manifests.</li>
+    <li><strong>Vite's two innovations:</strong> dev serves <strong>native ESM (no bundling, only changed files re-transform)</strong> so startup stays near-instant regardless of size; prod bundles with a single Rust bundler — <strong>Rolldown since Vite 8 (Mar 2026)</strong>, replacing the old esbuild + Rollup split, while staying Rollup-plugin-compatible.</li>
+    <li><strong>Pick by job:</strong> Vite for new SPAs/SSGs; Next.js built-in (swc transforms + Turbopack); tsup or Rollup for libraries; Metro for React Native (only real choice); Rspack to speed up a legacy Webpack config with minimal changes.</li>
+    <li><strong>Turbopack is the Next.js default</strong> since Next 16 (Oct 2025) for both <code>next dev</code> and <code>next build</code> — the <code>--turbopack</code> flag is now a no-op.</li>
+    <li><strong>Separate transform from bundle:</strong> swc/esbuild transform TS/JSX; Vite/Rollup/Rspack/Webpack do the bundling. esbuild transpiles TS but does NOT type-check — run <code>tsc --noEmit</code> separately.</li>
+    <li><strong>Libraries: externalize peer deps</strong> (mark React/ReactDOM as <code>external</code>), dual-publish ESM + CJS via the <code>exports</code> field, ship <code>.d.ts</code>, and set <code>"sideEffects": false</code> so tree-shaking works.</li>
+    <li><strong>Metro is purpose-built for RN:</strong> device-evaluable JS, multi-resolution assets (1x/2x/3x), platform files (.ios/.android), <code>inlineRequires</code> for startup, native HMR over WebSocket.</li>
+    <li><strong>Code splitting = smaller initial load:</strong> static chunks (vendor/runtime) via config, dynamic chunks via <code>import()</code> (route-level <code>React.lazy</code> + <code>Suspense</code>). Always split vendor + app + per-route; content-hash filenames for long-term caching.</li>
+    <li><strong>HMR</strong> swaps a changed module without a full reload; framework adapters (React Fast Refresh, Vue HMR) preserve component state. Non-accepted modules (utils/constants) fall back to a full reload.</li>
+    <li><strong>Module Federation</strong> (Webpack 5) shares modules across separately-deployed apps at runtime for microfrontends (singleton React); Vite equivalent is <code>vite-plugin-federation</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Claiming "Vite uses esbuild + Rollup in production."</strong> That was true only through Vite 7. Since <strong>Vite 8 (Mar 2026)</strong> a single Rust bundler — <strong>Rolldown</strong> — handles dev pre-bundling, prod bundling, and minification, while keeping the Rollup plugin API compatible. Say "Rolldown in Vite 8+, Rollup in Vite 7 and earlier" to stay current. (Related trap: forgetting <code>external</code> on library React, so it gets bundled and duplicated in every consumer.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A bundler walks the dependency graph from the entry, transforms each module, tree-shakes and code-splits, then emits content-hashed chunks with source maps."</div>
+  <div class="revision-say">"Vite's trick is native ESM in dev so startup doesn't grow with the project, and a single Rust bundler — Rolldown since Vite 8 — for optimized production output."</div>
+  <div class="revision-say">"I separate transform from bundle: swc or esbuild for TS/JSX, Vite or Rollup for the bundle — and for libraries I externalize React, dual-publish ESM + CJS, and set sideEffects:false."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you describe the stages a bundler runs — resolve, transform, tree-shake, code-split, emit content-hashed chunks with source maps?</li>
+    <li>Can you explain Vite's dev trick (native ESM) and why startup doesn't grow with project size?</li>
+    <li>Can you separate "transform" tools (swc/esbuild) from "bundle" tools (Vite/Rollup) and say which you'd use where?</li>
+    <li>Can you configure a library build — externalize React, dual-publish ESM + CJS, set <code>sideEffects: false</code>?</li>
+    <li>Can you say when you'd reach for Rspack or Turbopack over Webpack, and what makes Metro different for RN?</li>
+    <li>Can you explain why content-hashed chunks matter for long-term caching in production?</li>
+  </ul>
+</div>
 `}
 
 ]

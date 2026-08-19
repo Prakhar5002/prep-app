@@ -873,6 +873,8 @@ console.log('main');</code></pre>
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A promise is a placeholder for a future value in one of three states; it <strong>settles exactly once then is immutable</strong>, every <code>.then</code> returns a new promise, and reactions always run as microtasks.</div>
   <h4>Key points</h4>
   <ul>
     <li>A <strong>Promise</strong> represents the eventual result of an async op; it is in exactly one of three states — <code>pending</code>, <code>fulfilled</code>, <code>rejected</code>.</li>
@@ -889,10 +891,26 @@ console.log('main');</code></pre>
     <li>An unhandled rejection fires <code>unhandledrejection</code> in browsers and <strong>terminates the process in Node 15+</strong>; attach handlers synchronously.</li>
     <li>Prefer <code>Promise.all</code> for independent work — sequential <code>await</code>s on independent calls cost N× latency; never rely on <code>async</code> callbacks in <code>forEach</code>.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><code>await</code>-ing <strong>independent</strong> calls one after another — that's N× latency; run them together with <code>Promise.all</code>. Also an <code>async</code> callback inside <code>forEach</code> is not awaited, and promises can't be cancelled — cancel the underlying work with <code>AbortController</code>.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"A promise is a placeholder for a future value with three states; it settles exactly once and is then immutable, and every <code>.then</code> returns a new promise."</div>
   <div class="revision-say">"<code>async</code>/<code>await</code> is sugar over <code>.then</code> chains — <code>await</code> pauses the function and resumes it as a microtask when the awaited promise settles."</div>
   <div class="revision-say">"Promises aren't cancellable; you cancel the underlying work with <code>AbortController</code>, which rejects the promise with an <code>AbortError</code>."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the three promise states and explain why a promise settles at most once?</li>
+    <li>Can you explain why the executor runs synchronously but <code>.then</code> callbacks always run as microtasks?</li>
+    <li>Can you explain why <code>await 42</code> still introduces a microtask boundary?</li>
+    <li>Can you contrast <code>Promise.all</code>, <code>allSettled</code>, <code>race</code>, and <code>any</code>, including how each handles rejection?</li>
+    <li>Can you explain why promises aren't cancellable and how <code>AbortController</code> helps?</li>
+    <li>Can you explain why sequential <code>await</code>s on independent calls cost N× latency and how to fix it?</li>
+  </ul>
 </div>
 `}
 

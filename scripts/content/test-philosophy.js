@@ -706,6 +706,54 @@ beforeEach(() =&gt; {
   <li>"Audit one of your prior projects: which tests would you delete now?"</li>
 </ul>
 `
-    }
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>A test suite's only job is confidence to ship at your team's speed</strong> — test behaviour not implementation, optimise for confidence not coverage, and delete what doesn't earn its keep.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Tests have one job:</strong> tell you whether the change you just made broke something that matters. Confidence to ship is the metric — coverage, "documentation," and "design pressure" are downstream.</li>
+    <li><strong>Shape:</strong> the Testing Trophy (Kent C. Dodds — static + heavy integration + some unit + a few E2E) for frontend; the Pyramid (unit-heavy) still wins for backend, parsers, and algorithms; the <strong>diamond</strong> (lots of E2E, no integration) is the anti-shape.</li>
+    <li><strong>Behaviour over implementation:</strong> query by role and assert user-visible outcomes so a refactor (button &rarr; <code>Pressable</code>) doesn't break tests. The cost is thinking in user terms, not internal state.</li>
+    <li><strong>Dodds mantra:</strong> "the more your tests resemble the way your software is used, the more confidence they can give you."</li>
+    <li><strong>Coverage is a floor/smell, not a goal:</strong> 100% with mocks all the way down gives less confidence than 60% of focused integration; watch branch coverage, which is harder to inflate than line coverage.</li>
+    <li><strong>Four test outcomes:</strong> true positive (fix the bug), true negative, false positive/flake (fix or delete the test), false negative/gap (add a regression test at the right level). Good suites minimise FPs and FNs.</li>
+    <li><strong>The "delete the test" experiment:</strong> if you removed it and a bug shipped, would something else (an integration test, TypeScript) catch it? If yes, delete it — that keeps the suite small, fast, and meaningful.</li>
+    <li><strong>Mock only at boundaries</strong> (network with MSW) and run everything else real; mocking the module under test exercises only the renderer.</li>
+    <li><strong>TDD is a tool, not a religion:</strong> use it for algorithms, edge-heavy domains, and bug-fix repros; skip it for UI/layout/design exploration.</li>
+    <li><strong>Good test files:</strong> each test names a behaviour ("shows error when password is too short"), Arrange/Act/Assert spacing, one assertion-cluster, explicit setup helpers over deep <code>beforeEach</code>.</li>
+    <li><strong>Isolation:</strong> order-independent (shuffle/randomize passes), no shared mutable state, no real time/network/files unless you mean it and label those tests.</li>
+    <li><strong>Flake spends a trust budget:</strong> 0.5% healthy, 5% debt, 10% bankrupt. Track it, auto-quarantine, and fix at the root cause instead of retrying.</li>
+    <li><strong>Beyond example tests:</strong> property-based (fast-check) for invariants, mutation testing (Stryker) to audit whether coverage is real, contract (Pact) for service shape, visual regression for CSS/layout.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Chasing a coverage % by mocking every dependency — the number climbs while confidence falls, because the tests reimplement the code and integration silently breaks. Test behaviour through the real stack (MSW at the boundary) and treat coverage as a regression-prevention floor, not a goal.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A test suite exists to give confidence to ship — I test behaviour, not implementation, so refactors that don't change behaviour don't break tests."</div>
+  <div class="revision-say">"Trophy shape for frontend because most bugs live in component cooperation; coverage is a floor, not a goal, and mocks all the way down is false confidence."</div>
+  <div class="revision-say">"For every test I ask: if I deleted this and a bug shipped, would anything else catch it? If yes, it goes."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state a test suite's only job in one sentence?</li>
+    <li>Can you explain the difference between testing behaviour and testing implementation, and why refactors shouldn't break tests?</li>
+    <li>Can you argue why the Trophy shape fits frontend better than the classic Pyramid?</li>
+    <li>Can you explain why chasing a coverage % by mocking every dependency lowers real confidence?</li>
+    <li>Can you apply the "if I deleted this test and a bug shipped, would anything else catch it?" heuristic?</li>
+    <li>Can you explain why coverage is a floor, not a goal?</li>
+  </ul>
+</div>
+`}
+
   ]
 });

@@ -759,6 +759,8 @@ function Box&lt;T extends React.ElementType = 'div'&gt;({ as, ...rest }: BoxProp
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The real value is <strong>structural correctness at component boundaries</strong> (props, events, refs, context) — type props with a plain function signature, not <code>React.FC</code>, and validate runtime data at the edges.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>The real value is structural correctness at component boundaries</strong> — props, events, refs, and context all have known shapes checked at compile time.</li>
@@ -778,10 +780,26 @@ function Box&lt;T extends React.ElementType = 'div'&gt;({ as, ...rest }: BoxProp
     <li><strong>Prefer <code>unknown</code> over <code>any</code></strong> — <code>unknown</code> forces narrowing before use; every <code>any</code> and every <code>as</code> cast is a bug waiting to happen. Use <code>@ts-expect-error</code> (not <code>@ts-ignore</code>) with a linked reason.</li>
     <li><strong>TypeScript is structural</strong> (same shape = interchangeable) — use branded types (<code>string &amp; { __brand }</code>) for nominal typing. Turn on <code>strict</code> and <code>noUncheckedIndexedAccess</code> (<code>arr[i]</code> → <code>T | undefined</code>).</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Trusting types for <strong>runtime</strong> data — types are <em>erased</em>, so they never validate API / form / <code>localStorage</code> input. Validate at the boundary with Zod/Valibot and derive the type via <code>z.infer</code>. And prefer <code>unknown</code> over <code>any</code> — every <code>any</code> and every <code>as</code> cast is a bug waiting to happen.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"I type props with a plain function signature, not React.FC, and let TypeScript infer what it can — I only annotate exported signatures and cases where inference is too wide."</div>
   <div class="revision-say">"For loading/error/success I use a discriminated union instead of separate booleans, so invalid states are unrepresentable and I get exhaustiveness checking with never."</div>
   <div class="revision-say">"Types are erased at runtime, so I validate API and form data at the boundary with Zod and derive the TS type via z.infer — and I prefer unknown over any everywhere."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you type component props with a plain function signature and explain why you avoid <code>React.FC</code>?</li>
+    <li>Can you model loading/error/success with a discriminated union and get exhaustiveness checking via <code>never</code>?</li>
+    <li>Can you explain why you still validate data at runtime with Zod even though you have TypeScript types?</li>
+    <li>Can you explain the difference between <code>unknown</code> and <code>any</code> and why you prefer <code>unknown</code>?</li>
+    <li>Can you write a generic reusable component or hook that infers its type from usage?</li>
+    <li>Can you say where you let inference work versus where you annotate an exported signature?</li>
+  </ul>
 </div>
 `}
 

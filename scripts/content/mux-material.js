@@ -1036,6 +1036,56 @@ useEffect(() =&gt; {
   <li>"Study the Material color utilities source to understand tone palette generation."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Material 3 ("Material You") is Android's design contract — <strong>use Material primitives, lean on tonal color + ripples + FAB, honor the system back gesture, and go edge-to-edge with proper insets.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>M3 (current form: Material 3 Expressive, 2025) is the Android counterpart to iOS's HIG</strong> — different tokens, navigation primitives, and gestures; <code>react-native-paper</code> is the M3-compliant default in RN.</li>
+    <li><strong>Dynamic Color (Material You):</strong> Android 12+ extracts a 5-tone palette from the wallpaper via the Monet algorithm; apps read those tokens, with a seed-color fallback (<code>@pchmn/expo-material3-theme</code>) elsewhere.</li>
+    <li><strong>Color system:</strong> 5 key colors → 13 tones each → semantic role pairs; always pair the foreground <code>on-X</code> with its background <code>X</code> for guaranteed contrast.</li>
+    <li><strong>Tonal elevation over shadows:</strong> higher surfaces shift toward primary instead of casting shadows — essential in dark mode where shadows are invisible.</li>
+    <li><strong>The FAB is the primary screen action</strong> — standard 56dp, small 40, large 96, extended with a label for emphasis. No FAB on screens with no clear primary action; a FAB everywhere dilutes its meaning.</li>
+    <li><strong>Navigation is adaptive:</strong> bottom nav (3–5 dest, &lt; 600dp) → navigation rail (600–840dp) → navigation drawer (840dp+). Bottom nav beats a hamburger drawer for few destinations.</li>
+    <li><strong>Ripple, not opacity:</strong> touch feedback radiates from the touch point via <code>android_ripple</code>; borderless only for round icon buttons, bounded for rectangular ones.</li>
+    <li><strong>Feedback hierarchy:</strong> Snackbar for transient messages (auto-dismiss, never for critical info), Bottom sheet for a transient task, Dialog for critical interruption.</li>
+    <li><strong>Edge-to-edge (Android 15 default for SDK 35+):</strong> content draws under translucent status/nav bars — inset headers and FABs with <code>useSafeAreaInsets</code> or they hide behind the bars.</li>
+    <li><strong>Predictive Back (Android 13+)</strong> animates a preview of the destination — opt in via <code>android:enableOnBackInvokedCallback="true"</code> in the manifest + react-navigation v7+; don't block the system back gesture.</li>
+    <li><strong>Touch target 48 × 48dp; 4dp grid; 16dp edge inset.</strong> Type scale is Display / Headline / Title / Body / Label × Large/Medium/Small (Roboto / Roboto Flex).</li>
+    <li><strong>Cross-platform: Material on Android, HIG on iOS</strong> — <code>Platform.select</code> for top-level primitives, share the business logic. Never ship Material on iOS.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Shipping iOS visuals on Android:</strong> a chevron back button + centered title, opacity press feedback instead of ripple, and hard-coded brand color that ignores Dynamic Color. Fix with <code>Appbar.Header</code> + <code>Appbar.BackAction</code> (left-aligned title, arrow back), <code>android_ripple</code>, and <code>theme.colors.primary</code> from an MD3 theme — plus enable edge-to-edge insets so headers/FABs don't hide behind the translucent bars.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Use Material primitives via react-native-paper, lean on tonal color plus ripples plus the FAB, honor the system back gesture, and go edge-to-edge with proper insets."</div>
+  <div class="revision-say">"Tonal elevation over shadows — surfaces shift toward primary as they lift, which gives a depth signal in dark mode where shadows would be invisible."</div>
+  <div class="revision-say">"Dynamic Color reads the wallpaper palette on Android 12+ via Monet with a seed-color fallback elsewhere; navigation is adaptive — bottom nav, then rail, then drawer at width breakpoints."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain Dynamic Color (Material You) — how Monet extracts the palette and what the fallback is?</li>
+    <li>Can you say what tonal elevation is and why it matters in dark mode versus shadows?</li>
+    <li>Can you decide bottom nav vs navigation rail vs drawer by width breakpoint, and when a FAB belongs on a screen?</li>
+    <li>Can you handle edge-to-edge on Android 15 so headers and FABs don't hide behind the translucent system bars?</li>
+    <li>Can you enable and reason about Predictive Back — the manifest opt-in and why you shouldn't block the back gesture?</li>
+    <li>Can you name the feedback hierarchy — Snackbar vs Bottom sheet vs Dialog — and the cross-platform rule of Material on Android, HIG on iOS?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

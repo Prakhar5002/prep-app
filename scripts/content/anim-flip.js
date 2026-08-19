@@ -1012,6 +1012,50 @@ child.style.transform = 'scale(2)';   // counters parent scale
   <li>"For RN, I'd standardize on Reanimated's SharedTransition and document team patterns."</li>
 </ul>
 `
-    }
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">FLIP animates layout-driven change at 60fps by <strong>letting the browser do the layout instantly, then reversing the visual delta with a transform and playing it forward</strong> — the layout is instant, the animation is pure compositor transform.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>F-L-I-P = First, Last, Invert, Play.</strong> Measure the start rect with <code>getBoundingClientRect()</code> (First); make the layout change and measure again (Last); apply a transform that visually puts it back at First (Invert); remove the transform with a transition so it animates to Last (Play).</li>
+    <li><strong>Why it's fast: the only thing animating is a transform.</strong> The real layout change happens once, instantly; there is no layout or paint per frame — just a compositor-only translate/scale.</li>
+    <li><strong>It solves what CSS transitions can't:</strong> animating across a DOM reorder, a parent change, or a list filter — cases where you can't transition <code>top</code>/<code>left</code>/<code>order</code> or animate from "auto" positions.</li>
+    <li><strong>Two measurements are mandatory</strong> — you can't know the Last position without actually doing the layout, so you bracket the mutation: measure, mutate, measure.</li>
+    <li>The invert math: <code>dx = first.left - last.left</code>, <code>dy = first.top - last.top</code>, and <code>dw/dh</code> ratios if size changes; apply as <code>translate(...) scale(...)</code> with <strong><code>transform-origin: 0 0</code></strong> so translate and scale compose correctly.</li>
+    <li><strong>The invert must land before the next paint</strong> — apply it, then use <code>requestAnimationFrame()</code> before setting the transition and clearing the transform, or the browser collapses both into one frame and nothing animates.</li>
+    <li><strong>Resize needs a scale in the inverse</strong>, which squishes children — counter-scale children with the inverse-inverse, or use clip-path / explicit child transforms.</li>
+    <li>It's the foundation of <strong>shared-element transitions</strong> (card-to-detail, thumbnail-to-fullscreen): capture the thumbnail rect, mount the hero at its final position, invert to the thumbnail, then play.</li>
+    <li><strong>Modern alternatives do FLIP for you:</strong> the View Transitions API (<code>document.startViewTransition()</code> + <code>view-transition-name</code>), Framer Motion's <code>layout</code> prop, and RN's Reanimated SharedTransition.</li>
+    <li>In React, capture rects in <code>useLayoutEffect</code> and use <code>flushSync</code> so the DOM updates synchronously before you measure Last; only FLIP existing elements — fade new ones in and clone/animate-out removed ones.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Measuring "Last" while a transform is still applied — or skipping the rAF between Invert and Play.</strong> If you read <code>getBoundingClientRect()</code> with a transform on the element, the rect includes the transform and your delta is wrong (fix: clear the transform before measuring Last). And if you set the invert transform, the transition, and the identity transform in the same frame, the browser collapses them and you get no animation — apply the invert, then set the transition + clear the transform inside <code>requestAnimationFrame()</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"FLIP is First, Last, Invert, Play: measure the start, do the layout change, measure the end, apply a transform that hides the change, then transition it away — the layout is instant and the only animated property is a compositor transform."</div>
+  <div class="revision-say">"I use it wherever CSS transitions can't reach — list reorders, filters, parent changes, and shared-element card-to-detail transitions — because you can't animate top/left or order, but you can always animate a transform."</div>
+  <div class="revision-say">"The two gotchas are transform-origin 0 0 so translate and scale compose right, and a requestAnimationFrame between invert and play so the browser actually paints the First position before animating."</div>
+</div>
+`
+    },
+
+    { id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name what each letter of FLIP stands for and what happens in each step?</li>
+    <li>Can you explain why FLIP animates only <code>transform</code> yet produces a layout-change animation with no per-frame layout or paint?</li>
+    <li>Can you say which API you use to measure the First and Last positions?</li>
+    <li>Can you give two cases where a plain CSS transition fails but FLIP works (DOM reorder, parent change, list filter)?</li>
+    <li>Can you contrast FLIP with <code>document.startViewTransition()</code> and <code>view-transition-name</code>?</li>
+    <li>Can you say how you'd cover the same use cases in React Native?</li>
+  </ul>
+</div>
+`}
   ]
 });

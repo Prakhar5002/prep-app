@@ -899,6 +899,8 @@ function go(n) { return { depth, sum, isValid }; }
       collapsible: true,
       html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Every tree solution is one skeleton — base case for null, recurse left and right, then combine</strong> — you only decide what each call returns and how you merge it.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Trees are recursive structures</strong> — every subtree is a tree, so recursion is the natural fit. Mantra: "Recurse on subtrees. Decide the work order. Pick BFS only if you need level-by-level."</li>
@@ -924,12 +926,28 @@ function go(n) { return { depth, sum, isValid }; }
     <li><strong>Space:</strong> O(h) for the recursion/DFS stack (O(log n) balanced, O(n) skewed); BFS holds up to a full level, O(w) which can be O(n).</li>
     <li><strong>Signal → reach for it:</strong> "hierarchy / nested structure" → tree · "aggregate a value from subtrees" → postorder DFS · "path from root" → carry state down (preorder) · "ordered set / sorted output" → BST + inorder · "level-by-level / shortest depth / views" → BFS · "lowest common ancestor / path" → recursive DFS returning found-subtrees.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Validating a BST by comparing each node only to its immediate children is wrong</strong> — the invariant <code>left &lt; root &lt; right</code> covers <em>all</em> descendants, so pass <code>[min, max]</code> bounds down (seeded with <code>-Infinity</code>/<code>Infinity</code>, never 0, since values can be negative). Sibling slips: returning <code>undefined</code> instead of a proper null base (0/true/[]) poisons <code>Math.max</code> into NaN, and using <code>Array.shift()</code> for the BFS queue turns O(n) into O(n²).</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Every tree solution is the same skeleton: base case for null, recurse on left and right, then combine — I just decide what each call returns and how I merge it."</div>
   <div class="revision-say">"To validate a BST I pass min/max bounds down, because the invariant is over all descendants, not just the immediate children."</div>
   <div class="revision-say">"I use postorder when I aggregate from the leaves up, and BFS with a level-size snapshot when the problem is genuinely level-by-level."</div>
 </div>
 `
-    }
-  ]
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you code the three DFS traversals (pre-, in-, post-order) from memory?</li>
+    <li>Can you code BFS with a level-size snapshot from memory?</li>
+    <li>Can you state when you use preorder versus postorder?</li>
+    <li>Can you state the time and space complexity of a tree traversal?</li>
+    <li>Can you name the null-node base-case trap in tree recursion?</li>
+    <li>Can you name 2 tree problems and the traversal each needs?</li>
+  </ul>
+</div>
+`}
+]
 });

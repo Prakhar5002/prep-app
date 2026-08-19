@@ -310,6 +310,50 @@ ping -c 3 192.168.56.102</code></pre>
 <p>It's the practice of reporting a discovered vulnerability privately to the vendor or asset owner first — rather than publishing it immediately — and agreeing on a reasonable remediation timeline before any public disclosure (a common industry convention, popularized by Google Project Zero, is around 90 days). This gives the affected party a fair chance to fix the issue before attackers can learn about and exploit it. Bug-bounty platforms like HackerOne and Bugcrowd formalize this process and typically provide researchers a legal "safe harbor" as long as they stay within the program's published scope and rules.</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Ethical hacking is authorized, in-scope attacking to find flaws before real attackers do — the technical skills are identical to a criminal's, and authorization, scope, and intent are the entire difference.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>The rule above all others: only test systems you own or have explicit, written, in-scope authorization to test — no exceptions for "it looked insecure" or "I did no harm."</li>
+    <li>White, grey, and black hats differ in intent, but only authorization decides legality — a well-intentioned grey-hat "I found it and told them" story still describes an unauthorized-access crime.</li>
+    <li>The engagement lifecycle is pre-engagement, reconnaissance, scanning/enumeration, exploitation, post-exploitation, and reporting.</li>
+    <li>Every methodology names the same shape: PTES (7 phases), NIST SP 800-115 (Planning/Discovery/Attack/Reporting), the Cyber Kill Chain (attacker view, used defensively), MITRE ATT&amp;CK (Tactics + Techniques knowledge base, not linear), and OSSTMM (metrics-driven RAV score, not phase-based).</li>
+    <li>Pentest vs vulnerability assessment vs red team vs bug bounty are distinct engagement shapes: manual exploit-to-prove-impact vs broad automated coverage vs stealthy goal-oriented (also tests the blue team) vs continuous crowd-sourced with safe harbor.</li>
+    <li>Black-box / grey-box / white-box describe how much the tester knows going in; grey-box is the most common real-world choice because it balances realism against discovery cost.</li>
+    <li>The CIA triad (Confidentiality, Integrity, Availability) is what every finding ultimately threatens — DoS threatens availability, which is why it's usually excluded from scope by default.</li>
+    <li>The legal core is written authorization (signed by someone with real authority over the asset), an explicit in- and out-of-scope list, a Rules of Engagement document, and a "get-out-of-jail-free" letter for physical work.</li>
+    <li>An RoE typically covers scope, the testing window and blackout periods, permitted/prohibited techniques, emergency contacts and escalation, data-handling rules, and signatures.</li>
+    <li>The CFAA (US, 18 U.S.C. § 1030) criminalizes access "without authorization or exceeding authorized access"; equivalents include the UK Computer Misuse Act 1990, EU Directive 2013/40/EU, the Budapest Convention, and India's IT Act 2000.</li>
+    <li>Responsible/coordinated disclosure means reporting privately first, agreeing a remediation timeline (commonly ~90 days), and not going public before the fix ships.</li>
+    <li>Practice only in an isolated host-only lab (Kali/Parrot on VirtualBox/VMware) against vulnerable targets (DVWA, Metasploitable, Juice Shop, VulnHub) or on pre-authorized platforms (Hack The Box, TryHackMe); certs run roughly eJPT → CEH → PNPT → OSCP.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The colored "hats" describe intent, but good intentions and "no damage done" are not a legal defense — grey-hat unauthorized poking is still a crime. Authorization, not skill or intent or outcome, is the line between a legitimate engagement and an offense.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Get it in writing, stay in scope, report what you find — authorization is what makes it ethical and legal, not skill or intent."</div>
+  <div class="revision-say">"Every methodology — PTES, NIST 800-115, the kill chain, ATT&amp;CK — describes the same lifecycle shape, just in its own language."</div>
+  <div class="revision-say">"A pentest's real deliverable isn't the exploit, it's a prioritized, reproducible report tied to real business impact."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you list the phases of a penetration test and map them onto PTES and NIST SP 800-115?</li>
+    <li>Can you explain why authorization — not intent or damage — is what makes hacking legal or illegal?</li>
+    <li>Can you distinguish black-box, grey-box, and white-box testing and say which is most common and why?</li>
+    <li>Can you name what a Rules of Engagement document must contain?</li>
+    <li>Can you explain the CIA triad and why DoS testing is usually out of scope?</li>
+    <li>Can you describe responsible/coordinated disclosure and what a bug-bounty "safe harbor" provides?</li>
+  </ul>
+</div>
 `}
 
 ]});

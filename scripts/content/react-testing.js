@@ -703,6 +703,8 @@ test('boundary', () =&gt; {
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Test what the user experiences</strong> ("click X, see Y"), not implementation details — a refactor that keeps the same UI should keep the tests green.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Golden rule:</strong> test what the user experiences ("click X, see Y"), NOT implementation details (state names, internal method calls). A refactor that keeps the same UI should keep tests green.</li>
@@ -722,10 +724,26 @@ test('boundary', () =&gt; {
     <li><strong>E2E is expensive</strong> — reserve for 5-15 business-critical flows (login, checkout, signup) that only a real browser catches; variations go in integration/unit.</li>
     <li><strong>React Native:</strong> Jest + <code>@testing-library/react-native</code> for unit/integration; Detox or Maestro for E2E.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Suppressing the <strong>"not wrapped in <code>act</code>" warning</strong> — it's a real bug: async state updating after the test thinks it's done. Fix it at the source with <code>findBy</code>/<code>waitFor</code> (never a <code>setTimeout</code> sleep), and prefer <code>userEvent</code> over <code>fireEvent</code> so real event sequences run.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"I test the component the way a user uses it — semantic role/label queries and user-visible assertions — so refactors that don't change behavior don't break tests."</div>
   <div class="revision-say">"My default is RTL + MSW for integration tests, findBy/waitFor for async UI, and userEvent over fireEvent because real interactions are event sequences."</div>
   <div class="revision-say">"I follow the testing trophy — most effort in integration, a thin layer of E2E for critical flows — and I fix act warnings at the source instead of suppressing them."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why you query by role and label instead of by test IDs or class names?</li>
+    <li>Can you explain the difference between <code>userEvent</code> and <code>fireEvent</code> and why one is preferred?</li>
+    <li>Can you test async UI with <code>findBy</code>/<code>waitFor</code> instead of arbitrary timeouts?</li>
+    <li>Can you explain the testing trophy and where most of your effort should go?</li>
+    <li>Can you explain what an <code>act</code> warning means and how you'd fix it at the source?</li>
+    <li>Can you explain why you mock at the network boundary with MSW rather than mocking child components?</li>
+  </ul>
 </div>
 `}
 

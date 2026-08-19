@@ -724,6 +724,8 @@ const refresh = useCallback(async () =&gt; {
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">RN gives you a <strong>small set of primitives that wrap native views</strong> — View, Text, Image, FlatList, TextInput, Pressable — and everything else is composition; there's no DOM, so mastering their platform quirks is the whole job.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Core primitives wrap native views:</strong> View (<code>UIView</code> / <code>android.view.View</code>), Text, Image, ScrollView, FlatList / SectionList, TextInput, Pressable, Modal, SafeAreaView, KeyboardAvoidingView. View + Text + Image + FlatList + TextInput + Pressable covers ~90% of screens.</li>
@@ -741,10 +743,26 @@ const refresh = useCallback(async () =&gt; {
     <li><strong>Keyboard:</strong> prefer <code>react-native-keyboard-controller</code> over the flaky <code>KeyboardAvoidingView</code>; set <code>keyboardShouldPersistTaps="handled"</code> on scroll containers.</li>
     <li><strong>Modals:</strong> prefer the navigation library's <code>presentation: 'modal'</code> for native transitions; reserve the built-in <code>Modal</code> for simple cases.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Rendering a long list in a <code>ScrollView</code> (and keying list items by index).</strong> ScrollView mounts every child up front, so a big list blocks the thread and burns memory; index keys then remount the whole list on any reorder. Fix: use <code>FlatList</code> / <code>FlashList</code> (they virtualize / recycle) with a stable id <code>keyExtractor</code>, a <code>React.memo</code> Row, and a <code>useCallback</code> <code>renderItem</code>.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"RN gives you a small set of primitives that map to native views — View, Text, Image, FlatList, TextInput, Pressable — and everything else is composition; there's no DOM."</div>
   <div class="revision-say">"ScrollView mounts everything, FlatList virtualizes, and FlashList recycles cells instead of unmounting — I reach for FlashList on long, scroll-heavy lists."</div>
   <div class="revision-say">"I optimize FlatList with stable id keys, a memoized Row and useCallback renderItem, and getItemLayout for fixed-height rows; Pressable is my default touch handler and safe area comes from react-native-safe-area-context."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain when to reach for FlatList or SectionList over a ScrollView with <code>.map()</code>?</li>
+    <li>Can you list what makes a FlatList fast — stable keys, a memoized row, and <code>getItemLayout</code>?</li>
+    <li>Can you explain why an inline arrow <code>renderItem</code> hurts and how <code>useCallback</code> plus <code>React.memo</code> fix it?</li>
+    <li>Can you contrast <code>Pressable</code> with the older Touchable components?</li>
+    <li>Can you explain why a raw string outside a <code>&lt;Text&gt;</code> crashes, and how safe-area insets are applied?</li>
+    <li>Can you describe the difference between a controlled and an uncontrolled <code>TextInput</code>?</li>
+  </ul>
 </div>
 `}
 

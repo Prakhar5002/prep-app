@@ -1166,6 +1166,51 @@ try {
   <li>"Audit a real PWA's IDB schema; identify missing indexes / over-indexing."</li>
 </ul>
 `
+    },
+
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">IndexedDB is a <strong>real, transactional, async database in the browser</strong> — use a wrapper, version your schema, plan migrations, and persist deliberately.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Object stores (like tables), indexes, ACID transactions, versioning, and cursors — with large quotas (hundreds of MB to GBs).</li>
+    <li>Async and event-driven; the raw API is awkward, so almost always wrap it with <code>idb</code> (Promise wrapper), Dexie (ORM), or <code>idb-keyval</code> (simple kv).</li>
+    <li>Schema changes happen in an <code>onupgradeneeded</code> handler, which runs once per browser and migrates old DBs forward.</li>
+    <li>Transactions are scoped (readonly/readwrite) and auto-commit when idle — they can't span async work outside the IDB request chain.</li>
+    <li>Quotas differ per browser and persistence is best-effort; <code>navigator.storage.persist()</code> lowers eviction risk.</li>
+    <li>Don't use IDB for small flags/settings (localStorage) or session data (memory); do use it for offline-first data, queued mutations, blobs, and cached responses.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Awaiting an unrelated promise mid-transaction auto-closes it</strong>, so the next operation throws. And treating IDB as the sole source of truth means an eviction equals data loss — the browser can evict best-effort storage, so always sync to a backend.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"IndexedDB is a real database in the browser — object stores, indexes, ACID transactions — and I always use a wrapper like idb or Dexie."</div>
+  <div class="revision-say">"Transactions auto-commit when idle, so I never await unrelated work in the middle of one or it closes and the next op throws."</div>
+  <div class="revision-say">"Storage is best-effort; IDB alone isn't a source of truth — I sync to a backend and call persist() to lower eviction risk."</div>
+</div>
+`
+    },
+
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain how IndexedDB differs from localStorage and when to pick each?</li>
+    <li>Can you describe where schema migrations run and how often?</li>
+    <li>Can you explain why awaiting an unrelated promise mid-transaction breaks it?</li>
+    <li>Can you explain why IDB-only storage is risky and what <code>persist()</code> does?</li>
+    <li>Can you name a wrapper library and why the raw API is avoided?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

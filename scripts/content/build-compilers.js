@@ -824,6 +824,46 @@ npm exec esbuild src/index.ts --metafile=meta.json --bundle</code></pre>
     <li>You parallelize type-check + emit in CI.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A JS compiler is a <strong>transformer</strong> (source → AST → transform → output) — <strong>compilers transform one file; bundlers stitch the graph</strong>; for new projects use SWC/esbuild to emit and <code>tsc --noEmit</code> to type-check, in parallel.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Compiler vs bundler:</strong> a compiler/transformer takes one file → one file (TS→JS, JSX→JS); a bundler walks the dependency graph and combines files. They run together — the bundler invokes a compiler per file.</li>
+    <li><strong>The four tools:</strong> <strong>Babel</strong> (JS, plugin-rich, slowest — use only for niche plugins); <strong>SWC</strong> (Rust, 10-50× faster, TS+JSX+decorators, Next.js default); <strong>esbuild</strong> (Go, all-in-one transform+bundle+minify, Vite's dev transform); <strong>tsc</strong> (full type checking, slow emit).</li>
+    <li><strong>Split type-check from emit:</strong> let SWC/esbuild emit JS in seconds; run <code>tsc --noEmit</code> only for types; parallelize both in CI so wall time = the slower job, not the sum.</li>
+    <li><strong>tsc is slow because it does full semantic analysis</strong> (parse every dep's types, build the type graph, check assignability) — SWC/esbuild just strip TS syntax. The gap is closing: the Go-native TypeScript compiler (TS 7) is ~10× faster.</li>
+    <li><strong><code>isolatedModules: true</code> is mandatory with SWC/esbuild</strong> — it forbids TS features needing cross-file context (<code>const enum</code>, <code>namespace</code>) since each file is transpiled in isolation.</li>
+    <li><strong>JSX automatic runtime</strong> (React 17+, default): compiles to <code>jsx()</code> with auto-injected <code>react/jsx-runtime</code> import — no <code>import React</code> per file. Set via <code>"jsx": "react-jsx"</code> or <code>runtime: "automatic"</code>.</li>
+    <li><strong>Browserslist drives the target</strong> for every tool (preset-env transforms, autoprefixer/Lightning CSS prefixes, core-js polyfills, esbuild ES level). Modern default: <code>"&gt; 0.5%, last 2 versions, not dead"</code>; drop IE11.</li>
+    <li><strong>Speed wins:</strong> <code>skipLibCheck: true</code> (skip node_modules .d.ts checking), <code>incremental</code> + tsbuildinfo, and <code>tsc --build</code> project references for monorepos.</li>
+    <li><strong>React Compiler</strong> (stable 1.0, 2025) is a build-time Babel/SWC plugin that statically analyzes components and auto-inserts memoization.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Using a fast emitter (SWC/esbuild) but never running <code>tsc --noEmit</code> — so type bugs ship to runtime.</strong> SWC/esbuild only strip types; they do zero type checking. Fix: always keep <code>tsc --noEmit</code> in CI, run it in parallel with emit, and set <code>isolatedModules: true</code> so tsc flags the exact patterns (<code>const enum</code>, <code>namespace</code>) that a file-by-file transpiler can't handle.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Compilers transform, bundlers stitch — SWC or esbuild for emit, <code>tsc --noEmit</code> for type checking, and I run them in parallel in CI."</div>
+  <div class="revision-say">"tsc is slow because it does full semantic analysis; SWC and esbuild just strip TS syntax, which is why they're 10-50× faster at emit — but they don't type-check, so tsc still has to run."</div>
+  <div class="revision-say">"I set <code>isolatedModules: true</code> whenever a non-tsc emitter is in play, so TS forbids the cross-file features SWC/esbuild can't compile correctly."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you walk the parse → transform → generate pipeline a compiler runs on an AST?</li>
+    <li>Can you explain why tsc is 10-50× slower at emit than SWC/esbuild — and what full semantic analysis buys?</li>
+    <li>Can you split type-checking from emit — <code>tsc --noEmit</code> alongside swc/esbuild — and run them in parallel in CI?</li>
+    <li>Can you explain why <code>isolatedModules: true</code> is required whenever a non-tsc emitter is in play?</li>
+    <li>Can you say when Babel is still the right choice over SWC?</li>
+    <li>Can you explain what Browserslist drives and how it changes each compiler's output?</li>
+  </ul>
+</div>
 `}
 
 ]

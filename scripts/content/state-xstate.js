@@ -1103,6 +1103,52 @@ actions: { stopRef: stopChild('ref') }
   <li>"I'd persist key actors to disk so we can resume long-running flows after app restart."</li>
 </ul>
 `
-    }
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">XState models <strong>behavior, not data</strong> — reach for it when state has <strong>discrete modes with specific allowed transitions</strong>, and use it to <strong>make impossible states impossible</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A finite state machine = states + events + transitions</strong>, with exactly one state active at a time; each state defines which events it accepts and where they lead.</li>
+    <li><strong>Statecharts (Harel 1987) extend FSMs with</strong> hierarchy (substates), parallel regions, history states, guards, and actions. XState implements statecharts.</li>
+    <li><strong>The selling point: "make impossible states impossible."</strong> N booleans give 2^N combinations, most invalid ("loading + error + success"); enumerating real modes (<code>idle | loading | success | error</code>) forbids the illegal ones.</li>
+    <li><strong>States vs context:</strong> states are the <em>finite</em> set of named modes; context is the <em>unbounded</em> data carried alongside (form values, retry count). Update context only via <code>assign()</code> — never mutate it directly.</li>
+    <li><strong>Actions are synchronous side effects</strong> (entry/exit/transition); async work goes in <code>invoke</code> (services), whose lifetime is tied to the state — leaving the state cancels the in-flight work.</li>
+    <li><strong>Guards are pure predicates</strong> that gate transitions; use them instead of if-else inside actions. On a multi-guard event, the first matching transition wins.</li>
+    <li><strong><code>after</code> = delayed transitions tied to state lifetime</strong> — auto-cancelled when the state exits, unlike a raw <code>setTimeout</code> you'd have to clear by hand.</li>
+    <li><strong>Actors (v5):</strong> each machine instance is an actor that receives events and can spawn children; spawned actors must be stopped or they leak.</li>
+    <li><strong>In React use <code>useMachine</code>/<code>useActor</code></strong> and always read state with <code>state.matches('x')</code>, never <code>state.value === 'x'</code> (hierarchical/parallel values are objects, not strings).</li>
+    <li><strong>Visualize first:</strong> draw the chart in Stately Studio before coding — if you can't draw it, you don't understand it, and PMs/designers can review the diagram.</li>
+    <li><strong>Don't use XState for</strong> simple CRUD, lists, settings, single-flag toggles, or plain request lifecycles (React Query already handles those) — the learning curve only pays off for genuinely complex behavioral state.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Modeling data as states</strong> — a separate state for every counter value or wizard step-index (<code>zero</code>, <code>one</code>, <code>two</code>…), producing state explosion. If two "states" differ only in their data, they're one state with different <em>context</em>. States are for distinct <em>behaviors</em>, not distinct values. (Runner-up: putting an async <code>fetch</code> inside an action — actions are sync; use <code>invoke</code>.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I reach for a state machine when state has discrete modes with specific allowed transitions — it makes impossible states like 'loading and error at once' unrepresentable."</div>
+  <div class="revision-say">"States are the finite set of behaviors; context is the unbounded data. If two states differ only in data, they should be one state with different context."</div>
+  <div class="revision-say">"Actions are synchronous; async work goes in invoke, tied to the state's lifetime so it cancels automatically when the state exits — that's why it beats a switch reducer with manual flags."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why XState models behavior, not data, and when discrete modes justify it?</li>
+    <li>Can you explain how a machine makes impossible states (loading and error at once) unrepresentable?</li>
+    <li>Can you distinguish states (finite behaviors) from context (unbounded data)?</li>
+    <li>Can you spot "modeling data as states" causing state explosion, and collapse it into context?</li>
+    <li>Can you explain why async work goes in <code>invoke</code>, not an action, and how it auto-cancels on state exit?</li>
+    <li>Can you argue why a machine beats a switch reducer with manual flags?</li>
+  </ul>
+</div>
+`}
+
   ]
 });

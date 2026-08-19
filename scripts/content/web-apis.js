@@ -1177,6 +1177,52 @@ new PerformanceObserver(...).observe({ type: 'largest-contentful-paint', buffere
 </ul>
 <p>Together: the foundation any senior frontend engineer must internalize. Master the platform; libraries become optional helpers, not crutches.</p>
 `
-    }
-  ]
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Reach for the platform first:</strong> observers for tracking, workers for compute, permissions for access, streams for big data, WebAssembly for hot paths — native APIs cost 0KB and outrun most libraries.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The four observers:</strong> <code>IntersectionObserver</code> (viewport visibility — lazy load, infinite scroll, impressions), <code>ResizeObserver</code> (element size — container-query behavior), <code>MutationObserver</code> (DOM changes, batched), <code>PerformanceObserver</code> (LCP / long tasks / layout shift — pass <code>buffered: true</code> to catch entries fired before you registered).</li>
+    <li><strong>Prefer observers over scroll / resize listeners:</strong> IO fires on visibility change, not every scroll event, and never blocks the main thread — far cheaper than a throttled scroll handler.</li>
+    <li><strong>The worker family:</strong> Web Worker (background compute thread), Shared Worker (one worker across tabs), Service Worker (network proxy + offline + push), plus Audio / Paint worklets. Workers have their own scope — no <code>window</code>, <code>document</code>, or <code>localStorage</code>.</li>
+    <li><strong>Move expensive compute off the main thread</strong> with a Web Worker; use <strong>transferable objects</strong> (<code>postMessage(data, [data.buffer])</code>) to move a buffer without copying, and Comlink for ergonomic call-style APIs.</li>
+    <li><strong><code>fetch</code> + <code>AbortController</code></strong> is the modern HTTP API — the signal cancels in-flight requests (and event listeners via <code>{ signal }</code>). Remember <code>fetch</code> only rejects on network error; check <code>response.ok</code> for 4xx / 5xx.</li>
+    <li><strong>Streams API</strong> reads a response body in chunks (<code>response.body.getReader()</code>) — process large / newline-delimited data before the download finishes.</li>
+    <li><strong>Permissions API queries state, it does not request</strong> — <code>navigator.permissions.query()</code> returns <code>granted</code> / <code>denied</code> / <code>prompt</code>; the actual prompt comes from the underlying API (<code>getUserMedia</code>, <code>getCurrentPosition</code>, <code>Notification.requestPermission</code>).</li>
+    <li><strong>Secure-context + user-gesture rules:</strong> Notifications, Service Worker, Push, geolocation, and clipboard all need HTTPS; Clipboard and Wake Lock must be triggered from a user gesture.</li>
+    <li><strong>Page Visibility</strong> (<code>visibilitychange</code> / <code>document.hidden</code>) pauses work and flushes analytics with <code>sendBeacon</code> — more reliable than <code>beforeunload</code> on mobile.</li>
+    <li><strong>Always feature-detect and clean up:</strong> check before using cutting-edge APIs (WebUSB / HID / BackgroundFetch are Chromium-only), and disconnect observers, abort fetches, and remove listeners on teardown.</li>
+    <li>Heavier weapons: <strong>WebAssembly</strong> for compute-heavy hot paths (net win only past a size threshold — there's a compile + boundary-copy cost), <strong>OffscreenCanvas</strong> to render from a worker, <strong>WebGPU</strong> for GPU compute / 3D.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Confusing the Permissions API with requesting permission.</strong> A common bug is querying <code>navigator.permissions.query()</code> and expecting it to pop the prompt — it never does; a <code>prompt</code> state just means "undecided," and you must call the underlying feature API to actually ask. The sibling trap is the fetch memory leak: firing <code>fetch</code> in a component effect with no <code>AbortController</code>, so the response resolves after unmount and calls <code>setState</code> on a dead component — abort in the cleanup and swallow <code>AbortError</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I reach for the platform first — IntersectionObserver instead of a scroll listener, ResizeObserver instead of polling size, a Web Worker for heavy compute — because they're 0KB and the browser optimizes them off the main thread."</div>
+  <div class="revision-say">"The Permissions API only tells me the state; it doesn't request. To actually prompt, I call the underlying API like getUserMedia or getCurrentPosition."</div>
+  <div class="revision-say">"Every fetch in a component gets an AbortController so I can cancel it in cleanup and never setState on an unmounted component; I also check response.ok because fetch only rejects on network errors."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain when <code>IntersectionObserver</code> beats a scroll listener?</li>
+    <li>Can you cancel an in-flight fetch with <code>AbortController</code> and clean it up on unmount?</li>
+    <li>Can you say why <code>fetch</code> only rejects on network errors, and how you catch a 404?</li>
+    <li>Can you decide what work belongs on a Web Worker versus the main thread?</li>
+    <li>Can you contrast <code>IntersectionObserver</code>, <code>ResizeObserver</code>, and <code>MutationObserver</code> by use case?</li>
+    <li>Can you query state with the Permissions API before you trigger a prompt?</li>
+  </ul>
+</div>
+`}
+
+]
 });

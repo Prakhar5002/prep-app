@@ -1021,6 +1021,55 @@ resolve."</code></pre>
 <p><em>"Maintain a brag doc. Tell a coherent narrative. Build sponsors slowly. Pick visible teams. Match visibility to scope. Internal first; external supplements. Visibility is communication, not bragging."</em></p>
 <p>Engineers who treat visibility as part of senior engineering progress at a faster cadence than equivalently-skilled engineers who don't. The work is real; the visibility makes it knowable; together they build careers.</p>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Good work that's invisible loses to average work that's known — visibility is the work of making your work <strong>knowable, not making you known</strong>: a brag doc, a coherent narrative, sponsors, and strategically chosen visible teams.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Quiet excellence is invisible</strong> for promo / comp / retention decisions — which are made by people who never see your code, only your artifacts.</li>
+    <li><strong>Visibility is communication, not bragging.</strong> The best visibility is factual, helpful to others, and ladder-aligned to org goals; the target is "healthy visibility" where the work is real and fully seen.</li>
+    <li><strong>Keep a brag doc</strong> — 10 minutes every Friday. Without it you forget ~80% of your year by review time; with it you have 50+ concrete entries for packets, narratives, and resumes.</li>
+    <li><strong>Narrative beats a list.</strong> A coherent story about your impact ("this year I raised mobile reliability...") outperforms a 30-bullet shipped-features list.</li>
+    <li><strong>Sponsors beat mentors.</strong> Mentors give advice; sponsors spend political capital for you in rooms you're not in. Sponsorship is earned through a pattern of visible, useful work — never asked for cold.</li>
+    <li><strong>Career-shaping decisions happen in "rooms you're not in"</strong> (calibration, promo committee, headcount, layoffs). Ask continuously: if my name came up tomorrow, what artifacts could people point to?</li>
+    <li><strong>Internal visibility drives promo and scope; external drives comp and future offers.</strong> Junior ~80% internal; senior+ adds 20-30% external; staff+ treats external presence as part of the role.</li>
+    <li><strong>Ladder alignment multiplies weight:</strong> strategic + visible + delivered is promo gold; off-strategy or invisible work is near-zero career value.</li>
+    <li><strong>Credit collaborators by name and be specific about your role</strong> — engineers who credit others get more credit themselves. Over-claiming flips your reputation from high-output to credit-grabber fast.</li>
+    <li><strong>Route visibility through your manager</strong> (your first-line sponsor); don't end-run them to skip-level.</li>
+    <li><strong>Mobile / RN angle:</strong> mobile work is felt by users but not by other engineers — bridge it to product / business outcomes ("cut launch time 40%") rather than internal terms ("migrated nav to type-safe routing").</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Avoidance disguised as humility</strong> — "I don't want to brag" and "my work speaks for itself." It doesn't: reviewers don't have time to read code, and calibration involves people who never met you. The result is invisible, under-leveled work. (The opposite trap — chronic over-claiming — craters your reputation just as fast.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I think about visibility as making my work knowable, not making me known. The work has to be real first; visibility is the communication layer. I keep a brag doc, translate mobile work into business outcomes, and credit collaborators by name."</div>
+  <div class="revision-say">"For hard-to-see platform work I quantify the upstream impact and build dashboards — 'this migration let team X ship feature Y', or a crash-rate dashboard the VPs check weekly. Concrete numbers travel where 'refactored navigation' doesn't."</div>
+  <div class="revision-say">"I don't ask for sponsorship — I earn it by doing consistently visible, useful work in a senior leader's orbit and being reliable. Either it emerges from that pattern or it doesn't; asking cold is an anti-pattern."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you tell a concise STAR story about a project you're proud of — with your specific role, a hard decision, and measurable numbers?</li>
+    <li>Can you explain how you maintain a brag doc and why it beats reconstructing your year at review time?</li>
+    <li>Can you tell a coherent narrative of your org impact instead of reciting a list of shipped features?</li>
+    <li>Can you explain the difference between a mentor and a sponsor, and how you'd build sponsorship without asking for it?</li>
+    <li>Can you describe how you'd make hard-to-see (infra / platform / mobile) work visible by translating and quantifying upstream impact?</li>
+    <li>Can you explain how you balance internal versus external visibility, and why you'd credit collaborators by name?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

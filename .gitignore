@@ -1,3 +1,6 @@
 .superpowers/
 .vercel
 .env*
+
+# macOS noise
+.DS_Store

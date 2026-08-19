@@ -1145,6 +1145,52 @@ await redis.setex(\`user:\${id}\`, 600, JSON.stringify(user));
   <li>"Audit a real codebase's cache usage; find missing invalidations."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Caching is the universal scaling lever — it <strong>turns expensive computation into cheap memory lookup</strong>; the hard part is <strong>invalidation</strong> (one of the two genuinely hard problems in CS).</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Five cache layers</strong> in a typical stack: browser HTTP cache → CDN edge → reverse proxy → app-process memory → distributed (Redis/memcached). Each has its own TTL and invalidation rules.</li>
+    <li><strong>Cache-aside (lazy)</strong> is the default: read miss → fetch from source → populate cache; writes go to the source and invalidate the cache separately.</li>
+    <li>Write strategies: <strong>write-through</strong> (sync, consistent, slower writes), <strong>write-behind</strong> (async, fast writes, risk of loss), <strong>write-around</strong> (skip cache on write, populate on read).</li>
+    <li>Invalidation patterns: <strong>TTL</strong> (simple), <strong>event-driven</strong> (precise), <strong>versioned key</strong> (atomic swap), <strong>tags</strong> (group invalidation).</li>
+    <li>The <strong>cache key must include everything that affects the result</strong> — user id, tenant, version, params — or users see each other's data.</li>
+    <li><strong>Redis</strong> is the de facto distributed cache (also queues, pub/sub, rate-limit, locks, leaderboards). Note the 2024 license move to SSPL/RSAL that spawned the <strong>Valkey</strong> fork; Redis 8 returned to open source (AGPLv3) in 2025 — everything here applies to both.</li>
+    <li>Defend hot paths with <strong>single-flight</strong> (one fetcher per key), <strong>stale-while-revalidate</strong>, <strong>TTL jitter</strong> (±10%), and <strong>negative caching</strong> for not-found results.</li>
+    <li>Primary metric is <strong>cache hit ratio</strong> (aim &gt;95% on hot paths); and <strong>don't cache everything</strong> — cache when reads ≫ writes, compute is expensive, and stale-by-N-seconds is acceptable.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Two classic invalidation bugs: (1) <strong>forgetting a variable in the cache key</strong> (drop the user/tenant/version and users see each other's data); and (2) <strong>updating the source but forgetting to invalidate</strong>, so users see stale data for hours. And the availability trap — <strong>thundering herd / cache stampede</strong>: 1000 concurrent misses all fire the same DB query at once; single-flight fixes it.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I default to cache-aside with a TTL, and move to event-driven invalidation only where correctness actually matters."</div>
+  <div class="revision-say">"The cache key has to include everything that affects the result — the most common cache bug I've seen is a missing tenant or version leaking data between users."</div>
+  <div class="revision-say">"For hot keys I use single-flight and TTL jitter so a mass expiry doesn't stampede the database, and I watch hit rate as the primary metric."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the five cache layers and say why each has different TTL and invalidation rules?</li>
+    <li>Can you explain cache-aside and contrast write-through, write-behind, and write-around?</li>
+    <li>Can you list the invalidation patterns — TTL, event-driven, versioned key, tags — and when each fits?</li>
+    <li>Can you explain what belongs in a cache key and the bug that follows from omitting a variable?</li>
+    <li>Can you describe thundering herd / cache stampede and fix it with single-flight and TTL jitter?</li>
+    <li>Can you say when <em>not</em> to cache, and what hit-rate target you'd defend on a hot path?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

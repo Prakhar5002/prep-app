@@ -722,6 +722,48 @@ git bisect good v1.2.0
     <li>You bisect to find regressions.</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">RN debugging spans <strong>three runtimes — JS, React, and native</strong> — and the skill is <strong>mapping the symptom to the right tool</strong>: hunting a native crash in JS DevTools wastes hours.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Match symptom to domain:</strong> JS/React bugs → React Native DevTools + React DevTools + Profiler; native jank/crashes → Xcode Instruments / Android Studio Profiler + Logcat; production crashes → Sentry.</li>
+    <li><strong>React Native DevTools (RN 0.76+) is the primary JS debugger</strong> — Chrome-based on the Hermes native debugger (press <code>j</code> in Metro). It debugs the exact on-device engine, unlike the deprecated "Debug in Chrome" which ran your JS in Chrome's V8.</li>
+    <li><strong>Flipper is de-emphasized</strong> (RN 0.75+) — hard to maintain across versions; migrate to React Native DevTools + Reactotron.</li>
+    <li><strong>Perf Monitor (Dev Menu) shows JS FPS vs UI FPS:</strong> JS FPS dropping = JS thread overloaded (unmemoized rows, heavy render → memoize, FlashList); UI FPS dropping = native overloaded (too many views, image decode → simplify rows, use transform).</li>
+    <li><strong>Sentry is non-negotiable in production</strong> and useless without symbolication — upload JS source maps + dSYM (iOS) + mapping.txt (Android) per build, and set user/version/flag context so stacks are actionable.</li>
+    <li><strong>Release builds strip debugging hooks</strong> — you can't debug them like dev. Reproduce near-release by building a local Release config; for production issues rely on Sentry, not DevTools.</li>
+    <li>Dev Menu (shake / Cmd+D iOS / Cmd+M Android / <code>d</code> in Metro): Reload, Toggle Element Inspector, Show Perf Monitor, Open DevTools.</li>
+    <li><strong>Memory leaks:</strong> take a baseline heap snapshot, repeat the action, snapshot again, diff by Delta, expand retainers to find the reference chain — common culprits are unremoved listeners, uncleared timers, module-level arrays.</li>
+    <li>Native profilers for the native half: Xcode Instruments (Time Profiler, Allocations/Leaks, Animation Hitches), Android Studio Profiler (CPU/Memory/Network), Layout Inspector / View Debugger for view trees.</li>
+    <li>Catch silent failures: install a Hermes unhandled-promise-rejection tracker routing to Sentry; strip <code>console.log</code> in release with <code>transform-remove-console</code>.</li>
+    <li>Reproduce "Hermes bugs" in both engines before blaming Hermes; <code>git bisect run</code> to pin down regressions.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Debugging in the wrong runtime — chasing a native crash or UI-thread jank inside JS DevTools.</strong> If Perf Monitor shows JS FPS at 60 but UI FPS at 30, the bottleneck is native and JS tools can't see it. Fix: read the Perf Monitor split first (JS vs UI FPS) to pick the domain, then use the matching tool — Instruments / Android Studio Profiler for native, React Profiler for renders — and rely on Sentry with uploaded symbols for anything that only reproduces in production.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Debugging RN is about picking the right runtime — I map the symptom to JS, React, or native first, because looking for a native crash in JS DevTools wastes hours."</div>
+  <div class="revision-say">"Perf Monitor's JS-FPS versus UI-FPS split tells me where to look: JS dropping means an unmemoized render, UI dropping means too many native views or image decode."</div>
+  <div class="revision-say">"In production I lean on Sentry — but it's only useful with symbolication, so I upload source maps plus dSYM and mapping.txt on every build and tag errors with user, version, and flag context."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain what symbolication is and why a production stack trace is useless without it?</li>
+    <li>Can you describe how you would debug a bug that only reproduces in a release build?</li>
+    <li>Can you explain what context — user, version, feature flags — you attach to a Sentry error and why?</li>
+    <li>Can you contrast debugging on Hermes vs JSC and what the Hermes debugger gives you?</li>
+    <li>Can you tell a native crash apart from a JS error just from the stack trace?</li>
+    <li>Can you explain how you would track down a memory leak or a slow render in production?</li>
+  </ul>
+</div>
 `}
 
 ]

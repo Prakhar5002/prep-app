@@ -1038,6 +1038,49 @@ function bt(idx) { for (...) bt(idx + 1); }
   <li>"I'd consider symmetry breaking for N-queens and similar (only solve half; mirror for the rest)."</li>
 </ul>
 `
-    }
-  ]
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Backtracking is <strong>DFS over a tree of partial solutions — choose, explore, unchoose — pruning dead branches early</strong>; it's the tool for enumerating subsets, permutations, combinations, and constraint puzzles.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three-step template: choose → explore (recurse) → unchoose (undo).</strong> Mutate shared state and restore it before returning; only copy at the <em>recording</em> moment (<code>out.push([...path])</code>).</li>
+    <li><strong>Recognition signal:</strong> "generate/enumerate ALL ..." subsets, permutations, combinations, partitions, or "place N items satisfying a constraint" (N-queens, Sudoku, word search).</li>
+    <li><strong>Know the three shapes:</strong> subsets = include-or-skip with a start index; permutations = pick any unused element (track <code>used</code>); combinations = advance the start index so you never revisit earlier elements.</li>
+    <li><strong>Pruning is what makes it fast</strong> — cut a branch the moment the partial solution is invalid or the bound is exceeded (e.g. sorted candidates + break when <code>candidate &gt; remaining</code>). Worst case stays exponential; typical inputs collapse dramatically.</li>
+    <li><strong>Duplicate-input trick:</strong> sort first, then skip identical siblings <em>at the same depth</em>. Combinations use <code>if (i &gt; start &amp;&amp; nums[i] === nums[i-1]) continue;</code>; permutations use <code>if (i &gt; 0 &amp;&amp; nums[i] === nums[i-1] &amp;&amp; !used[i-1]) continue;</code> — the conditions are NOT interchangeable.</li>
+    <li><strong>Complexity:</strong> subsets O(N·2^N), permutations O(N·N!), combinations O(K·C(N,K)); space = recursion depth = height of the decision tree.</li>
+    <li>Grid/path problems: mark the cell visited, recurse in 4 directions, then restore — use a sentinel that can't appear in input, or a visited set.</li>
+    <li><strong>Use <code>continue</code> for a single bad candidate, <code>return</code> only when the whole branch is dead</strong> — returning on a per-candidate failure skips later valid siblings.</li>
+    <li>When to switch away: overlapping subproblems or "count/optimize" (not "enumerate all") → dynamic programming; needing only the K-th item → compute directly with factorials, don't enumerate.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Recording a reference to the mutable path instead of a copy:</strong> <code>out.push(path)</code> makes every result point at the same array, so later <code>push</code>/<code>pop</code> corrupts the whole history — always <code>out.push([...path])</code> at the recording moment. The sibling trap is forgetting to <em>undo</em> (the <code>path.pop()</code> or restoring a marked grid cell), which leaks state into sibling branches.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Backtracking is DFS over a state-space tree with choose, explore, unchoose — and I prune invalid branches as early as possible."</div>
+  <div class="revision-say">"I copy the path only when I record a solution; during the search I mutate and undo so I'm not deep-copying state on every call."</div>
+  <div class="revision-say">"For duplicate inputs I sort first and skip identical siblings — and I'm careful that the permutation condition (<code>!used[i-1]</code>) differs from the combination one."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state the general choose / explore / un-choose template?</li>
+    <li>Can you recognize when a problem needs backtracking?</li>
+    <li>Can you state the time complexity of subsets and of permutations?</li>
+    <li>Can you handle duplicate inputs by sorting and skipping identical siblings?</li>
+    <li>Can you explain how the permutation <code>used[]</code> check differs from combinations?</li>
+    <li>Can you name 2 problems it solves?</li>
+  </ul>
+</div>
+`}
+]
 });

@@ -656,21 +656,12 @@ f();   // ?</code></pre>
   <li>"What's the performance cost of deep scope chains?" (Each lookup walks upward — but V8 caches lookups. Usually negligible.)</li>
   <li>"How do ES modules affect scope?" (Each module is its own scope; no leakage; <code>import</code>/<code>export</code> control what crosses.)</li>
 </ul>
-
-<div class="callout success">
-  <div class="callout-title">✅ Master checklist</div>
-  <ul>
-    <li>Can you list all scope types (global, module, function, block, catch)?</li>
-    <li>Can you explain lexical scope and contrast it with dynamic scope?</li>
-    <li>Can you predict which scope a variable resolves to in a nested example?</li>
-    <li>Do you know the <code>var</code> vs <code>let</code> vs <code>const</code> differences cold?</li>
-    <li>Can you draw the scope chain diagram for any function?</li>
-  </ul>
-</div>
 `},
 
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">JavaScript uses <strong>lexical (static) scope</strong> — a function's variable access is fixed by where it is <em>written</em>, and lookups walk innermost → outward until the name is found or it throws <code>ReferenceError</code>.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Scope</strong> = the region where an identifier is accessible; <strong>scope chain</strong> = the ordered list of nested scopes the engine searches on lookup.</li>
@@ -686,10 +677,28 @@ f();   // ?</code></pre>
     <li>Each ES module has its own isolated top-level scope (nothing leaks; <code>this</code> is <code>undefined</code>).</li>
     <li><strong>Scope vs Execution Context:</strong> an EC bundles the scope chain PLUS <code>this</code> PLUS <code>arguments</code>. A named function expression's name is visible only inside its own body.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Expecting a function to see variables from where it is <em>called</em>. It only sees its <strong>birth scope</strong>. Classic tell: a <code>var</code> loop shares one binding so deferred callbacks log <code>3, 3, 3</code>, while <code>let</code> gives a fresh binding per iteration → <code>0, 1, 2</code>.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"JavaScript uses lexical scope — a function's variable access is fixed by where it's written, not where it's called."</div>
   <div class="revision-say">"Identifier lookup walks the scope chain from innermost outward until it finds the name or throws a <code>ReferenceError</code>."</div>
   <div class="revision-say">"<code>var</code> is function-scoped and ignores blocks; <code>let</code>/<code>const</code> are block-scoped, which is why <code>for (let)</code> gives a fresh binding each iteration."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the difference between lexical (static) scope and dynamic scope, and say which one JavaScript uses?</li>
+    <li>Can you trace how the engine resolves an identifier by walking the scope chain, and what happens when it reaches global and still misses?</li>
+    <li>Can you explain why a function called somewhere else still sees its birth scope, not the caller's variables?</li>
+    <li>Can you explain why <code>for (let i ...)</code> lets closures capture 0, 1, 2 while <code>var</code> gives 3, 3, 3?</li>
+    <li>Can you explain what shadowing is and when an outer binding becomes unreachable?</li>
+    <li>Can you explain how a scope differs from an execution context (scope chain plus <code>this</code> plus <code>arguments</code>)?</li>
+    <li>Can you list all five scope types (global, module, function, block, catch)?</li>
+    <li>Can you draw the scope-chain diagram for any nested function?</li>
+  </ul>
 </div>
 `}
 

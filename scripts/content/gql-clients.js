@@ -1420,6 +1420,51 @@ const { data } = useQuery(GET_ALL_DETAILS, { variables: { ids: items.map(i =&gt;
   <li>"Audit a real codebase's Apollo cache config; identify missing typePolicies / merge functions."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Pick the client by app shape — Apollo for ecosystem, Relay for performance discipline, Urql for lightness, TanStack + graphql-request when GraphQL is just one of many APIs — and wire codegen from day one so schema renames break the build, not production.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The big four:</strong> Apollo (most popular, full-featured, normalized cache by default), Relay (Meta's, compiler-driven, fragment masking, suspense-first), Urql (tiny ~6 KB core, document cache by default, graphcache opt-in for normalization), TanStack Query + graphql-request (no normalization — query keys are the cache).</li>
+    <li><strong>A client is more than transport:</strong> it owns the cache, request dedup, optimistic UI + rollback, reactivity, subscriptions, and codegen-typed hooks (<code>useQuery</code> / <code>useMutation</code> / <code>useSubscription</code>).</li>
+    <li><strong>Codegen is non-negotiable</strong> — <code>graphql-codegen</code> with the <code>client</code> preset gives single-file typed output; renames / removals fail at compile time.</li>
+    <li><strong>Normalized vs document cache:</strong> normalized stores each entity by <code>__typename + id</code> so a mutation to one record updates it everywhere; document caches a whole response by query+vars hash — simpler but duplicates records and needs manual invalidation.</li>
+    <li><strong>Optimistic UI = four steps:</strong> fire with <code>optimisticResponse</code> (<code>__typename</code> mandatory), Apollo applies it instantly, server response replaces it, error auto-rolls-back the optimistic record.</li>
+    <li><strong>Pagination needs a merge function</strong> — <code>keyArgs: false</code> plus a custom <code>merge</code> that appends edges; without it <code>fetchMore</code> overwrites instead of appending. Relay uses <code>@connection</code>; Urql uses <code>relayPagination()</code>.</li>
+    <li><strong>Subscriptions go over WebSocket via a splitLink</strong> — route subscriptions to <code>wsLink</code>, queries/mutations to HTTP; never run a subscription through an HTTP/batch link.</li>
+    <li><strong>Centralize auth + errors in a link/exchange:</strong> <code>errorLink</code> catches 401 → refresh token → retry the original operation, so no per-component auth handling.</li>
+    <li><strong>Apollo 4 (Sept 2025):</strong> React hooks import from <code>@apollo/client/react</code>; the client + cache stay on <code>@apollo/client</code>. Urql v4 builds dedup into the <code>Client</code> — no <code>dedupExchange</code>.</li>
+    <li><strong>RN angle:</strong> persisted queries for bandwidth, <code>apollo3-cache-persist</code> with MMKV + a size cap, and reconnect-and-replay subscriptions after background.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Spinning up multiple ApolloClient instances (or reaching for <code>refetchQueries</code> everywhere) — separate caches never see each other's mutations, and blanket refetching wastes round trips.</strong> Use one shared client and route via <code>split</code>/separate links; update the cache in place with <code>cache.modify</code> / <code>cache.evict</code> and refetch only when staleness is genuinely OK.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Apollo by default — largest ecosystem, best devtools, normalized cache. Relay for fragment masking and suspense-first, Urql when bundle size is critical, TanStack when we mostly do REST."</div>
+  <div class="revision-say">"Normalized cache keys entities by __typename plus id, so a mutation returning that entity updates every query watching it — no manual refetch."</div>
+  <div class="revision-say">"I wire graphql-codegen with the client preset on day one, so a schema rename breaks the build instead of shipping."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you pick between Apollo, Relay, Urql, and TanStack + graphql-request for a given app and defend it?</li>
+    <li>Can you argue why codegen is non-negotiable and what ships broken without it?</li>
+    <li>Can you explain what a normalized cache buys you over a document cache?</li>
+    <li>Can you describe what Relay's compiler and fragment masking give you — and their learning-curve cost?</li>
+    <li>Can you justify Urql or TanStack when bundle size or a REST-heavy app is the constraint?</li>
+    <li>Can you say what matters for these clients in React Native — persisted queries and an offline-aware cache?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

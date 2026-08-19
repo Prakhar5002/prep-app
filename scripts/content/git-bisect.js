@@ -1146,6 +1146,46 @@ debugging — read recent commits, form theories, test theories."</code></pre>
 <p><em>"Bisect is binary search over history. Verify endpoints first. Skip unbuildable commits. Automate when test is scriptable. Reset when done. Bisect identifies; you investigate. Squash-merge for bisect-friendly history."</em></p>
 <p>Bisect is the difference between "I'll spend a day investigating this" and "I'll find this by lunch." It's the most senior-engineer-flavored Git skill — used rarely but with huge leverage.</p>
 `
-    }
+    },
+    { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>git bisect is binary search over commit history</strong> — give it a good and a bad commit plus a yes/no test, and it finds the first bad commit in O(log N) steps instead of a linear hunt.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Bisect needs three things: a known-good commit, a known-bad commit, and a deterministic test.</strong> The test is the load-bearing piece — a flaky test leads bisect to the wrong commit.</li>
+    <li><strong>It's O(log N):</strong> ~7 steps for 100 commits, ~10 for 1000, ~14 for 10000 — versus linear guesswork over the whole range.</li>
+    <li><strong>Always verify the endpoints first:</strong> confirm the bug is absent at <em>good</em> and present at <em>bad</em> before starting; if the test passes on known-bad or fails on known-good, the test is wrong.</li>
+    <li>Manual flow: <code>git bisect start</code> → <code>git bisect bad</code> → <code>git bisect good v3.4</code>, then mark each checkout <code>good</code> / <code>bad</code> until Git names the first bad commit.</li>
+    <li><strong>Automate with <code>git bisect run &lt;script&gt;</code>:</strong> the script's exit code drives it — <strong>0 = good, 1 = bad, 125 = skip</strong>. Run it, walk away, come back to the answer.</li>
+    <li><strong>Skip unbuildable commits with <code>git bisect skip</code></strong> — never mark a commit that won't compile as good or bad; that misleads the search.</li>
+    <li><strong>Always <code>git bisect reset</code> when done</strong> to leave detached HEAD and return to your branch — commits made mid-bisect are easily lost.</li>
+    <li>Bisect is for <strong>regressions</strong> ("this used to work; what broke it?") — it needs a good commit to exist and a reproducible test; non-deterministic or always-broken bugs don't qualify.</li>
+    <li><strong>Clean between checkouts</strong> (<code>git clean -fdx</code>, reinstall deps) so cached build artifacts from a newer commit don't contaminate an older one and produce false results.</li>
+    <li><strong>Bisect identifies; you investigate:</strong> <code>git show &lt;sha&gt;</code> to read the culprit's diff and understand intent before fixing — don't blindly revert.</li>
+    <li>Use <code>--term-old</code> / <code>--term-new</code> (e.g. fast/slow) for perf bisects, <code>git bisect log</code> / <code>replay</code> to save and resume, and a path limiter to narrow the walk to relevant files.</li>
+    <li>WIP commits that don't compile hurt bisect — <strong>squash-merge / rebase for clean, bisectable history.</strong></li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Running bisect on a <strong>flaky or unverified test</strong>: each step then has a chance of misclassifying a commit, and errors compound into a wrong "first bad commit." Fix: stabilize the test first (or run it several times per step and require a majority), and validate it against both endpoints before starting.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Bisect is binary search over history — a known-good commit, a known-bad commit, and a deterministic test find the first bad commit in log N steps."</div>
+  <div class="revision-say">"Verify endpoints first, skip unbuildable commits instead of marking them, automate with <code>git bisect run</code> using exit codes 0/1/125, and always reset when done."</div>
+  <div class="revision-say">"Bisect identifies the commit; I still read the diff to understand and fix it — and I squash-merge so history stays bisectable."</div>
+</div>
+`},
+    { id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why bisect is O(log N) and what three inputs it requires?</li>
+    <li>Can you run a manual bisect end to end, from <code>start</code> to <code>reset</code>?</li>
+    <li>Can you automate a bisect with <code>git bisect run</code> and say what exit codes 0, 1, and 125 mean?</li>
+    <li>Can you explain why you verify the good and bad endpoints before starting?</li>
+    <li>Can you say why a flaky test breaks bisect, and how you'd handle unbuildable commits?</li>
+    <li>Can you decide when bisect is the right tool versus reading a diff or hypothesis-driven debugging?</li>
+  </ul>
+</div>
+`}
   ]
 });

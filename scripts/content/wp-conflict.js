@@ -1026,6 +1026,54 @@ seriously."</code></pre>
 <p><em>"Argue the problem, not the person. Use writing for high-stakes. Disagree-and-commit. Escalate as a tool, not a weapon. Address bad behavior separately."</em></p>
 <p>Productive disagreement is a senior-level skill that compounds. Engineers who never disagree become invisible; engineers who detonate become liabilities; engineers who disagree well become indispensable.</p>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Disagree <strong>clearly, early, in writing, with respect</strong> — argue the problem not the person — then <strong>commit fully</strong> once the decision is made, even one you lost.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Suppression and detonation both fail. The middle path is <strong>structured disagreement</strong>: name the issue cleanly, separate person from problem, drive to a decision, commit to the outcome.</li>
+    <li><strong>Diagnose the conflict type first:</strong> fact-based (get data), framing-based (surface trade-offs, pick a frame deliberately), or values-based (compromise hard, sometimes leadership decides, sometimes you walk). Misdiagnosing makes resolution impossible.</li>
+    <li><strong>Disagree-and-commit:</strong> opinions matter while the decision is open; execution matters once it is made. The hardest step is committing when you were right — no sandbagging, no "I told you so".</li>
+    <li>Stay <strong>above the line</strong> — curious, assumes good intent, focused on the problem and the outcome — not below it (defensive, needing to be right, focused on the person and the points).</li>
+    <li>Look past positions to <strong>interests</strong>: "ship Friday" vs "need testing time" is intractable at the position level, often resolvable at the interest level (both want a successful launch).</li>
+    <li>Climb the <strong>resolution funnel</strong> slowly: self-talk → direct conversation → written disagreement → tech-lead/facilitator → manager → skip-level. Skipping levels damages relationships.</li>
+    <li><strong>Escalation is a tool, not a weapon</strong> — use it to get a decision (be prepared to lose), tell the peer first, only after peer-level genuinely failed.</li>
+    <li>Use <strong>writing for high-stakes</strong> disagreements: it forces precision, creates a record, reduces drift, and often resolves the issue before you hit send.</li>
+    <li><strong>Bad behavior is a separate problem</strong> from disagreement — address yelling, dismissiveness, or exclusion directly and loop your manager; do not frame it as "robust debate".</li>
+    <li>Hold the line on what matters (customer harm, security, major debt); yield freely on style, naming, and calls that are not yours to make.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Relitigating a closed decision (or "I told you so" after losing).</strong> Sandbagging the direction you opposed, dragging it up in every retro, or slow-walking the work all destroy the disagree-and-commit contract — and the trust that gets you weight in the next decision. Log your dissent once, then bring full energy to executing the call.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I argue the problem, not the person — and once the decision is made, even if I lost, I commit fully. Sandbagging or saying 'I told you so' just guarantees I get less weight next time."</div>
+  <div class="revision-say">"For high-stakes disagreements I go to writing: it forces me to be precise, it steel-mans their view, and half the time I resolve my own concern before I even send it."</div>
+  <div class="revision-say">"I escalate to get a decision, not to win — I try peer-level first, I tell the person I'm escalating, and I go in prepared to lose."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you tell a concise STAR story about a time you disagreed with a peer, PM, or manager — raised it clearly, proposed an alternative, and committed to the outcome?</li>
+    <li>Can you explain how you diagnose whether a conflict is fact-based, framing-based, or values-based, and why the resolution differs?</li>
+    <li>Can you describe how you practice disagree-and-commit — including a time you committed fully to a decision you had argued against?</li>
+    <li>Can you explain when you would escalate a conflict, and how you do it without weaponizing your manager or blindsiding the peer?</li>
+    <li>Can you tell a story about receiving disagreement or harsh feedback without getting defensive — and updating your view when convinced?</li>
+    <li>Can you describe how you would handle bad behavior (yelling, dismissiveness, exclusion) differently from a genuine disagreement?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

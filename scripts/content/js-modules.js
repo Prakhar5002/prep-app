@@ -923,6 +923,8 @@ console.log(n);   // 2 — live binding</code></pre>
       collapsible: true,
       html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>ESM</strong> is static, async, and live-bound (which is what enables tree shaking); <strong>CJS</strong> is dynamic, synchronous, and value-copied — and almost every boundary bug comes from confusing the two.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Two systems:</strong> ESM (<code>import</code>/<code>export</code>) is static, async, and live-bound; CJS (<code>require</code>/<code>module.exports</code>) is dynamic, synchronous, and copies the value at import time. Most boundary bugs come from confusing the two.</li>
@@ -938,10 +940,30 @@ console.log(n);   // 2 — live binding</code></pre>
     <li>Metro/RN accepts ESM or CJS source but always emits <strong>CJS-style bundles</strong>; tree shaking only applies to ESM imports.</li>
     <li>Modern practice: author in ESM (+ TypeScript) and let the bundler emit the target format; don't mix <code>require</code> and <code>import</code> in one ESM file, and include the <code>.js</code> extension in ESM Node imports.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Dual-package hazard:</strong> shipping a library in both ESM and CJS without a proper <code>"exports"</code> map lets it load twice → two copies of module state → broken singletons. Also top-level <code>await</code> is ESM-only, and a CJS <code>require</code> takes a value snapshot so it won't see later mutations.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"ESM is static, asynchronous, and live-bound; CommonJS is dynamic, synchronous, and copies the value at require time — almost every boundary bug comes from confusing the two."</div>
   <div class="revision-say">"Tree shaking works well only with ESM because its static syntax lets the bundler analyze the module graph without running it."</div>
   <div class="revision-say">"Author in ESM, mind the interop, and never publish both formats without an exports map — that's exactly how you hit the dual-package hazard."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you contrast ESM and CJS on static-vs-dynamic, sync-vs-async, and live-binding-vs-value-copy?</li>
+    <li>Can you explain why tree shaking works with ESM but not CJS?</li>
+    <li>Can you explain how Node decides whether a file is CJS or ESM?</li>
+    <li>Can you explain why CJS can't statically import ESM and how to load it anyway?</li>
+    <li>Can you explain the dual-package hazard and how an <code>exports</code> map prevents it?</li>
+    <li>Can you explain how a circular import behaves differently in CJS versus ESM?</li>
+  </ul>
 </div>
 `
     }

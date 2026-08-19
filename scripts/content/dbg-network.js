@@ -815,6 +815,49 @@ navigator.connection?.saveData         // user has data-saving mode</code></pre>
     <li>You correlate Lighthouse fixes with RUM trends.</li>
   </ul>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Reproduce on a slow connection and device, measure with Network + Performance + Lighthouse, fix one thing at a time, and verify</strong> — lab tells you what to fix, field (RUM/CrUX) tells you whether it matters at scale.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Network vs Performance:</strong> Network = bytes over the wire (DNS/TCP/TLS/HTTP → most LCP wins); Performance = what the browser does with them (parse/layout/paint → most INP wins).</li>
+    <li><strong>Lab vs field:</strong> Lab (Lighthouse, WebPageTest, DevTools) is deterministic — for debugging + regression; Field (CrUX, your RUM) is real users at p75 — Google ranks on it, so optimize for it.</li>
+    <li><strong>Throttle to reality:</strong> your dev machine on Wi-Fi is the best case. <strong>Slow 4G (~3 Mbps, 400ms RTT) + 4× CPU</strong> approximates a mid-range mobile user — if you don't see the slow case, you don't fix it.</li>
+    <li><strong>Request Timing breakdown:</strong> Queueing, Stalled, DNS, Initial Connection, SSL, Request sent, <strong>Waiting (TTFB)</strong>, Content Download — high TTFB = server-side (check <code>Server-Timing</code> headers), long download = big payload.</li>
+    <li><strong>Long tasks &gt;50ms</strong> block input; INP needs input → next paint within ~200ms. Keep tasks under 50ms via yielding, splitting, or Web Workers.</li>
+    <li>Performance panel tabs: <strong>Bottom-Up</strong> for hottest cumulative self-time, Call Tree for top-down, Summary for time-by-category.</li>
+    <li>Network powers: filters (<code>status-code:404</code>, <code>larger-than:100k</code>, <code>mime-type:</code>), block a URL to measure delta, <strong>Copy as cURL</strong> to replay, export/import <strong>HAR</strong> to share a repro.</li>
+    <li><strong>Lighthouse:</strong> Navigation/Timespan/Snapshot modes; scores 0-100 + actionable opportunities; <strong>run 3-5× and take the median</strong> (single runs vary ±5). Enforce budgets with Lighthouse CI on PRs.</li>
+    <li><strong>WebPageTest</strong> beats Lighthouse for real devices, multi-region, filmstrips, and before/after comparison.</li>
+    <li><strong>Ship RUM</strong> with the <code>web-vitals</code> library (LCP, INP, CLS, TTFB, FCP) via <code>sendBeacon</code>; the <strong>attribution</strong> build tells you which element/event and which INP phase (input delay / processing / presentation) was slow.</li>
+    <li>Instrument code with <code>performance.mark/measure</code> and a <strong>PerformanceObserver</strong> for longtask + navigation timing; <code>navigator.connection</code> lets you adapt UX to slow/save-data users.</li>
+    <li>Proxy tools (Charles/Proxyman/mitmproxy) inspect + modify traffic from any app (mobile, native) and decrypt HTTPS with an installed root cert — beyond what the browser panel sees.</li>
+    <li>Cross-origin gotcha: <code>Server-Timing</code> and full timing need <code>Timing-Allow-Origin</code>; a CORS <strong>preflight</strong> (OPTIONS) can be the slow part and may be hidden by an XHR-only filter.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Treating the Lighthouse score as the only metric — measured on a fast dev machine on Wi-Fi.</strong> Lighthouse is a single-device, single-network lab snapshot with ±5 variance; a synthetic win often doesn't move real-user metrics. Fix: reproduce under Slow 4G + 4× CPU, run Lighthouse 3-5× for a median, and always confirm the fix against field p75 (CrUX + your RUM) — synthetic wins don't always translate.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Reproduce, measure, fix, verify — I reproduce under Slow 4G plus 4× CPU, then read the Network timing and a Performance trace before changing anything."</div>
+  <div class="revision-say">"Lab tells me what to fix, field tells me whether it matters — so I ship web-vitals to RUM and track p75 LCP, INP, and CLS per route, not just Lighthouse."</div>
+  <div class="revision-say">"For a slow request I check the Timing tab: high TTFB is the server, so I look at Server-Timing headers and the CDN rather than blaming the network."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you read a Network waterfall and explain each phase of a request's timing breakdown?</li>
+    <li>Can you throttle to Slow 4G + 4× CPU and explain why that profile represents a real mid-range phone?</li>
+    <li>Can you distinguish synthetic testing (Lighthouse, WebPageTest) from real-user monitoring (Web Vitals / RUM / CrUX)?</li>
+    <li>Can you name the three Core Web Vitals and say what each one measures (LCP, INP, CLS)?</li>
+    <li>Can you capture and share a HAR file, or use a proxy like Charles / Proxyman to modify a request?</li>
+    <li>Can you run the reproduce → measure → fix → verify loop on a real performance bug?</li>
+  </ul>
+</div>
 `}
 
 ]

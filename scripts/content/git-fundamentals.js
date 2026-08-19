@@ -325,6 +325,50 @@ git config --global core.autocrlf input</code></pre>
 <p>The staging area lets you curate exactly what goes into a commit, separate from everything else you happen to have changed in your working tree at that moment. That's what makes it possible to split unrelated changes into separate, focused commits (or even stage just part of one file's changes, via <code>git add -p</code>), instead of every commit being an undifferentiated dump of "whatever was true when I hit save."</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Git records snapshots through three areas — edit the working tree, <code>git add</code> to stage what you want, <code>git commit</code> to save it permanently</strong> — and every clone holds the entire history.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The core loop is edit → <code>git add</code> → <code>git commit</code></strong>, run hundreds of times a day.</li>
+    <li><strong>Three areas, one pipeline: working tree → staging area (the "index") → repository.</strong> <code>git add</code> moves changes into staging; <code>git commit</code> seals staging into permanent history.</li>
+    <li><strong>A commit is a snapshot, not a diff</strong> — it records the full state of every tracked file, plus parent pointer(s), author, message, and a unique SHA; Git computes diffs on demand.</li>
+    <li><strong>The staging area exists to curate a commit</strong> — you choose exactly what goes in, enabling clean, focused commits (even part of a file via <code>git add -p</code>).</li>
+    <li><strong>Distributed means every clone has the entire history</strong>, not just the latest files — so you commit, browse, diff, and branch fully offline, with no single point of failure.</li>
+    <li><strong><code>HEAD</code> = "where I am now"</strong> — normally the tip of the checked-out branch; committing moves HEAD and its branch forward.</li>
+    <li><strong><code>git status</code> is the most-run command</strong> — it shows staged, modified-unstaged, and untracked files; run it constantly.</li>
+    <li><strong><code>git diff</code> vs <code>git diff --staged</code>:</strong> plain diff = working tree vs staging ("what I haven't staged"); <code>--staged</code> = staging vs HEAD ("what I'm about to commit").</li>
+    <li><code>git commit -am</code> stages and commits already-tracked files in one step, but <strong>new files still need <code>git add</code></strong>.</li>
+    <li><strong><code>.gitignore</code> only stops <em>new, untracked</em> files</strong> — an already-tracked file keeps showing up until you <code>git rm --cached</code> it.</li>
+    <li>Setup gotchas: every commit needs <code>user.name</code>/<code>user.email</code> configured; a fresh repo may default to <code>master</code> unless <code>init.defaultBranch</code> is set to <code>main</code>.</li>
+    <li><code>git log --oneline</code> (and <code>--graph</code>) walk the commit chain backwards from <code>HEAD</code> through parent pointers.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Expecting <strong><code>.gitignore</code> to untrack a file that's already been committed</strong> — it only affects new, untracked files. Fix: <code>git rm --cached &lt;file&gt;</code> to stop tracking it (keeping it on disk), then commit; going forward <code>.gitignore</code> applies.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Git has three areas — working tree, staging area, repository — and changes flow through them via <code>git add</code> then <code>git commit</code>."</div>
+  <div class="revision-say">"A commit is an immutable snapshot with a parent pointer, author, message, and SHA — not a diff; Git computes diffs by comparing snapshots."</div>
+  <div class="revision-say">"Distributed means every clone has the full history, so I can commit and browse offline; the staging area lets me curate focused commits."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the three areas and describe how changes flow through them?</li>
+    <li>Can you explain why a commit is a snapshot rather than a diff, and what it contains?</li>
+    <li>Can you explain what the staging area is for and why it isn't just redundant?</li>
+    <li>Can you say what distributed version control gives you over a centralized one?</li>
+    <li>Can you explain the difference between <code>git diff</code> and <code>git diff --staged</code>?</li>
+    <li>Can you explain why <code>.gitignore</code> doesn't untrack an already-committed file, and how to fix it?</li>
+  </ul>
+</div>
 `}
 
 ]});

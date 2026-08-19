@@ -223,5 +223,46 @@ window.PREP_SITE.registerTopic({
 </table>
 `},
 
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A scannable master index of the tools introduced across the Ethical Hacking module, grouped by phase — a quick-lookup reference once you already understand what each tool does, with nothing new introduced and every entry still governed by the authorization rule.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>This is reference only — every tool still runs solely against systems you own or are authorized in writing to test; practice on labs (DVWA, Metasploitable, Juice Shop, Hack The Box, TryHackMe).</li>
+    <li>The tables are laid out by phase, roughly following the engagement lifecycle: Recon &amp; OSINT → Scanning &amp; Enumeration → Vulnerability Assessment → Web App → Network → Wireless → Passwords → Exploitation → Post-Exploit &amp; PrivEsc → Active Directory → Social &amp; Physical → Reporting &amp; Cloud.</li>
+    <li>Recon/OSINT is passive (whois, dig, amass, subfinder, theHarvester, Shodan/Censys, Maltego, exiftool); Scanning turns active (arp-scan, nmap, masscan/rustscan, service enumerators, netcat).</li>
+    <li>Vulnerability assessment tooling (Nessus, OpenVAS/GVM, Nikto, nuclei, wpscan) feeds severity via CVSS and prioritization via EPSS / CISA KEV.</li>
+    <li>Web-app work centers on Burp/ZAP proxies, sqlmap, directory fuzzers, and the OWASP Top 10 as the vulnerability-class reference.</li>
+    <li>Network attacks (Wireshark/tcpdump, ARP/DNS spoofing, Responder, pivoting) and wireless (aircrack-ng suite, wifite, hashcat mode 22000) each have their own tool families.</li>
+    <li>Password attacks split into online (hydra/medusa/ncrack) and offline (john, hashcat) cracking, plus wordlists (rockyou, SecLists) and generators (crunch, cewl).</li>
+    <li>Sensitive techniques — exploitation payloads, credential dumping (mimikatz), ticket forging (golden/silver, DCSync) — are kept conceptual throughout the module and are not weaponized in this index.</li>
+    <li>Columns are consistently Tool · Purpose · Typical usage (or Key idea) so an unfamiliar entry signals you should read its home topic first.</li>
+    <li>Reporting &amp; Cloud closes the loop: report structure, note-taking, the shared responsibility model, cloud/container/K8s/mobile auditors, and the blue/purple-team defensive side.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Treating this page as a place to learn tools. Nothing new is introduced here — if a tool is unfamiliar, read its home teaching topic first; the arsenal is only for fast lookup once you already understand what each one does.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I think in phases — recon, scanning, vuln assessment, exploitation, post-exploitation, reporting — and each phase has its own go-to tools that feed the next."</div>
+  <div class="revision-say">"Recon is passive, scanning is where it turns active and the authorization rule really bites — every tool here only touches systems I'm explicitly authorized to test."</div>
+  <div class="revision-say">"The sensitive stuff — payloads, credential dumping, ticket forging — I can discuss conceptually and defend against, without needing to weaponize it."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the engagement phases in order and give the go-to tools for each?</li>
+    <li>Can you explain where recon stops being passive and scanning becomes active, and why that matters legally?</li>
+    <li>Can you say which tools belong to vulnerability assessment versus exploitation, and how the two phases hand off?</li>
+    <li>Can you distinguish online from offline password-cracking tools and give an example of each?</li>
+    <li>Can you name the labs you'd practice on rather than running any of these against systems you don't own?</li>
+  </ul>
+</div>
+`},
+
   ],
 });

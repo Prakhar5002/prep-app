@@ -741,6 +741,8 @@ feedTweetIds: [id, id, id, ...]</code></pre>
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A frontend system-design interview grades your <strong>process, not a memorized right answer</strong> — so run the 10 steps broad-then-deep: clarify, estimate, decompose, and name tradeoffs out loud.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>The 10 steps:</strong> clarify requirements → estimate scale → high-level architecture → data model → API design → component design → state management → performance → scalability &amp; edge cases → tradeoffs &amp; deep dive.</li>
@@ -757,10 +759,27 @@ feedTweetIds: [id, id, id, ...]</code></pre>
     <li><strong>Adapt under pushback</strong> rather than defending; a wrong scale or feature assumption gets an explicit pivot, not a defense.</li>
     <li><strong>The deep dive is interviewer-driven</strong>, not an essay: answer with three options, tradeoffs, your pick, and the follow-up risks.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Blowing the time budget on early steps — 20 minutes on requirements or a perfect data model, then no components, state, perf, or edge cases. The fix: time-box each step, get a complete skeleton across every layer by ~minute 25, and fast-forward the moment you're running long rather than perfecting one section.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"The interviewer grades my process, not a memorized right answer — so I clarify, estimate, decompose, and name tradeoffs out loud."</div>
   <div class="revision-say">"I clarify in three buckets — functional, non-functional, and out-of-scope — and confirm the scope before I design anything."</div>
   <div class="revision-say">"I go broad then deep: a complete skeleton across every layer by about minute 25, then I let the interviewer steer the deep dive."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name all 10 steps in order and roughly budget their time across a 45-minute interview?</li>
+    <li>Can you split a vague "Design X" prompt into functional, non-functional, and out-of-scope buckets and confirm scope before designing?</li>
+    <li>Can you write back-of-envelope estimates (DAU, peak concurrent, data per session, avg object size) and explain which design decision each one drives?</li>
+    <li>Can you sketch the [Browser] → [CDN] / [Realtime server] / [API gateway] architecture and justify a normalized client cache keyed by entity id?</li>
+    <li>Can you pick between polling, long polling, SSE, and WebSocket — and between CSR, SSR, SSG, and RSC — tying each choice to a requirement?</li>
+    <li>Can you cover the non-functional edge cases (offline, a11y, i18n/RTL, error handling) and state a tradeoff with both sides for every significant choice?</li>
+  </ul>
 </div>
 `}
 

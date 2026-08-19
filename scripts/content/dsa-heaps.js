@@ -863,6 +863,50 @@ item.pri = 1;   // heap doesn't know; root may now be wrong
   <li>"I'd profile heap allocation pressure; in a hot loop with millions of pushes, the array growth strategy matters."</li>
 </ul>
 `
-    }
-  ]
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A heap is an <strong>array-backed complete binary tree that gives you the smallest/largest item in O(1) peek and O(log n) push/pop</strong> — the go-to for top-K, median, merge-K, and "repeatedly extract the extreme."</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Heap = complete binary tree with the heap property</strong> (every parent ≤ children for a min-heap, ≥ for a max-heap); the root is the extreme.</li>
+    <li><strong>Array-backed, no node objects:</strong> for index <code>i</code>, children are <code>2i+1</code> and <code>2i+2</code>, parent is <code>(i-1)&gt;&gt;1</code>. Push sifts up, pop moves the last element to the root and sifts down — both O(log n); peek is O(1).</li>
+    <li><strong>A heap is NOT sorted</strong> — only the root is guaranteed extreme; siblings are in any order, and searching for an arbitrary element is O(n).</li>
+    <li><strong>JavaScript has no built-in heap</strong> — hand-roll one (~30 lines) with a numeric comparator; you'll implement it in the interview.</li>
+    <li><strong>Top-K pattern:</strong> for the K <em>largest</em> keep a <em>min</em>-heap of size K (K smallest → max-heap); pop when it overflows. O(n log K), better than a full O(n log n) sort when K ≪ n.</li>
+    <li><strong>Median of a stream = two heaps:</strong> a max-heap for the lower half and a min-heap for the upper half, rebalanced so their sizes differ by ≤ 1; median is a peek (or average of two peeks).</li>
+    <li><strong>Merge K sorted lists = min-heap of the K head pointers</strong>, O(N log K); Dijkstra/Prim = min-heap keyed by distance/weight.</li>
+    <li><strong>Build a heap from an array in O(n)</strong> ("heapify": sift down from the last non-leaf backwards) — not O(n log n) from N pushes.</li>
+    <li>Binary heaps don't support efficient decrease-key or arbitrary delete — use <strong>lazy deletion</strong>: push a new entry and skip stale ones on pop (guard with a validity/distance check).</li>
+    <li>Comparator must return a <em>number</em> (negative/0/positive), not a boolean; equal-priority items aren't stable — add an insertion index to tie-break if FIFO matters.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Using the wrong heap direction for top-K:</strong> for the K <em>largest</em> elements you need a <em>min</em>-heap of size K (so the smallest of your K is the one you evict), and for K smallest a max-heap — beginners reach for the intuitive-but-backwards one. Two more silent killers: a comparator that returns a boolean instead of <code>a - b</code>, and building the heap with N pushes (O(n log n)) when O(n) heapify exists.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A heap is a priority queue — O(1) peek, O(log n) push and pop — and it's array-backed, so children live at 2i+1 and 2i+2."</div>
+  <div class="revision-say">"For the K largest I keep a min-heap of size K and pop when it overflows: O(n log K), which beats sorting when K is much smaller than n."</div>
+  <div class="revision-say">"For a streaming median I run two heaps — a max-heap for the low half and a min-heap for the high half — and keep them balanced, so the median is just a peek."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state the complexity of push, pop, and peek on a heap?</li>
+    <li>Can you recognize a &quot;top-k&quot; or streaming problem as a heap problem?</li>
+    <li>Can you code a heap-based top-k solution from memory?</li>
+    <li>Can you explain the two-heap streaming-median trick?</li>
+    <li>Can you decide between a min-heap and a max-heap for a given problem?</li>
+    <li>Can you name 2 problems heaps solve?</li>
+  </ul>
+</div>
+`}
+]
 });

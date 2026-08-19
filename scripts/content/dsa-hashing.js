@@ -912,6 +912,8 @@ for (const [k, v] of map)
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A hash map <strong>trades <code>O(n)</code> space for <code>O(1)</code> average lookup</strong> — whenever brute force does a nested-loop search, a hash usually collapses it to <code>O(n)</code>.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Hash map/set = <code>O(1)</code> average lookup, insert, and delete</strong> — trade <code>O(n)</code> space for time.</li>
@@ -934,12 +936,27 @@ for (const [k, v] of map)
     <li><strong>Space:</strong> <code>O(n)</code> for the map/set (or <code>O(charset)</code> for a fixed count array).</li>
     <li><strong>Signal → reach for it:</strong> presence/dedup → Set · frequency/top-K → count Map · complement search → two-sum-style map · subarray sum (including negatives) → prefix sum + hash · group anagrams → canonical-form key · any brute force with a nested lookup → replace the inner scan with a hash.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>In the two-sum idiom, check for the complement BEFORE inserting the current value</strong> — inserting first lets an element pair with itself, and it also mishandles duplicates. Two more classic slips: forgetting to seed the prefix-sum map with <code>[0, 1]</code> (the empty prefix, needed when a subarray starts at index 0), and using <code>if (map[k])</code> in the counter idiom where a stored <code>0</code> is falsy — guard with <code>map.has(k)</code> or <code>?? 0</code>.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"When my brute force is doing nested-loop lookups, I reach for a hash map — it usually trades O(n) space to bring the time down to O(n)."</div>
   <div class="revision-say">"For subarray-sum problems with negatives I use prefix sum plus a hash map, initialized with (0, 1) for the empty prefix — sliding window won't work with negative numbers."</div>
   <div class="revision-say">"Hash lookup is O(1) on average, not worst case — all keys colliding degrades to O(n), which is why engines use randomized hashing against adversarial input."</div>
 </div>
-`}
+`},
 
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state the average vs worst-case complexity of hash operations?</li>
+    <li>Can you explain how collisions are handled (chaining vs open addressing)?</li>
+    <li>Can you recognize when a hash map turns an O(n&sup2;) scan into O(n)?</li>
+    <li>Can you explain why adversarial input degrades a hash table to O(n)?</li>
+    <li>Can you name the trap of using a mutable object as a key?</li>
+    <li>Can you name 2 problems hashing solves?</li>
+  </ul>
+</div>
+`}
 ]
 });

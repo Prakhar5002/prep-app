@@ -358,6 +358,50 @@ git checkout f6e5d4c
 <p>They do overlapping jobs, but <code>checkout</code> is the older, overloaded command that handles both switching branches <em>and</em> restoring files to a previous state, depending on the arguments — a common source of beginner confusion. Git 2.23 split those two responsibilities into <code>git switch</code> (branches only) and <code>git restore</code> (files only). <code>git switch -c &lt;name&gt;</code> is the direct modern replacement for <code>git checkout -b &lt;name&gt;</code> — both create a branch at the current commit and move onto it. <code>checkout</code> still works exactly as before and is very common in existing docs and muscle memory, but <code>switch</code>/<code>restore</code> are the clearer, recommended commands for anything written today.</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>A branch is just a movable pointer to a commit, not a copy</strong> — merging brings two lines back together, either by sliding that pointer (fast-forward) or by creating a two-parent merge commit (3-way).</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A branch is a lightweight, movable pointer to one commit</strong> — a few bytes under <code>.git/refs/heads/</code>; creating one copies no files, which is why branching is effectively free.</li>
+    <li><strong>The chain is <code>HEAD → branch name → commit SHA</code>.</strong> <code>HEAD</code> normally holds the <em>name</em> of the checked-out branch; committing moves the branch pointer (and transitively HEAD) forward.</li>
+    <li><strong>Commits never move; only the labels pointing at them do.</strong> Create, switch, delete, merge — all just read or rewrite these small pointers.</li>
+    <li><strong>Fast-forward merge:</strong> possible when the current branch's tip is a <em>direct ancestor</em> of the branch being merged in — Git just slides the pointer forward, <strong>no new commit</strong>.</li>
+    <li><strong>3-way merge:</strong> when both branches moved independently, Git compares three snapshots (both tips + their common ancestor) and creates a <strong>merge commit with two parents</strong>. "3-way" = three snapshots compared, not three parents.</li>
+    <li><strong>A merge commit is the only commit with two parents</strong> (normal commit = one, first commit = zero); walking either parent leads into that branch's real history.</li>
+    <li><strong>A conflict is a normal pause, not an error</strong> — it happens when both branches changed the <em>same lines</em>; nothing is lost, both versions sit in the file between markers.</li>
+    <li>Resolve conflicts in four steps: <strong>edit the file (removing all three <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> / <code>=======</code> / <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> markers) → <code>git add</code> → <code>git commit</code></strong>; <code>git status</code> lists conflicts under "Unmerged paths."</li>
+    <li><code>git switch</code> (branches) and <code>git restore</code> (files) replaced the overloaded <code>git checkout</code> in Git 2.23; <code>switch -c</code> = <code>checkout -b</code>.</li>
+    <li><strong><code>git branch -d</code> is a guardrail</strong> (refuses to delete unmerged commits); <code>-D</code> forces it and can lose work.</li>
+    <li><strong><code>git merge --abort</code></strong> fully undoes an in-progress merge — but only before you commit it; <strong><code>--no-ff</code></strong> forces a merge commit even when a fast-forward was possible, leaving a visible marker of where a feature joined.</li>
+    <li><strong>Detached HEAD</strong> = HEAD points straight at a commit (no branch following); make a branch before switching away or new commits risk being garbage-collected.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Thinking a branch <strong>copies</strong> your project (it's one small pointer), and calling a merge conflict a <strong>failure</strong> — it's the expected, routine outcome when two branches edit the same lines. The fix is a plain manual routine: edit the file to the version you want, delete all three marker lines, <code>git add</code>, then <code>git commit</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A branch is a lightweight movable pointer to a commit — creating one copies nothing; <code>HEAD → branch → commit</code> is the whole mechanism."</div>
+  <div class="revision-say">"Fast-forward just slides the pointer when the current tip is an ancestor; a 3-way merge compares both tips plus their common ancestor and makes a two-parent merge commit."</div>
+  <div class="revision-say">"A conflict isn't an error — I edit the file, delete the conflict markers, <code>git add</code> to mark it resolved, and <code>git commit</code>; <code>git merge --abort</code> backs out if I haven't committed yet."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain what a branch really is, and how <code>HEAD → branch → commit</code> works?</li>
+    <li>Can you state exactly when a merge fast-forwards versus creates a 3-way merge commit?</li>
+    <li>Can you explain why a merge commit has two parents and what "3-way" refers to?</li>
+    <li>Can you resolve a conflict end to end and say how <code>git add</code> marks it resolved?</li>
+    <li>Can you explain <code>-d</code> vs <code>-D</code>, <code>--no-ff</code>, and <code>git merge --abort</code>?</li>
+    <li>Can you describe detached HEAD and how to keep commits made in that state?</li>
+  </ul>
+</div>
 `}
 
 ]});

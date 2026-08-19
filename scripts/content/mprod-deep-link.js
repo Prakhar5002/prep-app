@@ -892,6 +892,55 @@ nav.navigate('Product', { id });
   <li>"I'd add structured deep-link analytics: source channel, campaign, conversion rate per route."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Deep links turn URLs into in-app destinations — prefer <strong>Universal Links (iOS) / App Links (Android)</strong> over custom schemes, verify domain ownership, route every URL through <strong>one validated pipeline</strong>, and use a routing service for <strong>deferred</strong> installs.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three flavors:</strong> custom URL schemes (<code>myapp://...</code> — hijackable, no web fallback), Universal Links (iOS, https verified via <code>apple-app-site-association</code>), App Links (Android, https verified via <code>assetlinks.json</code> + autoVerify).</li>
+    <li><strong>Prefer Universal/App Links</strong> — they verify domain ownership so they can't be hijacked, and they fall back to the web when the app is missing.</li>
+    <li><strong>Verification files:</strong> iOS serves <code>/.well-known/apple-app-site-association</code> (content-type application/json, NO .json extension); Android serves <code>/.well-known/assetlinks.json</code> with the release keystore SHA-256 — both at the apex domain over HTTPS.</li>
+    <li><strong>Deferred deep linking</strong> survives the install: tap link → App Store → install → app opens to the original destination. Needs a routing service (Branch, AppsFlyer, Adjust) keyed by device fingerprint, with an attribution window (~24h).</li>
+    <li><strong>Routing is your job.</strong> The OS hands you a URL; you parse → validate → authorize → navigate in <strong>one</strong> pipeline, not scattered handlers.</li>
+    <li><strong>RN cold vs warm start:</strong> <code>Linking.getInitialURL()</code> for cold start, <code>Linking.addEventListener('url', ...)</code> for background→foreground — wire BOTH, and gate on navigation being ready.</li>
+    <li><strong>Never trust the URL.</strong> Allowlist hosts and routes, validate every parameter, and reject open redirects (<code>next</code>/<code>redirect</code> targets).</li>
+    <li><strong>Auth-gated links:</strong> park the URL as pending, navigate to Login, replay after auth succeeds.</li>
+    <li><strong>Always pair with a web fallback</strong> so links open the same content when the app isn't installed; version URL paths so old marketing emails keep working.</li>
+    <li><strong>Firebase Dynamic Links sunsets August 2025</strong> — migrate to Branch / AppsFlyer / Adjust; don't start new apps on FDL.</li>
+    <li>Custom schemes leak auth tokens (any app can claim the scheme) — use Universal/App Links + PKCE for OAuth callbacks.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Registering the URL listener before the navigator is mounted — the cold-start handler fires and <code>nav.navigate()</code> throws on a race. Also: AASA served with the wrong content-type or a <code>.json</code> extension makes Universal Links fail <em>silently</em>. Gate routing on navigation-ready, and serve AASA as application/json at the exact well-known path.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I'd use Universal Links and App Links over custom schemes — they verify domain ownership via the AASA and assetlinks files, so they can't be hijacked and they fall back to the web when the app is missing."</div>
+  <div class="revision-say">"Every incoming URL goes through one pipeline: parse, validate against an allowlist, authorize, then navigate — I never trust the URL directly, which kills open-redirect and token-leak bugs."</div>
+  <div class="revision-say">"For deferred deep links I'd use Branch: it stashes the URL keyed to the device, redirects to the App Store, and the SDK replays the original destination after install — that's what makes referral and ad-campaign routing work post-install."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the three deep-link flavors and why Universal Links / App Links beat custom URL schemes?</li>
+    <li>Do you know where the AASA and assetlinks.json files live, their content-type, and what each declares?</li>
+    <li>Can you describe deferred deep linking end-to-end and name the routing services that provide it?</li>
+    <li>Can you wire both cold-start (<code>getInitialURL</code>) and warm-start (<code>addEventListener</code>) handling in React Native and gate it on navigation being ready?</li>
+    <li>Can you handle an auth-gated deep link with pending-link parking and replay after login?</li>
+    <li>Can you name the security risks — custom-scheme hijacking, open redirects, magic-link reuse — and how you'd validate URLs against them?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

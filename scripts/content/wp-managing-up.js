@@ -1149,6 +1149,56 @@ result validated the call."
   <li>"Audit your last 5 1:1s — were they status reports or surfacing meetings? What would you change?"</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The 1:1 is <strong>your meeting</strong> — surface (don't status-report), make your manager's job easier, ask for what you want, calibrate quarterly, and disagree in private while committing in public.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Your manager relationship is the <strong>single highest-leverage relationship</strong> in your career — they shape scope, defend your packet in calibration, write your eval, and carry your references for years.</li>
+    <li><strong>1:1s are your meeting:</strong> bring an agenda, drive it, leave with 1-3 decisions or commitments. Status belongs in async docs.</li>
+    <li><strong>Surface, don't status-report</strong> — bring the things where the manager's input changes the outcome (blockers, ambiguity, decisions, sensitive topics), not what they already know from standup.</li>
+    <li>The <strong>four categories:</strong> work-now (blockers), feedback (give + get), career (trajectory), relationship (rapport check).</li>
+    <li><strong>No surprises:</strong> flag bad news the moment it becomes likely, not when it lands — with a proposed mitigation. Managers recover from early bad news; they cannot recover from being blindsided.</li>
+    <li><strong>Ask for what you want</strong> — projects, visibility, feedback, comp. Managers are bad mind-readers; if you don't ask, the default is no.</li>
+    <li><strong>Disagree privately, commit publicly:</strong> raise the concern in the 1:1 with an alternative, execute fully once they decide, and re-raise only on new information. Strong opinions, weakly held.</li>
+    <li><strong>Pull in negative feedback</strong> actively — "what would calibration peers object to?" beats "how am I doing?" which just gets "great".</li>
+    <li><strong>Calibrate quarterly,</strong> not at year-end: "am I on track? what's the gap? what's the plan?" — this is what prevents perf-review surprises.</li>
+    <li>Use a <strong>1-page brief</strong> (TL;DR, options, recommendation, decision needed) for complex topics to save your manager context-loading time.</li>
+    <li>Adjust to your manager's style (data vs story, written vs verbal), stay <strong>loyal in public and candid in private</strong>, and never trash-talk them to peers or skip-level.</li>
+    <li>Bad managers are real — build skip-level and cross-team relationships so your career isn't single-manager-dependent; plan a transfer/exit if the trust contract is structurally broken.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Treating the 1:1 as a status report and waiting to be noticed.</strong> Reciting what you worked on wastes the highest-leverage 30 minutes of your week, and assuming your manager will notice your ambitions means projects, visibility, and promo default to "no". Bring an agenda, surface the real decisions, and ask explicitly.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I treat 1:1s as my meeting — I bring an agenda and we spend the time on blockers, decisions, and career, because status is already visible async."</div>
+  <div class="revision-say">"My rule is no surprises: I flag risk the moment it becomes likely, with a proposed mitigation, so my manager can manage up before it lands."</div>
+  <div class="revision-say">"I disagree in private and commit in public — I make my case with an alternative, and once the decision is made I execute fully even if I had concerns."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain how you run a 1:1 as your meeting, and the difference between surfacing and status-reporting?</li>
+    <li>Can you tell a concise STAR story about delivering bad news early, with a mitigation, instead of blindsiding your manager?</li>
+    <li>Can you describe a time you disagreed with your manager, made your case, and then committed to their decision?</li>
+    <li>Can you explain how you ask for what you want — a project, visibility, comp — specifically rather than waiting to be noticed?</li>
+    <li>Can you describe how you run a quarterly career check to avoid perf-review surprises?</li>
+    <li>Can you explain how you would handle a hands-off, micromanaging, or untrustworthy manager without trash-talking them?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

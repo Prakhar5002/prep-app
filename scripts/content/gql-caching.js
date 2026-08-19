@@ -1374,6 +1374,51 @@ const useUser = (id) =&gt; useQuery(GET_USER, { variables: { id }, fetchPolicy: 
   <li>"Build a cache-debugging dashboard that visualizes the entity store."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Normalize every entity by <code>__typename + id</code>, add merge functions for connections, update the cache from mutations instead of refetching, and persist with a size cap — then verify in DevTools.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Two cache models:</strong> document caches the whole response by query+vars (Urql default, simple, duplicates data); normalized splits into entities keyed by <code>__typename + id</code> (Apollo + Relay default, dedupes, one mutation updates everywhere).</li>
+    <li><strong>Always select <code>id</code> + <code>__typename</code></strong> — without them Apollo can't write a normalized record, so a mutation updates one screen but not another showing the same entity.</li>
+    <li><strong>Use <code>keyFields</code> in typePolicies for non-id entities</strong> (slug, email, composite); <code>keyFields: false</code> for embedded types that shouldn't be normalized.</li>
+    <li><strong>Pagination needs a merge function + <code>keyArgs</code>:</strong> <code>keyArgs: false</code> makes one logical list and the merge appends edges; without it <code>fetchMore</code> overwrites or appears to do nothing. Use <code>keyArgs: ['filter']</code> when a filter is a genuinely separate list, and replace (not append) on the first page.</li>
+    <li><strong>Mutations auto-update by id</strong> when they return the affected entity with <code>id + __typename</code>; lists, derived counts, and connections need manual <code>cache.modify</code>. Prefer <code>cache.modify</code> over <code>refetchQueries</code>.</li>
+    <li><strong>Optimistic responses need <code>__typename</code> on every entity</strong> — Apollo merges by id and auto-rolls-back on error; but writes your <code>update</code> made to <em>other</em> records don't auto-rollback, so keep <code>update</code> minimal.</li>
+    <li><strong>Fetch policies:</strong> <code>cache-first</code> (default), <code>cache-and-network</code> (stale + refresh), <code>network-only</code>, <code>no-cache</code>, <code>cache-only</code>.</li>
+    <li><strong>Delete = <code>cache.evict</code> then <code>cache.gc()</code></strong> to clean orphaned children; <code>clearStore</code> wipes without refetch, <code>resetStore</code> wipes and refetches active queries.</li>
+    <li><strong>Persist on mobile with <code>apollo3-cache-persist</code> + MMKV + <code>maxSize</code></strong>, triggered on background; reactive vars (<code>makeVar</code>) aren't persisted and reset on boot.</li>
+    <li><strong>SSR cache must be per-request</strong> — a shared server-side singleton leaks one user's data to the next; per-user pages need <code>Cache-Control: private</code> so the CDN doesn't ship personal data.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting <code>keyArgs: false</code> (or a merge that just returns <code>incoming</code>) on a paginated connection — <code>fetchMore</code> then overwrites the list or fragments the cache per arg tuple, so infinite scroll silently breaks.</strong> Fix: set <code>keyArgs: false</code> for one logical list and write a merge that spreads <code>...existing.edges, ...incoming.edges</code>, replacing only on the first page (no <code>args.after</code>).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Apollo normalizes by <code>__typename + id</code>, so I always select id — a mutation to one record then updates every screen watching that entity, no refetch."</div>
+  <div class="revision-say">"For connections I set <code>keyArgs: false</code> and a merge that appends edges; without it <code>fetchMore</code> overwrites instead of appending."</div>
+  <div class="revision-say">"On logout I <code>clearStore</code> plus <code>persistor.purge</code>, and SSR gets a per-request cache — otherwise one user's data leaks to the next."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you contrast normalized vs document caching and say which Apollo, Relay, and Urql default to?</li>
+    <li>Can you explain how Apollo keys entities by <code>__typename</code> + <code>id</code>, and why you always select <code>id</code>?</li>
+    <li>Can you set up a connection with <code>keyArgs</code> and a merge so <code>fetchMore</code> appends instead of overwrites?</li>
+    <li>Can you explain how a mutation's return value auto-updates every screen watching that entity — no refetch?</li>
+    <li>Can you stop data leaking between users on logout and in SSR?</li>
+    <li>Can you explain why POST GraphQL isn't cacheable by intermediaries, and how persisted queries change that?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

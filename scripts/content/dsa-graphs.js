@@ -1003,6 +1003,51 @@ for (const [u, v] of edges) {
   <li>"I'd benchmark Tarjan vs Kosaraju on a real SCC workload before picking."</li>
 </ul>
 `
-    }
-  ]
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Always track visited; then pick the traversal by the axis: BFS for shortest unweighted, DFS for structure/cycles/topo, Dijkstra for weighted, Union-Find for components.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Default to an adjacency list</strong> — O(V+E) space; use a matrix only for small dense graphs that need O(1) edge-presence (e.g. Floyd-Warshall).</li>
+    <li><strong>Always track a <code>visited</code> set/array</strong> — without it, any cycle makes BFS/DFS loop forever. In BFS, mark visited <em>at enqueue time</em>, not dequeue, to avoid enqueuing duplicates.</li>
+    <li><strong>BFS = shortest path in unweighted graphs</strong> (first time you reach a node is the shortest); use a queue with a head pointer, never <code>shift()</code> on big inputs (O(n²)).</li>
+    <li><strong>DFS = structure</strong> — connected components, cycle detection, topological order. Convert to an explicit stack when depth risks blowing V8's call stack.</li>
+    <li><strong>Topological sort works only on a DAG:</strong> Kahn's (BFS on in-degree) or DFS-postorder reversed; both must detect cycles — Kahn's leaves nodes with in-degree &gt; 0, DFS sees a gray node.</li>
+    <li><strong>Cycle detection differs by direction:</strong> directed → white/gray/black DFS (gray = on current stack = back edge); undirected → parent-check DFS or Union-Find.</li>
+    <li><strong>Union-Find (DSU) answers "same component?" in near-O(1)</strong> — but only with <em>both</em> path compression and union by rank; used for Kruskal's MST and connected components under merges.</li>
+    <li><strong>Shortest-path ladder:</strong> unweighted → BFS; non-negative weights → Dijkstra O((V+E) log V); negative edges → Bellman-Ford O(V·E) (and it detects negative cycles); all-pairs → Floyd-Warshall O(V³).</li>
+    <li><strong>MST</strong> = cheapest tree connecting all nodes: Kruskal (sort edges + DSU) or Prim (priority queue).</li>
+    <li>Bipartite = 2-color via BFS/DFS; a same-color conflict means an odd cycle. Handle disconnected graphs by sweeping every unvisited vertex.</li>
+    <li>Grids are graphs: each cell is a vertex with up to 4 neighbors — "number of islands," "rotting oranges," "walls and gates" are all BFS/DFS sweeps.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Reaching for Dijkstra on a graph with negative edges — it silently returns wrong paths</strong> because it commits to the closest-unvisited vertex before a later negative edge can improve it. Use Bellman-Ford for negative weights. Two sibling traps: Dijkstra needs a stale-entry guard (<code>if (d &gt; dist[u]) continue;</code>), and BFS gives edge <em>count</em>, not weighted distance — don't use it when weights aren't all 1.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"First I write down V, E, directed vs undirected, weighted vs unweighted — then the algorithm falls out: BFS for shortest unweighted, DFS for structure, Dijkstra for weighted, Union-Find for components."</div>
+  <div class="revision-say">"I always track visited, and in BFS I mark it at enqueue time so a node is never queued twice."</div>
+  <div class="revision-say">"Dijkstra fails on negative edges because it finalizes the closest vertex too early — that's exactly the case where I switch to Bellman-Ford, which also detects negative cycles."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state when to use BFS versus DFS versus Dijkstra?</li>
+    <li>Can you code the BFS and DFS templates from memory?</li>
+    <li>Can you explain why Dijkstra fails on negative edges?</li>
+    <li>Can you state the complexity of BFS/DFS and of Dijkstra?</li>
+    <li>Can you recognize a topological-sort problem?</li>
+    <li>Can you name the visited-set trap that causes infinite loops?</li>
+  </ul>
+</div>
+`}
+]
 });

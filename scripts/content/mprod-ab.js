@@ -707,6 +707,54 @@ FIX: target both arms to the same eligibility (iOS 16+ users only).
   <li>"I'd integrate the experimentation platform with crash reporting so a treatment-induced crash auto-pauses the experiment."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">An A/B test = <strong>randomly assign users to Control vs Treatment, measure one primary metric, and use statistics to decide if the difference is real</strong> — powered by a feature flag for delivery and an experimentation platform for analysis.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Two pieces:</strong> a <strong>feature flag</strong> decides at runtime which variant a user sees; an <strong>experimentation platform</strong> assigns users and analyzes the metric difference. Tools: Statsig, LaunchDarkly, Optimizely, Firebase Remote Config + A/B, GrowthBook.</li>
+    <li><strong>The metric matters more than the variant</strong> — pick a primary metric tied to a real business outcome (revenue, retention, activation), not "% who tapped the button."</li>
+    <li><strong>Guardrails are mandatory:</strong> crash-free rate, launch latency, revenue, ANR — a treatment must not regress them, and never read the primary before checking guardrails.</li>
+    <li><strong>Sample size first, ship later:</strong> compute MDE → sample size → duration, and <strong>don't peek</strong> (daily peeking inflates false positives to ~30%). Use sequential testing if you must look early.</li>
+    <li>Random assignment is a <strong>deterministic hash of <code>(user_id, experiment_key) mod 100</code></strong> — same user, same variant every session, independent across experiments.</li>
+    <li><strong>Intent-to-treat:</strong> analyze users by their assigned variant even if they never saw the change; log <strong>exposure</strong> only when the variant is actually rendered.</li>
+    <li><strong>SRM (sample ratio mismatch)</strong> is the canary — a 50/50 that lands 52/48 signals a broken randomization or instrumentation (often a treatment-only crash or version skew).</li>
+    <li>Mobile tax: assignments persist across launches, survive offline, respect ATT/GDPR; <strong>server-side assignment + client cache</strong> is the default; restrict eligibility to the app version that has the variant code.</li>
+    <li><strong>CUPED</strong> uses pre-experiment data to cut variance 30–50% → 30–50% smaller sample size.</li>
+    <li>Ramp gradually (1% → 10% → 50% → 100%), run at least one full weekly cycle, and remove the flag within 30 days of the decision.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Peeking and stopping early:</strong> checking the p-value daily and stopping the first time <code>p &lt; 0.05</code> inflates the false-positive rate to ~30%. Pre-register a sample size and duration and don't conclude until then — or switch to sequential testing that yields valid p-values under continuous monitoring. Same discipline applies to post-hoc segment chasing, which is p-hacking.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"An A/B test is random assignment plus measurement of a pre-registered primary metric — the metric matters more than the variant, and I never read it without checking guardrails first."</div>
+  <div class="revision-say">"On mobile I default to server-side assignment with a client cache, restrict eligibility to the app version that carries the variant code, and watch SRM daily as my randomization canary."</div>
+  <div class="revision-say">"I pre-register sample size and duration and don't peek — daily peeking pushes false positives toward 30% — and I use CUPED to cut variance when the metric is noisy."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you define an A/B test and explain the split between a feature flag and an experimentation platform?</li>
+    <li>Can you name MDE, power, α, p-value, and sample size and give each an intuitive one-liner?</li>
+    <li>Can you explain why guardrails must be checked before reading the primary metric?</li>
+    <li>Can you describe SRM, list its common causes, and say what you'd do when you detect it?</li>
+    <li>Can you explain intent-to-treat and the difference between an assignment event and an exposure event?</li>
+    <li>Can you lay out a mobile rollout plan that handles version skew, ATT, App Store review delay, and doesn't peek?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

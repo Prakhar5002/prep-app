@@ -662,6 +662,46 @@ app.get('/', (req, res) =&gt; {
     <li>You avoid render-blocking third-party scripts and CSS.</li>
   </ul>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>HTML and CSS must both be ready before the first paint</strong> — anything you inline, defer, preload, or cut speeds that paint; anything that forces a re-layout after paint is a runtime bug.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Six stages:</strong> HTML parse → DOM, CSS parse → CSSOM, render tree (DOM × CSSOM minus <code>display:none</code>), layout (geometry), paint (pixels into layers), composite (GPU combines layers).</li>
+    <li><strong>CSS blocks rendering</strong> — the browser won't paint until every render-blocking stylesheet is parsed (avoids FOUC). That's why inlining critical CSS is so valuable.</li>
+    <li><strong>Synchronous scripts block parsing</strong> because a script can call <code>document.write</code>. <code>defer</code> runs after parse, in source order; <code>async</code> runs the instant it downloads, order undefined; <code>type="module"</code> defers by default.</li>
+    <li><strong>Rule of thumb:</strong> app bundle → <code>defer</code>; independent analytics → <code>async</code>; a script depending on another → ES modules or bundle them.</li>
+    <li><strong>Layout is the expensive step</strong> — it's non-local, so one element's height change can cascade down the whole document. <strong>Layout thrashing</strong> (interleaving reads and writes in a loop) forces a sync recompute every iteration.</li>
+    <li><strong>Compositor-only properties</strong> — <code>transform</code>, <code>opacity</code>, and <code>filter</code> on a promoted layer — skip layout and paint, so animate with those for 60fps (not <code>top</code>/<code>left</code>/<code>width</code>).</li>
+    <li>The <strong>preload scanner</strong> is a second parser that skims ahead for discoverable resources and fetches them even while the main parser is script-blocked — but it can't see resources referenced only from CSS (fonts, bg-images) or injected by JS. Use <code>rel="preload"</code> to surface them.</li>
+    <li><strong>Resource hints, cheapest wins:</strong> <code>dns-prefetch</code> (DNS), <code>preconnect</code> (DNS+TCP+TLS), <code>preload</code> (fetch now, this page), <code>prefetch</code> (idle, next page), <code>modulepreload</code> (module + its graph).</li>
+    <li>Fonts: <code>font-display: swap</code> (accept FOUT) or <code>optional</code>, <code>preload</code> with <code>crossorigin</code>, self-host, and subset.</li>
+    <li>Modern tools: <code>content-visibility: auto</code> skips off-screen rendering, <code>contain</code> isolates a subtree, and <code>103 Early Hints</code> starts subresource fetches before the 200 is ready.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Layout thrashing — reading a layout property right after writing a style, inside a loop.</strong> Each write invalidates layout and each subsequent read (<code>offsetHeight</code>, <code>getBoundingClientRect</code>) forces a synchronous recompute, so a 100-iteration loop pays 100 forced reflows (DevTools shows purple "Forced reflow" warnings). Fix: batch all reads first, then batch all writes, ideally inside <code>requestAnimationFrame</code>. Sibling trap: animating <code>top</code>/<code>left</code> instead of <code>transform</code> forces layout + paint every frame.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The path is parse HTML, parse CSS, build the render tree, layout, paint, composite — CSS and synchronous scripts both block the first paint, and defer/async/type=module release parsing."</div>
+  <div class="revision-say">"For 60fps I animate transform and opacity on a promoted layer — they only re-composite on the GPU, while top/left/width force layout and paint every frame."</div>
+  <div class="revision-say">"Layout thrashing is interleaving reads and writes; each read forces a sync layout after the previous write. I batch reads then writes, and lean on the preload scanner by declaring critical resources in HTML."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you list the CRP steps from HTML parse through to composite?</li>
+    <li>Can you explain why CSS is render-blocking and how to shrink that block?</li>
+    <li>Can you explain how a synchronous script blocks parsing, and what <code>async</code>/<code>defer</code> change?</li>
+    <li>Can you describe what the preload scanner does and how to feed it?</li>
+    <li>Can you define FCP and name what delays it?</li>
+    <li>Can you use <code>preload</code>/<code>preconnect</code> to shorten the critical path?</li>
+  </ul>
+</div>
 `}
 
 ]

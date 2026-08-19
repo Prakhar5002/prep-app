@@ -981,6 +981,48 @@ return () =&gt; anim.destroy();
 </ul>
 <p>Together these tools cover the full animation surface: simple state changes (CSS), dynamic JS-driven (WAAPI), layout transitions (FLIP), gesture-reactive native (Reanimated), and complex designer motion (Lottie / Rive).</p>
 `
-    }
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Lottie ships <strong>designer-built motion graphics as JSON</strong> — After Effects exports via the Bodymovin plugin, and a per-platform runtime renders it as crisp vectors — so <strong>use it for pre-baked designer motion, and Reanimated for gesture-driven animation</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Pipeline:</strong> After Effects composition → <strong>Bodymovin</strong> plugin → <code>animation.json</code> (layers, transforms, keyframes) → Lottie runtime (native shapes on iOS/Android, SVG/Canvas on web). One JSON = identical animation on every platform, no per-platform code.</li>
+    <li><strong>Right tool per motion type:</strong> Lottie for designer-built complex graphics (empty states, loaders, success/error, onboarding); <strong>Reanimated for gesture-reactive</strong> motion; CSS for simple/micro state changes. Don't reach for a Lottie file for a 200ms hover.</li>
+    <li><strong>Control surface:</strong> declarative props <code>source</code>, <code>autoPlay</code>, <code>loop</code>, <code>speed</code>, <code>progress</code>, <code>onAnimationFinish</code>; imperative ref methods <code>play</code> / <code>pause</code> / <code>reset</code> / <code>play(from, to)</code> / <code>setProgress</code> / <code>setSpeed</code>.</li>
+    <li><strong>Theming:</strong> override named-layer colors at runtime with <code>colorFilters</code> keyed by <code>keypath</code> — essential for dark mode and brand colors. Depends on designer naming layers consistently.</li>
+    <li><strong>Scrubbing:</strong> drive the <code>progress</code> prop (0–1) from a Reanimated SharedValue for scroll- or gesture-interactive animations — Lottie and Reanimated compose well.</li>
+    <li><strong>Performance:</strong> files range from a few KB to several MB — aim for <strong>under ~50KB</strong>; audit paths/keyframes, lower fps (30 often suffices), avoid unsupported effects (drop shadows, blurs), and cap simultaneous animations. Profile on real <strong>low-end Android</strong>, not just flagship iPhones.</li>
+    <li><strong>Cross-platform fidelity is not guaranteed:</strong> masks, mattes, effects, and live text render differently (or as no-ops) across iOS / Android / web — "works in After Effects" ≠ "works in Lottie." Always preview in the target runtime.</li>
+    <li><strong>Rive is the modern alternative:</strong> binary format (~5–10× smaller), built-in reactive <strong>state machines</strong>, better runtime perf, and a free editor — worth evaluating for new, state-driven, or gesture-reactive animation.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Using <code>autoPlay loop</code> for a one-shot success animation.</strong> It loops forever instead of playing once, and <code>onAnimationFinish</code> fires every iteration so your navigation callback misfires. Fix: <code>autoPlay loop={false} onAnimationFinish={onDone}</code>. Closely related traps: no explicit width/height renders at 0×0, and a color override silently no-ops when the <code>keypath</code> doesn't match the designer's layer name.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Lottie is JSON exported from After Effects via Bodymovin and rendered natively per platform — I reach for it for designer-built motion graphics, and Reanimated for anything gesture-driven."</div>
+  <div class="revision-say">"I theme animations with colorFilters keyed by layer keypath, and I drive the progress prop from a Reanimated SharedValue for scroll- or gesture-interactive scrubbing."</div>
+  <div class="revision-say">"Biggest risks are file size and cross-platform fidelity — I audit JSON under ~50KB, avoid unsupported effects, profile on low-end Android, and for new state-driven work I'd evaluate Rive for its smaller binary files and native state machines."</div>
+</div>
+`
+    },
+
+    { id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you trace the pipeline from After Effects through <strong>Bodymovin</strong> and JSON to a playing animation in your app?</li>
+    <li>Can you name the Lottie players for web and React Native, and how a Lottie file gets rendered?</li>
+    <li>Can you list the properties you'd control for playback and scrubbing (<code>autoPlay</code>, <code>loop</code>, <code>speed</code>, <code>progress</code>)?</li>
+    <li>Can you explain how to override colors or replace text in a Lottie animation at runtime?</li>
+    <li>Can you say when <strong>Rive</strong> is a better choice than Lottie?</li>
+    <li>Can you decide when NOT to use Lottie and reach for Reanimated instead?</li>
+  </ul>
+</div>
+`}
   ]
 });

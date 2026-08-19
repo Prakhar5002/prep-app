@@ -897,6 +897,8 @@ if (cond) { l++; r--; }
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Two pointers <strong>exploits structure — sortedness, symmetry, or a monotonic constraint — to replace nested loops with a single linear <code>O(n)</code> scan in <code>O(1)</code> space</strong>; identify the structure first and the pointer moves follow.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Two indices moved by intentional logic</strong> — turns many <code>O(n²)</code> brute forces into <code>O(n)</code>, usually with <code>O(1)</code> space.</li>
@@ -918,12 +920,27 @@ if (cond) { l++; r--; }
     <li><strong>Space:</strong> <code>O(1)</code> in-place — <code>O(n)</code> only when you build an output array (e.g. sorted-squares).</li>
     <li><strong>Signal → reach for it:</strong> sorted + pair/triplet with a target → opposite ends · palindrome/symmetry → opposite ends · in-place dedup/partition/move → slow + fast · linked-list cycle/midpoint/nth-from-end → fast + slow · sort 0/1/2 → Dutch flag (3 pointers).</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Applying opposite-ends two pointers to an UNSORTED array, and mishandling the pointer-advance edges.</strong> Opposite-ends convergence needs monotonicity — sort first, but remember sorting destroys original indices (use a hash map for two-sum on unsorted input). The other repeat mistakes: forgetting to skip duplicate neighbors so 3-sum emits repeated tuples; advancing <code>mid</code> after a swap with <code>high</code> in Dutch-flag (you must re-check the swapped-in value); and confusing <code>l &lt; r</code> (stops before the middle) with <code>l &lt;= r</code> (processes it). For Floyd's, guard the loop with <code>fast &amp;&amp; fast.next</code>.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Two pointers exploits structure — sortedness, symmetry, or a monotonic constraint — to replace nested loops with a single linear scan, usually in O(1) space."</div>
   <div class="revision-say">"In container-with-most-water I always move the shorter pointer, because moving the taller one can only keep the min the same or lower it while the width shrinks."</div>
   <div class="revision-say">"For linked-list cycles I use Floyd's tortoise-and-hare — both start at head, and it detects the cycle in O(1) space instead of an O(n) hash set."</div>
 </div>
-`}
+`},
 
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state when to reach for the two-pointer pattern?</li>
+    <li>Can you code the opposite-ends template from memory?</li>
+    <li>Can you code the fast/slow (Floyd's) template from memory?</li>
+    <li>Can you state its time/space complexity versus a hash-set approach?</li>
+    <li>Can you explain why the array usually has to be sorted first?</li>
+    <li>Can you name 2 problems two pointers solves?</li>
+  </ul>
+</div>
+`}
 ]
 });

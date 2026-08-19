@@ -162,6 +162,45 @@ function calculateDiscount(customerType: CustomerType, amount: number): number {
 <p>Robert C. Martin ("Uncle Bob") articulated most of the five principles individually, across papers and his book <em>Agile Software Development: Principles, Patterns, and Practices</em> — with one exception: the Liskov Substitution Principle originates with Barbara Liskov, from her 1987 OOPSLA keynote "Data Abstraction and Hierarchy" (later formalized with Jeannette Wing in 1994); Martin adopted her substitutability idea for the "L" rather than coining it. Michael Feathers is credited with rearranging the five principles into the memorable SOLID mnemonic; Martin then popularized the acronym himself. It's a three-person history worth knowing precisely — Martin for the set and four of the five principles, Liskov for the L, Feathers for the acronym — since interviewers sometimes specifically ask who coined the acronym versus who defined the underlying principles.</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>SOLID is five object-oriented design guidelines</strong> — not laws or syntax — aimed at making code easier to <strong>change, extend, and test</strong> as a system grows.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>The five, one line each: <strong>S</strong> — one reason to change / one actor; <strong>O</strong> — open for extension, closed for modification; <strong>L</strong> — a subtype must be usable anywhere its base is expected; <strong>I</strong> — don't force clients to depend on methods they don't use; <strong>D</strong> — depend on abstractions, not concretions.</li>
+    <li>History is a <strong>three-person credit</strong>: Robert C. Martin articulated four of the five and collected the set; the <strong>L is Barbara Liskov's</strong> (1987 keynote, formalized with Wing in 1994); <strong>Michael Feathers</strong> coined the SOLID acronym, which Martin then popularized.</li>
+    <li>SOLID exists to fix nameable smells: <strong>rigidity</strong> (small changes cascade), <strong>fragility</strong> (a change breaks something unrelated), <strong>immobility</strong> (logic can't be reused cleanly), and <strong>needless complexity/repetition</strong>.</li>
+    <li>These are guidelines for <strong>managing dependencies and coupling</strong> in OO code — they assume classes, interfaces, and polymorphism, and most fixes use <strong>composition</strong>, not inheritance.</li>
+    <li>The one question tying all five together: <strong>"when the change I actually expect shows up, is it easy to make?"</strong> — not "could this handle any conceivable future requirement."</li>
+    <li>The counterweight is <strong>YAGNI</strong>: every abstraction has a real cost (another file, another jump, another contract to keep consistent), so don't build extensibility before there's a real reason.</li>
+    <li><strong>Premature abstraction is often worse than a little duplication</strong> — two things that look alike but change for unrelated reasons are not "the same responsibility."</li>
+    <li>Rule of thumb: <strong>apply a principle when you feel real pain from its absence</strong> (a class you dread touching, a test needing a live DB, a switch edited five times this month), not speculatively.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Treating SOLID as <strong>laws or a checklist to satisfy on every class</strong> — extracting collaborators, adding an interface per dependency, and wrapping every construction behind a factory regardless of whether any symptom is present. That's premature abstraction: it pays the full cost of indirection for a change that may never come, and is its own design smell.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"SOLID is five guidelines for keeping the cost of a typical future change low — they target specific smells like rigidity, fragility, and immobility, not elegance for its own sake."</div>
+  <div class="revision-say">"Every letter is one angle on the same question: when the change I actually expect arrives, is this design ready for it?"</div>
+  <div class="revision-say">"The counterweight is YAGNI — I apply a principle when I feel real pain from its absence, because a single-implementation interface added 'just in case' is indirection with no payoff."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you say what SOLID stands for and give a one-line rule for each letter?</li>
+    <li>Can you name the three-person history — Martin for the set and four principles, Liskov for the L, Feathers for the acronym?</li>
+    <li>Can you name the design smells SOLID exists to fix — rigidity, fragility, immobility, needless complexity?</li>
+    <li>Can you state the one question that ties all five principles together?</li>
+    <li>Can you explain the YAGNI tension and when applying SOLID would be a mistake?</li>
+    <li>Can you explain why premature abstraction can be worse than a little duplication?</li>
+  </ul>
+</div>
 `}
 
 ]});

@@ -461,6 +461,42 @@ cat Meeting\\ Notes.txt</code></pre>
 <p>Both are pagers, but <code>more</code> is the older and more limited of the two: it only pages <em>forward</em> (Space for the next screen, <code>q</code> to quit) and has no way to scroll backward or search. <code>less</code> was written as a superset of <code>more</code>'s functionality — the name is a play on "less is more" — adding backward scrolling and <code>/</code>-search on top of everything <code>more</code> does, while still never loading the whole file into memory. In practice <code>less</code> is the one you'll actually use day to day; <code>more</code> mostly survives as the historically-earlier tool you should recognize but rarely need to reach for.</p>
 </div>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Linux is a small, fast <strong>kernel</strong> bundled into a <strong>distro</strong> and driven from a <strong>shell</strong> — where <strong>everything is a file</strong> living in one tree rooted at <code>/</code>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Kernel vs distro vs shell:</strong> the kernel is the engine, the distro is the whole car (kernel + package manager + apps + config), and the shell is the steering wheel — the text interface you drive from.</li>
+    <li><strong>"Everything is a file"</strong> — documents, directories, devices, even running processes are represented as files in one filesystem tree rooted at <code>/</code>. That one idea explains much of Linux's design.</li>
+    <li>The shell (<code>bash</code>/<code>zsh</code>) shows a prompt, reads the line you type, and runs it as a command; nearly all Linux work happens this way.</li>
+    <li>Core commands used every session: <code>pwd</code>, <code>ls</code>, <code>cd</code>, plus create/copy/move/remove and viewing file contents.</li>
+    <li><code>cd</code> with no argument goes home (<code>cd ~</code>); a plain <code>ls</code> hides dotfiles — use <code>ls -a</code>.</li>
+    <li>Filenames with spaces must be quoted (or the space escaped) or the shell splits one name into two arguments.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>There is no Recycle Bin on the command line.</strong> <code>rm</code> (with or without <code>-r</code>/<code>-f</code>) deletes immediately and it's gone — extra dangerous when the path is built from a variable that may be empty or wrong. Run <code>ls</code> on the exact same path first to confirm what you're about to delete.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Linux is a kernel plus a distro, and you drive it from a shell that reads and runs the lines you type."</div>
+  <div class="revision-say">"Everything is a file in one tree rooted at slash — that single idea explains a lot of Linux's design."</div>
+  <div class="revision-say">"There's no trash on the command line; rm deletes immediately, so I ls the path before I rm it."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the difference between the kernel, a distro, and the shell?</li>
+    <li>Can you state what "everything is a file" means and why it matters?</li>
+    <li>Can you navigate with <code>pwd</code>, <code>ls</code>, <code>cd</code> and create/copy/move/remove files from memory?</li>
+    <li>Can you show two ways to handle a filename that contains a space?</li>
+    <li>Can you list the hidden dotfiles in a directory and say why a plain <code>ls</code> skips them?</li>
+    <li>Can you explain why <code>rm -rf</code> is dangerous and how you guard against it?</li>
+  </ul>
+</div>
 `}
 
 ]});

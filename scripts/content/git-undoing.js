@@ -300,6 +300,50 @@ git stash pop
 <p>A stash isn't a commit — it's a separate shelf outside your normal history, meant for "I need my working tree clean right now, but I'm not ready to commit this." <code>git stash</code> pulls both staged and unstaged changes off the working tree and index; <code>git stash pop</code> reapplies the most recent one (and removes it from the stash list), while <code>git stash apply</code> reapplies it but keeps it in the list too, for applying to more than one branch. <code>git stash list</code> shows everything currently shelved. If a pop conflicts with changes made since the stash, Git leaves the stash entry in place until you resolve the conflict and explicitly <code>git stash drop</code> it.</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Diagnose <strong>where</strong> the mistake lives, then pick the matching tool — <strong>reset and amend rewrite local history (safe only before push); revert adds new history (always safe on shared branches)</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Undo isn't one command</strong> — the fix depends on where the mistake lives: an unstaged edit, a staged change, the last commit, or an already-pushed commit.</li>
+    <li><strong><code>git restore &lt;file&gt;</code> discards uncommitted working-tree edits; <code>git restore --staged &lt;file&gt;</code> unstages while keeping the edit</strong> — the modern split of the old <code>checkout --</code> / <code>reset HEAD</code>.</li>
+    <li><strong><code>git reset</code> moves HEAD; the mode decides the blast radius</strong> — <code>--soft</code> keeps changes staged, <code>--mixed</code> (default) leaves them unstaged, <code>--hard</code> discards them entirely.</li>
+    <li><strong><code>--hard</code> is the single most dangerous everyday command</strong> — uncommitted staged and working-tree changes are gone; check <code>git status</code> and <code>git diff</code> first.</li>
+    <li><strong><code>git revert</code> creates a new commit with the inverse diff</strong> — history isn't rewritten, so it's the only safe way to undo a commit that's already pushed and shared.</li>
+    <li><strong><code>git commit --amend</code> replaces the last commit with a new SHA</strong> — great for a wrong message or forgotten file, but a rewrite, so don't amend after pushing.</li>
+    <li><strong>The one split that matters: reset/amend rewrite local history (safe only before push); revert adds history (always safe)</strong> — if unsure whether a commit is shared, revert.</li>
+    <li><code>git stash</code> shelves staged + unstaged changes for a clean working tree without committing; <code>pop</code> reapplies and removes, <code>apply</code> reapplies but keeps it.</li>
+    <li>Both <code>--amend</code> and <code>reset</code> point HEAD at a different commit — from a shared remote's view that's rewriting history, and a later <code>--force</code> can drop a teammate's work.</li>
+    <li>A conflicted <code>git stash pop</code> does NOT auto-drop the stash — resolve, then <code>git stash drop</code> manually, so nothing is lost.</li>
+    <li><code>git revert</code> can itself conflict (it's a patch application) — resolve, then <code>git revert --continue</code> (or <code>--abort</code>).</li>
+    <li>If a commit is already lost (e.g. a bad <code>reset --hard</code>), that's the reflog / recovery toolkit, not this one.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Using <code>git reset</code> or <code>git commit --amend</code> to fix a commit you've already pushed:</strong> you rewrite history teammates may have pulled, your next push is rejected as non-fast-forward, and forcing it can silently discard their commits. Fix: for anything already shared (or when unsure), use <code>git revert</code>, which adds a new commit instead of rewriting.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The skill is diagnosing where the mistake lives — working tree, index, last commit, or already pushed — then picking the smallest tool that fixes it."</div>
+  <div class="revision-say">"Reset and amend rewrite local history and are safe only before pushing; revert adds a new inverse commit and is the safe choice for anything shared."</div>
+  <div class="revision-say">"The three reset modes differ by reach: soft keeps changes staged, mixed leaves them unstaged, hard discards them — only hard destroys uncommitted work."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the difference between <code>reset --soft</code>, <code>--mixed</code>, and <code>--hard</code> in terms of HEAD, index, and working tree?</li>
+    <li>Can you explain when to use <code>git reset</code> versus <code>git revert</code>?</li>
+    <li>Can you safely undo a commit that's already been pushed to a shared branch?</li>
+    <li>Can you fix a wrong commit message or a forgotten file in your last commit?</li>
+    <li>Can you explain what <code>git restore</code> and <code>git restore --staged</code> each do?</li>
+    <li>Can you explain how <code>git stash</code> differs from committing WIP, and what happens when a <code>pop</code> conflicts?</li>
+  </ul>
+</div>
 `}
 
 ]});

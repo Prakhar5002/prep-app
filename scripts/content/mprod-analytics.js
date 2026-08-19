@@ -821,6 +821,54 @@ logEvent('search', { category: 'pizza', query_length: 5 });
   <li>"I'd build a 'session replay' for top funnels with PostHog or LogRocket — the cheapest way to find UX bugs."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Analytics = <strong>capture user behavior as a stream of structured events, attribute them to an identity, and aggregate into funnels, retention, and revenue</strong> — where a governed event taxonomy, not the tool, is the hard part.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Event = name + properties + identity + auto-context</strong> (app version, OS, locale). Every event shares the same shape; only <code>event_name</code> and <code>properties</code> vary.</li>
+    <li><strong>Two identity tracks:</strong> anonymous <code>device_id</code> pre-login → <code>user_id</code> post-login. Always <strong>alias</strong> the two on sign-in (idempotent) or pre-signup history is lost forever.</li>
+    <li><strong>Event taxonomy is the hard part:</strong> a <code>tracking-plan.yaml</code> in source control is the single source of truth; codegen typed wrappers so an unknown event name or missing property fails to compile; CI lint enforces it.</li>
+    <li><strong>Lock property types</strong> — <code>amount_cents</code> always integer, <code>currency</code> always an ISO string. Type drift (<code>"14.99"</code> vs <code>14.99</code>) silently breaks <code>SUM</code> and fragments funnels.</li>
+    <li>Pick <strong>one naming convention</strong> (usually object_action snake_case) and code-review against it; inconsistency is the most expensive analytics bug.</li>
+    <li><strong>Privacy at the seam:</strong> never put PII in event names, keys, or values; honor ATT on iOS (≈50–70% deny → no IDFA), gate SDK init on GDPR consent, keep the App Store privacy nutrition label current.</li>
+    <li><strong>Cost:</strong> events are billed; sample noisy events (scroll/render) at 1–5% and push engineering/perf telemetry to an APM (Datadog/OpenTelemetry), not the product-analytics tool.</li>
+    <li><strong>Fire purchases/refunds server-side</strong> — the server is the source of truth and avoids duplicate events from flaky-network retries.</li>
+    <li>Use <strong>client-time</strong> for behavioral funnels/cohorts and <strong>server-time</strong> for revenue reconciliation; standardize cohort buckets on UTC.</li>
+    <li>Tools: Amplitude/Mixpanel (product analytics), Firebase GA4 (free + Google Ads attribution), PostHog (open source), Segment (fan-out router).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>No tracking plan + drift:</strong> letting each engineer name events by feel gives you 1,200 distinct events, <code>checkout_started</code> vs <code>chekout_started</code> vs per-platform <code>purchase_complete</code>, and type drift that breaks every aggregate. A plan costs a day; the schema-migration recovery costs months. The durable fix is a versioned plan → codegen typed wrapper → CI lint, so deviation is a compile error, not a silent split.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"An event is a name plus typed properties plus identity — and I'd write a tracking plan in source control and codegen typed wrappers so an unknown event or missing property fails to compile."</div>
+  <div class="revision-say">"I keep two identity tracks — an anonymous device_id pre-login aliased to the user_id on sign-in — so a user's pre-signup funnel survives account creation."</div>
+  <div class="revision-say">"I scrub PII at the SDK boundary, honor ATT and GDPR consent, and sample noisy events while firing purchases server-side from the source of truth."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you list what goes into an event and explain why property types must be locked?</li>
+    <li>Can you explain the device_id → user_id alias step and what breaks without it?</li>
+    <li>Can you describe a tracking plan and how codegen + CI lint enforce it?</li>
+    <li>Can you compute D1/D7/D30 retention and lay out a 4-step purchase funnel?</li>
+    <li>Can you name your defaults for ATT, GDPR consent, PII scrubbing, and the App Privacy label?</li>
+    <li>Can you say which events to sample, which to fire server-side, and how you'd keep event cost down?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

@@ -771,6 +771,51 @@ await redis.eval(BUCKET_LUA, 1, key, capacity, rate, now);
 </ul>
 <p>5 topics. Together they cover ~95% of API-design interview questions across REST, RPC, real-time, and operational concerns.</p>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Versioning is "never break clients silently" (additive evolution + deprecation + telemetry); rate limiting is "never trust clients implicitly" (token bucket by default, enforced in layers) — both are policy decisions before they are technical ones.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>URI path versioning is the boring default</strong> (<code>/v1/...</code>) — visible, easy to test and route; header and media-type are more REST-pure but invisible in logs; query-string is an anti-pattern.</li>
+    <li><strong>Stripe-style date versioning</strong> (<code>2024-09-01</code>) pins each API key at signup and runs every version via a permanent chain of compat shims — the senior move for fast-evolving APIs, at the cost of forever-code.</li>
+    <li><strong>Evolve additively; adding is safe, removing/renaming/retyping/tightening is breaking.</strong> A new required request field or tightened validation breaks callers — always add as optional with a default.</li>
+    <li><strong>Run the full deprecation cycle:</strong> announce → ship new → deprecate with <code>Deprecation</code> + <code>Sunset</code> headers → nudge → sunset with <code>410 Gone</code>. Typical window: 6 months for partners, 12+ for mobile.</li>
+    <li><strong>Token bucket is the industry default</strong> (rate + burst capacity; AWS, GCP, Stripe, Cloudflare). Fixed window is bursty at boundaries (2× LIMIT), sliding window smooths it, sliding log is exact but expensive, leaky bucket shapes outbound.</li>
+    <li><strong>Enforce in layers (defense in depth):</strong> CDN absorbs floods, gateway enforces per-key, service enforces business rules. Distribute with Redis + atomic Lua (or Redis-Cell's <code>CL.THROTTLE</code>).</li>
+    <li><strong>Combine identifiers</strong> — per-(api_key, endpoint) plus a global per-key cap; IP-alone punishes office/carrier NATs and mismatches IPv6.</li>
+    <li><strong>Rate limit ≠ quota:</strong> per-second smoothing vs per-day billing cap — production APIs usually need both. Cost-based limits bucket expensive calls (search) fairly instead of raw counting.</li>
+    <li><strong>Emit standard headers on every response</strong> (<code>RateLimit-Limit/Remaining/Reset</code>) and <code>429 + Retry-After</code> when blocked, so SDKs back off before they hit the wall.</li>
+    <li><strong>Mobile reality:</strong> exponential backoff with jitter, idempotency keys for retried mutations, offline queue, and <code>426 Upgrade Required</code> for stragglers.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Cutting a whole <code>/v2</code> (or bumping <code>/v1.1</code>) for a change that is actually additive — fragmenting clients and the URL space for nothing.</strong> URI versions should reflect breaking changes only; for additive changes just ship a new field and, when you must remove one, keep both and deprecate the old with telemetry so you know when zero usage makes it safe to sunset.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"URI versioning by default; Stripe-style date versioning when breaking changes are frequent and partner upgrade cycles are slow."</div>
+  <div class="revision-say">"Token bucket because it's burst-tolerant and intuitive — rate plus burst capacity — enforced in layers: CDN absorbs floods, gateway enforces per-key, service enforces business rules."</div>
+  <div class="revision-say">"Additive evolution, never remove without deprecation; track per-client usage and sunset only when telemetry shows zero."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you compare URI, header, and media-type versioning — and say when you'd pick Stripe-style date versioning?</li>
+    <li>Can you describe additive evolution plus a deprecation/sunset cycle backed by per-client telemetry?</li>
+    <li>Can you contrast token bucket, sliding window, and fixed window rate limiting?</li>
+    <li>Can you decide where to enforce limits — CDN vs gateway vs service — and why you'd layer them?</li>
+    <li>Can you distinguish a rate limit from a quota, and name the response headers plus <code>429</code> + <code>Retry-After</code>?</li>
+    <li>Can you build a distributed limiter that stays correct across many gateway instances?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

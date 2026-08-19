@@ -1089,6 +1089,53 @@ input:user-valid {
   <li>"I'd add a 'CSS architecture' chapter to the team wiki — when to use which layout primitive."</li>
 </ul>
 `
-    }
-  ]
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Master the cascade, specificity, and box model — then Flex for 1D, Grid for 2D, container queries for components, and custom properties as the design system.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The cascade order:</strong> origin/importance → cascade layer → specificity → source order. Later layers and later source win at equal specificity.</li>
+    <li><strong>Specificity is (inline, ids, classes/attrs/pseudo-classes, elements/pseudo-elements)</strong> — compared left to right; inline beats selectors and <code>!important</code> beats everything. Prefer classes; avoid ID selectors and <code>!important</code>.</li>
+    <li><strong>Box model:</strong> content + padding + border + margin. Set <code>box-sizing: border-box</code> globally so width includes padding and border — predictable sizing.</li>
+    <li><strong>Flex for one axis, Grid for two:</strong> Flex distributes items along a row or column (nav bars, toolbars); Grid lays out explicit rows and columns (page structure). Use <code>gap</code>, not margins between siblings.</li>
+    <li><strong>Custom properties (CSS variables) cascade and are runtime-mutable</strong> — the foundation of theming and design tokens (Sass variables are compile-time only, so they can't theme at runtime).</li>
+    <li><strong>Cascade layers (<code>@layer</code>)</strong> give explicit specificity ordering: a later layer beats an earlier one regardless of selector specificity — the clean fix for "my utility class won't override the component style."</li>
+    <li><strong>Container queries</strong> (<code>container-type: inline-size</code> + <code>@container</code>) respond to a parent's size, not the viewport — true component-level responsiveness.</li>
+    <li><strong>Modern selectors:</strong> <code>:has()</code> (parent selector — CSS state machines without JS), <code>:is()</code> (specificity of its strongest argument), <code>:where()</code> (specificity 0 — use it for resets), <code>:focus-visible</code>, <code>:focus-within</code>.</li>
+    <li><strong>Logical properties</strong> (<code>margin-inline-start</code>, <code>inline-size</code>) auto-flip for RTL and vertical writing modes — reach for them over <code>margin-left</code> / <code>width</code>.</li>
+    <li><strong>z-index only works on positioned elements and is local to its stacking context</strong> — <code>opacity &lt; 1</code>, <code>transform</code>, and <code>filter</code> create new contexts, so a huge z-index can stay trapped below a low one.</li>
+    <li>Fluid layout without breakpoints: <code>clamp(min, preferred, max)</code>, <code>fr</code> units, and <code>repeat(auto-fit, minmax(280px, 1fr))</code> for responsive grids.</li>
+    <li>On mobile Safari use <code>100dvh</code> (dynamic) instead of <code>100vh</code>, which overshoots when the address bar collapses.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>A flex item that refuses to shrink below its content (overflowing or blowing out the layout).</strong> A flex item's default <code>min-width: auto</code> is its min-content size, so long text or a nested element won't let it get smaller. The fix is <code>min-width: 0</code> (or <code>min-height: 0</code> for a column) on the flex item — the same reason a scroll container inside flex won't shrink. Sibling trap: <code>z-index</code> "not working" because the element is <code>position: static</code> or trapped in a lower stacking context created by an ancestor's <code>transform</code> / <code>opacity</code> / <code>filter</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The cascade resolves conflicts by origin, then layer, then specificity, then source order — so I reach for cascade layers before I ever reach for !important."</div>
+  <div class="revision-say">"Flex is one-dimensional, Grid is two-dimensional — I pick based on whether I'm distributing along one axis or laying out rows and columns together."</div>
+  <div class="revision-say">"Container queries let a component respond to its own container's width instead of the viewport, and custom properties give me runtime-mutable design tokens for theming."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you choose between Flexbox and Grid for a given layout and justify the pick?</li>
+    <li>Can you explain container queries and how they differ from media queries?</li>
+    <li>Can you build a runtime-switchable theme with custom properties?</li>
+    <li>Can you keep specificity low and say why you avoid <code>!important</code> and ID selectors?</li>
+    <li>Can you use logical properties to support RTL without duplicating CSS?</li>
+    <li>Can you explain what <code>:has()</code> unlocks that was impossible before?</li>
+  </ul>
+</div>
+`}
+
+]
 });

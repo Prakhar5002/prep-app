@@ -793,6 +793,8 @@ AppState.addEventListener('change', (status) =&gt; {
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Separate server state from client state and pick storage by data shape</strong> — Zustand + TanStack Query + MMKV as the default, with tokens always in hardware-backed secure storage.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Default stack:</strong> Zustand for client state + TanStack Query (React Query) for server state + MMKV for persistence. Reach for SQLite only when scale and relations justify it.</li>
@@ -810,10 +812,26 @@ AppState.addEventListener('change', (status) =&gt; {
     <li><strong>Centralize logout</strong>: clear the auth store, call <code>qc.clear()</code>, delete secure-store tokens, and <code>clearAll()</code> the user-data MMKV instance — prevents one user's data leaking into the next session.</li>
     <li><strong>Version persisted cache keys</strong> (include app version) so an API-shape change on upgrade doesn't crash rehydration.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Storing auth tokens in AsyncStorage or plain MMKV.</strong> Both are unencrypted app storage — tokens sit in plaintext and are trivially extractable on a rooted/jailbroken device. Fix: keep tokens in OS-level secure storage (<code>expo-secure-store</code> / <code>react-native-keychain</code>, backed by iOS Keychain / Android Keystore, hardware-bound), and on logout centralize the cleanup — clear the auth store, <code>qc.clear()</code> the Query cache, delete the secure-store tokens, and <code>clearAll()</code> the user MMKV instance so one user's data never leaks into the next session.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"My default is Zustand for client state, TanStack Query for server state, and MMKV for persistence — SQLite or WatermelonDB only when I have lots of relational data."</div>
   <div class="revision-say">"MMKV beats AsyncStorage because it's JSI-based and synchronous — roughly 30× faster — but tokens go in secure storage like expo-secure-store, never plain MMKV."</div>
   <div class="revision-say">"For offline I persist the Query cache to MMKV, watch the network with NetInfo, and queue mutations with idempotency keys to replay on reconnect, with optimistic updates in the meantime."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain when to reach for local state vs a global store vs React Query?</li>
+    <li>Can you describe how you persist the React Query cache to MMKV for offline use?</li>
+    <li>Can you walk through an offline mutation queue with idempotency keys and replay on reconnect?</li>
+    <li>Can you explain optimistic updates and how you roll back on failure?</li>
+    <li>Can you contrast MMKV with AsyncStorage and say why MMKV is faster?</li>
+    <li>Can you explain staleTime vs cacheTime and how refetch-on-reconnect behaves?</li>
+  </ul>
 </div>
 `}
 

@@ -453,6 +453,46 @@ export type AppDispatch = typeof store.dispatch;</code></pre>
 <p>Mixing styles in one reducer: mutating the draft <em>and</em> returning a new value in the same function. Immer only lets you do one or the other — if you return a value from a <code>createSlice</code> case reducer, Immer expects that return value to <em>be</em> the new state and ignores/conflicts with any draft mutations you made earlier in the same function. Another real one: putting a non-serializable value (a class instance, a <code>Map</code>, a Promise) into slice state — the dev-only serializability check in <code>configureStore</code> will warn about it, and it's worth listening to, since it breaks DevTools and persistence the same way it did in hand-written Redux.</p>
 </div>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">RTK is the official way to write Redux in 2026 — it <strong>generates the boilerplate</strong> (actions, types, immutable updates, store wiring) without changing the store/action/reducer/dispatch model, and its core trick is <strong>Immer</strong>: mutating-looking reducer code becomes a safe immutable update.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>RTK <em>is</em> Redux now</strong> — nobody hand-writes action constants and switch reducers in production; the mental model (one store, change only via dispatched actions through reducers) is unchanged.</li>
+    <li><strong>Batteries included in one package:</strong> <code>configureStore</code>, <code>createSlice</code>, <code>createAsyncThunk</code>, <code>createEntityAdapter</code>, and RTK Query.</li>
+    <li><strong>Immer is the core trick:</strong> the <code>state</code> parameter inside a <code>createSlice</code> reducer is a <em>draft</em> proxy that records writes; <code>state.count += 1</code> never touches real state — Immer produces a new immutable object from the recorded changes. The "never mutate" rule still holds; it's just automatic.</li>
+    <li><strong><code>createSlice</code> generates action creators AND action-type strings</strong> from the reducer keys (<code>name/reducerKey</code>), so a creator and its reducer can never drift out of sync — no hand-typed type strings, no typo no-ops.</li>
+    <li><strong><code>configureStore</code> bakes in good defaults:</strong> thunk middleware, Redux DevTools, and dev-only <em>immutability</em> and <em>serializability</em> checks (stripped from production) — the exact two bugs from hand-written Redux, caught automatically.</li>
+    <li><strong><code>createAsyncThunk('prefix', fn)</code> generates the pending/fulfilled/rejected lifecycle:</strong> dispatch it → <code>pending</code> fires immediately, then <code>fulfilled</code> (resolved value as payload) or <code>rejected</code> (error, or <code>rejectWithValue</code> value). Handle all three in <code>extraReducers</code> via <code>builder.addCase</code>, usually toggling a <code>status: idle | loading | succeeded | failed</code> field.</li>
+    <li><strong><code>reducers</code> handles a slice's own actions; <code>extraReducers</code> handles outside actions</strong> (like a thunk's three), and the builder ties each case to the real action creator for full type-safety.</li>
+    <li><strong><code>createEntityAdapter</code> gives normalized <code>{ ids, entities }</code> state</strong> with pre-built CRUD reducers (<code>addOne</code>, <code>removeOne</code>, <code>updateOne</code>, <code>upsertMany</code>) and memoized selectors (<code>selectAll</code>, <code>selectById</code>, ...) — O(1) lookup by id instead of scanning an array.</li>
+    <li><strong><code>createSelector</code> (Reselect) memoizes derived state</strong> — recomputes only when its input selectors change, and returns the same reference otherwise so consumers can skip re-renders. Still don't <em>store</em> derived data; compute it on read.</li>
+    <li><strong>Type the store by inference:</strong> <code>RootState = ReturnType&lt;typeof store.getState&gt;</code>, <code>AppDispatch = typeof store.dispatch</code>, then pre-typed <code>useAppSelector</code>/<code>useAppDispatch</code>. <code>AppDispatch</code> is needed because the default <code>Dispatch</code> type doesn't know the store accepts thunks.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Fighting Immer.</strong> Two flavors: (1) mutating the draft <em>and</em> also returning a new value in the same case reducer — Immer allows one or the other, never both, and returning a value makes it ignore your draft mutations; (2) assuming Immer protects mutations made <em>outside</em> a slice reducer — it only intercepts writes to its draft, so mutating a plain object you pulled out of the store (e.g. in a component) is a real, dangerous mutation.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"RTK is just Redux with the boilerplate generated — createSlice makes actions and reducers together, and Immer lets me write mutating-looking reducers that are actually immutable updates on a draft."</div>
+  <div class="revision-say">"createAsyncThunk gives me pending/fulfilled/rejected for free; I handle them in extraReducers and drive a status field, so no component manages its own loading flag."</div>
+  <div class="revision-say">"I normalize collections with createEntityAdapter for O(1) id lookups, memoize derived data with createSelector, and type the store by inferring RootState and AppDispatch from configureStore."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain what RTK generates and why it doesn't change the store/action/reducer/dispatch model?</li>
+    <li>Can you explain how Immer turns mutating-looking reducer code into a safe immutable update?</li>
+    <li>Can you explain why you must never both mutate the draft and return a value in one case reducer?</li>
+    <li>Can you explain why Immer does <em>not</em> protect a plain object you pulled out of the store in a component?</li>
+    <li>Can you describe what <code>createAsyncThunk</code> gives you (pending/fulfilled/rejected) and how to handle it in extraReducers?</li>
+    <li>Can you normalize with <code>createEntityAdapter</code> and type the store via RootState/AppDispatch inference?</li>
+  </ul>
+</div>
 `}
 
 ]});

@@ -625,22 +625,13 @@ outer();</code></pre>
   <li>The mental separation between <em>declaration</em> and <em>initialization</em></li>
 </ul>
 <p>Mastering this topic makes every subsequent JS question easier. It's the foundation of closures, hoisting, scope, and <code>this</code>.</p>
-
-<div class="callout success">
-  <div class="callout-title">✅ Interview checklist before moving on</div>
-  <ul>
-    <li>Can you name the two phases of EC creation?</li>
-    <li>Can you explain why <code>var</code> hoists to <code>undefined</code> but <code>let</code> doesn't?</li>
-    <li>Can you predict the output of 3 hoisting traps without running the code?</li>
-    <li>Can you draw the call stack at any point during a recursive call?</li>
-    <li>Can you explain why function declarations "win" over <code>var</code> in memory phase?</li>
-  </ul>
-</div>
 `},
 
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The engine builds <strong>every execution context in two phases</strong> — memory/creation (hoist declarations) then execution (run line by line) — and those contexts stack LIFO on the call stack.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Execution Context = the environment the engine builds to run code</strong> (global, function, eval, or module). It bundles a Variable Environment, a scope chain (outer-environment reference), and a <code>this</code> binding.</li>
@@ -657,10 +648,26 @@ outer();</code></pre>
     <li>Top-level <code>this</code> in an ES module is <code>undefined</code> (NOT <code>window</code>/<code>globalThis</code>).</li>
     <li>Closures work <em>because</em> the EC stores a reference to its outer lexical environment.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Assuming <strong>all declarations hoist to <code>undefined</code></strong>. Only <code>var</code> does — <code>let</code>/<code>const</code>/<code>class</code> hoist <em>uninitialized</em> and throw in the TDZ, and a function <em>declaration</em> is callable above its line while a function <em>expression</em> is not.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"The engine builds every execution context in two phases — it prepares memory and hoists declarations first, then runs the code line by line."</div>
   <div class="revision-say">"That two-phase model is exactly why <code>var</code> hoists to <code>undefined</code>, function declarations are callable above their definition, and <code>let</code>/<code>const</code> throw in the temporal dead zone."</div>
   <div class="revision-say">"A function's context is created when it's called, not when it's defined, and those contexts stack up LIFO on the call stack."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the two phases the engine builds every execution context in, and say what each phase does?</li>
+    <li>Can you explain why <code>var</code> hoists to <code>undefined</code>, a function declaration is callable above its line, but <code>let</code>/<code>const</code> throw in the TDZ?</li>
+    <li>Can you predict the output of a trap where a function declaration and a <code>var</code> share the same name?</li>
+    <li>Can you draw the call stack at any point during a recursive call and explain what causes a stack overflow?</li>
+    <li>Can you explain why a function's execution context is created when it's called, not when it's defined?</li>
+    <li>Can you explain the <code>var</code>-in-a-loop trap in terms of one shared binding versus a new binding per iteration?</li>
+  </ul>
 </div>
 `}
 

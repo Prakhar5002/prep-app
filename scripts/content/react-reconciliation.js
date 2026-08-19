@@ -722,6 +722,8 @@ return &lt;button onClick={() =&gt; countRef.current++}&gt;{countRef.current}&lt
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Elements are immutable descriptors diffed each render; Fiber is the work unit — <strong>same type + same key = same fiber (state preserved); different type or key = destroy + re-create</strong>.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>React Elements are immutable descriptors</strong> (<code>{ type, props, key, ref }</code>) created fresh each render; <strong>Fiber is the internal work unit</strong> that spans renders and carries hooks, flags, and lanes.</li>
@@ -740,10 +742,26 @@ return &lt;button onClick={() =&gt; countRef.current++}&gt;{countRef.current}&lt
     <li>Fiber <strong>iterates a linked list rather than recursing</strong> — constant JS stack depth regardless of tree depth — which is what unlocks time-slicing, Suspense, and error boundaries.</li>
     <li><strong>Commit is synchronous</strong>, so <code>startTransition</code> only helps the <em>render</em> phase — it won't speed up a heavy commit (big DOM/layout).</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong><code>key={index}</code> on a reorderable / insert-in-middle list</strong> — on reorder, state and DOM migrate to the wrong item. Use a stable id. (The flip side is useful: change a component's <code>key</code> to <em>intentionally</em> remount and reset a subtree's state.)</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"React Elements are the diff target; Fiber is the scheduler's work unit that spans renders."</div>
   <div class="revision-say">"Same type and same key means the same fiber with preserved state — a different type or key destroys and re-creates it."</div>
   <div class="revision-say">"Render is pure and interruptible, commit is synchronous and atomic — that's why <code>setState</code> belongs in effects or handlers, never during render."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the difference between a React Element and a Fiber, and why both exist?</li>
+    <li>Can you state the two rules that decide whether a fiber is reused or destroyed — same type and same <code>key</code>?</li>
+    <li>Can you explain why using the array index as a <code>key</code> corrupts state in a reorderable or filterable list?</li>
+    <li>Can you describe the render phase (pure, interruptible) versus the commit phase (synchronous, atomic)?</li>
+    <li>Can you explain why calling <code>setState</code> during render is a bug, and where it belongs instead?</li>
+    <li>Can you walk through how reconciliation diffs children when an element's type changes?</li>
+  </ul>
 </div>
 `}
 

@@ -675,6 +675,49 @@ queryObjects($r.constructor);     // find all instances</code></pre>
     <li>You pair React DevTools with Chrome Performance for deeper analysis.</li>
   </ul>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>React DevTools answers two questions Chrome can't — "what does the fiber tree look like?" (Components) and "why did this re-render?" (Profiler)</strong> — because it introspects React's fiber tree, not the DOM.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Two panels:</strong> <strong>Components</strong> inspects the live fiber tree (props, state, hooks, context — all editable); <strong>Profiler</strong> records commits with per-component render time, ranked by cost.</li>
+    <li>React DevTools sees the <strong>fiber tree</strong> (components/hooks that produce the DOM) via the <code>__REACT_DEVTOOLS_GLOBAL_HOOK__</code> bridge — Chrome's Elements shows the resulting DOM; complementary views.</li>
+    <li><strong>Enable "Record why each component rendered"</strong> — attribution reasons: first mount, "Props changed: X", "Hooks changed", "Parent rendered" (no memo), "Context changed". This is the main perf insight.</li>
+    <li>"Props changed: onClick" → parent recreates the handler each render → wrap in <code>useCallback</code>. "Parent rendered" with identical props → wrap the child in <code>React.memo</code>.</li>
+    <li><strong>Props look identical but it still re-rendered</strong> = a new reference (inline object/array/function in render) — React compares by referential, not deep, equality.</li>
+    <li><strong>Actual time vs base time:</strong> actual = what this commit spent (memo bailouts are fast); base = what it would take with no memo. Big gap = memoization is helping; equal = no memo or it's busted.</li>
+    <li>Profiler views: <strong>Flame graph</strong> (per-commit hierarchy, width = time), <strong>Ranked</strong> (slowest this commit), <strong>Component chart</strong> (one component across commits — "how often does it re-render?").</li>
+    <li>Self time high = the component itself is slow (profile its JS in Chrome); total high but self low = a child is slow.</li>
+    <li><code>$r</code> in the console = the selected component instance (like <code>$0</code> for DOM): read <code>$r.props</code>, invoke handlers, <code>queryObjects($r.constructor)</code>.</li>
+    <li><strong>"Highlight updates"</strong> flashes a border per render — a static or memoized component flashing red = needless re-render or broken memoization.</li>
+    <li><code>useDebugValue(value, format)</code> labels custom hooks in the panel; name your function components and set <code>displayName</code> on HOCs so the tree isn't full of "Anonymous" wrappers.</li>
+    <li><strong>Production strips the Profiler</strong> — either alias <code>react-dom</code> to <code>react-dom/profiling</code> for a staging build, or use the in-code <code>&lt;Profiler id onRender&gt;</code> component (works in prod) to send timings to RUM.</li>
+    <li>Pair with Chrome Performance: <strong>React Profiler finds which component; Chrome Performance finds which JS inside it</strong>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Profiling shows "Props changed" but the prop looks the same</strong> — because it's a fresh reference (an inline object, array, or arrow function created in render), and React compares by identity. Fix: stabilize the identity with <code>useCallback</code> / <code>useMemo</code> (or hoist the constant), then wrap the child in <code>React.memo</code>. Also profile a production/profiling build, not dev, since StrictMode double-renders skew the numbers.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"React DevTools answers two things Chrome can't — what the fiber tree looks like, and why a component re-rendered — so I turn on 'Record why each component rendered' before I touch anything."</div>
+  <div class="revision-say">"'Props changed' on an identical-looking prop means a new reference each render; I fix it with useCallback or useMemo and then memo the child."</div>
+  <div class="revision-say">"React Profiler tells me which component is slow; I switch to Chrome Performance to find which JS inside it is slow — and I profile a profiling build, not dev."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain what the Components panel shows and how to inspect props, state, hooks, and context?</li>
+    <li>Can you use the Profiler to find which component re-rendered, how long it took, and why?</li>
+    <li>Can you turn on "why did this render?" and read the per-render attribution?</li>
+    <li>Can you use <code>$r</code> in the console and say how it differs from <code>$0</code>?</li>
+    <li>Can you edit props, state, or hook values live and watch the component re-render?</li>
+    <li>Can you say when you'd reach for the standalone React DevTools app (React Native, Electron)?</li>
+  </ul>
+</div>
 `}
 
 ]

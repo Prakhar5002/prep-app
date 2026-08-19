@@ -830,6 +830,53 @@ expect(page).toHaveScreenshot('home.png', { maxDiffPixels: 100 });
 </ul>
 <p>5 topics. Together they cover the philosophy, tools, tactics, and meta-strategy that make a test suite earn its keep instead of becoming dead weight.</p>
 `
-    }
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>A test strategy is the one-page contract between testing investment and confidence to ship</strong> — risk-based, layered by job, with a CI pipeline and a flake budget — decided before the suite, not after.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Strategy is a living 1-3 page doc:</strong> goals, risks, coverage shape, test data, CI policy, ownership, tooling, metrics — the framework individual test decisions are made against, not a list of every test.</li>
+    <li><strong>Risk-based investment:</strong> cost-if-broken &times; probability &times; detectability. Payments/auth/core flows get unit + integration + E2E + ~90% coverage; marketing gets visual regression and lint, no E2E.</li>
+    <li><strong>Pick a shape:</strong> Trophy for frontend/RN (integration is the workhorse), Pyramid for backend/parsers/algorithms; the <strong>diamond</strong> (heavy E2E, no integration) is the anti-shape.</li>
+    <li><strong>Each layer has a distinct job:</strong> static (typos/types), unit (pure logic/edges), integration (cooperating units), contract (cross-service drift), E2E (full-stack/hydration/CSP) — plus visual, a11y, and performance.</li>
+    <li><strong>Test data is half the strategy:</strong> hand-written fixtures, factories (<code>aUser({...})</code>), seed scripts, anonymised prod snapshots, property-based — an explicit choice per project, and no PII in fixtures.</li>
+    <li><strong>CI buckets:</strong> PR fast + deterministic (&lt; 10 min: static + unit + integration + critical E2E), merge broader (cross-browser + perf + contract), nightly slow (mobile matrix + full visual + smoke against staging).</li>
+    <li><strong>Shift left:</strong> push detection earlier — IDE (TS/ESLint) &rarr; pre-commit &rarr; pre-push &rarr; PR CI &rarr; merge CI &rarr; nightly &rarr; production monitoring. Earlier = cheaper to fix.</li>
+    <li><strong>Flake budget:</strong> &lt; 0.5% healthy; auto-quarantine after N fails; &gt; 5% bankrupt. Retries keep CI green while you root-cause — never to ignore the flake.</li>
+    <li><strong>Coverage as a per-folder floor,</strong> never one global number: billing 90%, auth 85%, core 70%, marketing 0% (visual covers it).</li>
+    <li><strong>Escaped-bug analysis on every Sev 1-2:</strong> which layer should have caught it, why didn't it, add the regression test, and update the strategy if the gap is structural.</li>
+    <li><strong>Write down what you deliberately DON'T test</strong> — "we don't test X because Y" is a position; "we forgot X" is a gap.</li>
+    <li><strong>Mobile gets its own track:</strong> Jest + RTL-RN per PR, Detox/Maestro on emulator for key flows, real-device cloud matrix nightly, OS-version drift weekly.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">One global coverage number (or "100% coverage") as the goal — it punishes well-tested code, rewards tautological tests that exercise without asserting, and hides gaps in critical flows behind an 80% average. Use per-folder, risk-based thresholds and behavioural tests instead.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Strategy before suite — risk-based investment, Trophy by default and Pyramid where it fits, never diamond; fast feedback close to the engineer."</div>
+  <div class="revision-say">"Per-folder coverage thresholds, not one global number; E2E only on the critical paths where breakage equals revenue, integration for the rest."</div>
+  <div class="revision-say">"Flake budget under 0.5% with quarantine, CI split into PR/merge/nightly buckets, and an escaped-bug post-mortem on every Sev 1-2 that maps the bug to the layer that should have caught it."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you describe what a one-page test strategy contains and why it's decided before the suite?</li>
+    <li>Can you explain risk-based, layered-by-job investment instead of one global coverage number?</li>
+    <li>Can you justify per-folder coverage thresholds over a single 80% average?</li>
+    <li>Can you set a flake budget with quarantine, and split CI into PR / merge / nightly buckets?</li>
+    <li>Can you decide which flows deserve E2E versus integration on a risk basis?</li>
+    <li>Can you run an escaped-bug post-mortem that maps a Sev 1-2 bug to the layer that should have caught it?</li>
+  </ul>
+</div>
+`}
+
   ]
 });

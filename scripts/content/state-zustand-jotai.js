@@ -975,6 +975,52 @@ const { name, email } = useStore(useShallow((s) =&gt; ({ name: s.user.name, emai
   <li>"I'd add Jotai-devtools for atom-graph visualization in dev."</li>
 </ul>
 `
-    }
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Zustand and Jotai are the <strong>minimalist Redux alternatives</strong> (same author, 1-3 KB, no boilerplate) — <strong>Zustand gives you stores, Jotai gives you atoms</strong>; pick by mental model, and both beat Context because they subscribe at the value level, not the provider level.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Zustand = store-based:</strong> one hook-store per domain, state and actions together, no providers, ~1KB — the "Redux but small" experience.</li>
+    <li><strong>Jotai = atom-based:</strong> small composable atoms; derived atoms compute from <code>get(otherAtom)</code> and auto-track dependencies; ~3KB, Suspense-friendly, one optional Provider for tests/SSR.</li>
+    <li><strong>Both subscribe granularly</strong> (via selectors / atoms) so only components whose slice changed re-render — no Context fan-out. Internally both use React's <code>useSyncExternalStore</code>, so they're concurrent-safe.</li>
+    <li><strong>Pick Zustand</strong> when state is "one big object per feature"; <strong>pick Jotai</strong> when state is naturally composed from many small pieces you want to derive from each other.</li>
+    <li><strong>No server state in either</strong> — caching/refetching/invalidation is React Query's job. And keep deeply-local UI state (modal open, hover) in <code>useState</code>, not a global store.</li>
+    <li><strong>Persistence:</strong> Zustand's <code>persist</code> middleware (with <code>partialize</code> to pick fields) or Jotai's <code>atomWithStorage</code>; on RN prefer an MMKV adapter over AsyncStorage, and never persist functions/non-serializable values.</li>
+    <li><strong>Zustand: read via the hook with a selector</strong> (<code>useStore(s =&gt; s.items)</code>) — calling <code>getState()</code> during render bypasses the subscription and won't re-render.</li>
+    <li><strong>Zustand: without the immer middleware you must return new state</strong>; mutating <code>s.items.push()</code> and returning <code>s</code> keeps the same reference and breaks subscriptions.</li>
+    <li><strong>Jotai: atoms are lazy</strong> — they only "exist" when a component subscribes; and <code>atomFamily</code> caches one atom per parameter, so clean up with <code>family.remove(id)</code> or it leaks.</li>
+    <li><strong>Jotai: async atoms suspend the consumer</strong> — wrap in <code>&lt;Suspense&gt;</code>+ErrorBoundary, or use <code>loadable</code> for inline <code>loading | hasData | hasError</code> handling instead of suspending.</li>
+    <li><strong>Sensitive data (tokens):</strong> the default localStorage/AsyncStorage adapters aren't secure — route secrets through Keychain/Keystore via a custom storage interface.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>A Zustand selector that returns a fresh object every render</strong> — <code>useStore(s =&gt; ({ name: s.user.name, email: s.user.email }))</code> builds a new object each call, so the default equality never matches and the component re-renders on every store change. Fix: wrap with <code>useShallow</code>, or select primitives separately. (Jotai's equivalent trap: an <code>atomFamily</code> that grows unbounded because entries are never removed.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Zustand and Jotai are the same author's minimalist take on Redux — Zustand is store-based, Jotai is atomic — and both subscribe at the value level so they avoid Context's re-render fan-out."</div>
+  <div class="revision-say">"I pick Zustand when state is one object per feature and Jotai when it composes from many small derived pieces — and neither holds server state, which belongs in React Query."</div>
+  <div class="revision-say">"The classic Zustand gotcha is a selector returning a new object every render — I fix it with useShallow or by selecting primitives individually."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you contrast Zustand (stores) with Jotai (atoms) and pick by mental model?</li>
+    <li>Can you explain why both beat Context by subscribing at the value level, not the provider level?</li>
+    <li>Can you fix a Zustand selector that returns a fresh object every render (<code>useShallow</code> / select primitives)?</li>
+    <li>Can you explain the Jotai <code>atomFamily</code> unbounded-growth trap?</li>
+    <li>Can you say why neither should hold server state?</li>
+    <li>Can you decide when state is one object per feature (Zustand) versus many derived pieces (Jotai)?</li>
+  </ul>
+</div>
+`}
+
   ]
 });

@@ -925,6 +925,49 @@ if (c === '.') {
   <li>"I'd benchmark trie vs sorted array + bisect for our specific lookup pattern."</li>
 </ul>
 `
-    }
-  ]
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A Trie is a tree where <strong>each root-to-node path spells a prefix</strong>, giving O(L) insert/search/startsWith that is <strong>independent of how many words are stored</strong> — the canonical answer whenever prefixes matter.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Node = children (Map or 26-slot array) + an <code>isEnd</code> flag.</strong> The flag is what distinguishes a stored word from a mere prefix of one.</li>
+    <li><strong>All three core ops walk character by character:</strong> insert creates missing nodes and marks the last as end-of-word; search walks then checks <code>isEnd</code>; startsWith walks and returns true regardless of <code>isEnd</code>. Each is O(L).</li>
+    <li><strong>Recognition signals:</strong> "prefix", "starts with", "autocomplete / search suggestions", "dictionary of words", or "word search on a grid with many words" → reach for a trie.</li>
+    <li><strong>Pair a trie with DFS</strong> for grid problems (Word Search II): build one trie of all words, then DFS the grid only advancing while the path stays a valid trie node — a huge win when words share prefixes.</li>
+    <li><strong>Wildcard search ('.'):</strong> replace the linear walk with a DFS that tries every child when it hits a dot.</li>
+    <li><strong>Memory is O(total characters stored)</strong> worst case, less with prefix overlap; use a compressed/radix trie for large dictionaries with long unique tails.</li>
+    <li><strong>vs hash set:</strong> a Set wins for exact-match lookup (simpler, smaller constant); a trie only earns its keep when you need prefix queries (O(L + k) vs O(N·L)).</li>
+    <li><strong>Variants worth knowing:</strong> bit trie for Maximum XOR (walk MSB-first preferring the opposite bit), reversed-word trie for suffix/stream matching, counting trie for "words with this prefix".</li>
+    <li>Iterate strings with <code>for...of</code> (not by index) so emoji/surrogate pairs don't break; tries are case-sensitive by default, so normalize up front.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting the <code>isEnd</code> check on search — and over-pruning on delete.</strong> Without the flag, <code>search("app")</code> returns true just because "apple" is stored, since the walk succeeds; always verify <code>node.isEnd</code> at the end. On delete, never remove a node that still has children or is another word's endpoint (deleting "car" must not break "card") — only prune nodes with no children and no <code>isEnd</code> on the way back up.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A trie gives O(L) operations independent of the number of stored words, so it beats a hash set the moment I need prefix queries like autocomplete."</div>
+  <div class="revision-say">"Each node is just children plus an end-of-word flag — that flag is what separates a stored word from a prefix of one."</div>
+  <div class="revision-say">"For word search on a grid I'd build one trie of all the words and DFS while the current path stays a valid trie node, instead of searching each word separately."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you describe a trie node's structure (children map plus isEnd flag)?</li>
+    <li>Can you code insert and search from memory?</li>
+    <li>Can you state the time and space complexity of trie operations?</li>
+    <li>Can you recognize a prefix / autocomplete problem as a trie problem?</li>
+    <li>Can you explain why one shared trie beats searching each word separately?</li>
+    <li>Can you name 2 problems a trie solves?</li>
+  </ul>
+</div>
+`}
+]
 });

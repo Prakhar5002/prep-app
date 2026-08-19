@@ -350,6 +350,49 @@ snmpwalk -c public -v1 192.168.56.102
 <p>Layered: a default-deny firewall reduces the open surface itself and makes many ports show as "filtered" rather than giving a scanner a clean open/closed answer. IDS/IPS systems (Snort, Suricata) detect scanning through rate and pattern signatures — a high volume of unanswered SYNs or sequential port touches from one source — which is exactly what nmap's slow timing templates try to evade. But the highest-leverage fix is usually service hardening at the target itself: disabling SMB null sessions and SMBv1, changing default/public SNMP community strings (or moving to SNMPv3), requiring authenticated LDAP binds, restricting NFS exports to specific trusted client IPs, and disabling or rate-limiting SMTP's VRFY/EXPN commands — since most of what deep enumeration extracts is a misconfiguration, not an inherent flaw in the protocol.</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Scanning &amp; enumeration is the active phase that turns passive recon into a concrete attack map — live hosts, open ports, service versions, OS, and what chatty services (SMB/SNMP/LDAP/NFS/SMTP) hand over when asked.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Scanning answers "what's there?" (hosts, ports, services/versions, OS); enumeration goes one level deeper per-service to turn "port open" into a reportable finding.</li>
+    <li>The pipeline narrows each stage: host discovery → port scanning → service/version detection → OS fingerprint → deep enumeration.</li>
+    <li><code>-sT</code> (TCP connect) completes the full handshake, needs no root, but is fully logged by the target app; <code>-sS</code> (SYN "half-open") needs raw sockets/root, is nmap's default when privileged, and is stealthier.</li>
+    <li><code>-sU</code> (UDP) is slow and ambiguous — no reply means open|filtered — because UDP has no handshake, yet SNMP/DNS/NFS/TFTP live there.</li>
+    <li>Timing templates run <code>-T0</code> Paranoid (a probe every 5 min) through <code>-T5</code> Insane; <code>-T4</code> is the common lab/internal choice, slow templates exist to fall under IDS rate thresholds.</li>
+    <li>NSE (<code>--script</code>) runs Lua checks — <code>default</code>, <code>vuln</code>, targeted enum scripts; output flags <code>-oN</code>/<code>-oX</code>/<code>-oG</code>/<code>-oA</code> save results for reporting and later phases.</li>
+    <li>masscan/rustscan sweep huge ranges for open ports fast, then hand the narrow port list to nmap for the slow <code>-sV</code>/<code>-O</code>/NSE deep dive.</li>
+    <li>Per-service enum tools: SMB (enum4linux-ng, smbclient, smbmap, nmblookup), SNMP (snmpwalk, onesixtyone), LDAP (ldapsearch), NFS (showmount), SMTP (smtp-user-enum), plus nc for manual banner grabs.</li>
+    <li>Version detection matters because "Samba 3.0.20" maps to a specific CVE while "port 445 open" does not.</li>
+    <li>MITRE ATT&amp;CK: external/no-foothold scanning is Reconnaissance → Active Scanning (T1595); the same commands from an already-compromised host are Discovery → Network Service Discovery (T1046).</li>
+    <li>Defenses: default-deny firewalls (filtered ports return no clean state), IDS/IPS rate/pattern signatures, and service hardening — most deep findings are misconfigurations, not protocol flaws.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Calling external network scanning "Discovery" in ATT&amp;CK. The tactic depends entirely on whether you already have a foothold — outsider probing is Reconnaissance (T1595); the identical nmap command from inside a compromised host is Discovery (T1046).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A SYN scan never completes the handshake so many app-level logs never see it, but it needs root; a connect scan is fully logged but needs no privileges."</div>
+  <div class="revision-say">"A scan result is a lead, not a finding — enumeration is the step that turns 'port 445 open' into 'anonymous SMB session lists a writable share.'"</div>
+  <div class="revision-say">"Same nmap command maps to Reconnaissance or Discovery in ATT&amp;CK depending only on whether I already have a foothold."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the difference between a TCP connect scan, a SYN scan, and a UDP scan — including which needs root and which is stealthier?</li>
+    <li>Can you describe what each stage of the scanning pipeline hands to the next, from host discovery through to deep enumeration?</li>
+    <li>Can you say why external network scanning maps to ATT&amp;CK Reconnaissance (T1595) and not Discovery (T1046)?</li>
+    <li>Can you walk through enumerating SMB once nmap shows port 445 open, and name which tool tells you shares exist vs. what you can do with them?</li>
+    <li>Can you explain the practical division of labor between nmap, masscan, and rustscan?</li>
+    <li>Can you name the defenses that actually reduce what scanning and enumeration find, and why most deep findings are misconfigurations?</li>
+  </ul>
+</div>
 `}
 
 ]});

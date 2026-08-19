@@ -684,6 +684,8 @@ rm -rf $TMPDIR/metro-*</code></pre>
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Most RN "bugs" are not bugs — they're <strong>cross-platform differences and API quirks your JS code didn't handle</strong>, so learn the pitfalls early or they surface in production on a device you don't own.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Most RN "bugs" are cross-platform differences</strong> your JS didn't handle — learn the pitfalls early or they surface in production on a device you don't own.</li>
@@ -702,10 +704,26 @@ rm -rf $TMPDIR/metro-*</code></pre>
     <li><strong>State traps:</strong> function-component <code>setState</code> replaces (no merge — spread manually); pass a lazy initializer for expensive init; object deps in <code>useEffect</code> fire every render (depend on primitives or <code>useMemo</code>); <code>useEffect</code> runs twice in StrictMode dev.</li>
     <li><strong>Build/runtime:</strong> keep Hermes + New Architecture (Fabric + TurboModules, default since 0.76) on and test release on Hermes (<code>Intl</code>/regex edge cases); run <code>pod install</code> after native deps; bump versionCode / CFBundleVersion each upload; back up the Android keystore; always smoke-test release builds on a physical mid-range Android.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Building and testing on only one platform (usually the iOS simulator) and assuming it works everywhere.</strong> Keyboard behavior, shadows (<code>elevation</code> vs <code>shadow*</code>), safe area, status bar, the Android back button, permissions, and Hermes-vs-JSC edge cases all diverge — and a debugger attached hides the real perf. Fix: develop against both platforms per feature and smoke-test the release build on a physical mid-range Android before shipping.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Most RN bugs aren't bugs — they're cross-platform differences the JS code didn't handle, so I learn the platform pitfalls up front and test on real devices."</div>
   <div class="revision-say">"My modern defaults are FlashList, Reanimated, expo-image, and MMKV, with Hermes and the New Architecture on."</div>
   <div class="revision-say">"I animate transform and opacity — never layout props — and push heavy animation work onto the UI thread with Reanimated worklets."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why a bare string outside <code>&lt;Text&gt;</code> crashes and how you catch it early?</li>
+    <li>Can you name the flex-vs-percentage layout traps and why <code>flex: 1</code> sometimes collapses to nothing?</li>
+    <li>Can you keep the keyboard from covering an input on both iOS and Android?</li>
+    <li>Can you list platform differences that bite — shadow vs elevation, ripple, status bar?</li>
+    <li>Can you explain why animating layout props janks and what to animate instead?</li>
+    <li>Can you spot a common list-key or image-caching gotcha and give its fix?</li>
+  </ul>
 </div>
 `}
 

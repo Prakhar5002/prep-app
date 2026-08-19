@@ -1024,6 +1024,8 @@ if (stack.length === 0 || stack.pop() !== expected) return false;</code></pre>
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Stack (LIFO) matches the most recent; queue (FIFO) processes in arrival order</strong> — and when a brute force scans backward for a match, a monotonic stack collapses it to <code>O(n)</code>.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Stack = LIFO</strong> ("match the most recent"): parens/tags, undo-redo, monotonic, DFS. <strong>Queue = FIFO</strong> ("process in arrival order"): BFS, scheduling.</li>
@@ -1048,12 +1050,27 @@ if (stack.length === 0 || stack.pop() !== expected) return false;</code></pre>
     <li><strong>Space:</strong> O(n) for the structure; BFS holds up to a full level in the queue plus an O(V) visited set.</li>
     <li><strong>Signal → reach for it:</strong> "most recent" / nesting / balanced symbols / next-greater-or-smaller → stack (monotonic if brute force loops backward for a match) · level-order / shortest path on unweighted graph / flood fill → BFS queue · window max/min → monotonic deque · deep recursion risk → iterative explicit stack.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Using <code>arr.shift()</code> as a dequeue silently makes your "O(V+E)" BFS O(V·E)</strong> — <code>shift()</code> is O(n) because it re-indexes the whole array; use an index head pointer or two-stack queue for amortized O(1). Two other classic slips: in BFS mark visited on <em>enqueue</em> (not dequeue), or the same node gets queued from multiple paths and the queue explodes; and store <em>indices</em> (not values) in a monotonic stack so you can recover width/distance.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Stack for 'match the most recent', queue for 'process in order' — and when a brute force scans backward to find a match, a monotonic stack usually collapses it to O(n)."</div>
   <div class="revision-say">"In JS I avoid <code>arr.shift()</code> for a queue because it's O(n); I use an index head pointer or a two-stack queue for amortized O(1)."</div>
   <div class="revision-say">"For BFS I mark nodes visited on enqueue, not dequeue, so the same node isn't queued from multiple paths."</div>
 </div>
-`}
+`},
 
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state the operations and complexity of a stack and a queue?</li>
+    <li>Can you recognize a monotonic-stack problem?</li>
+    <li>Can you code the monotonic-stack template from memory?</li>
+    <li>Can you explain why BFS marks nodes visited on enqueue, not dequeue?</li>
+    <li>Can you implement a queue with two stacks?</li>
+    <li>Can you name 2 problems each of a stack and a queue solves?</li>
+  </ul>
+</div>
+`}
 ]
 });

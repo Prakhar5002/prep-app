@@ -916,6 +916,52 @@ vi.mock('@/lib/payments', () =&gt; ({
   <li>"Try property-based testing on a pure function; replace half its unit tests."</li>
 </ul>
 `
-    }
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Mock at the boundary — network, clock, native modules — inject collaborators when you can, and run the real code inside;</strong> a mock of the function under test proves nothing.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Five test doubles (Meszaros):</strong> dummy (placeholder, unused), stub (canned return, no verification), fake (real but simpler impl, e.g. in-memory DB), spy (records calls, real impl runs), mock (pre-programmed expectations, verifies interactions). Don't conflate them.</li>
+    <li><strong>Mock the boundary, not internals:</strong> network (MSW), time (fake timers), random (inject the RNG), file system (memfs), browser globals, native modules (RN bridge), third-party SDKs. Inside the boundary, run the real code — that's where bugs live.</li>
+    <li><strong>MSW over <code>fetch.mockResolvedValue</code>:</strong> your real fetcher's auth/retries/error-mapping run; the same handlers work in tests, Storybook, and dev; realistic delays and status codes.</li>
+    <li><strong>Dependency injection is the "un-mock":</strong> pass collaborators (<code>fetch</code>, <code>now</code>, RNG) as arguments and swap a fake in tests — no global state, survives module restructuring, encourages testable code.</li>
+    <li><strong>Fake timers:</strong> <code>vi.useFakeTimers</code> intercepts <code>setTimeout</code>/<code>setInterval</code>/<code>Date</code>/rAF; <code>advanceTimersByTime</code> is synchronous, <code>advanceTimersByTimeAsync</code> also flushes microtasks; pass <code>advanceTimers</code> to <code>userEvent.setup()</code> or typing hangs.</li>
+    <li><strong>Module mocks (<code>vi.mock</code>/<code>jest.mock</code>) are hoisted above imports</strong> — reach for them to mute analytics, native modules, and SDKs, <em>not</em> the function under test; use <code>importOriginal</code> for partial mocks.</li>
+    <li><strong>Wrap an out-of-control SDK</strong> (Stripe, FCM) in a thin module and mock the wrapper — not 30 SDK methods one by one.</li>
+    <li><strong>Prefer a fake over a stub for stateful collaborators</strong> (DB, repo, queue) — behaviour matters more than return values, and fakes stay honest without coupling to call signatures.</li>
+    <li><strong>Reset/restore between tests:</strong> <code>mockClear</code> (history), <code>mockReset</code> (history + impl), <code>mockRestore</code> (original, spies only). Common <code>afterEach</code>: <code>vi.restoreAllMocks()</code>; set <code>onUnhandledRequest: 'error'</code>.</li>
+    <li><strong>Preference order:</strong> pure function &gt; DI'd deps &gt; MSW network &gt; module-mocked third-party &gt; module-mocked own code &gt; mocked framework (least preferred).</li>
+    <li><strong>RN boundary is the JS bridge:</strong> mock AsyncStorage/MMKV/Reanimated/FCM at <code>jest.setup.js</code>; native gestures can't run in Jest — push them to Detox/Maestro.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The <strong>tautological mock</strong> — stubbing the function under test, then asserting it returned what you set, proves nothing. Related: a hand-built response like <code>{ json: async () =&gt; ({}) }</code> passes the test but crashes production when the code reads <code>res.ok</code>. Mock at the boundary with production-shaped responses (MSW); if a test has more mock setup than body, redesign the code for DI.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Mock at the boundary — network with MSW, time with fake timers, native modules at the bridge; internals run real."</div>
+  <div class="revision-say">"DI over module mocking whenever the signature allows — no global state, survives restructuring; and a fake over a thicket of stubs for stateful collaborators."</div>
+  <div class="revision-say">"I know the five doubles — dummy, stub, fake, spy, mock — and I never mock the function under test or React internals."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the five test doubles (dummy, stub, fake, spy, mock) and give one use for each?</li>
+    <li>Can you explain why mocking the function under test proves nothing (the tautological mock)?</li>
+    <li>Can you say what "mock at the boundary" means for the network, the clock, and native modules?</li>
+    <li>Can you argue DI over module mocking, and when a fake beats a thicket of stubs?</li>
+    <li>Can you explain how a hand-built response like <code>{ json: async () =&gt; ({}) }</code> passes the test but crashes production?</li>
+    <li>Can you recognise when heavy mock setup is a signal to redesign the code for injection?</li>
+  </ul>
+</div>
+`}
+
   ]
 });

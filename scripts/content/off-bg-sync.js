@@ -1152,6 +1152,52 @@ if (status.state === 'granted') {
   <li>"Audit a real PWA's offline mutations — does it dedupe? does it surface failures?"</li>
 </ul>
 `
+    },
+
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Background Sync defers a queued mutation until the device is online — <strong>enqueue locally, fire-and-forget, retry on reconnect, dedupe with idempotency keys, and fall back where the API isn't supported</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Two specs: <code>SyncManager</code> (one-shot, "send when online") and <code>PeriodicSyncManager</code> (recurring refresh, gated on PWA install + user engagement).</li>
+    <li>Support is uneven — Background Sync is Chrome/Edge/Opera only (not Safari, not Firefox) — so always keep a fallback that flushes on the next visit or online event.</li>
+    <li>The pattern: the page enqueues to IndexedDB, the SW listens for the sync event, then iterates the queue, calls <code>fetch</code>, and retries on failure with exponential backoff.</li>
+    <li><strong>Idempotency keys are mandatory</strong> because network failures replay requests — the server must dedupe.</li>
+    <li><code>event.waitUntil</code> keeps the SW alive mid-sync; without it the browser kills the worker.</li>
+    <li>Workbox ships <code>BackgroundSyncPlugin</code> and a <code>Queue</code> class — the de facto implementation.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Relying on Background Sync alone silently loses Safari and Firefox submissions</strong>, and skipping idempotency keys turns every retry into a duplicate. Try the request immediately, register the sync only if it's supported, and always keep a plain fallback that flushes later.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Background Sync is enqueue-locally, retry-on-reconnect — the UI succeeds instantly and the SW flushes the queue when connectivity returns."</div>
+  <div class="revision-say">"It's Chrome and Edge only, so I always keep a fallback that flushes on the next visit; relying on it alone loses Safari and Firefox data."</div>
+  <div class="revision-say">"Retries replay requests, so idempotency keys are mandatory and the server dedupes on them."</div>
+</div>
+`
+    },
+
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you describe the enqueue then sync-event then retry flow end to end?</li>
+    <li>Can you explain why idempotency keys are mandatory?</li>
+    <li>Can you name which browsers support Background Sync and what your fallback is?</li>
+    <li>Can you explain what <code>event.waitUntil</code> does during a sync?</li>
+    <li>Can you distinguish one-shot Sync from Periodic Sync?</li>
+    <li>Can you explain why optimistic UI needs a rollback path here?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

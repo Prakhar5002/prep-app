@@ -939,6 +939,55 @@ processes finishing up; I want to do this fairly to all of them."</code></pre>
 <p><em>"Get the offer in writing. Never accept on the call. Anchor with data, not feelings. Negotiate the whole package. Be willing to walk."</em></p>
 <p>Compensation is the highest-leverage 30 minutes of negotiation in your career. Treat it accordingly. Prepare. Take your time. The discomfort is temporary; the dollars compound for decades.</p>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Comp is the most leveraged 30 minutes of your year — <strong>get it in writing, never accept on the call, anchor on data and competing offers (not feelings), negotiate the whole package, and be willing to walk.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Total comp is a stack:</strong> base + bonus + RSU + sign-on + perks. Most engineers fixate on base, but RSU and sign-on are usually larger and the most negotiable levers.</li>
+    <li><strong>Level is the biggest lever of all</strong> — a poor leveling decision compounds through every future raise, refresher, bonus, and promotion. Push leveling <em>before</em> discussing the dollar number.</li>
+    <li><strong>Get the offer in writing</strong> before responding, and <strong>never accept on the call</strong> — "Thank you, let me review and come back by [date]." A verbal yes isn't binding; the signed letter is.</li>
+    <li><strong>A competing offer is the only lever that reliably moves big numbers</strong> (★★★★★). Always run ≥2 processes at once; "I really need this job" is negative leverage.</li>
+    <li><strong>Anchor on data, not feelings.</strong> Levels.fyi is the floor of your data; supplement with peers, Blind, and recruiter band info. Never reveal your current TC (if below market) or your minimum acceptable.</li>
+    <li><strong>Sign-on is the easiest knob</strong> — one-time, doesn't touch the band or ongoing payroll; frame it as covering unvested equity you're leaving behind.</li>
+    <li><strong>Model 4-year TC, not year-1</strong> — refreshers can flip a comparison, and beware the "Year 4 cliff" where the original grant is gone.</li>
+    <li><strong>"This is our best offer" usually means "what I can give without escalating"</strong> — politely test it; recruiters rarely walk over a few percent.</li>
+    <li><strong>Whatever you negotiate must appear in the final written offer</strong> — verbal promises don't survive comp/HR; all negotiation ends before you sign.</li>
+    <li><strong>Current-company comp lags market</strong> (the "loyalty tax") — fixes are promotion, refresher advocacy, or a competing offer; counter-offer acceptors often leave within 6–12 months anyway.</li>
+    <li><strong>Mobile/RN scarcity is real leverage</strong> — articulate scarcity + scope; broaden your pipeline (incl. web/full-stack) so you're not "a small market for me."</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Accepting verbally on the call in a rush of excitement (or panic at a low number) — it locks in the first offer and signals you'll take anything. And only negotiating base while ignoring RSU/sign-on, where the real movement is. Fix: always ask for the written offer, take your time, and negotiate the whole package. Even a fast verbal yes is recoverable — a signed letter is not.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"That's exciting, thank you — could you send the full offer in writing so I can review the components properly? I'll come back to you with a thoughtful response by [date]."</div>
+  <div class="revision-say">"I have a competing offer at [X]. The role and team here are the better fit for me — comp is the deciding variable. To get to yes I'd need base at [target], RSU at [target], and sign-on at [target]."</div>
+  <div class="revision-say">"Before we discuss the dollar figure, I'd like to revisit the level — the scope described looks closer to [higher level], and I'm happy to do another loop if that helps calibration."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you break total comp into its components and say which are most negotiable and why?</li>
+    <li>Can you deliver a clean line for "get it in writing" and "let me think and come back" without accepting on the call?</li>
+    <li>Can you tell a concise STAR story about a real negotiation — your prep, your ask, the outcome, and what you'd do differently?</li>
+    <li>Can you deflect "What's your current TC?" and "What are your salary expectations?" without anchoring yourself low?</li>
+    <li>Can you explain how you'd use a competing offer and market data to move an offer, and when you'd push level instead of dollars?</li>
+    <li>Can you explain how you'd decide to walk away, and why 4-year TC (with refreshers) beats a year-1 comparison?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

@@ -792,6 +792,8 @@ useState.prototype.set = ...; // makes no sense</code></pre>
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A hook is a <strong>slot in a per-fiber linked list matched by call order</strong> — that single fact is why hooks must be called unconditionally, at the top level, every render.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>A hook is a slot in a per-fiber singly-linked list</strong> stored in <code>fiber.memoizedState</code>, matched by <strong>call order</strong> — not by name. That single fact is the reason for every other rule.</li>
@@ -810,10 +812,26 @@ useState.prototype.set = ...; // makes no sense</code></pre>
     <li><code>useSyncExternalStore</code> is the concurrent-safe way to subscribe to an external store — it prevents tearing that <code>useState</code>+<code>useEffect</code> could exhibit.</li>
     <li>Dev <code>StrictMode</code> double-invokes render/initializers and mounts→unmounts→mounts effects to surface impurity and missing cleanup; production is untouched.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Stale closure:</strong> a callback captures render-time state, so three <code>setN(n + 1)</code> calls only add +1. Fix with a functional updater <code>setN(p =&gt; p + 1)</code>, correct deps, or a ref for the latest value. (Same root cause as omitting a dep in <code>useEffect</code>.)</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Hooks are slots in a per-fiber linked list matched by call order — that's the entire reason for the top-level rule."</div>
   <div class="revision-say">"<code>useEffect</code> is async after paint, <code>useLayoutEffect</code> is sync before paint — I default to <code>useEffect</code> and only escalate when I need to measure layout without a flicker."</div>
   <div class="revision-say">"A stale closure is a callback still holding state from the render it was created in; I fix it with the right deps, a functional updater, or a ref."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why hooks must be called at the top level, using the per-fiber linked-list-by-call-order model?</li>
+    <li>Can you explain the difference between <code>useEffect</code> and <code>useLayoutEffect</code> and when each one is the right default?</li>
+    <li>Can you describe what a stale closure is and fix one three different ways (deps, functional updater, ref)?</li>
+    <li>Can you explain exactly what the dependency array controls and how React compares its values?</li>
+    <li>Can you say when <code>useMemo</code> / <code>useCallback</code> actually earn their cost versus being premature?</li>
+    <li>Can you explain why <code>useRef</code> doesn't trigger a re-render and when to reach for it over state?</li>
+  </ul>
 </div>
 `}
 

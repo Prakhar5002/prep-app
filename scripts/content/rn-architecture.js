@@ -731,6 +731,8 @@ emitter.addListener('change', (val) =&gt; setVal(val));</code></pre>
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">React Native runs your React tree in a JS engine that drives <strong>real native views</strong> — the old <em>Bridge</em> talks to native over an async JSON queue, while the <em>New Architecture</em> (JSI + Fabric + TurboModules) replaces it with a synchronous C++ binding, no serialization.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>RN is not a WebView</strong> — your React tree renders <em>real native views</em> (<code>&lt;View&gt;</code> → <code>UIView</code> / <code>android.view.View</code>, <code>&lt;Text&gt;</code> → <code>UILabel</code> / <code>TextView</code>). No DOM, no HTML/CSS.</li>
@@ -749,10 +751,26 @@ emitter.addListener('change', (val) =&gt; setVal(val));</code></pre>
     <li>Remote JS debugging (ran your JS in Chrome V8, not on-device Hermes) was removed in 0.79 — use React Native DevTools, which debugs the real Hermes engine.</li>
     <li><strong>Metro</strong> is the RN bundler (like Webpack for mobile); <code>inlineRequires</code> defers module evaluation to first use for faster startup.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Assuming a JS-only hot reload picks up native changes.</strong> After installing a library, editing a native module / TurboModule spec, or running <code>pod install</code>, Fast Refresh reloads only the JS bundle — the native code is still the stale build, so the change silently "doesn't work." Fix: do a full native rebuild (and <code>--reset-cache</code> if Metro cached a stale transform) whenever native code, specs, or Podfile/gradle change.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Old architecture sends JSON across an async bridge; the new architecture — JSI plus Fabric and TurboModules — shares C++ objects directly so calls are synchronous and there's no serialization."</div>
   <div class="revision-say">"There are three threads — JS, native UI, and shadow. Blocking JS delays state updates but UI-thread animations keep running; blocking the UI thread freezes everything."</div>
   <div class="revision-say">"Reanimated runs worklets on the UI thread over JSI, so animations and gestures stay smooth even when the JS thread is doing heavy work."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the old bridge's async, batched, serialized message queue and why it dropped frames?</li>
+    <li>Can you describe how JSI lets JavaScript hold a direct reference to a C++ HostObject with no serialization?</li>
+    <li>Can you contrast a TurboModule with the legacy NativeModule and say what lazy loading buys you?</li>
+    <li>Can you explain what Fabric changes about the rendering and shadow-tree pipeline?</li>
+    <li>Can you say what the New Architecture is and why libraries must be migrated to support it?</li>
+    <li>Can you explain how Reanimated stays smooth over JSI even when the JS thread is blocked?</li>
+  </ul>
 </div>
 `}
 

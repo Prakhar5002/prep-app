@@ -1048,6 +1048,8 @@ You: "Good question. For tweets: eventual is fine (people don't notice 100ms lag
       collapsible: true,
       html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Walk the six-step framework calmly and talk your tradeoffs out loud, because <strong>structure beats knowledge</strong> — the organized candidate passes over the equally-knowledgeable rambler.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>6-step framework:</strong> clarify scope (5-10m) → estimate scale (5m) → high-level design (10-15m) → deep dive 2-3 hard parts (15-20m) → scale + reliability + observability (10-15m) → wrap-up (2-5m).</li>
@@ -1064,12 +1066,31 @@ You: "Good question. For tweets: eventual is fine (people don't notice 100ms lag
     <li><strong>Last third is non-functional:</strong> bottleneck at 10×, sharding, read replicas, multi-region + failover (RTO/RPO), observability (RED/USE metrics, logs, traces, SLOs + error budget).</li>
     <li><strong>Always name the failure case</strong> ("primary fails → replica promoted via Patroni, RTO ~30s, RPO ~seconds") and wrap up with strong / deferred / next.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is jumping straight into a solution — dumping tools within 30 seconds and skipping clarification, so you spend the interview designing the wrong thing. The fix: pause, spend the first 5-10 minutes asking about features, scale, and constraints, then confirm the scope back before drawing a single box.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Clarify scope, estimate scale, high-level shape, deep-dive what's hard, then scale + reliability — tradeoffs out loud, restraint over completeness."</div>
   <div class="revision-say">"I estimate aloud from DAU × actions ÷ 86400, peak roughly 3× average — order-of-magnitude right is what anchors every downstream decision."</div>
   <div class="revision-say">"In every design I find the hot key and name the failure case — that's exactly where average-case designs break."</div>
 </div>
 `
-    }
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the six steps of the framework in order, with a rough time budget for each in a 45-60 minute interview?</li>
+    <li>Can you estimate RPS, storage, and bandwidth aloud from DAU × actions/day ÷ 86400, with peak roughly 3× average and reads around 100× writes?</li>
+    <li>Can you recall the ballpark capacity ceilings — single Postgres ~10K-50K writes/sec, single Redis ~100K ops/sec, single Kafka broker ~1M msg/sec — and the latency numbers (memory ~100ns, SSD ~100μs, datacenter RTT ~500μs, cross-continent ~50-150ms)?</li>
+    <li>Can you list the building blocks (load balancer, stateless app servers, SQL + NoSQL DB, cache, queue/stream, object storage, CDN) and justify why each belongs in a given design?</li>
+    <li>Can you explain push vs pull vs hybrid fan-out and describe how you would handle the celebrity hot-key problem?</li>
+    <li>Can you cover the last-third non-functional concerns — bottleneck at 10×, sharding, replicas, multi-region failover with RTO/RPO, and observability (RED/USE metrics, logs, traces, SLOs) — and close with a strong / deferred / next wrap-up?</li>
+  </ul>
+</div>
+`}
   ]
 });

@@ -1198,6 +1198,52 @@ await db.transaction(async (tx) =&gt; {
   <li>"Audit a real codebase's queue usage; find missing idempotency / DLQs."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Queues turn <strong>synchronous request/response into asynchronous work</strong> — decoupling producers from consumers, smoothing spikes, retrying transient failures, and enabling event-driven systems.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three families:</strong> message queues (RabbitMQ/SQS) — work distribution; streams (Kafka/Redis Streams) — durable append-only log with replay; pub/sub (Redis Pub/Sub / NATS) — fire-and-forget broadcast.</li>
+    <li><strong>Delivery semantics:</strong> at-most-once (fast, lossy), at-least-once (default, may duplicate), exactly-once (rare, expensive). Most systems are <strong>at-least-once + idempotent consumers</strong>.</li>
+    <li><strong>Idempotent consumers are non-negotiable</strong> — put an idempotency key on every message and design every handler to be safe to run twice.</li>
+    <li><strong>Dead-letter queue (DLQ)</strong> for poison messages — after N failures, move the message out of the main queue and alert, so one bad message doesn't block everything.</li>
+    <li><strong>Backpressure via bounded queues</strong> — reject / spill / shed when full; unbounded queues are how systems OOM and collapse.</li>
+    <li><strong>Ordering:</strong> partition by key (Kafka) or single-consumer (RabbitMQ) for per-key ordered delivery.</li>
+    <li><strong>Visibility timeout / lease</strong> so a crashed consumer's message gets retried; track <strong>queue depth, consumer lag, processing time, error rate</strong>.</li>
+    <li>Use a queue when work is <strong>async-tolerable, retry-friendly, and throughput-decoupled</strong>; version your message <strong>schema</strong> (Avro/Protobuf/JSON Schema) for backwards-compat. <strong>Don't queue user-facing reads.</strong></li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The three failure modes that lose data or wedge the system: <strong>no idempotency</strong> (an at-least-once retry double-charges the customer), <strong>unbounded queues</strong> (a producer outpaces the consumer, the queue grows, and the system OOMs), and <strong>no DLQ</strong> (a single poison message blocks the whole queue so nothing gets processed). Also lost ordering: a comment-on-deleted-post arriving before the delete.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"My pragmatic default is at-least-once delivery with idempotent consumers — I assume every message can arrive twice and design the handler to be safe."</div>
+  <div class="revision-say">"Every queue gets a DLQ for poison messages and a bounded size for backpressure — an unbounded queue is just a deferred OOM."</div>
+  <div class="revision-say">"When ordering matters I partition by key so all events for one entity land on one consumer in order, and I don't put user-facing reads behind a queue."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you distinguish the three families — message queue, stream/log, pub/sub — and when each fits?</li>
+    <li>Can you explain the three delivery semantics and why at-least-once + idempotent is the pragmatic default?</li>
+    <li>Can you explain what makes a consumer idempotent and how an idempotency key is used?</li>
+    <li>Can you explain what a DLQ is for and what happens to a poison message without one?</li>
+    <li>Can you explain backpressure and why unbounded queues collapse a system?</li>
+    <li>Can you explain how to preserve per-key ordering, and when <em>not</em> to use a queue?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

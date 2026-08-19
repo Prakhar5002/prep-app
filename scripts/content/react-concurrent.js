@@ -665,6 +665,47 @@ flushSync(() =&gt; setC(3));</code></pre>
     <li>You don't conflate Suspense (async) with ErrorBoundary (errors).</li>
   </ul>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Concurrent React (18+) lets React <strong>prepare the UI at multiple priorities and render interruptibly</strong> — updates are tagged with <em>lanes</em>, the scheduler renders the highest-priority one, and abandoned work is discarded before commit.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Old model:</strong> one priority, render-to-completion, commit. <strong>New model:</strong> N priorities (lanes), interruptible render, speculative trees — but most of your code is unchanged.</li>
+    <li><strong>Opt-in APIs only:</strong> <code>startTransition</code>, <code>useTransition</code>, <code>useDeferredValue</code>, <code>&lt;Suspense&gt;</code>. Everything else behaves as before.</li>
+    <li><strong><code>startTransition</code>/<code>useTransition</code></strong> mark an update non-urgent — <em>you</em> own the setter; urgent input (typing) stays responsive while the transition renders in the background. <code>isPending</code> drives a spinner.</li>
+    <li><strong><code>useDeferredValue</code></strong> lags a value you do <em>not</em> control the setter of (e.g. a prop) — same effect, different ownership.</li>
+    <li><strong>Concurrency changes perceived perf, not wall-clock</strong> — the heavy render still runs; it just no longer blocks urgent updates and can be interrupted or restarted.</li>
+    <li><strong>Automatic batching applies everywhere now</strong> (promises, <code>setTimeout</code>, native events), not only React event handlers. <code>flushSync</code> opts out.</li>
+    <li><strong>Suspense</strong> = a component "suspends" by throwing a thenable; the nearest <code>&lt;Suspense fallback&gt;</code> shows until it resolves, then retries — declarative loading states in the tree.</li>
+    <li><strong>Streaming SSR</strong> (<code>renderToPipeableStream</code>) flushes HTML chunks as they become ready → fast TTFB and <strong>selective hydration</strong> (interactive parts hydrate first, by priority).</li>
+    <li><strong>Concurrent rendering is only safe for pure renders</strong> — render can run twice, be interrupted, or be thrown away, so side effects during render become visible bugs (why <code>StrictMode</code> double-invokes in dev).</li>
+    <li><strong>Commit is still synchronous and atomic</strong> — <code>startTransition</code> speeds the <em>render</em> phase, not a heavy commit (big DOM/layout).</li>
+    <li>Suspense (async/loading) and Error Boundaries (errors) are <strong>different mechanisms</strong> — you often pair them, but don't conflate them.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Expecting <code>startTransition</code> to make slow work <strong>faster</strong>. It doesn't — same wall-clock time; it only keeps urgent updates responsive by rendering the transition at low priority (and may restart it). Separately, any <strong>side effect during render</strong> breaks under concurrency.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Concurrent React tags updates with lanes and renders interruptibly — a low-priority transition can be paused for urgent input and even thrown away before commit."</div>
+  <div class="revision-say">"<code>startTransition</code> is for setters you own; <code>useDeferredValue</code> is for values you don't — both keep the UI responsive without reducing total work."</div>
+  <div class="revision-say">"Suspense is a component throwing a thenable that the nearest boundary catches and retries on resolve — it's about async, not errors."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain what lanes are and how React tags an update with a priority?</li>
+    <li>Can you explain the difference between <code>startTransition</code> and <code>useDeferredValue</code> and when you'd pick each?</li>
+    <li>Can you describe how a low-priority transition can be interrupted by urgent input, or thrown away before commit?</li>
+    <li>Can you explain how Suspense works as a component throwing a thenable that the nearest boundary catches?</li>
+    <li>Can you explain why concurrent rendering demands pure renders, and what tearing is?</li>
+    <li>Can you explain what <code>isPending</code> from <code>useTransition</code> tells you and how you'd use it in the UI?</li>
+  </ul>
+</div>
 `}
 
 ]

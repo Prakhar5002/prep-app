@@ -1158,6 +1158,52 @@ self.addEventListener('fetch', (e) =&gt; {
 </ul>
 <p>4 topics. Together they cover the full offline-first, installable web-app stack — what it takes to ship a real product that works without the network and feels like an app.</p>
 `
+    },
+
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A PWA is a web app that <strong>installs, runs in its own window, works offline, and gets push</strong> — the minimum-viable trio is HTTPS, a Web App Manifest, and a Service Worker with a fetch handler.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Manifest essentials: <code>name</code>, <code>short_name</code>, <code>icons</code> (192 + 512), <code>start_url</code>, <code>display</code> (<code>standalone</code> for app feel), <code>background_color</code>, <code>theme_color</code>.</li>
+    <li>Install prompt: Chrome/Edge fire <code>beforeinstallprompt</code> when criteria are met and you decide when to call <code>.prompt()</code>; iOS Safari has no programmatic prompt — the user taps "Add to Home Screen".</li>
+    <li>Display modes: browser, minimal-ui, standalone (most app-like), fullscreen.</li>
+    <li>iOS is a thinner version: limited manifest support, relies on <code>apple-touch-icon</code> and <code>apple-mobile-web-app-*</code> tags; push only since iOS 16.4 and only for installed PWAs.</li>
+    <li>Lighthouse's PWA audit is the source-of-truth installability checklist: HTTPS, viewport, manifest, SW, offline.</li>
+    <li>Beyond browser PWAs: Trusted Web Activities (Android/Play Store) and Tauri/Capacitor native shells.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>A SW with no fetch handler isn't installable</strong>, and a missing <em>maskable</em> icon means Android OEMs crop the square icon and the logo loses its corners. Design iOS as a deliberately thinner version rather than assuming parity.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A PWA is HTTPS plus a manifest plus a Service Worker with a fetch handler — the manifest declares intent, the SW delivers behavior."</div>
+  <div class="revision-say">"iOS gets a thinner version — no programmatic install prompt and limited manifest support — so I design for that, not for parity."</div>
+  <div class="revision-say">"I ship a maskable icon; otherwise Android crops the square one and the logo loses its corners."</div>
+</div>
+`
+    },
+
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the minimum requirements for an installable PWA?</li>
+    <li>Can you list the manifest fields that actually matter and what <code>display: standalone</code> does?</li>
+    <li>Can you explain how the install prompt differs between Chrome and iOS Safari?</li>
+    <li>Can you explain why a maskable icon matters on Android?</li>
+    <li>Can you name the iOS limitations you design around?</li>
+    <li>Can you say what the Lighthouse PWA audit checks?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

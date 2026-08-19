@@ -812,6 +812,8 @@ setTimeout(c.inc, 100);
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">JS has <strong>prototypal inheritance</strong> — objects link to other objects via a hidden <code>[[Prototype]]</code>; reads walk up the chain, writes shadow on the instance, and <code>class</code> is (mostly) sugar over a constructor + prototype.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>JS has prototypal inheritance, not classical.</strong> Every object has a hidden <code>[[Prototype]]</code> slot pointing at another object (or <code>null</code>), read via <code>Object.getPrototypeOf(obj)</code> (legacy <code>obj.__proto__</code>).</li>
@@ -827,10 +829,26 @@ setTimeout(c.inc, 100);
     <li>In a subclass constructor, <code>this</code> is in the TDZ until <code>super()</code> runs.</li>
     <li>Don't type-check with <code>obj.constructor</code> (overwritable) — prefer <code>instanceof</code>. Avoid <code>Object.setPrototypeOf</code> in hot code and never extend built-in prototypes (deopts + collisions).</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Putting <strong>mutable state (arrays/objects) on the prototype</strong> — it's shared across every instance, so one instance's <code>push</code> shows up on all. Initialize it in the constructor (<code>this.tags = []</code>). And don't confuse <code>obj.__proto__</code> (the lookup link on every object) with <code>Fn.prototype</code> (only used by <code>new</code>).</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"JavaScript has prototypal inheritance — objects inherit from other objects through a hidden <code>[[Prototype]]</code> link, and classes are just syntax layered on top of that."</div>
   <div class="revision-say">"Reads walk up the prototype chain; writes always land on the instance and shadow the prototype."</div>
   <div class="revision-say">"<code>class</code> isn't pure sugar — it adds strict mode, new-only calling, a TDZ, and non-enumerable methods that a plain constructor function doesn't have."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the difference between an object's <code>[[Prototype]]</code>/<code>__proto__</code> and a function's <code>prototype</code> property?</li>
+    <li>Can you explain why a property read walks the chain but a write shadows on the instance?</li>
+    <li>Can you list the four steps <code>new Fn()</code> performs?</li>
+    <li>Can you explain how <code>class</code> differs from a plain constructor function — beyond "it's just sugar"?</li>
+    <li>Can you explain why putting a mutable array/object on the prototype is a bug and where it belongs instead?</li>
+    <li>Can you explain what prototype pollution is and how to guard against it?</li>
+  </ul>
 </div>
 `}
 

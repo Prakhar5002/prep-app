@@ -602,6 +602,42 @@ show $@      # [one] [two] [three]     — unquoted: word-split, losing the orig
 <p>Unquoted, or printed plainly, they look identical — both represent "all the positional arguments." The difference only appears when each is quoted and then passed on to another command: <code>"$@"</code> expands to each original argument as its own separately-quoted word, exactly preserving argument boundaries (including any spaces inside a single argument); <code>"$*"</code> expands to a single string with every argument joined together, losing that original separation. In practice, <code>"$@"</code> is almost always what you want when forwarding a script's arguments to another command, since it's the only form that survives an argument containing a space without corrupting it.</p>
 </div>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A shell script is the commands you'd type, saved to run the same way every time — <strong>quote every variable, check every exit code, and make robustness opt-in</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Every script starts with a shebang (<code>#!/usr/bin/env bash</code>) and needs <code>chmod +x</code> to run as <code>./script.sh</code>; <code>source</code> runs it in your <em>current</em> shell — the only way it can change your cwd or export vars into the shell you're in.</li>
+    <li><strong>Always quote variables:</strong> <code>"$var"</code> protects against word-splitting and globbing; <code>'$var'</code> (single quotes) is a literal string that expands nothing.</li>
+    <li><code>[[ ]]</code> is bash's safer modern test; <code>if</code>/<code>elif</code>/<code>else</code> and <code>case</code> branch; <code>for</code>/<code>while</code>/<code>until</code> loop; functions with <code>local</code> keep variables from leaking.</li>
+    <li><strong>Robustness is opt-in:</strong> <code>set -euo pipefail</code> turns off bash's forgiving defaults — keep-going on failure, unset treated as empty, ignored pipeline failures.</li>
+    <li><code>trap 'cleanup' EXIT</code> guarantees cleanup runs even when the script exits early.</li>
+    <li><code>set -e</code> has gaps — it doesn't fire inside an <code>if</code>/<code>while</code> condition or a <code>&amp;&amp;</code>/<code>||</code> chain; and <code>set -u</code> only catches a truly <em>unset</em> variable, not an empty one.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>An unquoted variable silently word-splits.</strong> With <code>file="my report.txt"</code>, <code>rm $file</code> tries to delete two files; and <code>rm -rf "$dir"/*</code> with an empty <code>$dir</code> expands to <code>rm -rf /*</code>. Quote everything, and guard empty values explicitly (<code>[[ -n "$dir" ]]</code>) before anything destructive runs.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A script is just sequenced commands, but robustness is opt-in — my first line is set -euo pipefail with a trap for cleanup."</div>
+  <div class="revision-say">"Quote every variable; an unquoted one that has a space or is empty is the single most common and most destructive bash bug."</div>
+  <div class="revision-say">"set -e isn't a substitute for checking — it skips conditions and boolean chains, so I still check the failures I expect."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you write the shebang and make a script executable from memory?</li>
+    <li>Can you explain the difference between running a script and sourcing it?</li>
+    <li>Can you explain what each of <code>set -e</code>, <code>set -u</code>, and <code>set -o pipefail</code> does?</li>
+    <li>Can you show why an unquoted variable is dangerous inside <code>rm</code>/<code>cp</code>/<code>mv</code>?</li>
+    <li>Can you name a case where <code>set -e</code> does NOT fire?</li>
+    <li>Can you use <code>trap</code> to guarantee cleanup on exit?</li>
+  </ul>
+</div>
 `}
 
 ]});

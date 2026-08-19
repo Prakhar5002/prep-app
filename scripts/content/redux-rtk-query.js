@@ -354,6 +354,47 @@ const postsSlice = createSlice({
 <p>One. RTK Query keys its cache by endpoint name plus serialized arguments, so both components subscribe to the exact same cache entry — the first one to mount triggers the fetch, the second one gets served the same in-flight request (or the already-resolved cached value) with no duplicate call. This is a large part of what makes RTK Query more than "a fetch wrapped in a thunk": the cache is shared across every consumer of that query, not per-component.</p>
 </div>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">RTK Query is RTK's <strong>server-state caching layer</strong> — you <strong>describe endpoints</strong> and it generates the reducer, middleware, cache, and a hook per endpoint, so you stop hand-writing thunks, loading flags, and refetch-after-mutation logic.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>One call does it all:</strong> <code>createApi({ baseQuery, endpoints })</code> returns a slice-like <code>api</code> object plus auto-generated hooks (<code>useGetPostsQuery</code>, <code>useAddPostMutation</code>) — no action creators or <code>extraReducers</code> cases by hand.</li>
+    <li><strong>It's a cache, not just a fetcher:</strong> the cache is keyed by endpoint name + serialized args, so two components calling the same query with the same args share one entry and one in-flight request (dedup), and <code>data</code>/<code>isLoading</code>/<code>isFetching</code>/<code>error</code> come from the hook.</li>
+    <li><strong>Invalidation is declarative via tags:</strong> queries declare <code>providesTags</code> (what data they represent); mutations declare <code>invalidatesTags</code> (what they changed); on success, any cached query holding an invalidated tag auto-refetches. You never manually refetch a list after add/edit/delete.</li>
+    <li><strong>The <code>{ type, id: 'LIST' }</code> bulk pattern:</strong> list queries provide a per-item tag <em>and</em> a shared LIST tag; <em>add</em> invalidates LIST (new item has no id yet); <em>update/delete</em> invalidates the specific item id so only that entry refetches.</li>
+    <li><strong>It's for SERVER state, not client state.</strong> Server data is a cache of a remote source of truth (goes stale, shared, needs dedup/invalidation); keep real client state (theme, form drafts, modal open) in plain slices.</li>
+    <li><strong>An <code>api</code> object is just a specialized slice + middleware</strong> — still one store, still the same dispatch → reducer → subscriber loop; RTK Query writes those pieces for you.</li>
+    <li><strong>query vs mutation:</strong> <code>builder.query</code> for reads (cached); <code>builder.mutation</code> for writes (returns a <code>[trigger, result]</code> tuple; <code>trigger(arg).unwrap()</code> gives the raw payload or throws for <code>try/catch</code>).</li>
+    <li><strong>Store wiring is three parts:</strong> mount <code>[api.reducerPath]: api.reducer</code>, <code>.concat(api.middleware)</code>, and call <code>setupListeners(store.dispatch)</code> to enable <code>refetchOnFocus</code>/<code>refetchOnReconnect</code>.</li>
+    <li><strong>Cache args must be serializable</strong> — object key order doesn't matter (RTK Query sorts keys), but functions/class instances/Maps break the cache key. Same discipline as plain Redux state.</li>
+    <li><strong><code>keepUnusedDataFor</code> (default 60s)</strong> is how long an entry survives after its last subscriber unmounts, in case someone asks again soon.</li>
+    <li><strong>Optimistic updates:</strong> in the mutation's <code>onQueryStarted</code>, dispatch <code>api.util.updateQueryData(endpoint, args, recipe)</code> (Immer draft, patches an existing entry) → returns a patch with <code>.undo()</code> → <code>await queryFulfilled</code> in try/catch → on failure call <code>patchResult.undo()</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting to add <code>api.middleware</code> (and mount <code>api.reducer</code>) to the store.</strong> The hooks look correctly wired, but without the middleware nothing actually dispatches requests or manages cache lifetimes — so nothing ever fetches. (Runner-ups: forgetting <code>invalidatesTags</code> so the UI stays stale after a mutation; and mirroring an <code>api</code> resource into a second hand-written slice, creating two sources of truth that drift.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"RTK Query is Redux's server-state layer — I describe endpoints and it generates the cache, dedup, and a hook per endpoint, so I never hand-write loading flags or refetch logic."</div>
+  <div class="revision-say">"Invalidation is declarative: queries provide tags, mutations invalidate them, and any cached query holding an invalidated tag refetches automatically — the LIST-tag convention handles 'the whole collection changed'."</div>
+  <div class="revision-say">"I'd pick RTK Query if the app already uses Redux so it shares the store and DevTools, and TanStack Query otherwise so I don't adopt Redux just for caching."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain what RTK Query generates for you (reducer, middleware, cache, a hook per endpoint)?</li>
+    <li>Can you explain why forgetting to mount <code>api.middleware</code> means nothing ever fetches?</li>
+    <li>Can you describe tag-based invalidation (queries provide, mutations invalidate) and the LIST-tag convention?</li>
+    <li>Can you explain why mirroring an <code>api</code> resource into a second hand-written slice creates drift?</li>
+    <li>Can you decide between RTK Query and TanStack Query for a given app?</li>
+    <li>Can you say why forgetting <code>invalidatesTags</code> leaves the UI stale after a mutation?</li>
+  </ul>
+</div>
 `}
 
 ]});

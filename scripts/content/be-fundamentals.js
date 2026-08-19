@@ -1298,6 +1298,52 @@ async function callDownstream(req) {
   <li>"Read Stripe + GitHub API docs for production-grade design references."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A backend service is <strong>request in, response out</strong> — receive HTTP, maybe talk to a DB/cache/queue/API, return HTTP. Everything else is a variation on that loop.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Request lifecycle:</strong> connection → routing → middleware → handler → response. Every framework is a variation on this loop.</li>
+    <li><strong>Two runtime models:</strong> <em>event-loop</em> (Node, Deno, async Python) — one thread, non-blocking I/O; and <em>thread-per-request</em> (Java, Go, Ruby) — concurrency via threads/goroutines. Know which you're on.</li>
+    <li><strong>HTTP is the protocol:</strong> verbs, status codes, headers, content negotiation, cookies, auth headers, CORS, redirects.</li>
+    <li><strong>Middleware pipeline</strong> composes cross-cutting concerns: auth → logging → tracing → rate limit → body parsing → handler, per-route or global.</li>
+    <li><strong>Connection management:</strong> pool DB and HTTP connections (never per-request), set request timeouts and per-handler deadlines, keep-alive, and graceful shutdown (drain in-flight on SIGTERM).</li>
+    <li><strong>Error model:</strong> never leak raw stack traces to clients; map domain errors to HTTP codes through a centralized error handler.</li>
+    <li><strong>Latency budget per layer:</strong> network 10-200ms, DB query 1-100ms, external API 100-1000ms, CPU variable — know where a request's time goes.</li>
+    <li>Operational hygiene: structured (JSON) logs with a per-request correlation ID, a health-check endpoint for load balancers, and config from env vars (12-factor).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Backend correctness is <strong>concurrent, not single-user</strong>. The classic mistakes all stem from ignoring that: opening a <strong>DB connection per request</strong> (pool exhausted under load), doing <strong>synchronous/blocking I/O on the event loop</strong> (blocks all requests), storing <strong>request-scoped state in module-level variables</strong> (race conditions), and running calls with <strong>no timeout</strong> (one slow upstream blocks the whole process).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A backend is request in, response out — routing, middleware, handler, response — and the framework is just sugar over that loop."</div>
+  <div class="revision-say">"The runtime model decides how I reason about blocking: on an event loop one synchronous call stalls every request, so I never block it."</div>
+  <div class="revision-say">"I pool connections, timeout every external call, and map domain errors to status codes centrally — never leaking a stack trace to the client."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you walk the request lifecycle from connection through routing, middleware, handler, to response?</li>
+    <li>Can you contrast the event-loop and thread-per-request runtime models and their blocking implications?</li>
+    <li>Can you explain why connections must be pooled and what happens when they aren't?</li>
+    <li>Can you describe a middleware pipeline and the order of common stages?</li>
+    <li>Can you describe a sane error model — mapping domain errors to HTTP codes without leaking stack traces?</li>
+    <li>Can you break down where request latency comes from across network, DB, external API, and CPU?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

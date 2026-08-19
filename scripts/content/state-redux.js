@@ -962,6 +962,52 @@ export const makeSelectFiltered = () =&gt; createSelector(...);
   <li>"I'd profile re-renders with React DevTools and trace any high-fan-out selectors."</li>
 </ul>
 `
-    }
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Redux is a <strong>single store, read-only state, changed only by pure reducers</strong> — and in 2026 "Redux" means <strong>Redux Toolkit (RTK)</strong>, which kills the boilerplate with <code>createSlice</code>, Immer, <code>createAsyncThunk</code>, and RTK Query.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The three principles:</strong> single source of truth (one store), state is read-only (change only by dispatching actions), changes via pure functions (reducers are <code>(state, action) =&gt; newState</code> — no side effects).</li>
+    <li><strong>Modern Redux = RTK.</strong> <code>createSlice</code> (reducer + actions + initial state in one place), <code>configureStore</code> (sane defaults), <code>createAsyncThunk</code>, <code>createEntityAdapter</code>, and RTK Query. Never hand-roll classic Redux for new code.</li>
+    <li><strong>Immer lets you write "mutating" code</strong> in <code>createSlice</code> reducers (<code>state.items.push(x)</code>) while producing immutable output — but mutating <em>outside</em> Immer (selectors, middleware) silently corrupts the store.</li>
+    <li><strong>Immutability powers everything:</strong> reference equality lets <code>useSelector</code> bail out when the result <code>===</code> the previous one; it also enables time-travel debugging and side-by-side state comparison.</li>
+    <li><strong>Memoize derived state with <code>createSelector</code> (reselect).</strong> A plain selector that returns a fresh array/object every call breaks reference equality and re-renders on every dispatch.</li>
+    <li><strong>Middleware is a pipeline</strong> that sees every action in order — used for logging, async (thunk / listener / saga), analytics, and persistence. Keep it to infrastructure, not domain logic.</li>
+    <li><strong>Normalize entities</strong> (byId dictionary + allIds) so an update touches one location, not N. <code>createEntityAdapter</code> generates the CRUD reducers and selectors.</li>
+    <li><strong>RTK Query is the data layer:</strong> define endpoints → get generated hooks; <code>providesTags</code> + <code>invalidatesTags</code> drive cache invalidation; optimistic updates via <code>onQueryStarted</code> with <code>patch.undo()</code> on failure.</li>
+    <li><strong>Server state → RTK Query, not slices.</strong> Async logic → <code>createAsyncThunk</code>, not reducers. Local UI state (modal, hover, form input) → <code>useState</code>, not the store.</li>
+    <li><strong>Redux earns its keep for:</strong> large cross-feature state, undo/redo, time-travel debugging, and strict audit — it's overkill for &gt;90% of small/medium apps.</li>
+    <li><strong>Type it:</strong> export <code>RootState</code> and <code>AppDispatch</code>; use typed <code>useAppSelector</code>/<code>useAppDispatch</code> hooks. Don't persist the RTK Query cache or store tokens in plain storage (use Keychain/httpOnly cookies).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>A non-memoized selector that returns a fresh reference</strong> — e.g. <code>useSelector(s =&gt; s.cart.items.filter(i =&gt; i.active))</code> returns a new array every render, so the component re-renders on <em>every</em> action, relevant or not. Fix: pull it into a <code>createSelector</code>. (Runner-up trap: putting form/modal/derived data in the store at all — keep local state local and derive with selectors.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Redux's three principles are a single source of truth, read-only state, and changes only through pure reducers — and immutability is what lets useSelector skip re-renders via reference equality."</div>
+  <div class="revision-say">"In 2026 Redux means RTK — createSlice with Immer, createAsyncThunk for async, createEntityAdapter for normalization, and RTK Query for server data. I'd never hand-roll classic Redux."</div>
+  <div class="revision-say">"Derived data goes in a memoized createSelector, never in the store, and a plain selector returning a new array each call is the classic cause of re-render-on-every-dispatch."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state Redux’s three principles (single source of truth, read-only state, pure reducers)?</li>
+    <li>Can you explain why immutability is what lets <code>useSelector</code> skip re-renders via reference equality?</li>
+    <li>Can you say what "Redux" means in 2026 and list the RTK pieces that replace the boilerplate?</li>
+    <li>Can you explain why a non-memoized selector returning a fresh array re-renders on every action, and fix it?</li>
+    <li>Can you argue why derived data belongs in a memoized <code>createSelector</code>, not the store?</li>
+    <li>Can you decide what should <em>not</em> go in the store (forms, modals, derived data)?</li>
+  </ul>
+</div>
+`}
+
   ]
 });

@@ -835,6 +835,8 @@ nav.navigate('Post', { id: '1' });  // typed
 // ─────────────────────────────────────────────────────────────
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Navigation is <strong>a library, not part of RN</strong> — default to React Navigation's native stack, type the ParamList from day one, and keep route params small and JSON-serializable.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Navigation is a library, not part of RN.</strong> Default to <strong>React Navigation (v7)</strong>; <strong>Expo Router</strong> for file-based routes on Expo; <strong>Wix RNN</strong> only for a hard fully-native requirement.</li>
@@ -853,10 +855,26 @@ nav.navigate('Post', { id: '1' });  // typed
     <li><strong>Expo Router file conventions:</strong> <code>(group)</code> (no URL impact), <code>[param]</code> (dynamic), <code>[...slug]</code> (catch-all), <code>_layout.tsx</code> (layout), <code>+not-found.tsx</code> (404).</li>
     <li>Tab screens are kept mounted by default; <code>lazy: true</code> / <code>unmountOnBlur</code> trade memory against preserved state.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Stuffing large or non-serializable data into route params</strong> — functions, class instances, big objects. Navigation state is serialized for persistence and deep links, so it silently breaks. Fix: keep params to primitives and ids, store the heavy data in a cache or store, and pass only the id. (Related: put modals in the ROOT stack, not inside a tab's stack, or the tab bar stays visible.)</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"I default to React Navigation with the native stack, type the ParamList from day one, and keep params small and serializable — big data goes in a store and I pass an id."</div>
   <div class="revision-say">"navigate reuses an existing screen and updates params, push always adds a new one, replace swaps with no back, and reset rebuilds the whole tree — I use reset only for auth transitions."</div>
   <div class="revision-say">"Deep linking is the linking prop mapping URLs to state, backed by Universal Links on iOS and App Links on Android; cold-start links are handled by the NavigationContainer automatically."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain how the <code>linking</code> config maps a URL to navigation state?</li>
+    <li>Can you contrast Universal Links on iOS with App Links on Android and the verification file each needs?</li>
+    <li>Can you explain how a cold-start deep link is handled vs one received while the app is running?</li>
+    <li>Can you contrast stack, tab, and drawer navigators and say when you nest them?</li>
+    <li>Can you pass and read params safely, and reset a stack to a fresh route?</li>
+    <li>Can you explain how <code>react-native-screens</code> changes what stays mounted in the background?</li>
+  </ul>
 </div>
 `}
 

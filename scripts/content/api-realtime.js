@@ -801,6 +801,49 @@ window.addEventListener('mousemove', (e) =&gt; {
   <li>"Compare Phoenix Channels (Elixir), ActionCable (Rails), Apollo subscriptions, tRPC subs — different ecosystems hit the same problems."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>"Realtime" is six transports, not one — walk the decision tree (direction → frequency → bidirectional? → P2P? → mobile-background?) and pick for the slowest realistic case: SSE one-way, WebSocket bidirectional, WebRTC peer-to-peer, push for closed apps.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Direction first, frequency next, mobile-background reality last.</strong> Don't confuse latency budget with frequency — email arrival tolerates minutes, a voice call needs ~150ms.</li>
+    <li><strong>SSE for one-way streams</strong> — server→client, HTTP-friendly, auto-reconnect via <code>Last-Event-ID</code>, text-only. Perfect for notifications, dashboards, log streams, and AI token streaming.</li>
+    <li><strong>WebSocket for bidirectional low-latency</strong> — chat, presence, live cursors, multiplayer. Stateful, so it needs sticky sessions or a pub/sub backbone to scale.</li>
+    <li><strong>WebRTC for peer-to-peer media</strong> — needs signalling (often a WebSocket) plus STUN to find the public address and TURN to relay when NAT blocks direct (~5–20% of connections); TURN bandwidth is real money.</li>
+    <li><strong>Push (FCM/APNs/Web Push) is the ONLY thing that reaches a closed or backgrounded app</strong> — but it's best-effort: coalesced, dropped, or delayed. Treat it as a wake-up trigger, never a state channel.</li>
+    <li><strong>Reliability toolkit:</strong> monotonic sequence IDs + <code>?since=</code> catch-up, dedupe by message ID (at-least-once means duplicates are guaranteed), heartbeats (30s WS, 15s SSE), exponential backoff with jitter (500ms→30s), and backpressure (drop / buffer / throttle / coalesce).</li>
+    <li><strong>Multi-instance fanout needs a pub/sub bus</strong> (Redis Pub/Sub or Streams, NATS, Kafka) — sockets live in one instance's memory; the bus is what routes across instances.</li>
+    <li><strong>Mobile pattern:</strong> socket in foreground, push to wake when backgrounded, reconnect + replay from a "since" cursor on resume. iOS suspends within ~30s; don't fight the OS to keep a background socket alive.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Reaching for WebSocket by reflex when the feature is server→client only.</strong> A stock ticker, notification feed, or AI stream needs no client→server channel — SSE is simpler to operate, works through proxies, and gives you auto-reconnect for free. Save WebSocket for genuinely bidirectional traffic, and never rely on push to deliver state — it's a wake-up, not a sync channel.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I name direction, latency budget, and mobile-background behaviour before I pick a transport — often it's two: a socket for foreground and push for backgrounded delivery."</div>
+  <div class="revision-say">"For one-way streams I use SSE — auto-reconnect with Last-Event-ID and one less moving part than WebSocket; I only reach for WebSocket when it's truly bidirectional."</div>
+  <div class="revision-say">"At-least-once delivery, so receivers dedupe by message ID; on reconnect the client replays from the last sequence ID with a since cursor. Exactly-once is a lie at scale."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the direction, latency budget, and mobile-background behaviour <em>before</em> you pick a transport?</li>
+    <li>Can you justify SSE over WebSocket for a one-way stream — and say what <code>Last-Event-ID</code> buys you?</li>
+    <li>Can you explain why "delivery even when the app is closed" on mobile means push notifications, period?</li>
+    <li>Can you design a reconnect + catch-up flow using a since cursor / sequence ID?</li>
+    <li>Can you explain why exactly-once is a lie at scale, and how at-least-once plus dedupe-by-message-ID replaces it?</li>
+    <li>Can you say why multi-instance servers need a Redis / NATS / Kafka pub/sub backbone so fanout doesn't fragment?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

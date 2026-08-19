@@ -750,6 +750,48 @@ await BackgroundFetch.registerTaskAsync('REFRESH_CART', { minimumInterval: 1800 
     <li>You know notification channels (Android) and categories (iOS).</li>
   </ul>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Every device API touches <strong>permissions, platform quirks, and lifecycle</strong> — pick a maintained library, handle <em>denied</em>/<em>blocked</em> explicitly, and test on a real device because simulators fake half the hardware.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Permission is a state machine, not a boolean:</strong> unavailable, denied, blocked, granted, and iOS-only limited. A "grant" button that does nothing when the state is <strong>blocked</strong> is broken — <code>blocked</code> must route to OS Settings.</li>
+    <li><strong>Declare before you request:</strong> iOS needs <code>NS*UsageDescription</code> strings in <code>Info.plist</code> (missing them = crash on use + App Store rejection); Android needs <code>&lt;uses-permission&gt;</code> in the manifest plus a runtime request for dangerous permissions (camera, location, mic).</li>
+    <li><strong>Request contextually, with a rationale screen</strong> right when the user takes the action — never a barrage at app start, which tanks grant rates.</li>
+    <li><strong>Re-check on foreground:</strong> the user can revoke a permission in Settings while you're backgrounded, so verify before every use.</li>
+    <li><strong>Camera:</strong> <code>react-native-vision-camera</code> (Fabric, frame processors for ML/OCR/barcode) for serious use; <code>expo-camera</code> for simple capture.</li>
+    <li><strong>Location:</strong> foreground (WhenInUse) vs background (Always) are separate, staged approvals — you can't ask for Always directly, and background tracking burns battery under stricter rules.</li>
+    <li><strong>Push = two provider systems</strong> (APNs on iOS, FCM on Android, unified by Firebase Messaging). Handle all three delivery cases — foreground (<code>onMessage</code>), background-tap (<code>onNotificationOpenedApp</code>), and cold-start (<code>getInitialNotification</code>) — and listen for <strong>token refresh</strong>.</li>
+    <li><strong>Biometrics authenticate, they don't encrypt:</strong> the API returns only success/failure. Store the real secret in the hardware-backed keychain (iOS Keychain / Android Keystore) bound to biometric access, and gate the UI on a capability check (<code>hasHardwareAsync</code>).</li>
+    <li><strong>Background execution is never guaranteed:</strong> iOS Background Fetch runs at OS discretion (~15 min windows, maybe never); make tasks idempotent and use push to nudge for time-sensitive work.</li>
+    <li><strong>File system:</strong> <code>documentDirectory</code> persists (iCloud-backed on iOS unless excluded); <code>cacheDirectory</code> is evictable. Never store tokens/PII there in plain text — use secure storage.</li>
+    <li>Clean up subscriptions — location watchers, AppState and BackHandler listeners — or you leak battery and double-fire handlers; note <code>BackHandler</code> only fires on Android.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Treating a permission as a one-time boolean asked at launch.</strong> The user denies twice (or taps "Don't ask again"), the state becomes <code>blocked</code>, and your "Allow" button silently does nothing because <code>request()</code> no longer shows a dialog. Fix: check status first, request <em>contextually</em> with a rationale, and on <code>blocked</code> route the user to <code>openSettings()</code> instead of re-requesting — then re-check when the app returns to foreground.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Permissions aren't a boolean — I handle unavailable, denied, blocked, granted, and iOS limited, and I route blocked to Settings because re-requesting won't show a dialog."</div>
+  <div class="revision-say">"I request contextually with a rationale screen, not at app start, and re-check on foreground since the user can revoke in Settings."</div>
+  <div class="revision-say">"Push has three cases — foreground, background-tap, and cold-start via getInitialNotification — and biometrics only authenticate, so the real secret lives in the hardware keychain bound to that check."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain the three push cases — foreground, background-tap, and cold-start via <code>getInitialNotification</code>?</li>
+    <li>Can you explain why biometrics only authenticate and where the actual secret should live?</li>
+    <li>Can you describe the permission lifecycle — request, denied, blocked, and deep-linking to Settings?</li>
+    <li>Can you contrast the iOS and Android permission models and the never-ask-again state?</li>
+    <li>Can you explain requesting location while-in-use vs always and why the distinction matters?</li>
+    <li>Can you describe how you handle a permission the user has permanently denied?</li>
+  </ul>
+</div>
 `}
 
 ]

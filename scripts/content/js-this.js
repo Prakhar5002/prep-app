@@ -769,22 +769,12 @@ wrap();              // ?</code></pre>
   <li>"What happens to <code>this</code> in a class method passed as a callback?"</li>
   <li>"Why are arrow functions lighter memory-wise?" (no own <code>this</code>/<code>arguments</code> — shared with enclosing.)</li>
 </ul>
-
-<div class="callout success">
-  <div class="callout-title">✅ Master checklist</div>
-  <ul>
-    <li>Can you recite the 4 binding rules + priority order?</li>
-    <li>Can you explain why arrow functions don't follow the rules?</li>
-    <li>Can you predict <code>this</code> for any call expression without running it?</li>
-    <li>Can you implement <code>call</code>, <code>apply</code>, <code>bind</code> from scratch?</li>
-    <li>Do you know when to use arrow vs regular function?</li>
-    <li>Can you spot "lost <code>this</code>" bugs in React class components or Node-style callbacks?</li>
-  </ul>
-</div>
 `},
 
 { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><code>this</code> is decided at <strong>call time by HOW a function is invoked</strong> — priority <code>new</code> &gt; explicit (<code>call</code>/<code>apply</code>/<code>bind</code>) &gt; implicit (<code>obj.method()</code>) &gt; default (<code>undefined</code> in strict) — and arrows have no <code>this</code> of their own.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong><code>this</code> is decided at call time by HOW a function is invoked</strong> — not by where it was written.</li>
@@ -800,10 +790,27 @@ wrap();              // ?</code></pre>
     <li>DOM event handlers: a regular <code>function</code> gets <code>this</code> = the element; an arrow gets the lexical <code>this</code>. Array methods like <code>forEach</code>/<code>map</code> accept a <code>thisArg</code> second argument.</li>
     <li>Fix lost <code>this</code> with <code>bind</code>, an arrow wrapper (<code>() =&gt; obj.method()</code>), or an arrow class field.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Losing <code>this</code> by dropping the dot: <code>const f = obj.method; f()</code> makes <code>this</code> <code>undefined</code> in strict mode (and classes are always strict). Fix with <code>bind</code>, an arrow wrapper, or a class arrow field — and remember <code>call</code>/<code>apply</code>/<code>bind</code> can <strong>never</strong> change an arrow's <code>this</code>.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"<code>this</code> is decided at call time by how a function is invoked — four rules in priority: <code>new</code>, explicit bind, implicit dot, then default."</div>
   <div class="revision-say">"Arrow functions have no <code>this</code> of their own; they inherit it lexically, and <code>call</code>/<code>apply</code>/<code>bind</code> can't change it."</div>
   <div class="revision-say">"The moment you detach a method from its object — destructure it or pass it as a callback — you lose the dot, and <code>this</code> becomes <code>undefined</code> in strict mode."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state the four <code>this</code> binding rules in priority order?</li>
+    <li>Can you predict <code>this</code> for <code>new</code>, <code>call</code>/<code>apply</code>/<code>bind</code>, <code>obj.method()</code>, and a bare <code>fn()</code>?</li>
+    <li>Can you explain why <code>call</code>/<code>apply</code>/<code>bind</code> cannot change an arrow function's <code>this</code>?</li>
+    <li>Can you explain why <code>b.a.greet()</code> binds <code>this</code> to <code>a</code>, not <code>b</code>?</li>
+    <li>Can you list the ways you "lose <code>this</code>" and three ways to fix a detached method?</li>
+    <li>Can you explain why a detached class method throws a <code>TypeError</code> instead of silently using the global?</li>
+    <li>Can you implement <code>call</code>, <code>apply</code>, and <code>bind</code> from scratch?</li>
+  </ul>
 </div>
 `}
 

@@ -1094,6 +1094,52 @@ AppState.addEventListener('change', (state) =&gt; {
   <li>"I'd profile bundle size; tree-shake unused query features."</li>
 </ul>
 `
-    }
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Server state isn't "your" state — it's a <strong>cache of a remote source that can go stale</strong>; stop owning it in Redux and start syncing it with <strong>queries (reads) and mutations (writes)</strong> via TanStack/React Query.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Server state is fundamentally different from client state:</strong> owned remotely, becomes stale, updated out-of-band, needs caching, deduplication, retries, and invalidation. That's why it deserves its own library.</li>
+    <li><strong>Two primitives:</strong> <em>queries</em> (read, cached by key) and <em>mutations</em> (write, can invalidate queries). Queries READ, mutations WRITE and re-sync.</li>
+    <li><strong>The query key is the cache identity</strong> — same key = same cache entry, different key = independent fetch. Keys are descriptive arrays: <code>['user', id]</code>, and invalidation can be partial (<code>['users']</code> matches all <code>['users', ...]</code>).</li>
+    <li><strong>Stale-while-revalidate by default:</strong> cached data is shown instantly while a background refetch updates it.</li>
+    <li><strong>Deduplication:</strong> N components asking for the same key at once collapse into a single in-flight fetch.</li>
+    <li><strong>Auto-refetch</strong> on window focus, network reconnect, and mount, plus optional <code>refetchInterval</code> polling.</li>
+    <li><strong><code>staleTime</code> vs <code>gcTime</code>:</strong> staleTime = how long data is "fresh" (when to refetch, default 0 = always stale); gcTime/cacheTime = how long an unused entry stays in cache (default 5 min). Tune per query.</li>
+    <li><strong>Optimistic-update pattern:</strong> <code>onMutate</code> cancels in-flight queries, snapshots previous, applies the optimistic value; <code>onError</code> rolls back from the snapshot; <code>onSettled</code> invalidates to refetch the truth.</li>
+    <li><strong>Any variable used in <code>queryFn</code> must be in the <code>queryKey</code></strong>, or the query won't refetch when it changes (stale-closure/identity bug).</li>
+    <li><strong><code>fetch</code> does NOT throw on 4xx/5xx</strong> — check <code>r.ok</code> and throw yourself, or the query never enters its error state.</li>
+    <li><strong>Mobile essentials:</strong> wire <code>NetInfo → onlineManager</code> (pause/resume on connectivity), <code>focusManager</code> via AppState (refetch on foreground), and prefer an MMKV persister over AsyncStorage; filter sensitive data out of any persisted cache.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>A value used in <code>queryFn</code> but left out of the <code>queryKey</code></strong> — e.g. <code>queryKey: ['foo'], queryFn: () =&gt; fetch('/foo?filter=' + filter)</code>. The key never changes, so the query serves stale cached data and never refetches when <code>filter</code> changes. Fix: put it in the key — <code>['foo', filter]</code>. (Sibling trap: two components using the same key for different data → cache collision; and <code>fetch</code> not throwing on HTTP errors.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Server state is a cache of a remote source, not local state — so I use queries for reads and mutations for writes, and I never store fetched data in Redux with manual loading flags."</div>
+  <div class="revision-say">"The query key is the cache's identity, and every variable the queryFn reads has to be in that key — otherwise it serves stale data and won't refetch."</div>
+  <div class="revision-say">"Optimistic updates are onMutate to cancel-snapshot-apply, onError to roll back from the snapshot, and onSettled to invalidate and refetch the source of truth."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why server state is a cache of a remote source, not "your" state?</li>
+    <li>Can you contrast queries (reads) with mutations (writes)?</li>
+    <li>Can you explain why every variable the <code>queryFn</code> reads must be in the <code>queryKey</code>?</li>
+    <li>Can you describe the optimistic-update flow (onMutate cancel-snapshot-apply, onError rollback, onSettled invalidate)?</li>
+    <li>Can you spot a cache collision from two components sharing one key for different data?</li>
+    <li>Can you explain why <code>fetch</code> not throwing on HTTP errors is a trap?</li>
+  </ul>
+</div>
+`}
+
   ]
 });

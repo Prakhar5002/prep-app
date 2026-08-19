@@ -1031,6 +1031,56 @@ multi-worktree workflow is non-negotiable now."</code></pre>
 <p><em>"One repo, many checkouts. Use worktrees for parallel branches. Hotfixes don't disturb feature work. Same branch only in one worktree. Remove cleanly. Pays back daily for build-heavy stacks like mobile."</em></p>
 <p>Worktrees are one of those Git features that quietly transform your workflow once adopted. Many engineers don't know about them; the ones who do don't go back.</p>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A worktree = <strong>one repo, many checkouts</strong> — multiple branches checked out into separate directories that all share one <code>.git</code> object store, so hotfixes and reviews never disturb your feature work.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>One shared <code>.git</code>, many working trees.</strong> All worktrees share objects and refs; each has its own HEAD, index, and files on disk.</li>
+    <li><strong>Cheap to create</strong> — <code>git worktree add</code> just makes a directory plus a pointer in <code>.git/worktrees/</code>; no re-clone, no re-fetch.</li>
+    <li>A commit made in one worktree is <strong>instantly visible</strong> in all others — they share history, only their "current state" pointers differ.</li>
+    <li><strong>The one hard rule: the same branch can't be checked out in two worktrees at once.</strong> Use a different branch, or <code>--detach</code>.</li>
+    <li>The original clone is the <strong>main worktree</strong> (can't be removed); the others are <strong>linked worktrees</strong> whose <code>.git</code> is a file pointing back to main.</li>
+    <li>Core commands: <code>add</code>, <code>list</code>, <code>remove</code>, <code>move</code>, <code>lock</code>/<code>unlock</code>, <code>prune</code>.</li>
+    <li><strong>Always clean up with <code>git worktree remove</code></strong> — if you <code>rm -rf</code> a worktree dir manually, run <code>git worktree prune</code> to clear the stale metadata.</li>
+    <li><strong>Worktrees beat multiple clones</strong> for parallel branches: faster, smaller on disk, shared history. Clones win only for truly isolated environments.</li>
+    <li><strong>Mobile is the killer use case</strong> — Pods, Gradle, Xcode indexing, and Metro make branch switching a 5–30 min tax; worktrees eliminate it. Seniors live in 2–4 at once.</li>
+    <li>Each worktree needs its <strong>own <code>node_modules</code> / Pods</strong> — never symlink deps (native modules break); rely on the offline/CocoaPods caches for fast installs.</li>
+    <li><strong>Stashes are global to the repo, not per-worktree</strong> — a stash from worktree A is visible (and mis-appliable) in worktree B. Name stashes and read the source branch.</li>
+    <li>Don't run destructive <code>.git</code> operations (<code>gc</code>, <code>filter-repo</code>) while other worktrees are mid-work — object pruning can corrupt referenced state.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Deleting a worktree with <code>rm -rf</code> instead of <code>git worktree remove</code>. Git still thinks the worktree exists, so <code>git worktree list</code> lies and you can't re-check-out that branch. <strong>Fix:</strong> run <code>git worktree prune</code> to clear the orphaned <code>.git/worktrees/</code> entry — and prefer <code>git worktree remove</code> next time.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Worktrees are one repo, many checkouts — every worktree shares the same .git object store but has its own working tree, so a hotfix on a release branch never touches my feature work."</div>
+  <div class="revision-say">"The one rule is the same branch can only be checked out in one worktree at a time — different branch or detached HEAD otherwise."</div>
+  <div class="revision-say">"For mobile they pay back daily: no re-installing Pods or re-indexing Xcode on every context switch — switching is just a cd."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain what a worktree shares with the main repo and what it keeps separate?</li>
+    <li>Can you state the one-branch-one-worktree rule and its two workarounds?</li>
+    <li>Can you contrast worktrees with keeping two clones — when does each win?</li>
+    <li>Can you describe the clean lifecycle: add, use, remove, and recover from a manual delete with prune?</li>
+    <li>Can you explain why worktrees are especially valuable for mobile / build-heavy stacks?</li>
+    <li>Can you say why stashes and node_modules need care across worktrees?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

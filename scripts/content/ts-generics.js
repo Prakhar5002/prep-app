@@ -793,6 +793,55 @@ function List&lt;T extends { id: string }&gt;({ items, render }: { items: T[]; r
   <li><em>"Why is my generic React component complaining about the key prop?"</em> — Because the constraint doesn't guarantee an id; either constrain to <code>{ id: string }</code> or pass a <code>getKey</code> prop.</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Generics are <strong>functions for the type system</strong> — they take types in and produce types out, preserving type information across a boundary that <code>any</code> would erase.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A generic preserves the caller's type; <code>any</code> discards it.</strong> <code>head&lt;T&gt;(xs: T[]): T | undefined</code> keeps <code>number | undefined</code>; the <code>any</code> version is a bug nursery — the difference shows the moment you compose the result.</li>
+    <li><strong>The rule of two:</strong> a type parameter earns its cost only if it appears in at least two positions to <em>relate</em> them. If <code>T</code> appears once, it's "secretly <code>any</code>" — use <code>unknown</code>.</li>
+    <li><strong>Constraints (<code>T extends X</code>)</strong> narrow what <code>T</code> can be so the body can use <code>X</code>'s members (<code>{ length: number }</code>, <code>keyof T</code>).</li>
+    <li>The <strong><code>keyof T</code> + <code>T[K]</code> pattern</strong> is the bread-and-butter of type-safe property access: <code>get&lt;T, K extends keyof T&gt;(o, k): T[K]</code>.</li>
+    <li><strong>Inference picks the most general type</strong> satisfying all positions; <code>pair(1, "x")</code> widens <code>T</code> to <code>string | number</code>. <code>NoInfer</code> (5.4) fixes <code>T</code> from only chosen positions.</li>
+    <li><strong>Defaults</strong> (<code>&lt;T = unknown&gt;</code>) are for ergonomic call sites — prefer <code>unknown</code> over <code>any</code> as the default.</li>
+    <li><strong>Constrain to the minimum the body needs</strong> — too loose and the body can't operate, too tight and you exclude valid callers. Return <code>T</code> (not the constraint) so subclass info survives.</li>
+    <li><strong>Method-level generics</strong> (<code>map&lt;U&gt;</code>) are independent of the class-level <code>T</code>; static members can't see the class's <code>T</code>.</li>
+    <li><strong>Variance annotations (4.7):</strong> <code>out</code> = covariant (read positions), <code>in</code> = contravariant (write positions), <code>in out</code> = invariant.</li>
+    <li>In <code>.tsx</code>, a <code>&lt;T&gt;</code> arrow clashes with JSX — use <code>&lt;T,&gt;</code> or a function declaration.</li>
+    <li>Naked type parameters <strong>distribute</strong> over unions in conditional types — the frequent "why is my type a union of 12 things?" surprise.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>A type parameter that appears only once.</strong> <code>logIt&lt;T&gt;(x: T): void</code> looks generic but behaves exactly like <code>any</code> and gives a false sense of safety, because <code>T</code> relates nothing. Fix: if <code>T</code> doesn't connect two positions, use <code>unknown</code>; and constrain <code>T</code> to exactly what the body needs, returning <code>T</code> so subtype precision is preserved.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A generic preserves type information across a boundary; any throws it away — and the difference shows the moment you compose the result."</div>
+  <div class="revision-say">"My rule of two: a type parameter is only justified if it appears in at least two places to relate them, otherwise it's secretly any."</div>
+  <div class="revision-say">"I let inference pick T, constrain to the minimum the body needs, and return T rather than the constraint so subclass information survives."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain how a generic preserves the caller's type where <code>any</code> would erase it?</li>
+    <li>Can you state the "rule of two" and why a type parameter used once is secretly <code>any</code>?</li>
+    <li>Can you explain why you constrain <code>T</code>, and how <code>keyof T</code> + <code>T[K]</code> gives type-safe property access?</li>
+    <li>Can you explain why you return <code>T</code> rather than the constraint?</li>
+    <li>Can you explain how inference picks <code>T</code> and what <code>NoInfer</code> changes?</li>
+    <li>Can you explain the <code>&lt;T,&gt;</code> trick for a generic arrow in <code>.tsx</code>?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

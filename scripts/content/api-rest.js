@@ -821,6 +821,49 @@ GET /users/42
   <li>"Pair-design a payments API with someone; idempotency stories make it real."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>REST leverages HTTP itself: resources are nouns, verbs are actions, status codes are semantics, and headers are metadata — so caching, idempotency, and pagination come almost for free.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>URIs are nouns, never verbs</strong> — <code>GET /users/42</code>, not <code>POST /getUserById</code>; hierarchy reflects ownership (<code>/orgs/42/projects/7</code>), plural + kebab-case, no file extensions.</li>
+    <li><strong>Pick the verb by semantics:</strong> GET reads, POST creates, PUT replaces, PATCH partially updates, DELETE removes; GET/PUT/DELETE are idempotent by spec, POST is not.</li>
+    <li><strong>Status codes carry meaning</strong> — be specific: 201 + Location on create, 204 for no-body delete, 422 for validation (body parsed but business-invalid) vs 400 for malformed, 409 for conflict, 401 auth vs 403 permission, 429 + Retry-After when rate-limited.</li>
+    <li><strong>Idempotency protects retries:</strong> add an <code>Idempotency-Key</code> header on mutating POSTs and dedupe on (key, request hash) — mobile networks fail mid-request and clients retry.</li>
+    <li><strong>Cursor pagination by default</strong> — stable across writes and index-friendly; offset/page break under inserts. Encode the cursor opaque so clients cannot mutate it.</li>
+    <li><strong>Cache with ETag + <code>If-None-Match</code> → 304,</strong> plus <code>Cache-Control</code> and <code>Vary</code>; use <code>If-Match</code> → 412 for optimistic concurrency.</li>
+    <li><strong>One consistent error envelope</strong> — RFC 9457 (formerly 7807) problem+json or your own — used everywhere; inconsistent error shapes are the #1 client complaint.</li>
+    <li><strong>Data hygiene:</strong> ISO 8601 UTC timestamps with <code>Z</code>, money as integer minor units (never floats), big IDs as strings to survive JS 2⁵³.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Returning HTTP 200 with <code>{ "success": false }</code> for errors (and 500 for client mistakes).</strong> This blinds every proxy, CDN, and client that observes status codes. Let the status line carry the outcome: 4xx for client faults (422/409/401/403), 5xx only for real server bugs.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"422 instead of 400 when the JSON parses but business rules fail — it distinguishes 'bad request' from 'bad data'."</div>
+  <div class="revision-say">"Idempotency-Key on every mutating POST, because mobile networks drop mid-request and clients retry safely."</div>
+  <div class="revision-say">"Cursor pagination because feeds are append-mostly and offset skips or dupes rows under concurrent writes."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you map "activate this account" to a verb + URI and defend the choice against the alternative?</li>
+    <li>Can you explain when to return 422 vs 400, and 409 vs 404?</li>
+    <li>Can you make a POST idempotent with an <code>Idempotency-Key</code>, and name which verbs are idempotent by spec?</li>
+    <li>Can you explain when cursor pagination beats offset for a live, append-mostly feed?</li>
+    <li>Can you wire up <code>ETag</code> / <code>If-None-Match</code> / <code>304</code> to cut bandwidth and round-trips?</li>
+    <li>Can you name REST's structural weaknesses — over/under-fetching, N+1 round trips, no native realtime?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

@@ -1145,6 +1145,55 @@ heroic; it's hidden cost the org pays in turnover later."
   <li>"Audit your last 4 quarters honestly: was each sustainable? What changed?"</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Pressure isn't the problem; sustained-pressure-without-recovery is</strong> — burnout is structural, so recognize the trajectory early, own the recovery, and change the structure when recovery alone won't fix it.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Burnout is structural, not emotional</strong> — a long-term mismatch between demands and recovery. It builds over months and recovers over months; a weekend doesn't fix it.</li>
+    <li><strong>Three dimensions (Maslach):</strong> emotional exhaustion, cynicism/depersonalization, reduced sense of accomplishment. Two of three trending bad for 4+ weeks = warning zone.</li>
+    <li>Watch the <strong>early signals:</strong> Sunday-evening dread, small tasks feeling huge, sleep/appetite drift, cynicism about people you used to respect, weekends no longer restoring you.</li>
+    <li><strong>Pressure types differ:</strong> deadline (surge + recover), on-call (distribute, runbook, cap), outage trauma (postmortem, support, sometimes leave), promo (reframe to scope), layoff anxiety (control what you can), abusive manager/toxic team (document + exit — don't try to fix).</li>
+    <li><strong>Recovery is owned by you,</strong> not your manager. Real time off (phone off, delegated coverage), protected sleep, and boundaries set publicly and early.</li>
+    <li>Ask the <strong>trajectory question:</strong> not "is this week hard?" but "is my baseline shifting versus three months ago?" Two bad quarters running = structural; act.</li>
+    <li><strong>Escalate with data and options, not "I'm stressed":</strong> hours logged, sleep, specific quality drops, plus A/B/C options and a lean. Vague escalation gets "hang in there".</li>
+    <li>When recovery alone won't fix it, pull the <strong>structural levers:</strong> reduce scope, add support, change role, take real time off, or change jobs. "Push through" is rarely the answer.</li>
+    <li><strong>Imposter syndrome is a feeling, not data</strong> — keep a wins file, talk about it openly, and don't let it drive you to refuse opportunities.</li>
+    <li>On a <strong>PIP:</strong> assume managed-exit is the likely case — document criteria in writing, deliver hard, quietly start a search, talk to a lawyer, and don't go through it alone.</li>
+    <li><strong>Get help early</strong> — therapist, EAP, doctor if sleep/mood drift past 8 weeks — because professionals navigate pressure faster than you alone, not because something is "wrong with you".</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>"I'll rest after this launch."</strong> Recovery gets perpetually deferred, the warning signs get normalized, and 18 months later it's a collapse and an abrupt quit. Make recovery a default (days off after every launch, real vacations) not a reward — and measure your baseline, not just this week.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Pressure isn't the problem — sustained pressure without recovery is. I distinguish an acute spike I surge through and recover from, from an unsustainable trajectory that needs a structural change."</div>
+  <div class="revision-say">"When I escalate I bring data and options, not just 'I'm stressed' — the hours, the sleep, specific quality drops, and two or three ways to reduce scope — so my manager can actually act."</div>
+  <div class="revision-say">"Part of the senior IC role is spotting an unsustainable trajectory on the team, not just for myself, and forcing the structural conversation before it costs the org in turnover."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why burnout is structural, and name your own early warning signs and how you'd act on them?</li>
+    <li>Can you tell a concise STAR story about handling a high-pressure situation — the signals you noticed, what you did, and how you recovered after?</li>
+    <li>Can you explain how you'd escalate unsustainable pressure to a manager with data and options rather than "I'm stressed"?</li>
+    <li>Can you describe the difference between pushing through an acute spike and pulling back on a chronic trajectory?</li>
+    <li>Can you tell a story about noticing a teammate struggling and how you supported them?</li>
+    <li>Can you explain how you'd handle a structural problem — abusive manager, toxic team, or a PIP — that recovery alone won't fix?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

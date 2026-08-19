@@ -573,6 +573,40 @@ echo "alice  25  engineer" | awk '{print $2}'
 <p>A pipe only connects one command's stdout to the next command's <em>stdin</em> — but many commands (<code>rm</code>, <code>cp</code>, <code>mkdir</code>, <code>curl</code>) don't read their targets from stdin at all; they expect them as command-line <em>arguments</em>. Piping a list of filenames into <code>rm</code> directly does nothing, because <code>rm</code> never looks at stdin for filenames. <code>xargs</code> bridges that gap: it reads lines from stdin and uses them to construct and run another command, appending them as arguments (or, with <code>-I{}</code>, substituting a placeholder anywhere in the command, once per input line) — e.g. <code>find . -name "*.tmp" | xargs -I{} rm {}</code> deletes every matched file even though <code>rm</code> itself never reads a stream.</p>
 </div>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Everything is a <strong>stream of lines</strong>; <strong>redirection</strong> points a stream at a file and a <strong>pipe</strong> points it at the next program, while small single-purpose <strong>filters</strong> each transform the stream a little.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Three standard streams: <strong>stdin</strong> (fd 0), <strong>stdout</strong> (fd 1), <strong>stderr</strong> (fd 2) — kept separate on purpose.</li>
+    <li>Redirection (<code>&gt;</code>, <code>&gt;&gt;</code>, <code>&lt;</code>, <code>2&gt;</code>, <code>2&gt;&amp;1</code>, <code>&amp;&gt;</code>) wires a stream to a <em>file</em>; a pipe (<code>|</code>) wires stdout of one process into stdin of the next, with no file in between.</li>
+    <li>Filters do one job each: <code>grep</code> searches, <code>sed</code> edits line by line, <code>awk</code> does field-aware processing, <code>sort</code>/<code>uniq</code> order and dedupe/count, <code>cut</code>/<code>tr</code>/<code>paste</code>/<code>join</code>/<code>comm</code> slice and combine columns.</li>
+    <li><code>xargs</code> turns a stream of lines into arguments for another command.</li>
+    <li><code>grep -F</code> treats the pattern as a literal fixed string — faster and immune to regex surprises like <code>.</code> meaning "any character".</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Order matters in <code>2&gt;&amp;1</code>.</strong> The shell reads redirections left to right, so <code>command &gt; out.log 2&gt;&amp;1</code> captures both, but <code>command 2&gt;&amp;1 &gt; out.log</code> leaves stderr on the terminal — it followed stdout's <em>old</em> destination. Redirect stdout to its final target first, then say <code>2&gt;&amp;1</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Every tool reads a text stream and writes one; I compose small filters with pipes to do real work."</div>
+  <div class="revision-say">"There are three streams — stdin, stdout, stderr — and redirection points them at files while pipes point them at the next command."</div>
+  <div class="revision-say">"2 to 1 means send stderr wherever stdout points right now, so order matters — I redirect stdout first, then combine."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the three standard streams and their file descriptor numbers?</li>
+    <li>Can you send both stdout and stderr to the same file, and explain why order matters?</li>
+    <li>Can you say what <code>grep</code>, <code>sed</code>, <code>awk</code>, <code>sort</code>, <code>uniq</code>, and <code>cut</code> each do in one line?</li>
+    <li>Can you explain when to reach for <code>grep -F</code> over a normal <code>grep</code>?</li>
+    <li>Can you use <code>xargs</code> to turn a list of lines into arguments for another command?</li>
+  </ul>
+</div>
 `}
 
 ]});

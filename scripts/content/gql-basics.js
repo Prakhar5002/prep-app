@@ -1215,6 +1215,53 @@ query Feed($first: Int = 20, $after: String) {
   <li>"Wire persisted queries end-to-end on a tiny app."</li>
 </ul>
 `
+    },
+    {
+      id: 'revision',
+      title: '⚡ Revision — Points to Remember',
+      collapsible: true,
+      html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>The query language is what the client writes: name every operation, pass dynamic inputs as typed variables, co-locate fragments, always select <code>id</code> + <code>__typename</code>, and make mutations return the entity that changed.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three operation types:</strong> <code>query</code> reads, <code>mutation</code> writes (has side effects), <code>subscription</code> is server push over WebSocket. Each is type + name + variables + selection set.</li>
+    <li><strong>Selection sets ask for the exact shape</strong> — no <code>SELECT *</code>; the response mirrors the query. Narrow to what the screen needs; over-fetching costs bandwidth, parse, and cache.</li>
+    <li><strong>Always use variables, never inline values</strong> — one query string per input keeps persisted-query hashes stable, lets the cache dedup, gives type safety, and blocks injection.</li>
+    <li><strong>Name every operation</strong> (<code>VerbNoun</code>) — anonymous queries lose analytics, break persisted queries, and are harder to debug.</li>
+    <li><strong>Always select <code>id</code> + <code>__typename</code></strong> on normalizable types — Apollo/Relay/Urql key the cache on them; without them updates don't propagate. Apollo auto-injects <code>__typename</code>; you must remember <code>id</code>.</li>
+    <li><strong>Fragments are reusable selection sets</strong> — co-locate per component, name them <code>ComponentName_TypeName</code>, and compose at the screen level. Inline fragments (<code>... on Type</code>) narrow unions/interfaces.</li>
+    <li><strong>Aliases</strong> rename a field to query it multiple times with different args without a key collision.</li>
+    <li><strong>Directives:</strong> <code>@include(if:)</code> / <code>@skip(if:)</code> conditionally include fields; <code>@deprecated</code> is schema-level; <code>@defer</code> / <code>@stream</code> are newer; libraries add <code>@client</code>, <code>@connection</code>, etc.</li>
+    <li><strong>Errors are two-tier:</strong> top-level <code>errors</code> array for system/network/parse failures; result-type unions in the payload for domain errors you branch on via <code>__typename</code>.</li>
+    <li><strong>Mutations return the affected entity, not <code>Boolean</code></strong> — the cache auto-updates by id and you skip a refetch round trip; prefer a cache <code>update</code> over <code>refetchQueries</code>.</li>
+    <li><strong>Paginate with Relay-style cursor connections</strong> (edges / node / cursor / pageInfo); never ship a huge <code>first: 1000</code> page.</li>
+    <li><strong>Introspection makes the schema queryable</strong> — GraphiQL, codegen, and schema-diff tools all rely on it.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting <code>id</code> (and <code>__typename</code>) in the selection set — updating an object in one place silently doesn't update it elsewhere, because the cache can't normalize and stores separate entries per query.</strong> Always select <code>id</code> + <code>__typename</code> on normalizable types so the cache keys and dedups correctly.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I always name operations and use variables for every dynamic input — persisted queries hash by query string, and inline values defeat both caching and the hash."</div>
+  <div class="revision-say">"I select <code>id</code> and <code>__typename</code> everywhere so the cache normalizes, and mutations return the affected entity so it auto-updates without a refetch."</div>
+  <div class="revision-say">"Fragments are co-located per component and named <code>ComponentName_TypeName</code>; the screen composes them, so refactoring a component only touches its own fragment."</div>
+</div>
+`
+    },
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you name the three operation types and say what a selection set actually shapes?</li>
+    <li>Can you explain why you always name operations and pass variables instead of string-interpolating input?</li>
+    <li>Can you say why selecting <code>id</code> and <code>__typename</code> everywhere matters for cache normalization?</li>
+    <li>Can you co-locate a fragment with its component and compose fragments at the screen level?</li>
+    <li>Can you explain what an alias is for and when you'd query the same field twice with different args?</li>
+    <li>Can you distinguish the top-level <code>errors</code> array from expected/business failures?</li>
+  </ul>
+</div>
+`
     }
   ]
 });

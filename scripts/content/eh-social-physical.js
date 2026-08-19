@@ -279,6 +279,50 @@ sudo setoolkit
 <p>A blameless reporting culture paired with recurring security-awareness training — because no filter or policy catches every attempt, so the last line of defense is whether an employee who suspects something actually reports it quickly, and keeps reporting things in the future. A punitive response to someone who got fooled (or who reported something that turned out to be harmless) trains people to stay quiet instead, which is the opposite of the intended effect. The right metric to track over time is click rate trending down and report rate trending up across successive training/simulation cycles, not a one-time pass/fail.</p>
 </div>
 </div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Social engineering and physical testing attack people and premises rather than software — manipulating trust, authority, urgency and helpfulness to bypass controls — so the authorization bar is higher and the primary fixes are training and culture, not patches.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>The human attack surface is the target, not a bug — you "patch" it with training and culture, so every technique here is paired with the defense that counters it.</li>
+    <li>Phishing is bulk email; spear-phishing is researched and targeted; vishing is voice/phone (often help desk/IT); pretexting is the invented identity underneath all of them.</li>
+    <li>BEC (Business Email Compromise) impersonates an executive/vendor to redirect a real payment — often no malware or stolen credential at all, and one of the costliest categories the FBI IC3 tracks.</li>
+    <li>Industry research (Verizon DBIR) repeatedly finds a human element in roughly six of ten breaches.</li>
+    <li>Cialdini's principles underpin most pretexts: authority, urgency/scarcity, social proof, liking/rapport, reciprocity, commitment/consistency.</li>
+    <li>Simulation tooling is conceptual: GoPhish (open-source campaign framework — templates, tracked pages, metrics) and SET/setoolkit (spear-phishing and site-cloning vectors); Proxmark3 assesses badge cloning.</li>
+    <li>Physical vectors map to defense-in-depth layers: perimeter (USB drop), building entry (tailgating), internal doors (badge cloning), specific asset (lock-picking) — each bypasses one assumption.</li>
+    <li>Badge cloning works on older 125kHz low-frequency prox cards that broadcast a static unencrypted ID; MIFARE DESFire / HID iCLASS SE use mutual authentication to resist it.</li>
+    <li>Email authentication defense: SPF (which servers may send), DKIM (cryptographic signature), DMARC (requires SPF/DKIM alignment with the From domain, policy p=none/quarantine/reject) — only enforcement at quarantine/reject actually blocks spoofing.</li>
+    <li>The key metric for awareness programs is the trend — click rate down, report rate up — reported in aggregate, never as a blame list.</li>
+    <li>MFA limits blast radius when a credential is phished, but phishing-resistant FIDO2/WebAuthn/passkeys beat SMS or simple push, which fall to AiTM relay and MFA fatigue.</li>
+    <li>These engagements need extra authorization: a named target scope (never "all employees"), an absolute do-not-do list (no impersonating law enforcement/emergency responders, no contact/intimidation), recording/consent-law coverage, and a physically-carried get-out-of-jail-free letter.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Treating pretexting as a separate channel. It is the invented identity and story underneath the others — a phishing email, a vishing call, and a tailgating attempt all rely on a pretext; only the delivery channel differs.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Social engineering works because it exploits trust, urgency and authority — no firewall or patch stops a convincingly pretexted call, so the defense is awareness and culture, not a patch."</div>
+  <div class="revision-say">"BEC is dangerous precisely because it often needs no malware — the fix is procedural: independent callback verification and dual approval before changing payment details."</div>
+  <div class="revision-say">"DMARC only helps if it's enforced at quarantine or reject — p=none is monitoring-only and blocks nothing on its own."</div>
+</div>
+`},
+
+// ─────────────────────────────────────────────────────────────
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you distinguish phishing, spear-phishing, vishing, and pretexting, and explain why pretexting is not really a separate channel?</li>
+    <li>Can you explain what BEC is and why it's dangerous despite often involving no malware?</li>
+    <li>Can you describe how SPF, DKIM, and DMARC work together, and why DMARC only helps at p=quarantine or p=reject?</li>
+    <li>Can you name Cialdini's principles of influence and give a pretext example for each?</li>
+    <li>Can you list the extra authorization a physical or social-engineering engagement needs beyond a normal pentest's scope?</li>
+    <li>Can you explain why phishing-resistant MFA (FIDO2/WebAuthn) beats SMS or simple push, and what a blameless reporting culture adds?</li>
+  </ul>
+</div>
 `}
 
 ]});

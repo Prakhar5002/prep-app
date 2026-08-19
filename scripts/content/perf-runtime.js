@@ -860,6 +860,47 @@ onINP((metric) =&gt; {
     <li>You measure INP with web-vitals + RUM, not just Lighthouse.</li>
   </ul>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Keep tasks small (&lt;50ms), animate on the compositor, batch DOM reads and writes, move heavy work off the main thread, and profile</strong> — every long task in the input-to-paint path inflates INP.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Runtime perf is what happens after load</strong> — interaction responsiveness, scroll, animation, sustained CPU. The dominant metric is <strong>INP</strong>, measured at p98 across the session.</li>
+    <li><strong>Long tasks (&gt;50ms) are the enemy.</strong> At 60fps that's already ~3 dropped frames; a single 50ms task eats 25% of the 200ms INP budget. Keep every task under 50ms.</li>
+    <li><strong>INP has three phases:</strong> input delay (main thread busy before the event), processing (your handler + setState + render), presentation (layout + paint). Diagnose which is slow, then fix that one.</li>
+    <li><strong>Yield to the browser</strong> in long loops: <code>scheduler.yield()</code> (newest) with <code>setTimeout(0)</code> fallback — each yield lets the browser handle pending input, layout, and paint.</li>
+    <li><strong>React's <code>startTransition</code> / <code>useDeferredValue</code></strong> mark heavy state updates low-priority so input and paint stay responsive while the render proceeds incrementally.</li>
+    <li><strong>Web Workers</strong> run &gt;50ms CPU work off the main thread (JSON parse, crypto, fuzzy search, image processing); communicate via <code>postMessage</code>, use <code>Transferable</code> for big buffers, reuse a pool, and consider Comlink.</li>
+    <li><strong>Compositor-only animation:</strong> <code>transform</code> / <code>opacity</code> / <code>filter</code> on a promoted layer skip layout + paint and run on the GPU — 60fps even when JS is busy; <code>width</code>/<code>height</code>/<code>top</code>/<code>left</code> force layout per frame.</li>
+    <li><strong>Avoid layout thrashing:</strong> batch all reads, then all writes (ideally in <code>requestAnimationFrame</code>); interleaving them forces a synchronous layout each iteration.</li>
+    <li><strong>Rate-limit high-frequency events:</strong> debounce (fire once after inactivity — search-as-you-type) vs throttle (at most once per interval — scroll/resize); prefer <code>IntersectionObserver</code> over scroll handlers, and set <code>{ passive: true }</code> on scroll/touch/wheel.</li>
+    <li><strong>Virtualize long lists</strong> (react-window/virtuoso or <code>content-visibility: auto</code>) so only visible rows render; use <code>requestIdleCallback</code> for genuinely non-urgent work.</li>
+    <li><strong>Profile, don't guess</strong> — DevTools Performance for long tasks, React Profiler for renders, a <code>longtask</code> observer + web-vitals <code>onINP</code> (with attribution) in production RUM.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Doing heavy work synchronously inside an event handler.</strong> Sorting/filtering a big array or parsing large JSON on <code>click</code>/<code>input</code> blocks the main thread for its whole duration — the interaction feels frozen and INP is exactly that duration. Fix: keep the urgent update (setState for the input value) immediate, then defer the expensive part with <code>startTransition</code>, yield with <code>scheduler.yield()</code>, or move it to a Worker. Related misconception: <code>requestAnimationFrame</code> is not a magic perf fix — its callback still runs on the main thread and counts toward the 16ms frame budget.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"INP is worst-case input-to-paint across the session, and every long task over 50ms in that path inflates it — so I break work into sub-50ms chunks and yield with scheduler.yield."</div>
+  <div class="revision-say">"For a slow input I keep the value update urgent and wrap the heavy filter in startTransition or useDeferredValue; if the work itself is CPU-bound I move it to a Web Worker."</div>
+  <div class="revision-say">"I animate transform and opacity on the compositor, batch reads then writes to avoid layout thrashing, virtualize long lists, and measure INP with web-vitals in RUM — not just Lighthouse."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you state the ~16.7ms frame budget and what must fit inside it?</li>
+    <li>Can you explain why a task over 50ms is a "long task" and how it hurts INP?</li>
+    <li>Can you break a long task up by yielding — <code>scheduler.yield()</code> or <code>startTransition</code>?</li>
+    <li>Can you say which animations are compositor-only and why that matters?</li>
+    <li>Can you avoid layout thrashing by batching reads then writes?</li>
+    <li>Can you virtualize a long list and measure INP in RUM rather than Lighthouse?</li>
+  </ul>
+</div>
 `}
 
 ]

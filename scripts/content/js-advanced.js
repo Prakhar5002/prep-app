@@ -906,6 +906,8 @@ new Money() + 1;             // 10000
       collapsible: true,
       html: `
 <div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Symbols are for <strong>protocols</strong>, Proxy for <strong>observing operations</strong> (forward each trap via <code>Reflect</code>), iterators/generators for <strong>traversal</strong>, weak collections for <strong>memory safety</strong>, and Intl for <strong>i18n</strong>.</div>
   <h4>Key points</h4>
   <ul>
     <li><strong>Symbol</strong> is a primitive that is unique per creation — two <code>Symbol('x')</code> are never equal. As object keys they never collide, are invisible to <code>JSON.stringify</code> and <code>Object.keys</code>, and surface only via <code>Object.getOwnPropertySymbols</code>.</li>
@@ -921,10 +923,30 @@ new Money() + 1;             // 10000
     <li><strong>Intl</strong> is the built-in i18n layer (<code>NumberFormat</code>, <code>DateTimeFormat</code>, <code>PluralRules</code>, <code>ListFormat</code>, <code>Segmenter</code>) — locale-correct formatting at near-zero bundle cost. Don't hand-roll currency or pluralization.</li>
     <li><code>WeakRef</code>/<code>FinalizationRegistry</code> are intentionally limited — never depend on the finalizer running for correctness, and don't use <code>WeakRef</code> for caching (use an LRU). Don't over-trap: most Proxies need only <code>get</code>/<code>set</code>.</li>
   </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Treating <strong>Symbol keys as private</strong> — they're discoverable via <code>Object.getOwnPropertySymbols</code>, so they're collision-safe but not secret; use <code>#private</code> fields or a <code>WeakMap</code> for real privacy. Also a Proxy is <strong>not <code>===</code></strong> its target, so route every access through the proxy or reactivity splits.</div>
   <h4>Say this in the interview</h4>
   <div class="revision-say">"Symbols are for protocols, Proxy is for observing operations, iterators are for traversal, weak collections are for memory safety, and Intl is for the world."</div>
   <div class="revision-say">"A Proxy traps the engine's essential internal operations, and you forward each trap through the matching <code>Reflect</code> call to keep the default semantics intact."</div>
   <div class="revision-say">"<code>WeakMap</code> keys are held weakly so entries die with their key — that's why it has no <code>.size</code> and can't leak, unlike a plain <code>Map</code> cache."</div>
+</div>
+`
+    },
+    {
+      id: 'checklist',
+      title: '✅ Interview Checklist',
+      collapsible: true,
+      html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you explain why two <code>Symbol('x')</code> are never equal and where Symbol keys are and aren't visible?</li>
+    <li>Can you name three well-known symbols and the protocol each one hooks into?</li>
+    <li>Can you explain why every Proxy trap should forward via the matching <code>Reflect.*</code> call?</li>
+    <li>Can you write an object that works in <code>for...of</code> by implementing the iterator protocol?</li>
+    <li>Can you explain why <code>WeakMap</code> has no <code>.size</code> and when to reach for it over <code>Map</code>?</li>
+    <li>Can you explain why Symbol keys aren't truly private and what gives you real privacy?</li>
+  </ul>
 </div>
 `
     }

@@ -345,6 +345,47 @@ function badReducer(state = { count: 0 }, action) {
 <p>Returning a new object (rather than mutating) means the old and new state are two distinct references. That reference difference is exactly what React-Redux's <code>useSelector</code> uses to decide "should this component re-render," and what Redux DevTools uses to record a distinct entry in its history for time-travel debugging. Mutating in place collapses old and new state into the same reference, silently breaking both.</p>
 </div>
 </div>
+`},
+
+{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Redux keeps all shared state in <strong>one store</strong> that changes only when you <strong>dispatch an action</strong> (a plain object describing what happened) through a <strong>pure reducer</strong> that returns a brand-new state — one-way, synchronous, and traceable.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Four pieces, one loop:</strong> a component calls <code>dispatch(action)</code> → the store runs the <strong>reducer</strong> <code>(state, action) =&gt; newState</code> → the store saves the new state → every subscriber re-reads and re-renders.</li>
+    <li><strong>Store</strong> = single source of truth (one per app); <strong>action</strong> = a plain object describing what happened, just data (<code>{ type, payload }</code>); <strong>reducer</strong> = the pure function that computes the next state; <strong>dispatch</strong> = the only door in.</li>
+    <li><strong>The problem it solves:</strong> sharing state across components that aren't close relatives without <strong>prop-drilling</strong>, and making every change <strong>traceable</strong> to one action instead of scattered mutations.</li>
+    <li><strong>Reducers must never mutate</strong> — always build and return a new object/array. Same reference before and after means "did state change?" (reference equality) sees nothing, so <code>useSelector</code> skips re-renders and DevTools records no history.</li>
+    <li><strong>Reducers must be pure</strong> — no <code>fetch</code>, no <code>Date.now()</code>, no <code>Math.random()</code>. Same <code>(state, action)</code> always yields the same result; that determinism is what makes time-travel debugging and replay possible.</li>
+    <li><strong>The whole store is ~15 lines:</strong> a closed-over <code>state</code> variable, a <code>dispatch</code> that reassigns it via the reducer, and a list of <code>subscribe</code> callbacks. No magic.</li>
+    <li><strong>React wiring (react-redux):</strong> <code>Provider</code> once near the root, then any component reads with <code>useSelector</code> and sends actions with <code>useDispatch</code> — no props threaded through.</li>
+    <li><strong>Keep state (and actions) JSON-serializable</strong> — no Date/Map/class-instances/Promises/functions — or DevTools and persistence break. Store a Date as an ISO string.</li>
+    <li><strong>Don't store derived data</strong> (e.g. <code>totalPrice</code> from <code>items</code>) — recompute it with a selector on read, or you'll forget to keep it in sync somewhere.</li>
+    <li><strong>You often don't need Redux:</strong> <code>useState</code> for local, Context for a few stable shared values, React Query for server data — Redux (via RTK) earns its cost only for large, cross-feature client state needing auditability/undo.</li>
+    <li><strong>Nobody ships hand-written Redux in 2026</strong> — this hand-rolled version exists to reveal the mechanism; real apps use Redux Toolkit, which generates the boilerplate.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Mutating state inside a reducer</strong> — <code>state.count++; return state;</code> looks like it works (the number goes up) but returns the <em>same</em> object reference. Anything comparing <code>oldState === newState</code> — which is exactly how <code>useSelector</code> decides to re-render and how DevTools records history — concludes nothing changed, so components silently stop updating. Always return a new object.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Redux puts shared state in one store and the only way to change it is dispatching an action through a pure reducer that returns new state — so every change is one-way and traceable to a specific action."</div>
+  <div class="revision-say">"Reducers must be pure and never mutate — returning a new object is what lets useSelector skip re-renders by reference and lets DevTools time-travel."</div>
+  <div class="revision-say">"I don't reach for Redux by default — local state, Context, and React Query cover most cases; Redux via RTK is for large cross-feature client state that needs predictability and auditability."</div>
+</div>
+`},
+
+{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
+<div class="callout success">
+  <div class="callout-title">Can you answer these before moving on?</div>
+  <ul>
+    <li>Can you trace a change through dispatch → action → pure reducer → new state?</li>
+    <li>Can you explain why a reducer must return a new object and never mutate?</li>
+    <li>Can you explain how mutating and returning the same reference silently stops <code>useSelector</code> re-renders and breaks DevTools?</li>
+    <li>Can you say why you would <em>not</em> reach for Redux by default?</li>
+    <li>Can you name what covers most cases instead (local state, Context, React Query)?</li>
+    <li>Can you describe the kind of state Redux via RTK is actually for?</li>
+  </ul>
+</div>
 `}
 
 ]});
