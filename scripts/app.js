@@ -206,6 +206,8 @@
     });
     const practiceLink = $('#navPracticeLink');
     if (practiceLink) practiceLink.classList.remove('active');
+    const planLink = $('#navPlanLink');
+    if (planLink) planLink.classList.remove('active');
     updateRailActive();
     updateBottomNavState();
   }
@@ -213,8 +215,19 @@
   // Mark the JS Practice sidebar link active and clear topic links (mirrors updateActiveNav)
   function setPracticeNavActive() {
     $$('.nav-topic[data-topic-id]').forEach(link => link.classList.remove('active'));
+    const planLink = $('#navPlanLink');
+    if (planLink) planLink.classList.remove('active');
     const practiceLink = $('#navPracticeLink');
     if (practiceLink) practiceLink.classList.add('active');
+  }
+
+  // Mark the Study Plan sidebar link active and clear the others
+  function setPlanNavActive() {
+    $$('.nav-topic[data-topic-id]').forEach(link => link.classList.remove('active'));
+    const practiceLink = $('#navPracticeLink');
+    if (practiceLink) practiceLink.classList.remove('active');
+    const planLink = $('#navPlanLink');
+    if (planLink) planLink.classList.add('active');
   }
 
   function updateProgress() {
@@ -251,6 +264,7 @@
     const hash = location.hash.slice(1);
     if (!hash || hash === '/' || hash === '') return { name: 'home' };
     if (hash === '/practice' || hash === '/practice/') return { name: 'practice' };
+    if (hash === '/plan' || hash === '/plan/') return { name: 'plan' };
     const topicMatch = hash.match(/^\/topic\/([\w-]+)(?:#(.+))?$/);
     if (topicMatch) return { name: 'topic', topicId: topicMatch[1], anchor: topicMatch[2] };
     return { name: 'home' };
@@ -263,6 +277,10 @@
     else if (r.name === 'practice') {
       window.PREP_SITE.renderPractice($('#content'));
       setPracticeNavActive();
+    }
+    else if (r.name === 'plan') {
+      renderPlan($('#content'));
+      setPlanNavActive();
     }
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
@@ -520,6 +538,128 @@
         if (el) el.scrollIntoView({ behavior: 'smooth' });
       }, 50);
     }
+  }
+
+  // ==========================================================
+  // STUDY PLAN (30-day roadmap page)
+  // ==========================================================
+  function renderPlan(container) {
+    const DATA = [
+      { n: 1, cls: 'p1', name: 'JS Mastery + DSA Foundation', range: 'Days 1–8', days: [
+        [1, '<b>JS:</b> Execution Context · Scope &amp; Scope Chain', '<b>DSA:</b> Complexity &amp; Big-O — read + notes'],
+        [2, '<b>JS:</b> Closures · <code>this</code> Keyword', '<b>DSA:</b> Arrays &amp; Strings + 3 easy problems'],
+        [3, '<b>JS:</b> Hoisting &amp; TDZ · Prototypes &amp; Inheritance', '<b>DSA:</b> Two Pointers + 3 problems'],
+        [4, '<b>JS:</b> Promises &amp; async/await · Event Loop', '<b>DSA:</b> Sliding Window + 3 problems'],
+        [5, '<b>JS:</b> Memory &amp; GC · JS Practice — output-prediction set', '<b>DSA:</b> Hashing / Maps + 3 problems'],
+        [6, '<b>JS Practice:</b> debounce · throttle · once · curry · memoize', '<b>DSA:</b> Stack &amp; Queue + 3 problems'],
+        [7, '<b>DSA:</b> Binary Search (+ variants) + 4 problems', '<b>JS Practice:</b> promises / async output questions'],
+        [8, '<b>DSA:</b> Linked List basics + 3 problems', '<b>Consolidate:</b> self-quiz every JS ✅ checklist'],
+      ]},
+      { n: 2, cls: 'p2', name: 'React Deep + State', range: 'Days 9–15', days: [
+        [9, '<b>React:</b> Reconciliation &amp; Fiber · Hooks Internals', '<b>DSA:</b> mixed set (5 problems)'],
+        [10, '<b>React:</b> Performance · State Management', '<b>JS Practice:</b> arrays / objects set'],
+        [11, '<b>React:</b> Advanced Patterns · TypeScript + React', '<b>DSA:</b> mixed set (5 problems)'],
+        [12, '<b>React:</b> Concurrent (18+) · SSR / SSG / ISR / RSC', '<b>JS Practice:</b> closures / scope set'],
+        [13, '<b>Redux:</b> Core · Toolkit', '<b>DSA:</b> mixed set (5 problems)'],
+        [14, '<b>State:</b> RTK Query · Server state (React Query) · Zustand/Jotai', '<b>JS Practice:</b> tricky output set'],
+        [15, '<b>React:</b> Testing', '<b>Consolidate:</b> self-quiz React &amp; Redux ✅ checklists'],
+      ]},
+      { n: 3, cls: 'p3', name: 'React Native (polish) + Web Basics', range: 'Days 16–22', days: [
+        [16, '<b>RN:</b> Architecture (Bridge/Fabric/JSI) · Core Components', '<b>DSA:</b> mixed set (4 problems)'],
+        [17, '<b>RN:</b> Navigation · State &amp; Data (MMKV / React Query)', '<b>Web:</b> HTML &amp; semantics'],
+        [18, '<b>RN:</b> Styling · Animations (Reanimated)', '<b>Web:</b> CSS — layout, specificity, box model'],
+        [19, '<b>RN:</b> Native Modules · Device APIs &amp; Permissions', '<b>Web:</b> Rendering pipeline + Critical Render Path'],
+        [20, '<b>RN:</b> Performance · Build &amp; Release', '<b>Web:</b> Networking (HTTP / TLS / CDN / CORS)'],
+        [21, '<b>RN:</b> Testing · Debugging · Common Gotchas', '<b>Web:</b> Storage + Accessibility'],
+        [22, '<b>Consolidate:</b> self-quiz RN &amp; Web ✅ checklists', '<b>Practice:</b> mixed DSA + JS reps'],
+      ]},
+      { n: 4, cls: 'p4', name: 'System Design, Machine Coding &amp; Mocks', range: 'Days 23–30', days: [
+        [23, '<b>FSD:</b> the framework — how to structure a design answer', '<b>Practice:</b> talk one design out loud (autocomplete / feed)'],
+        [24, '<b>FSD:</b> worked cases · RN System Design', '<b>Practice:</b> design a chat / infinite feed'],
+        [25, '<b>Machine Coding:</b> build a debounced typeahead / autocomplete', '<b>Practice:</b> controlled inputs, keyboard nav, loading states'],
+        [26, '<b>Machine Coding:</b> infinite scroll / paginated list + reusable modal', '<b>Practice:</b> state patterns, cleanup, accessibility'],
+        [27, '<b>Mock #1:</b> JS + React — use the ✅ Checklists as the question bank', '<b>Log gaps:</b> list every question you fumbled'],
+        [28, '<b>Fix + Behavioral:</b> patch mock gaps · DSA mixed reps', '<b>Behavioral:</b> write 3–4 STAR stories'],
+        [29, '<b>Mock #2:</b> RN + Frontend System Design', '<b>Revise:</b> rapid pass through every ⚡ Revision card'],
+        [30, '<b>Mock #3</b> + behavioral · polish resume &amp; portfolio', '<b>Buffer:</b> rest, or mop up the weakest topic'],
+      ]},
+    ];
+    const KEY = 'prep-plan-done';
+    const total = DATA.reduce((n, p) => n + p.days.length, 0);
+    const done = new Set((store.get(KEY, []) || []).map(String));
+
+    const phasesHtml = DATA.map(p => `
+      <section class="plan-phase ${p.cls}">
+        <div class="plan-phead">
+          <span class="plan-ptag">Phase ${p.n}</span>
+          <h2 class="plan-pname">${p.name}</h2>
+          <span class="plan-pfocus">${p.range}</span>
+        </div>
+        <div class="plan-days">
+          ${p.days.map(([d, a, b]) => `
+            <label class="plan-day${done.has(String(d)) ? ' is-done' : ''}">
+              <input type="checkbox" class="plan-cb" data-day="${d}"${done.has(String(d)) ? ' checked' : ''}>
+              <span class="plan-box" aria-hidden="true"></span>
+              <span class="plan-num">D${d}</span>
+              <span class="plan-dbody"><span class="plan-line">${a}</span><span class="plan-sub">${b}</span></span>
+            </label>`).join('')}
+        </div>
+      </section>`).join('');
+
+    container.innerHTML = `
+      <div class="plan">
+        <div class="topic-meta"><span class="topic-meta-module">30 days · 2.5 hrs/day · mid-size target</span></div>
+        <h1 class="topic-title">30-Day Frontend Sprint</h1>
+        <p class="plan-lede">A day-by-day roadmap for an <strong>experienced React Native engineer</strong> — polish what you know, drill what you don't. Each topic is a <strong>skim → self-quiz (⚡ Revision + ✅ Checklist) → deep-read only the gaps</strong> loop.</p>
+
+        <div class="plan-board">
+          <div class="plan-stats">
+            <div class="plan-stat"><span class="n">75</span><span class="l">total hours</span></div>
+            <div class="plan-stat"><span class="n">57</span><span class="l">topics</span></div>
+            <div class="plan-stat"><span class="n">~45</span><span class="l">DSA / JS problems</span></div>
+            <div class="plan-stat"><span class="n">3</span><span class="l">mock interviews</span></div>
+          </div>
+          <div class="plan-prog-head"><span class="lab">Progress</span><span class="pct" id="planPct"></span></div>
+          <div class="plan-track"><div class="plan-fill" id="planFill"></div></div>
+        </div>
+
+        <div class="plan-method">
+          <div class="plan-m"><span class="k">Daily rhythm</span><strong>~1.25h concept · ~1h practice · ~15m revise</strong></div>
+          <div class="plan-m"><span class="k">Polish, don't relearn</span><strong>Lean on the ✅ Checklists — deep-read only where you stumble</strong></div>
+          <div class="plan-m"><span class="k">Swing factor</span><strong>DSA is a daily habit — solve, don't just read</strong></div>
+        </div>
+
+        ${phasesHtml}
+
+        <div class="plan-note"><strong>Before you start:</strong> DSA is the swing factor — if you're rusty it eats into concept days, so protect the reps and skim React/RN faster. Scope is capped for mid-size (no heavy graphs / DP / advanced JS). The consolidation days (8, 15, 22) are load-bearing — spaced self-quizzing is what sticks under pressure.</div>
+      </div>`;
+
+    const toc = document.getElementById('tocList');
+    if (toc) toc.innerHTML = '';
+
+    function updatePlanProgress() {
+      const d = new Set((store.get(KEY, []) || []).map(String));
+      const pctN = Math.round(d.size / total * 100);
+      const fill = document.getElementById('planFill');
+      const pct = document.getElementById('planPct');
+      if (fill) fill.style.width = pctN + '%';
+      if (pct) pct.textContent = d.size + ' / ' + total + ' days · ' + pctN + '%';
+    }
+    $$('.plan-cb', container).forEach(cb => {
+      cb.addEventListener('change', () => {
+        const d = new Set((store.get(KEY, []) || []).map(String));
+        const day = cb.dataset.day;
+        const row = cb.closest('.plan-day');
+        if (cb.checked) { d.add(day); row.classList.add('is-done'); }
+        else { d.delete(day); row.classList.remove('is-done'); }
+        store.set(KEY, [...d]);
+        updatePlanProgress();
+      });
+    });
+    updatePlanProgress();
+
+    if (window.Prism) window.Prism.highlightAll(container);
+    document.title = '30-Day Study Plan · Docs';
   }
 
   // ==========================================================
