@@ -1175,7 +1175,7 @@
   // KEYBOARD SHORTCUTS
   // ==========================================================
   function initKeyboard() {
-    let lastG = 0;
+    let gPending = 0;
     document.addEventListener('keydown', (e) => {
       // Don't trigger inside inputs
       const tag = (document.activeElement && document.activeElement.tagName) || '';
@@ -1197,6 +1197,19 @@
       const k = e.key;
       const lower = k.toLowerCase();
 
+      // "g" prefix → go-to navigation (g g = top, g h = home, g p = practice, g s = study plan)
+      if (gPending && (Date.now() - gPending < 800)) {
+        gPending = 0;
+        let handled = true;
+        if (lower === 'g') window.scrollTo({ top: 0, behavior: 'smooth' });
+        else if (lower === 'h') location.hash = '#/';
+        else if (lower === 'p') location.hash = '#/practice';
+        else if (lower === 's') location.hash = '#/plan';
+        else handled = false;
+        if (handled) { e.preventDefault(); return; }
+        // otherwise fall through and treat this key as a normal shortcut
+      }
+
       if (k === '?') { e.preventDefault(); openKbdModal(); return; }
       if (lower === 't') { e.preventDefault(); toggleTheme(); return; }
       if (lower === 'f') { e.preventDefault(); toggleFocusMode(); return; }
@@ -1208,17 +1221,7 @@
       if (k === 'ArrowLeft')  { e.preventDefault(); navTopic(-1); return; }
       if (lower === 'j') { e.preventDefault(); navSection(+1); return; }
       if (lower === 'k') { e.preventDefault(); navSection(-1); return; }
-      if (lower === 'g') {
-        const now = Date.now();
-        if (now - lastG < 600) {
-          e.preventDefault();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          lastG = 0;
-        } else {
-          lastG = now;
-        }
-        return;
-      }
+      if (lower === 'g') { gPending = Date.now(); return; }
     });
   }
 
