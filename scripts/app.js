@@ -560,7 +560,7 @@
   }
   function userRef() { return (_authUser && _fbDb) ? _fbDb.collection('users').doc(_authUser.uid) : null; }
   function localData() {
-    return { studied: Array.from(state.studied), planDone: store.get('plan-done', []) || [], updatedAt: Date.now() };
+    return { studied: Array.from(state.studied), planDone: store.get('prep-plan-done', []) || [], updatedAt: Date.now() };
   }
   function pushUserData() {
     if (_applyingRemote) return;
@@ -581,7 +581,7 @@
     if (!data) return;
     _applyingRemote = true;
     if (Array.isArray(data.studied)) { state.studied = new Set(data.studied); store.set('studied', data.studied); }
-    if (Array.isArray(data.planDone)) { store.set('plan-done', data.planDone); }
+    if (Array.isArray(data.planDone)) { store.set('prep-plan-done', data.planDone); }
     reRenderForSync();
     _applyingRemote = false;
   }
@@ -593,9 +593,9 @@
       const remote = (snap && snap.exists) ? (snap.data() || {}) : {};
       // Merge local + remote once at login so nothing is lost.
       const mStudied = new Set([].concat(remote.studied || [], Array.from(state.studied)));
-      const mPlan = new Set([].concat(remote.planDone || [], store.get('plan-done', []) || []));
+      const mPlan = new Set([].concat(remote.planDone || [], store.get('prep-plan-done', []) || []));
       state.studied = mStudied; store.set('studied', Array.from(mStudied));
-      store.set('plan-done', Array.from(mPlan));
+      store.set('prep-plan-done', Array.from(mPlan));
       ref.set({ studied: Array.from(mStudied), planDone: Array.from(mPlan), updatedAt: Date.now() }, { merge: true }).catch(function () {});
       reRenderForSync();
       if (_userUnsub) { _userUnsub(); }
