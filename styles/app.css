@@ -1039,6 +1039,32 @@ html[data-theme="light"] .icon-moon { display: block; }
 .plan-track { height: 8px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 99px; overflow: hidden; }
 .plan-fill { height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width var(--dur-slow) var(--ease-out); }
 
+.plan-sync {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px;
+  margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--border);
+}
+.plan-sync-note { color: var(--fg-subtle); font-size: 12px; }
+.plan-sync-note a, .plan-sync-link { color: var(--accent); text-decoration: none; }
+.plan-sync-note a:hover, .plan-sync-link:hover { text-decoration: underline; }
+.plan-sync-status {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--green);
+}
+.plan-sync-code { color: var(--fg-muted); font-size: 12.5px; }
+.plan-sync-code code {
+  font-family: var(--font-mono); font-size: 11px; padding: 1px 6px;
+  background: var(--code-bg); border: 1px solid var(--code-border);
+  border-radius: 5px; color: var(--accent-strong);
+}
+.plan-sync-btn {
+  font-family: var(--font-sans); font-size: 12px; padding: 3px 11px;
+  border-radius: 7px; border: 1px solid var(--border-strong);
+  background: var(--bg-elev-2); color: var(--fg); cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.plan-sync-btn:hover { border-color: var(--border-accent); color: var(--accent-strong); }
+.plan-sync-link { font-family: var(--font-mono); font-size: 11px; }
+
 .plan-method { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 11px; margin: 18px 0 30px; }
 .plan-m { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
 .plan-m .k { display: block; font-family: var(--font-mono); font-size: 10.5px; color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 5px; }

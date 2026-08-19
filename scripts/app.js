@@ -655,6 +655,7 @@
           </div>
           <div class="plan-prog-head"><span class="lab">Progress</span><span class="pct" id="planPct"></span></div>
           <div class="plan-track"><div class="plan-fill" id="planFill"></div></div>
+          <div class="plan-sync" id="planSync"></div>
         </div>
 
         <div class="plan-method">
@@ -688,9 +689,125 @@
         else { d.delete(key); row.classList.remove('is-done'); }
         store.set(KEY, [...d]);
         updatePlanProgress();
+        planWriteRemote();
       });
     });
     updatePlanProgress();
+
+    // ---------- Optional cross-device sync (Firebase, keyed by a personal code) ----------
+    const SYNC_KEY = 'sync-code';
+    let planUnsub = null;
+
+    function fbConfigured() {
+      const c = window.PREP_FIREBASE_CONFIG;
+      return !!(c && c.apiKey && c.projectId && !/REPLACE_ME/.test(c.apiKey));
+    }
+    function fbLoad() {
+      if (window._fbPromise) return window._fbPromise;
+      const cfg = window.PREP_FIREBASE_CONFIG;
+      const urls = [
+        'https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js',
+        'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js',
+        'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js'
+      ];
+      window._fbPromise = urls.reduce((p, u) => p.then(() => new Promise((res, rej) => {
+        if (document.querySelector('script[src="' + u + '"]')) return res();
+        const s = document.createElement('script'); s.src = u; s.async = false;
+        s.onload = res; s.onerror = () => rej(new Error('firebase load failed'));
+        document.head.appendChild(s);
+      })), Promise.resolve()).then(() => {
+        if (!firebase.apps.length) firebase.initializeApp(cfg);
+        return firebase.auth().signInAnonymously().then(() => firebase.firestore());
+      });
+      return window._fbPromise;
+    }
+    function newSyncCode() {
+      const r = () => Math.random().toString(36).slice(2, 10);
+      return 'plan-' + r() + r();
+    }
+    function setSyncStatus(txt) {
+      const el = document.getElementById('planSyncStatus');
+      if (el) el.textContent = txt;
+    }
+    function planApplyDone(arr) {
+      const d = new Set(arr || []);
+      store.set(KEY, [...d]);
+      $$('.plan-cb', container).forEach(cb => {
+        const on = d.has(cb.dataset.day);
+        cb.checked = on;
+        cb.closest('.plan-day').classList.toggle('is-done', on);
+      });
+      updatePlanProgress();
+    }
+    function planWriteRemote() {
+      const code = store.get(SYNC_KEY, null);
+      if (!code || !fbConfigured()) return;
+      fbLoad().then(db => db.collection('plans').doc(code).set({
+        done: store.get(KEY, []) || [], updatedAt: Date.now()
+      }, { merge: true })).then(() => setSyncStatus('Synced ✓')).catch(() => setSyncStatus('Offline'));
+    }
+    function planStartSync(code) {
+      store.set(SYNC_KEY, code);
+      renderSyncBar();
+      if (!fbConfigured()) return;
+      setSyncStatus('Connecting…');
+      fbLoad().then(db => {
+        if (planUnsub) { planUnsub(); planUnsub = null; }
+        planUnsub = db.collection('plans').doc(code).onSnapshot(snap => {
+          const data = snap.data();
+          if (data && Array.isArray(data.done)) planApplyDone(data.done);
+          else planWriteRemote(); // first time on this code — seed from local
+          setSyncStatus('Synced ✓');
+        }, () => setSyncStatus('Offline'));
+      }).catch(() => setSyncStatus('Sync error — check config'));
+    }
+    function wireSyncBar() {
+      const enable = document.getElementById('planSyncEnable');
+      if (enable) enable.addEventListener('click', () => planStartSync(newSyncCode()));
+      const use = document.getElementById('planSyncUse');
+      if (use) use.addEventListener('click', (e) => {
+        e.preventDefault();
+        const c = window.prompt('Enter the sync code from your other device:', store.get(SYNC_KEY, '') || '');
+        if (c && c.trim()) planStartSync(c.trim());
+      });
+      const copy = document.getElementById('planSyncCopy');
+      if (copy) copy.addEventListener('click', () => {
+        const code = store.get(SYNC_KEY, '') || '';
+        if (navigator.clipboard) navigator.clipboard.writeText(code).then(() => {
+          copy.textContent = 'Copied'; setTimeout(() => { copy.textContent = 'Copy'; }, 1400);
+        });
+      });
+      const off = document.getElementById('planSyncOff');
+      if (off) off.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (planUnsub) { planUnsub(); planUnsub = null; }
+        store.set(SYNC_KEY, null); renderSyncBar();
+      });
+    }
+    function renderSyncBar() {
+      const el = document.getElementById('planSync');
+      if (!el) return;
+      if (!fbConfigured()) {
+        el.innerHTML = '<span class="plan-sync-note">Cross-device sync isn\'t configured yet.</span>';
+        return;
+      }
+      const code = store.get(SYNC_KEY, null);
+      if (!code) {
+        el.innerHTML = '<button type="button" class="plan-sync-btn" id="planSyncEnable">Enable cross-device sync</button>' +
+          '<span class="plan-sync-note">— or <a href="#" id="planSyncUse">use a code from another device</a></span>';
+      } else {
+        el.innerHTML = '<span class="plan-sync-status" id="planSyncStatus">Connecting…</span>' +
+          '<span class="plan-sync-code">Sync code&nbsp;<code>' + code + '</code></span>' +
+          '<button type="button" class="plan-sync-btn" id="planSyncCopy">Copy</button>' +
+          '<a href="#" class="plan-sync-link" id="planSyncUse">use another</a>' +
+          '<a href="#" class="plan-sync-link" id="planSyncOff">turn off</a>';
+      }
+      wireSyncBar();
+    }
+
+    renderSyncBar();
+    const _existingCode = store.get(SYNC_KEY, null);
+    if (_existingCode) planStartSync(_existingCode);
 
     if (window.Prism) window.Prism.highlightAll(container);
     document.title = 'Study Plan · Docs';
