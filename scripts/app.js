@@ -541,6 +541,177 @@
   }
 
   // ==========================================================
+  // ACCOUNTS + CROSS-DEVICE SYNC (Firebase)
+  // Studied topics + Study Plan progress sync to users/{uid}.
+  // ==========================================================
+  let _authUser = null, _userUnsub = null, _fbDb = null, _syncTimer = null, _applyingRemote = false, _authMode = 'signin';
+
+  function fbConfigured() {
+    const c = window.PREP_FIREBASE_CONFIG;
+    return !!(c && c.apiKey && c.projectId && !/REPLACE_ME/.test(c.apiKey) && typeof firebase !== 'undefined');
+  }
+  function fbInit() {
+    if (!fbConfigured()) return false;
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(window.PREP_FIREBASE_CONFIG);
+      _fbDb = firebase.firestore();
+      return true;
+    } catch (e) { return false; }
+  }
+  function userRef() { return (_authUser && _fbDb) ? _fbDb.collection('users').doc(_authUser.uid) : null; }
+  function localData() {
+    return { studied: Array.from(state.studied), planDone: store.get('plan-done', []) || [], updatedAt: Date.now() };
+  }
+  function pushUserData() {
+    if (_applyingRemote) return;
+    const ref = userRef(); if (!ref) return;
+    clearTimeout(_syncTimer);
+    _syncTimer = setTimeout(() => { ref.set(localData(), { merge: true }).catch(function () {}); }, 400);
+  }
+  function reRenderForSync() {
+    renderSidebar(); updateProgress();
+    const r = parseRoute();
+    if (r.name === 'plan') renderPlan($('#content'));
+    else if (r.name === 'topic' && state.currentTopicId) {
+      const pt = $('#progressToggle'); if (pt) pt.classList.toggle('active', state.studied.has(state.currentTopicId));
+      $$('.nav-topic[data-topic-id]').forEach(l => l.classList.toggle('studied', state.studied.has(l.dataset.topicId)));
+    }
+  }
+  function applyRemote(data) {
+    if (!data) return;
+    _applyingRemote = true;
+    if (Array.isArray(data.studied)) { state.studied = new Set(data.studied); store.set('studied', data.studied); }
+    if (Array.isArray(data.planDone)) { store.set('plan-done', data.planDone); }
+    reRenderForSync();
+    _applyingRemote = false;
+  }
+  function onLoggedIn(user) {
+    _authUser = user;
+    updateAuthUI();
+    const ref = userRef(); if (!ref) return;
+    ref.get().then(function (snap) {
+      const remote = (snap && snap.exists) ? (snap.data() || {}) : {};
+      // Merge local + remote once at login so nothing is lost.
+      const mStudied = new Set([].concat(remote.studied || [], Array.from(state.studied)));
+      const mPlan = new Set([].concat(remote.planDone || [], store.get('plan-done', []) || []));
+      state.studied = mStudied; store.set('studied', Array.from(mStudied));
+      store.set('plan-done', Array.from(mPlan));
+      ref.set({ studied: Array.from(mStudied), planDone: Array.from(mPlan), updatedAt: Date.now() }, { merge: true }).catch(function () {});
+      reRenderForSync();
+      if (_userUnsub) { _userUnsub(); }
+      _userUnsub = ref.onSnapshot(function (s) {
+        if (s.metadata && s.metadata.hasPendingWrites) return; // ignore our own writes
+        applyRemote(s.data());
+      }, function () {});
+    }).catch(function () {});
+  }
+  function onLoggedOut() {
+    _authUser = null;
+    if (_userUnsub) { _userUnsub(); _userUnsub = null; }
+    updateAuthUI();
+  }
+  function updateAuthUI() {
+    const btn = $('#authToggle'), initial = $('#authInitial');
+    if (btn) {
+      btn.classList.toggle('signed-in', !!_authUser);
+      btn.title = _authUser ? ('Signed in as ' + (_authUser.email || 'your account')) : 'Sign in to sync your progress';
+    }
+    if (initial) initial.textContent = _authUser ? String((_authUser.email || '?').charAt(0)).toUpperCase() : '';
+    renderPlanSyncBar();
+  }
+  function renderPlanSyncBar() {
+    const el = document.getElementById('planSync');
+    if (!el) return;
+    if (!fbConfigured()) { el.innerHTML = '<span class="plan-sync-note">Sign-in sync isn\'t configured.</span>'; return; }
+    if (_authUser) {
+      el.innerHTML = '<span class="plan-sync-status">Synced ✓</span>' +
+        '<span class="plan-sync-note">Saved to <b>' + escapeHtml(_authUser.email || 'your account') + '</b> — open on any device.</span>';
+    } else {
+      el.innerHTML = '<button type="button" class="plan-sync-btn" id="planSignin">Sign in to sync across devices</button>';
+      const b = document.getElementById('planSignin');
+      if (b) b.addEventListener('click', openAuthModal);
+    }
+  }
+  function setAuthError(msg) {
+    const e = $('#authError'); if (!e) return;
+    if (msg) { e.textContent = msg; e.hidden = false; } else { e.textContent = ''; e.hidden = true; }
+  }
+  function openAuthModal() {
+    const m = $('#authModal'); if (!m) return;
+    const so = $('#authSignedOut'), si = $('#authSignedIn');
+    if (_authUser) {
+      if (so) so.hidden = true; if (si) si.hidden = false;
+      const em = $('#authEmailShow'); if (em) em.textContent = _authUser.email || '';
+      const av = $('#authAvatarBig'); if (av) av.textContent = String((_authUser.email || '?').charAt(0)).toUpperCase();
+    } else {
+      if (so) so.hidden = false; if (si) si.hidden = true;
+      setAuthError('');
+    }
+    m.hidden = false;
+  }
+  function closeAuthModal() { const m = $('#authModal'); if (m) m.hidden = true; }
+  function toggleAuthMode() {
+    _authMode = _authMode === 'signin' ? 'signup' : 'signin';
+    const isSignin = _authMode === 'signin';
+    $('#authTitle').textContent = isSignin ? 'Sign in' : 'Create account';
+    $('#authSubmit').textContent = isSignin ? 'Sign in' : 'Create account';
+    $('#authSwitchText').textContent = isSignin ? 'New here?' : 'Already have an account?';
+    $('#authSwitch').textContent = isSignin ? 'Create an account' : 'Sign in';
+    setAuthError('');
+  }
+  function friendlyAuthError(err) {
+    const c = (err && err.code) || '';
+    if (c.indexOf('email-already-in-use') >= 0) return 'That email already has an account — try signing in instead.';
+    if (c.indexOf('user-not-found') >= 0 || c.indexOf('wrong-password') >= 0 || c.indexOf('invalid-credential') >= 0) return 'Wrong email or password.';
+    if (c.indexOf('weak-password') >= 0) return 'Password should be at least 6 characters.';
+    if (c.indexOf('invalid-email') >= 0) return 'That email looks invalid.';
+    if (c.indexOf('popup-closed') >= 0 || c.indexOf('cancelled-popup') >= 0) return 'Google sign-in was closed — try again.';
+    if (c.indexOf('operation-not-allowed') >= 0) return 'This sign-in method isn\'t enabled in Firebase yet.';
+    if (c.indexOf('network') >= 0) return 'Network error — check your connection.';
+    return (err && err.message) || 'Something went wrong. Try again.';
+  }
+  function submitEmailAuth() {
+    setAuthError('');
+    const email = ($('#authEmail').value || '').trim();
+    const pass = $('#authPassword').value || '';
+    if (!email || pass.length < 6) { setAuthError('Enter an email and a password of at least 6 characters.'); return; }
+    const auth = firebase.auth();
+    const submit = $('#authSubmit'); if (submit) submit.disabled = true;
+    const op = _authMode === 'signin'
+      ? auth.signInWithEmailAndPassword(email, pass)
+      : auth.createUserWithEmailAndPassword(email, pass);
+    op.then(function () { closeAuthModal(); })
+      .catch(function (err) { setAuthError(friendlyAuthError(err)); })
+      .then(function () { if (submit) submit.disabled = false; });
+  }
+  function googleSignIn() {
+    setAuthError('');
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider)
+        .then(function () { closeAuthModal(); })
+        .catch(function (err) { setAuthError(friendlyAuthError(err)); });
+    } catch (e) { setAuthError('Google sign-in is unavailable.'); }
+  }
+  function initAuthUI() {
+    const btn = $('#authToggle'); if (btn) btn.addEventListener('click', openAuthModal);
+    const close = $('#authClose'); if (close) close.addEventListener('click', closeAuthModal);
+    const bd = $('#authBackdrop'); if (bd) bd.addEventListener('click', closeAuthModal);
+    const sw = $('#authSwitch'); if (sw) sw.addEventListener('click', function (e) { e.preventDefault(); toggleAuthMode(); });
+    const form = $('#authForm'); if (form) form.addEventListener('submit', function (e) { e.preventDefault(); submitEmailAuth(); });
+    const g = $('#authGoogle'); if (g) g.addEventListener('click', googleSignIn);
+    const so = $('#authSignout'); if (so) so.addEventListener('click', function () { if (fbConfigured()) firebase.auth().signOut(); closeAuthModal(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAuthModal(); });
+  }
+  function initAuthAndSync() {
+    initAuthUI();
+    if (!fbInit()) { updateAuthUI(); return; }
+    firebase.auth().onAuthStateChanged(function (u) {
+      if (u && !u.isAnonymous) onLoggedIn(u); else onLoggedOut();
+    });
+  }
+
+  // ==========================================================
   // STUDY PLAN (30-day roadmap page)
   // ==========================================================
   function renderPlan(container) {
@@ -689,125 +860,12 @@
         else { d.delete(key); row.classList.remove('is-done'); }
         store.set(KEY, [...d]);
         updatePlanProgress();
-        planWriteRemote();
+        pushUserData();
       });
     });
     updatePlanProgress();
 
-    // ---------- Optional cross-device sync (Firebase, keyed by a personal code) ----------
-    const SYNC_KEY = 'sync-code';
-    let planUnsub = null;
-
-    function fbConfigured() {
-      const c = window.PREP_FIREBASE_CONFIG;
-      return !!(c && c.apiKey && c.projectId && !/REPLACE_ME/.test(c.apiKey));
-    }
-    function fbLoad() {
-      if (window._fbPromise) return window._fbPromise;
-      const cfg = window.PREP_FIREBASE_CONFIG;
-      const urls = [
-        'https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js',
-        'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js',
-        'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js'
-      ];
-      window._fbPromise = urls.reduce((p, u) => p.then(() => new Promise((res, rej) => {
-        if (document.querySelector('script[src="' + u + '"]')) return res();
-        const s = document.createElement('script'); s.src = u; s.async = false;
-        s.onload = res; s.onerror = () => rej(new Error('firebase load failed'));
-        document.head.appendChild(s);
-      })), Promise.resolve()).then(() => {
-        if (!firebase.apps.length) firebase.initializeApp(cfg);
-        return firebase.auth().signInAnonymously().then(() => firebase.firestore());
-      });
-      return window._fbPromise;
-    }
-    function newSyncCode() {
-      const r = () => Math.random().toString(36).slice(2, 10);
-      return 'plan-' + r() + r();
-    }
-    function setSyncStatus(txt) {
-      const el = document.getElementById('planSyncStatus');
-      if (el) el.textContent = txt;
-    }
-    function planApplyDone(arr) {
-      const d = new Set(arr || []);
-      store.set(KEY, [...d]);
-      $$('.plan-cb', container).forEach(cb => {
-        const on = d.has(cb.dataset.day);
-        cb.checked = on;
-        cb.closest('.plan-day').classList.toggle('is-done', on);
-      });
-      updatePlanProgress();
-    }
-    function planWriteRemote() {
-      const code = store.get(SYNC_KEY, null);
-      if (!code || !fbConfigured()) return;
-      fbLoad().then(db => db.collection('plans').doc(code).set({
-        done: store.get(KEY, []) || [], updatedAt: Date.now()
-      }, { merge: true })).then(() => setSyncStatus('Synced ✓')).catch(() => setSyncStatus('Offline'));
-    }
-    function planStartSync(code) {
-      store.set(SYNC_KEY, code);
-      renderSyncBar();
-      if (!fbConfigured()) return;
-      setSyncStatus('Connecting…');
-      fbLoad().then(db => {
-        if (planUnsub) { planUnsub(); planUnsub = null; }
-        planUnsub = db.collection('plans').doc(code).onSnapshot(snap => {
-          const data = snap.data();
-          if (data && Array.isArray(data.done)) planApplyDone(data.done);
-          else planWriteRemote(); // first time on this code — seed from local
-          setSyncStatus('Synced ✓');
-        }, () => setSyncStatus('Offline'));
-      }).catch(() => setSyncStatus('Sync error — check config'));
-    }
-    function wireSyncBar() {
-      const enable = document.getElementById('planSyncEnable');
-      if (enable) enable.addEventListener('click', () => planStartSync(newSyncCode()));
-      const use = document.getElementById('planSyncUse');
-      if (use) use.addEventListener('click', (e) => {
-        e.preventDefault();
-        const c = window.prompt('Enter the sync code from your other device:', store.get(SYNC_KEY, '') || '');
-        if (c && c.trim()) planStartSync(c.trim());
-      });
-      const copy = document.getElementById('planSyncCopy');
-      if (copy) copy.addEventListener('click', () => {
-        const code = store.get(SYNC_KEY, '') || '';
-        if (navigator.clipboard) navigator.clipboard.writeText(code).then(() => {
-          copy.textContent = 'Copied'; setTimeout(() => { copy.textContent = 'Copy'; }, 1400);
-        });
-      });
-      const off = document.getElementById('planSyncOff');
-      if (off) off.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (planUnsub) { planUnsub(); planUnsub = null; }
-        store.set(SYNC_KEY, null); renderSyncBar();
-      });
-    }
-    function renderSyncBar() {
-      const el = document.getElementById('planSync');
-      if (!el) return;
-      if (!fbConfigured()) {
-        el.innerHTML = '<span class="plan-sync-note">Cross-device sync isn\'t configured yet.</span>';
-        return;
-      }
-      const code = store.get(SYNC_KEY, null);
-      if (!code) {
-        el.innerHTML = '<button type="button" class="plan-sync-btn" id="planSyncEnable">Enable cross-device sync</button>' +
-          '<span class="plan-sync-note">— or <a href="#" id="planSyncUse">use a code from another device</a></span>';
-      } else {
-        el.innerHTML = '<span class="plan-sync-status" id="planSyncStatus">Connecting…</span>' +
-          '<span class="plan-sync-code">Sync code&nbsp;<code>' + code + '</code></span>' +
-          '<button type="button" class="plan-sync-btn" id="planSyncCopy">Copy</button>' +
-          '<a href="#" class="plan-sync-link" id="planSyncUse">use another</a>' +
-          '<a href="#" class="plan-sync-link" id="planSyncOff">turn off</a>';
-      }
-      wireSyncBar();
-    }
-
-    renderSyncBar();
-    const _existingCode = store.get(SYNC_KEY, null);
-    if (_existingCode) planStartSync(_existingCode);
+    renderPlanSyncBar();
 
     if (window.Prism) window.Prism.highlightAll(container);
     document.title = 'Study Plan · Docs';
@@ -858,6 +916,7 @@
         link.classList.toggle('studied', state.studied.has(link.dataset.topicId));
       });
       updateProgress();
+      pushUserData();
     });
   }
 
@@ -1088,6 +1147,7 @@
     updateProgress();
     updateBottomNavState();
     renderRail();
+    pushUserData();
   }
 
   function toggleTheme() {
@@ -1346,6 +1406,7 @@
     initFocusMode();
     initKeyboard();
     initKbdModal();
+    initAuthAndSync();
     // Re-apply mobile section-collapse if user resizes
     window.addEventListener('resize', () => {
       // Don't run during topic load races
