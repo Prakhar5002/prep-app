@@ -1091,6 +1091,18 @@ html[data-theme="light"] .icon-moon { display: block; }
   flex: 0 0 auto; width: 32px; font-family: var(--font-mono); font-weight: 700;
   font-size: 12.5px; color: var(--pc); font-variant-numeric: tabular-nums; margin-top: 1px;
 }
+.plan-date {
+  flex: 0 0 auto; width: 52px; display: flex; flex-direction: column;
+  line-height: 1.08; margin-top: 1px;
+}
+.plan-dow {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--fg-subtle);
+}
+.plan-dnum {
+  font-family: var(--font-mono); font-weight: 700; font-size: 12.5px;
+  color: var(--pc); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
 .plan-dbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .plan-line { font-size: 14px; color: var(--fg); line-height: 1.42; }
 .plan-line b { color: var(--fg-strong); font-weight: 600; }
