@@ -100,6 +100,45 @@ window.PREP_SITE.registry = {
       ],
     },
     {
+      id: "rncfg",
+      title: "RN Project & Config (Deep)",
+      topics: [
+        { id: "rncfg-structure", title: "Project Structure & Entry Point" },
+        { id: "rncfg-package-json", title: "package.json Deep" },
+        { id: "rncfg-metro", title: "Metro Bundler" },
+        { id: "rncfg-babel", title: "Babel Config" },
+        { id: "rncfg-app-config", title: "App Config & Autolinking" },
+        { id: "rncfg-ts-lint", title: "TypeScript & Linting" },
+        { id: "rncfg-env-build", title: "Environments & Build Config" },
+      ],
+    },
+    {
+      id: "andr",
+      title: "Android Native (Deep)",
+      topics: [
+        { id: "andr-folder-tour", title: "Anatomy of android/ Folder" },
+        { id: "andr-gradle", title: "Gradle & Build System" },
+        { id: "andr-manifest", title: "Manifest, Permissions & Resources" },
+        { id: "andr-entry-code", title: "Entry Code & RN Wiring" },
+        { id: "andr-signing-release", title: "Signing, Build Types & Release" },
+        { id: "andr-tools", title: "Tools: Studio, SDK, adb, logcat" },
+        { id: "andr-debugging", title: "Debugging Native Android Errors" },
+      ],
+    },
+    {
+      id: "iosn",
+      title: "iOS Native (Deep)",
+      topics: [
+        { id: "iosn-folder-tour", title: "Anatomy of ios/ Folder" },
+        { id: "iosn-xcode-project", title: "Xcode Project Model" },
+        { id: "iosn-cocoapods", title: "CocoaPods & Dependencies" },
+        { id: "iosn-plist-entry", title: "Plist, Entitlements & Entry Code" },
+        { id: "iosn-signing-release", title: "Signing & Release" },
+        { id: "iosn-tools", title: "Tools: Xcode, xcodebuild, Simulators" },
+        { id: "iosn-debugging", title: "Debugging Native iOS Errors" },
+      ],
+    },
+    {
       id: "typescript",
       title: "TypeScript",
       topics: [
