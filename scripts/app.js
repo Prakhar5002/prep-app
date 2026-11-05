@@ -807,7 +807,7 @@
   // ==========================================================
   function renderPlan(container) {
     // Fixed start date so the plan is stable regardless of when it's opened.
-    const START = new Date(2026, 7, 19); // 19 Aug 2026 (month 7 = August)
+    const START = new Date(2026, 10, 6); // 6 Nov 2026 (month 10 = November) → 40 days → 15 Dec
     const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const pad = n => (n < 10 ? '0' + n : '' + n);
@@ -815,57 +815,67 @@
     const fmt = dt => dt.getDate() + ' ' + MON[dt.getMonth()];
     const addDays = n => { const d = new Date(START); d.setDate(START.getDate() + n); return d; };
 
+    // Topic link helper: T('be-kafka') → clickable topic title; titles come from the registry.
+    const planTopics = new Set();
+    const titleOf = (id) => {
+      for (const m of window.PREP_SITE.registry.modules) { const t = m.topics.find(x => x.id === id); if (t) return t.title; }
+      return id;
+    };
+    const T = (id, label) => { planTopics.add(id); return `<a class="plan-link" href="#/topic/${id}">${escapeHtml(label || titleOf(id))}</a>`; };
+    const QR = (label) => `<a class="plan-link" href="#/revise">Quick Revision</a> → ${label}`;
+
     const DATA = [
-      { cls: 'p1', name: 'JS Mastery + DSA Foundation', days: [
-        ['<b>JS:</b> Execution Context · Scope &amp; Scope Chain', '<b>DSA:</b> Complexity &amp; Big-O — read + notes'],
-        ['<b>JS:</b> Closures · <code>this</code> Keyword', '<b>DSA:</b> Arrays &amp; Strings + 4 problems'],
-        ['<b>JS:</b> Hoisting &amp; TDZ · Prototypes &amp; Inheritance', '<b>DSA:</b> Two Pointers + 4 problems'],
-        ['<b>JS:</b> Promises &amp; async/await · Event Loop', '<b>DSA:</b> Sliding Window + 4 problems'],
-        ['<b>JS:</b> Memory &amp; GC · Modules (ESM vs CJS)', '<b>DSA:</b> Hashing / Maps + 4 problems'],
-        ['<b>JS:</b> Advanced (Proxy · Symbol · Iterators · Intl)', '<b>DSA:</b> Stack &amp; Queue + 4 problems'],
-        ['<b>JS Practice:</b> debounce · throttle · once · curry · memoize · deepClone', '<b>DSA:</b> Binary Search (+ variants) + 4 problems'],
-        ['<b>JS Practice:</b> promise/async output + polyfills (Promise.all, map)', '<b>DSA:</b> Linked List + 4 problems'],
-        ['<b>DSA:</b> Recursion &amp; Backtracking basics + 4 problems', '<b>JS Practice:</b> this / closure tricky set'],
-        ['<b>DSA:</b> Trees &amp; BST basics (traversals) + 4 problems', '<b>JS Practice:</b> coercion / hoisting output set'],
-        ['<b>DSA:</b> mixed review set (6 problems, timed)', '<b>Revise:</b> JS ⚡ Revision cards — rapid pass'],
-        ['<b>Consolidate:</b> self-quiz EVERY JS ✅ checklist', '<b>Re-solve</b> the 2 hardest DSA problems from scratch'],
+      { cls: 'p1', name: 'Backend Foundations', days: [
+        [`<b>Backend:</b> ${T('be-fundamentals')} · ${T('api-rest')}`, '<b>DSA:</b> Arrays &amp; Strings + Hashing — 4 problems'],
+        [`<b>Data:</b> ${T('be-databases')} · ${T('be-mysql')}`, '<b>SQL drill:</b> 6 problems from the MySQL topic (window functions, top-N per group)'],
+        [`<b>Data:</b> ${T('be-mongodb')} · ${T('be-caching')}`, '<b>DSA:</b> Two Pointers + Sliding Window — 4 problems'],
+        [`<b>Node:</b> ${T('be-express')} · ${T('be-nestjs')}`, '<b>Build:</b> start the running project — a small NestJS/Express CRUD API with validation + error handling'],
+        [`<b>Auth:</b> ${T('api-auth-rbac')} · ${T('api-versioning')}`, '<b>Build:</b> add JWT auth + a role guard to your API'],
+        [`<b>Async:</b> ${T('be-queues')} · ${T('be-event-driven')} · ${T('be-kafka')}`, '<b>DSA:</b> Stack &amp; Queue + Linked List — 4 problems'],
+        [`<b>Realtime:</b> ${T('api-websockets')} · ${T('be-mqtt')} · ${T('test-api')}`, '<b>Build:</b> integration tests for your API (supertest + a test DB)'],
+        [`<b>Ops:</b> ${T('be-architecture')} · ${T('be-resilience')} · ${T('be-observability')}`, `<b>Consolidate:</b> ${QR('Backend, Backend Stack, API Design')}`],
       ]},
-      { cls: 'p2', name: 'React Deep + State', days: [
-        ['<b>React:</b> Reconciliation &amp; Fiber · Hooks Internals', '<b>DSA:</b> mixed set (5 problems)'],
-        ['<b>React:</b> Performance · State Management', '<b>JS Practice:</b> arrays / objects set'],
-        ['<b>React:</b> Advanced Patterns · TypeScript + React', '<b>DSA:</b> mixed set (5 problems)'],
-        ['<b>React:</b> Concurrent (18+) · SSR / SSG / ISR / RSC', '<b>JS Practice:</b> event-loop ordering set'],
-        ['<b>React:</b> Testing', '<b>DSA:</b> Trees mixed (5 problems)'],
-        ['<b>Redux:</b> Core · Toolkit', '<b>JS Practice:</b> rebuild useState/useEffect mental model'],
-        ['<b>Redux:</b> RTK Query · Middleware / Thunks', '<b>DSA:</b> mixed set (5 problems)'],
-        ['<b>State:</b> Server state (React Query) · Zustand/Jotai · when-to-use', '<b>JS Practice:</b> tricky output set'],
-        ['<b>Build:</b> a component from scratch (tabs / accordion, controlled)', '<b>DSA:</b> mixed set (5 problems)'],
-        ['<b>Consolidate:</b> self-quiz React &amp; Redux ✅ checklists', '<b>Re-explain</b> reconciliation + hooks out loud'],
+      { cls: 'p2', name: 'Cloud &amp; DevOps (AWS)', days: [
+        [`<b>AWS:</b> ${T('cloud-aws-foundations')}`, '<b>DSA:</b> Binary Search — 4 problems'],
+        [`<b>Serverless:</b> ${T('cloud-lambda')} · ${T('cloud-api-gateway')}`, '<b>Build:</b> put your API behind Lambda + API Gateway (or sketch it in SAM/CDK)'],
+        [`<b>Storage &amp; queues:</b> ${T('cloud-s3')} · ${T('cloud-sqs')}`, '<b>DSA:</b> Trees — traversals + recursion — 4 problems'],
+        [`<b>Data &amp; ops:</b> ${T('cloud-rds')} · ${T('cloud-cloudwatch')}`, '<b>Practice:</b> write 3 Logs Insights queries + an alarm plan for your API'],
+        [`<b>Auth &amp; BaaS:</b> ${T('cloud-cognito')} · ${T('cloud-amplify')} · ${T('cloud-firebase')}`, '<b>DSA:</b> BST + tree DP basics — 4 problems'],
+        [`<b>Delivery:</b> ${T('cloud-cicd')} · ${T('cloud-dev-tools')}`, '<b>Build:</b> GitHub Actions pipeline for your API (test → deploy, OIDC to AWS)'],
+        [`<b>Case:</b> ${T('cloud-serverless-case')} — whiteboard it end to end`, `<b>Consolidate:</b> ${QR('Cloud &amp; DevOps')}`],
       ]},
-      { cls: 'p3', name: 'React Native + Web Basics', days: [
-        ['<b>RN:</b> Architecture (Bridge/Fabric/JSI) · Core Components', '<b>Web:</b> HTML &amp; semantics'],
-        ['<b>RN:</b> Navigation · State &amp; Data (MMKV / React Query)', '<b>Web:</b> CSS — layout, specificity, box model'],
-        ['<b>RN:</b> Styling · Animations (Reanimated)', '<b>Web:</b> Rendering pipeline + Critical Render Path'],
-        ['<b>RN:</b> Native Modules · Device APIs &amp; Permissions', '<b>Web:</b> Networking (HTTP / TLS / CDN / CORS)'],
-        ['<b>RN:</b> Performance · Build &amp; Release', '<b>Web:</b> Storage + Accessibility'],
-        ['<b>RN:</b> Testing · Debugging · Common Gotchas', '<b>Web:</b> Security basics (XSS / CSRF / CSP)'],
-        ['<b>RN:</b> System Design + Machine Coding patterns', '<b>DSA:</b> mixed set (4 problems)'],
-        ['<b>Consolidate:</b> self-quiz RN &amp; Web ✅ checklists', '<b>Practice:</b> JS + DSA reps — hit your weak set'],
-        ['<b>Full revision sweep:</b> JS + React + RN ⚡ Revision cards (rapid)', '<b>Buffer</b> / patch any weak spot'],
+      { cls: 'p3', name: 'AI / LLM Engineering — the FDE core', days: [
+        [`<b>LLM:</b> ${T('ai-prompts')} · ${T('ai-llm-integration')}`, '<b>Build:</b> a streaming chat endpoint with structured (JSON-schema) output'],
+        [`<b>Agents:</b> ${T('ai-agents-tools')}`, '<b>Build:</b> give the chat 2 tools (function calling) and handle tool errors as results'],
+        [`<b>Retrieval:</b> ${T('ai-vector-search')}`, '<b>DSA:</b> Heaps / top-K — 4 problems'],
+        [`<b>RAG:</b> ${T('ai-rag')}`, '<b>Build:</b> mini RAG over your own notes — chunk → embed → retrieve → answer with citations'],
+        [`<b>Quality:</b> ${T('ai-evals')}`, '<b>Build:</b> a 20-case golden set + LLM-as-judge for the RAG demo; record a baseline'],
+        [`<b>Conversations:</b> ${T('ai-conversational')} · ${T('api-webrtc')}`, '<b>DSA:</b> Graphs — BFS / DFS — 4 problems'],
+        [`<b>Voice:</b> ${T('ai-realtime-voice')} · ${T('ai-livekit')}`, "<b>Practice:</b> explain a voice agent's latency budget out loud, on a whiteboard"],
+        [`<b>Your resume:</b> ${T('ai-call-scoring')} · ${T('ai-predictive')}`, '<b>Practice:</b> tell the call-scoring story in 90 s, then survive the deep-dive questions'],
+        [`<b>Vision + review:</b> ${T('ai-computer-vision')} · ${QR('AI / LLM')}`, '<b>Mock #1:</b> AI system design — "design a support copilot for a customer"'],
       ]},
-      { cls: 'p4', name: 'System Design, Machine Coding, Mocks &amp; Revision', days: [
-        ['<b>FSD:</b> the framework — how to structure a design answer', '<b>Practice:</b> talk one design out loud'],
-        ['<b>FSD:</b> worked cases · RN System Design', '<b>Practice:</b> design an infinite feed'],
-        ['<b>FSD:</b> design a chat / notifications system', '<b>Practice:</b> components, data flow, edge cases'],
-        ['<b>Machine Coding:</b> debounced typeahead / autocomplete', '<b>Practice:</b> keyboard nav, loading / empty states'],
-        ['<b>Machine Coding:</b> infinite scroll / paginated list + reusable modal', '<b>Practice:</b> cleanup, accessibility'],
-        ['<b>Machine Coding:</b> form with validation + a small state store', '<b>Practice:</b> controlled inputs, error states'],
-        ['<b>Mock #1:</b> JS + React — use the ✅ Checklists as the question bank', '<b>Log gaps:</b> list every question you fumbled'],
-        ['<b>Fix gaps</b> + DSA mixed timed set', '<b>Behavioral:</b> write 4–5 STAR stories'],
-        ['<b>Mock #2:</b> RN + Frontend System Design', '<b>Revise:</b> weak ⚡ Revision cards'],
-        ['<b>Mock #3:</b> DSA + machine coding (timed)', '<b>Fix gaps</b> from the mock'],
-        ['<b>Full revision:</b> every ✅ checklist as a rapid self-quiz, all modules', '<b>Behavioral</b> rehearsal'],
-        ['<b>Mock #4</b> (full loop) + polish resume &amp; portfolio', '<b>Buffer:</b> rest, or hit the single weakest topic'],
+      { cls: 'p4', name: 'System Design — HLD + LLD', days: [
+        [`<b>HLD:</b> ${T('bsd-framework')} · ${T('sd-framework')}`, '<b>DSA:</b> Graphs — topological sort / union-find — 4 problems'],
+        [`<b>HLD cases:</b> ${T('bsd-cases')} — URL shortener, rate limiter`, '<b>Practice:</b> redo one case on paper in 35 minutes'],
+        [`<b>HLD cases:</b> ${T('bsd-cases')} — chat, feed, payments`, '<b>DSA:</b> Dynamic Programming (1D) — 4 problems'],
+        [`<b>LLD:</b> ${T('lld-framework')} · ${T('lld-patterns')}`, '<b>Practice:</b> map 5 patterns to real code you have shipped'],
+        [`<b>LLD cases:</b> ${T('lld-parking-lot')} · ${T('lld-lru-cache')}`, '<b>Code:</b> LRU cache from scratch, timed (30 min)'],
+        [`<b>LLD cases:</b> ${T('lld-rate-limiter')} · ${T('lld-booking-system')}`, '<b>Code:</b> booking conflict check + a concurrency guard'],
+        [`<b>LLD + FE SD:</b> ${T('lld-notification')} · ${T('sd-cases')}`, '<b>Mock #2:</b> one HLD + one LLD round, timed'],
+      ]},
+      { cls: 'p5', name: 'Frontend Polish (fast)', days: [
+        [`<b>JavaScript:</b> ${QR('JavaScript')}; deep-read ${T('js-event-loop')} · ${T('js-promises')}`, '<b>DSA:</b> Dynamic Programming (2D) — 4 problems'],
+        [`<b>TS + React:</b> ${QR('TypeScript, React')}; deep-read ${T('react-concurrent')}`, '<b>Machine coding:</b> typeahead with debounce, keyboard nav, loading/empty states'],
+        [`<b>Full-stack React:</b> ${T('react-nextjs')} · ${T('react-ssr')}`, '<b>Build:</b> a Next.js page for your API — server component + server action'],
+        [`<b>Web:</b> ${T('web-security')} · ${T('web-networking')} · ${T('test-strategies')}`, '<b>Mock #3:</b> full-stack coding round (API + UI), timed'],
+      ]},
+      { cls: 'p6', name: 'FDE Readiness &amp; Final Loop', days: [
+        [`<b>Behavioral:</b> ${T('beh-star')} · ${T('beh-stories')} — write 8 STAR stories (customer, ambiguity, incident, shipped AI feature)`, '<b>DSA:</b> mixed timed set — 6 problems'],
+        [`<b>FDE scenarios:</b> ${T('beh-company-values')} + answer every "a customer says…" question in the AI &amp; Backend Interview Q&amp;A`, '<b>Fix gaps</b> from mocks #1–#3'],
+        ['<b>Mock #4:</b> full FDE loop — problem decomposition + build-a-demo + behavioral', '<b>Log &amp; fix</b> every question you fumbled'],
+        [`<b>Full revision:</b> ${QR('Core tier, all modules')}`, '<b>Re-solve</b> the 3 hardest DSA problems from scratch'],
+        ['<b>Light day:</b> your 5 weakest Revision cards + rehearse the resume walkthrough', '<b>Rest</b> — sleep beats one more topic'],
       ]},
     ];
 
@@ -904,15 +914,15 @@
 
     container.innerHTML = `
       <div class="plan">
-        <div class="topic-meta"><span class="topic-meta-module">${total} days · 2.5 hrs/day · ${fmt(START)} – ${fmt(endDt)} · mid-size target</span></div>
-        <h1 class="topic-title">${total}-Day Frontend Roadmap</h1>
-        <p class="plan-lede">A date-by-date plan for an <strong>experienced React Native engineer</strong> — polish what you know, drill what you don't, and get genuinely strong at the points that matter. Each topic is a <strong>skim → self-quiz (⚡ Revision + ✅ Checklist) → deep-read only the gaps</strong> loop.</p>
+        <div class="topic-meta topic-crumbs"><span class="crumb-tier">Study Plan</span><span class="crumb-sep" aria-hidden="true">/</span><span class="crumb-mod">Full Stack + FDE</span><span class="crumb-time">${total} days · ${fmt(START)} – ${fmt(endDt)}</span></div>
+        <h1 class="topic-title">${total}-Day Full Stack + FDE Plan</h1>
+        <p class="plan-lede">A date-by-date plan to move from React Native to <strong>Full Stack</strong> and <strong>Forward Deployed Engineer</strong> roles. Go deep on what's new (backend, cloud, AI, design) and polish what you already know (JS, TypeScript, React) with Quick Revision. One project grows through the plan, from API to cloud to AI demo, so you finish with something to show. Every topic name links to its page.</p>
 
         <div class="plan-board">
           <div class="plan-stats">
-            <div class="plan-stat"><span class="n">~${Math.round(total * 2.5)}</span><span class="l">total hours</span></div>
-            <div class="plan-stat"><span class="n">~62</span><span class="l">topics</span></div>
-            <div class="plan-stat"><span class="n">~70</span><span class="l">DSA / JS problems</span></div>
+            <div class="plan-stat"><span class="n">~${total * 3}</span><span class="l">total hours</span></div>
+            <div class="plan-stat"><span class="n">${planTopics.size}</span><span class="l">topics</span></div>
+            <div class="plan-stat"><span class="n">~60</span><span class="l">DSA problems</span></div>
             <div class="plan-stat"><span class="n">4</span><span class="l">mock interviews</span></div>
           </div>
           <div class="plan-prog-head"><span class="lab">Progress</span><span class="pct" id="planPct"></span></div>
@@ -921,14 +931,14 @@
         </div>
 
         <div class="plan-method">
-          <div class="plan-m"><span class="k">Daily rhythm</span><strong>~1.25h concept · ~1h practice · ~15m revise</strong></div>
-          <div class="plan-m"><span class="k">Polish, don't relearn</span><strong>Lean on the ✅ Checklists — deep-read only where you stumble</strong></div>
-          <div class="plan-m"><span class="k">Swing factor</span><strong>DSA is a daily habit — solve, don't just read</strong></div>
+          <div class="plan-m"><span class="k">Daily rhythm</span><strong>~1.5h concept · ~1h build or DSA · ~30m revise</strong></div>
+          <div class="plan-m"><span class="k">Learn vs polish</span><strong>Deep-read backend, cloud, AI and LLD; skim frontend with Quick Revision</strong></div>
+          <div class="plan-m"><span class="k">FDE edge</span><strong>Build as you go: API → AWS → RAG demo with evals you can show</strong></div>
         </div>
 
         ${phasesHtml}
 
-        <div class="plan-note"><strong>How to use it:</strong> each day is ~1.25h concept + ~1h practice + ~15m revision. Polish familiar React/RN fast with the ⚡ Revision + ✅ Checklist and spend the saved time on DSA reps. Scope now covers <strong>JS in full + basic DSA (recursion &amp; trees included)</strong> — heavy graphs / DP stay out for a mid-size target. The consolidation &amp; full-revision days are load-bearing — spaced self-quizzing is what holds up under interview pressure.</div>
+        <div class="plan-note"><strong>How to use it:</strong> each day is about 3 hours: read the concept topics (Revision card first, then the sections), then do the second line, which is DSA, a build step on your running project, or practice. Tick the day when done; ticks sync to your account. Consolidation days use <a class="plan-link" href="#/revise">Quick Revision</a>. The four mocks are load-bearing, so after each one, fix the gaps before moving on. Fell behind? Skip a DSA line, never a build step or a mock.</div>
       </div>`;
 
     const toc = document.getElementById('tocList');

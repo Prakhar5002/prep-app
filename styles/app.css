@@ -2741,3 +2741,14 @@ html.focus-mode #focusToggle {
 .rd-modbtn.is-parent .rd-modname { color: var(--fg-strong); }
 .rd-mod.open > .rd-modbtn .rd-chev { color: var(--tone); }
 .rd-children { margin-left: 26px; }
+
+/* Study Plan v2 (Full Stack + FDE): extra phase colours + clickable topic links */
+.plan-phase.p5 { --pc: var(--yellow); --pc-soft: var(--yellow-soft); }
+.plan-phase.p6 { --pc: var(--red);    --pc-soft: var(--red-soft); }
+.plan-link {
+  color: var(--accent-strong); text-decoration: none; font-weight: 500;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.plan-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.plan-day.is-done .plan-link { color: inherit; border-bottom-color: transparent; }
