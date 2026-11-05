@@ -1,33 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'wp-visibility',
-  module: 'workplace',
-  title: 'Visibility & Self-Promotion',
-  estimatedReadTime: '35 min',
-  tags: ['visibility', 'self-promotion', 'career', 'sponsor', 'network', 'brag-doc', 'narrative'],
+  id: "wp-visibility",
+  module: "workplace",
+  title: "Visibility & Self-Promotion",
+  estimatedReadTime: "35 min",
+  tags: ["visibility","self-promotion","career","sponsor","network","brag-doc","narrative"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>The good engineer who is invisible underperforms the average engineer who is well-known. This isn't fair, but it's the system. Visibility is not bragging; it's the work of making sure your work is <em>knowable</em>. Decisions about your career — promo, scope, comp, retention — are made by people who don't see your code. They see your visibility artifacts: docs, talks, demos, peer endorsements, the "I shipped X" thread. Your job is to ensure those artifacts represent the value you create.</p>
-<ul>
-  <li><strong>Quiet excellence is invisible.</strong> If your work isn't visible, it doesn't exist for promo / comp / opportunity decisions.</li>
-  <li><strong>Visibility ≠ self-promotion bombast.</strong> Best visibility is factual, helpful to others, and ladder-aligned to org goals.</li>
-  <li><strong>Brag doc.</strong> Write down your wins as you go; otherwise they're forgotten by review time.</li>
-  <li><strong>Narrative > list.</strong> A coherent story about your impact beats a 30-bullet shipped-features list.</li>
-  <li><strong>Sponsors > mentors.</strong> Mentors give advice; sponsors advocate for you in rooms you're not in. Build sponsorship deliberately.</li>
-  <li><strong>Internal visibility</strong> drives promo + scope. <strong>External visibility</strong> drives comp + future job offers. Both matter at different career stages.</li>
-  <li><strong>Mobile / RN engineers face specific visibility challenges:</strong> often work in a smaller niche; need to actively pull mobile work into broader visibility.</li>
-  <li><strong>The "halo" of high-visibility teams</strong> often outweighs individual performance. Choose teams with rising-stock when possible.</li>
-</ul>
-<p><strong>Mantra:</strong> "Do good work, then make it knowable. Maintain a brag doc. Build sponsors. Tell a coherent narrative. Pick visible teams. External presence at staff+."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Good work that's invisible loses to average work that's known — visibility is the work of making your work <strong>knowable, not making you known</strong>: a brag doc, a coherent narrative, sponsors, and strategically chosen visible teams.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Quiet excellence is invisible</strong> for promo / comp / retention decisions — which are made by people who never see your code, only your artifacts: docs, talks, demos, peer endorsements, the "I shipped X" thread.</li>
+    <li><strong>Visibility is communication, not bragging.</strong> The best visibility is factual, helpful to others, and ladder-aligned to org goals; the target is "healthy visibility" where the work is real and fully seen.</li>
+    <li><strong>Keep a brag doc</strong> — 10 minutes every Friday. Without it you forget ~80% of your year by review time; with it you have 50+ concrete entries for packets, narratives, and resumes.</li>
+    <li><strong>Narrative beats a list.</strong> A coherent story about your impact ("this year I raised mobile reliability...") outperforms a 30-bullet shipped-features list.</li>
+    <li><strong>Sponsors beat mentors.</strong> Mentors give advice; sponsors spend political capital for you in rooms you're not in. Sponsorship is earned through a pattern of visible, useful work — never asked for cold.</li>
+    <li><strong>Career-shaping decisions happen in "rooms you're not in"</strong> (calibration, promo committee, headcount, layoffs). Ask continuously: if my name came up tomorrow, what artifacts could people point to?</li>
+    <li><strong>Internal visibility drives promo and scope; external drives comp and future offers.</strong> Junior ~80% internal; senior+ adds 20-30% external; staff+ treats external presence as part of the role.</li>
+    <li><strong>Ladder alignment multiplies weight:</strong> strategic + visible + delivered is promo gold; off-strategy or invisible work is near-zero career value.</li>
+    <li><strong>Team halo is real:</strong> the visibility of a high-profile team often outweighs individual performance — pick rising-stock teams when you can.</li>
+    <li><strong>Credit collaborators by name and be specific about your role</strong> — engineers who credit others get more credit themselves. Over-claiming flips your reputation from high-output to credit-grabber fast.</li>
+    <li><strong>Route visibility through your manager</strong> (your first-line sponsor); don't end-run them to skip-level.</li>
+    <li><strong>Mobile / RN angle:</strong> mobile work is felt by users but not by other engineers — bridge it to product / business outcomes ("cut launch time 40%") rather than internal terms ("migrated nav to type-safe routing").</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Avoidance disguised as humility</strong> — "I don't want to brag" and "my work speaks for itself." It doesn't: reviewers don't have time to read code, and calibration involves people who never met you. The result is invisible, under-leveled work. (The opposite trap — chronic over-claiming — craters your reputation just as fast.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I think about visibility as making my work knowable, not making me known. The work has to be real first; visibility is the communication layer. I keep a brag doc, translate mobile work into business outcomes, and credit collaborators by name."</div>
+  <div class="revision-say">"For hard-to-see platform work I quantify the upstream impact and build dashboards — 'this migration let team X ship feature Y', or a crash-rate dashboard the VPs check weekly. Concrete numbers travel where 'refactored navigation' doesn't."</div>
+  <div class="revision-say">"I don't ask for sponsorship — I earn it by doing consistently visible, useful work in a senior leader's orbit and being reliable. Either it emerges from that pattern or it doesn't; asking cold is an anti-pattern."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The "good work isn't enough" reality</h3>
 <p>The engineering myth: do good work, get rewarded. Reality: do good work + make it visible, get rewarded.</p>
 <p>Why visibility matters even when work is excellent:</p>
@@ -112,12 +121,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>External mobile / RN community is a strong external visibility channel</strong> — mobile-specific conferences (App.js, RN London, FrontConf, etc.), OSS contributions to RN ecosystem.</li>
 </ul>
 <p>The cross-cutting move: bridge mobile work to product / business outcomes that anyone can understand.</p>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "rooms you're not in" framework</h3>
 <p>Every career-shaping decision happens in a meeting you're not in:</p>
 <ul>
@@ -217,12 +224,10 @@ window.PREP_SITE.registerTopic({
   </tbody>
 </table>
 <p>For junior engineers, low-cost external (a blog, occasional GitHub contributions). For senior+, more deliberate (talks, books, OSS leadership). At staff+, often part of the role.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>The brag doc</h3>
 <p>The single highest-leverage visibility tool. Mechanics:</p>
 <pre><code>Format (use whatever doc tool, kept private):
@@ -395,12 +400,10 @@ for office hours]. Onward to [next thing].</code></pre>
   <li><strong>Mobile platform talks.</strong> Internal RN / iOS / Android talks are usually well-attended.</li>
   <li><strong>External mobile community.</strong> RN OSS contributions, mobile conferences (App.js, Chain React, RN London).</li>
 </ul>
-`
-    },
-    {
-      id: 'examples',
-      title: '🔍 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Brag-doc entry</h3>
 <p><strong>Setup:</strong> You shipped a major performance improvement in the mobile app.</p>
 
@@ -613,12 +616,11 @@ Each post:
 </ol>
 
 <p>This is a 6-12 month investment. Most engineers under-recognized for output suffer in silence; the recovery is consistent visibility work.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Cultural calibration of self-promotion</h3>
 <p>What reads as "appropriate visibility" varies by culture and team. US tech is more visibility-permissive; some cultures (Japan, parts of EU, traditional enterprise) view it as inappropriate.</p>
 <ul>
@@ -740,12 +742,9 @@ Each post:
   <li><strong>Transition pitfall:</strong> as new manager, taking too much IC credit erodes team trust. As new IC after manager, lacking recent shipped artifacts.</li>
   <li><strong>Plan visibility for the role you're in.</strong> Different rubrics.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern: avoidance disguised as humility</h3>
 <p><strong>Looks like:</strong> "I don't want to brag." Result: invisible work; under-leveled.</p>
 <p><strong>Why bad:</strong> Humility is fine; being unknown is not. Sharing concrete work isn't bragging.</p>
@@ -836,12 +835,10 @@ Each post:
 <p><strong>Why bad:</strong> Manager / mentor / sponsor can amplify you; you have to ask.</p>
 <p><strong>Fix:</strong> "I want to make sure my work is visible at the right level. What artifacts / forums would help?" — direct conversation with manager.</p>
 </p>
-`
-    },
-    {
-      id: 'interview',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>"Tell me about a project you're proud of"</h3>
 <p>Universal interview question. Tests: scope, impact, your role, communication.</p>
 
@@ -1020,56 +1017,26 @@ resolve."</code></pre>
 <h3>The 30-second mantra</h3>
 <p><em>"Maintain a brag doc. Tell a coherent narrative. Build sponsors slowly. Pick visible teams. Match visibility to scope. Internal first; external supplements. Visibility is communication, not bragging."</em></p>
 <p>Engineers who treat visibility as part of senior engineering progress at a faster cadence than equivalently-skilled engineers who don't. The work is real; the visibility makes it knowable; together they build careers.</p>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Good work that's invisible loses to average work that's known — visibility is the work of making your work <strong>knowable, not making you known</strong>: a brag doc, a coherent narrative, sponsors, and strategically chosen visible teams.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Quiet excellence is invisible</strong> for promo / comp / retention decisions — which are made by people who never see your code, only your artifacts.</li>
-    <li><strong>Visibility is communication, not bragging.</strong> The best visibility is factual, helpful to others, and ladder-aligned to org goals; the target is "healthy visibility" where the work is real and fully seen.</li>
-    <li><strong>Keep a brag doc</strong> — 10 minutes every Friday. Without it you forget ~80% of your year by review time; with it you have 50+ concrete entries for packets, narratives, and resumes.</li>
-    <li><strong>Narrative beats a list.</strong> A coherent story about your impact ("this year I raised mobile reliability...") outperforms a 30-bullet shipped-features list.</li>
-    <li><strong>Sponsors beat mentors.</strong> Mentors give advice; sponsors spend political capital for you in rooms you're not in. Sponsorship is earned through a pattern of visible, useful work — never asked for cold.</li>
-    <li><strong>Career-shaping decisions happen in "rooms you're not in"</strong> (calibration, promo committee, headcount, layoffs). Ask continuously: if my name came up tomorrow, what artifacts could people point to?</li>
-    <li><strong>Internal visibility drives promo and scope; external drives comp and future offers.</strong> Junior ~80% internal; senior+ adds 20-30% external; staff+ treats external presence as part of the role.</li>
-    <li><strong>Ladder alignment multiplies weight:</strong> strategic + visible + delivered is promo gold; off-strategy or invisible work is near-zero career value.</li>
-    <li><strong>Credit collaborators by name and be specific about your role</strong> — engineers who credit others get more credit themselves. Over-claiming flips your reputation from high-output to credit-grabber fast.</li>
-    <li><strong>Route visibility through your manager</strong> (your first-line sponsor); don't end-run them to skip-level.</li>
-    <li><strong>Mobile / RN angle:</strong> mobile work is felt by users but not by other engineers — bridge it to product / business outcomes ("cut launch time 40%") rather than internal terms ("migrated nav to type-safe routing").</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Avoidance disguised as humility</strong> — "I don't want to brag" and "my work speaks for itself." It doesn't: reviewers don't have time to read code, and calibration involves people who never met you. The result is invisible, under-leveled work. (The opposite trap — chronic over-claiming — craters your reputation just as fast.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I think about visibility as making my work knowable, not making me known. The work has to be real first; visibility is the communication layer. I keep a brag doc, translate mobile work into business outcomes, and credit collaborators by name."</div>
-  <div class="revision-say">"For hard-to-see platform work I quantify the upstream impact and build dashboards — 'this migration let team X ship feature Y', or a crash-rate dashboard the VPs check weekly. Concrete numbers travel where 'refactored navigation' doesn't."</div>
-  <div class="revision-say">"I don't ask for sponsorship — I earn it by doing consistently visible, useful work in a senior leader's orbit and being reliable. Either it emerges from that pattern or it doesn't; asking cold is an anti-pattern."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. How do you maintain a brag doc, and why does it beat reconstructing your year at review time?</div>
+  <div class="qa-answer">
+    <p>It's a private doc, organised by quarter, where each project entry gets my specific role, the measurable outcome, links to visible artifacts (PRs, docs, talks), and the collaborators and what they did. Alongside that I log other contributions (mentoring, hiring, on-call, code reviews), exact quotes of feedback I received, and recognition. I update it Friday afternoons for about 10 minutes, so by review time I have 50+ entries; without it you forget roughly 80% of your year by the time you write your packet. It captures impact while it's fresh, protects against memory decay, and becomes raw material for review packets, promo cases, resumes and my narrative.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you tell a concise STAR story about a project you're proud of — with your specific role, a hard decision, and measurable numbers?</li>
-    <li>Can you explain how you maintain a brag doc and why it beats reconstructing your year at review time?</li>
-    <li>Can you tell a coherent narrative of your org impact instead of reciting a list of shipped features?</li>
-    <li>Can you explain the difference between a mentor and a sponsor, and how you'd build sponsorship without asking for it?</li>
-    <li>Can you describe how you'd make hard-to-see (infra / platform / mobile) work visible by translating and quantifying upstream impact?</li>
-    <li>Can you explain how you balance internal versus external visibility, and why you'd credit collaborators by name?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. What's the difference between a mentor and a sponsor, and how do you build sponsorship without asking for it?</div>
+  <div class="qa-answer">
+    <p>A mentor gives advice in 1:1s, can be anywhere in or outside the org, and you can simply ask to learn from them. A sponsor spends political capital for you, mentioning you in rooms you're not in. They're usually senior and in or near your reporting chain, and they're decisive for promo and opportunities. You earn a sponsor rather than ask for one. The pattern: do consistently visible, valuable work in a senior leader's orbit, be useful to them (solve a problem they care about, stay calm in a crisis), stay a known quantity, and communicate honestly without overselling. Eventually they advocate for you unprompted, or they don't; asking cold or aggressive networking usually backfires.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. How do you balance internal and external visibility, and why do you credit collaborators by name?</div>
+  <div class="qa-answer">
+    <p>Internal visibility (brag doc, demos, all-hands talks, internal docs and blogs) drives promo, scope, retention and internal mobility. External visibility (public blog, OSS, conference talks) drives comp through outside offers, future opportunities and authority in your domain, but it costs time and carries some risk. So junior engineers should spend about 80% on internal, senior+ should add about 20-30% external, and at staff+ external presence becomes part of the role. On credit: I always name collaborators and say exactly what my role was ("I designed; Y implemented"), and I credit upstream work. Counter-intuitively, engineers who credit others get more credit themselves, while over-claiming quickly flips your reputation from high-output to credit-grabber.</p>
+  </div>
+</div>
+` },
+
   ]
 });

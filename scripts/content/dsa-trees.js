@@ -1,32 +1,54 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-trees',
-  module: 'dsa',
-  title: 'Trees',
-  estimatedReadTime: '45 min',
-  tags: ['trees', 'binary-tree', 'bst', 'traversal', 'dfs', 'bfs', 'recursion', 'lca', 'serialize'],
+  id: "dsa-trees",
+  module: "dsa",
+  title: "Trees",
+  estimatedReadTime: "45 min",
+  tags: ["trees","binary-tree","bst","traversal","dfs","bfs","recursion","lca","serialize"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>A <strong>tree</strong> is a connected acyclic graph: each node has one parent (except root) and any number of children. Trees model hierarchies — DOM, file systems, JSON, Abstract Syntax Trees, React fiber, navigation stacks, decision trees. In interview-land, the canonical species is the <strong>binary tree</strong>: every node has at most two children (<code>left</code>, <code>right</code>).</p>
-<ul>
-  <li><strong>Two traversal families:</strong> <em>DFS</em> (preorder, inorder, postorder — usually recursive or stack-based) and <em>BFS</em> (level-order via queue).</li>
-  <li><strong>BST</strong> = binary tree with the invariant <code>left &lt; root &lt; right</code>. Search/insert/delete are O(h) where h is height — O(log n) balanced, O(n) worst case.</li>
-  <li><strong>Inorder traversal of a BST</strong> yields sorted output. Memorize this.</li>
-  <li><strong>The "carry up vs carry down" pattern</strong> determines most tree problem shapes: do you compute children first and combine (postorder), or pass parent state down (preorder)?</li>
-  <li><strong>Recursion is the natural fit</strong> — trees ARE recursive structures. Every tree problem has a clean recursive solution; iterative versions exist when stack depth matters.</li>
-  <li><strong>Common patterns:</strong> max depth, diameter, lowest common ancestor (LCA), path sum, serialize/deserialize, validate BST, level-order, zig-zag, view (left/right/top/bottom), sum of paths.</li>
-  <li><strong>Balanced trees</strong> (AVL, red-black, B-tree) are mostly used in databases and engine internals; rarely required to implement in interviews — but knowing they exist matters.</li>
-</ul>
-<p><strong>Mantra:</strong> "Recurse on subtrees. Decide the work order. Pick BFS only if you need level-by-level."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Every tree solution is one skeleton — base case for null, recurse left and right, then combine</strong> — you only decide what each call returns and how you merge it.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A tree is a connected acyclic graph:</strong> one parent per node except the root. It models DOM, file systems, JSON, ASTs and React fiber; the interview default is the binary tree (<code>left</code>, <code>right</code>).</li>
+    <li><strong>Trees are recursive structures</strong> — every subtree is a tree, so recursion is the natural fit. Mantra: "Recurse on subtrees. Decide the work order. Pick BFS only if you need level-by-level."</li>
+    <li><strong>The subtree-solver skeleton:</strong> null → BASE; <code>L = solve(left)</code>, <code>R = solve(right)</code>; <code>return COMBINE(node.val, L, R)</code>. The whole problem is choosing BASE, what L/R return, and COMBINE.</li>
+    <li><strong>Two traversal families:</strong> DFS (preorder visit→L→R, inorder L→visit→R, postorder L→R→visit) and BFS (level-order via queue).</li>
+    <li><strong>Order picks the job:</strong> preorder → serialize/copy; inorder → BST sorted output; postorder → aggregate from leaves up (height, sum, validation, deletion).</li>
+    <li><strong>Carry-down vs carry-up:</strong> pass state <em>into</em> the call for path-from-root problems (path sum, validate BST); let children <em>return</em> and combine for subtree aggregates (max depth, diameter).</li>
+    <li><strong>BST invariant <code>left &lt; root &lt; right</code>:</strong> search/insert/delete are <code>O(h)</code>, so <code>O(log n)</code> balanced but <code>O(n)</code> skewed. <strong>Inorder traversal of a BST yields sorted output</strong> — memorize this.</li>
+    <li><strong>Balanced trees</strong> (AVL, red-black, B-tree) live in databases and engine internals; rarely implemented in interviews, but know they exist and why.</li>
+    <li><strong>Validate BST with min/max bounds passed down, NOT adjacent-child comparisons</strong> — the invariant covers <em>all</em> descendants, not just immediate children.</li>
+    <li><strong>Never seed BST bounds with 0</strong> — use <code>-Infinity</code>/<code>Infinity</code>, since values may be negative.</li>
+    <li><strong>Diameter passes THROUGH a node → <code>L + R</code>, not <code>max(L, R)</code></strong> (that's just depth).</li>
+    <li><strong>Null must return the right base</strong> (0 for depth/sum, true for validate, [] for lists) — returning <code>undefined</code> poisons <code>Math.max</code> into NaN.</li>
+    <li><strong>BFS trick: snapshot <code>levelSize = queue.length</code></strong> at the top of each level to separate this level from the next (level averages, zig-zag, right-side view).</li>
+    <li><strong>Don't use <code>Array.shift()</code> for the BFS queue</strong> — it's O(n), making BFS O(n²); use an index head pointer (<code>q[head++]</code>).</li>
+    <li><strong>Recursion depth ≈ tree height:</strong> O(log n) balanced but O(n) on a skewed tree, which overflows V8's stack around ~10,000 frames — iterate for very deep/large trees.</li>
+    <li><strong>Standard nodes have no parent pointer</strong> — build a parent map, pass parent down, or keep the DFS path stack when you need ancestors.</li>
+    <li><strong>Iterative postorder is the tricky one</strong> — do reversed-preorder (root→right→left) then reverse, or use a visited marker.</li>
+    <li><strong>Always handle empty tree (null) and single node first;</strong> clarify duplicate handling in a BST before coding.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> traversal (DFS or BFS) visits each node once → O(n). BST search/insert/delete is O(h): O(log n) balanced, O(n) worst-case skewed.</li>
+    <li><strong>Space:</strong> O(h) for the recursion/DFS stack (O(log n) balanced, O(n) skewed); BFS holds up to a full level, O(w) which can be O(n).</li>
+    <li><strong>Signal → reach for it:</strong> "hierarchy / nested structure" → tree · "aggregate a value from subtrees" → postorder DFS · "path from root" → carry state down (preorder) · "ordered set / sorted output" → BST + inorder · "level-by-level / shortest depth / views" → BFS · "lowest common ancestor / path" → recursive DFS returning found-subtrees.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Validating a BST by comparing each node only to its immediate children is wrong</strong> — the invariant <code>left &lt; root &lt; right</code> covers <em>all</em> descendants, so pass <code>[min, max]</code> bounds down (seeded with <code>-Infinity</code>/<code>Infinity</code>, never 0, since values can be negative). Sibling slips: returning <code>undefined</code> instead of a proper null base (0/true/[]) poisons <code>Math.max</code> into NaN, and using <code>Array.shift()</code> for the BFS queue turns O(n) into O(n²).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Every tree solution is the same skeleton: base case for null, recurse on left and right, then combine — I just decide what each call returns and how I merge it."</div>
+  <div class="revision-say">"To validate a BST I pass min/max bounds down, because the invariant is over all descendants, not just the immediate children."</div>
+  <div class="revision-say">"I use postorder when I aggregate from the leaves up, and BFS with a level-size snapshot when the problem is genuinely level-by-level."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a tree?</h3>
 <p>A tree is a hierarchical data structure: a connected acyclic graph with a designated <strong>root</strong>. Each node holds a value and references to its <strong>children</strong>. A node's children are themselves the roots of <strong>subtrees</strong> — this recursive structure is what makes trees so amenable to recursion.</p>
 
@@ -77,12 +99,10 @@ window.PREP_SITE.registerTopic({
   <li>You discuss time/space complexity (typically O(n) time, O(h) space for recursion).</li>
   <li>You convert recursion → iteration if stack depth is a concern.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "subtree solver" pattern</h3>
 <p>Every recursive tree solution has the same shape:</p>
 <pre><code class="language-text">function solve(node):
@@ -176,12 +196,10 @@ function isBST(node, min = -Infinity, max = Infinity) {
     <tr><td>LCA</td><td>null</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Node definition</h3>
 <pre><code class="language-js">class TreeNode {
   constructor(val = 0, left = null, right = null) {
@@ -434,12 +452,10 @@ function deserialize(s) {
   return build(0, inorder.length - 1);
 }
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Maximum Path Sum (any node to any node)</h3>
 <pre><code class="language-js">function maxPathSum(root) {
   let best = -Infinity;
@@ -595,12 +611,11 @@ function deserialize(s) {
   return go(root, 0);
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Empty tree</h3>
 <p>The single most common omission. <code>maxDepth(null)</code> should return 0; <code>levelOrder(null)</code> should return <code>[]</code>; <code>isBST(null)</code> should return true. Always handle null at the top.</p>
 
@@ -665,12 +680,9 @@ while (head &lt; q.length) {
 
 <h3>Numerical overflow in path sums</h3>
 <p>JS numbers are 64-bit floats — safe integer is 2⁵³. Sum of paths that approach this need BigInt or modular arithmetic.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Validating BST with only adjacent comparisons</h3>
 <pre><code class="language-js">// BAD — passes for invalid trees like [10,5,15,null,null,6,20]
 //        — 6 is in 15's left subtree but 6 &lt; 10, BST invariant broken
@@ -793,12 +805,10 @@ function go(n) { return { depth, sum, isValid }; }
 
 <h3>Anti-pattern 8: Hand-rolling balanced BST</h3>
 <p>AVL/red-black implementations are 100+ lines of rotations. Almost never asked in interviews; certainly not implemented from scratch on a whiteboard. If you need an ordered map, use the language's built-in (Java's TreeMap, C++'s std::map). JS has no built-in; use a sorted array + binary search if the problem requires.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 14 problems worth memorizing patterns for</h3>
 <table>
   <thead><tr><th>Problem</th><th>Pattern</th></tr></thead>
@@ -891,63 +901,58 @@ function go(n) { return { depth, sum, isValid }; }
   <li>"I'd handle duplicate values explicitly via a tie-break rule (always go right)."</li>
   <li>"I'd cache subtree heights per node so diameter / balanced-BST checks become O(n) on repeated queries."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Every tree solution is one skeleton — base case for null, recurse left and right, then combine</strong> — you only decide what each call returns and how you merge it.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Trees are recursive structures</strong> — every subtree is a tree, so recursion is the natural fit. Mantra: "Recurse on subtrees. Decide the work order. Pick BFS only if you need level-by-level."</li>
-    <li><strong>The subtree-solver skeleton:</strong> null → BASE; <code>L = solve(left)</code>, <code>R = solve(right)</code>; <code>return COMBINE(node.val, L, R)</code>. The whole problem is choosing BASE, what L/R return, and COMBINE.</li>
-    <li><strong>Two traversal families:</strong> DFS (preorder visit→L→R, inorder L→visit→R, postorder L→R→visit) and BFS (level-order via queue).</li>
-    <li><strong>Order picks the job:</strong> preorder → serialize/copy; inorder → BST sorted output; postorder → aggregate from leaves up (height, sum, validation, deletion).</li>
-    <li><strong>Carry-down vs carry-up:</strong> pass state <em>into</em> the call for path-from-root problems (path sum, validate BST); let children <em>return</em> and combine for subtree aggregates (max depth, diameter).</li>
-    <li><strong>Inorder traversal of a BST yields sorted output</strong> — memorize this.</li>
-    <li><strong>Validate BST with min/max bounds passed down, NOT adjacent-child comparisons</strong> — the invariant covers <em>all</em> descendants, not just immediate children.</li>
-    <li><strong>Never seed BST bounds with 0</strong> — use <code>-Infinity</code>/<code>Infinity</code>, since values may be negative.</li>
-    <li><strong>Diameter passes THROUGH a node → <code>L + R</code>, not <code>max(L, R)</code></strong> (that's just depth).</li>
-    <li><strong>Null must return the right base</strong> (0 for depth/sum, true for validate, [] for lists) — returning <code>undefined</code> poisons <code>Math.max</code> into NaN.</li>
-    <li><strong>BFS trick: snapshot <code>levelSize = queue.length</code></strong> at the top of each level to separate this level from the next (level averages, zig-zag, right-side view).</li>
-    <li><strong>Don't use <code>Array.shift()</code> for the BFS queue</strong> — it's O(n), making BFS O(n²); use an index head pointer (<code>q[head++]</code>).</li>
-    <li><strong>Recursion depth ≈ tree height:</strong> O(log n) balanced but O(n) on a skewed tree, which overflows V8's stack around ~10,000 frames — iterate for very deep/large trees.</li>
-    <li><strong>Standard nodes have no parent pointer</strong> — build a parent map, pass parent down, or keep the DFS path stack when you need ancestors.</li>
-    <li><strong>Iterative postorder is the tricky one</strong> — do reversed-preorder (root→right→left) then reverse, or use a visited marker.</li>
-    <li><strong>Always handle empty tree (null) and single node first;</strong> clarify duplicate handling in a BST before coding.</li>
-  </ul>
-  <h4>Complexity &amp; when to reach for it</h4>
-  <ul>
-    <li><strong>Time:</strong> traversal (DFS or BFS) visits each node once → O(n). BST search/insert/delete is O(h): O(log n) balanced, O(n) worst-case skewed.</li>
-    <li><strong>Space:</strong> O(h) for the recursion/DFS stack (O(log n) balanced, O(n) skewed); BFS holds up to a full level, O(w) which can be O(n).</li>
-    <li><strong>Signal → reach for it:</strong> "hierarchy / nested structure" → tree · "aggregate a value from subtrees" → postorder DFS · "path from root" → carry state down (preorder) · "ordered set / sorted output" → BST + inorder · "level-by-level / shortest depth / views" → BFS · "lowest common ancestor / path" → recursive DFS returning found-subtrees.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Validating a BST by comparing each node only to its immediate children is wrong</strong> — the invariant <code>left &lt; root &lt; right</code> covers <em>all</em> descendants, so pass <code>[min, max]</code> bounds down (seeded with <code>-Infinity</code>/<code>Infinity</code>, never 0, since values can be negative). Sibling slips: returning <code>undefined</code> instead of a proper null base (0/true/[]) poisons <code>Math.max</code> into NaN, and using <code>Array.shift()</code> for the BFS queue turns O(n) into O(n²).</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Every tree solution is the same skeleton: base case for null, recurse on left and right, then combine — I just decide what each call returns and how I merge it."</div>
-  <div class="revision-say">"To validate a BST I pass min/max bounds down, because the invariant is over all descendants, not just the immediate children."</div>
-  <div class="revision-say">"I use postorder when I aggregate from the leaves up, and BFS with a level-size snapshot when the problem is genuinely level-by-level."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you code the three DFS traversals (pre-, in-, post-order) from memory?</li>
-    <li>Can you code BFS with a level-size snapshot from memory?</li>
-    <li>Can you state when you use preorder versus postorder?</li>
-    <li>Can you state the time and space complexity of a tree traversal?</li>
-    <li>Can you name the null-node base-case trap in tree recursion?</li>
-    <li>Can you name 2 tree problems and the traversal each needs?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. Write the three DFS traversals of a binary tree.</div>
+  <div class="qa-answer">
+    <p>They differ only in where you "visit" the node relative to the two recursive calls: preorder visits before (visit, left, right), inorder between (left, visit, right), postorder after (left, right, visit).</p>
+    <pre><code class="language-js">function pre(n, out)  { if (!n) return; out.push(n.val); pre(n.left, out); pre(n.right, out); }
+function ino(n, out)  { if (!n) return; ino(n.left, out); out.push(n.val); ino(n.right, out); }
+function post(n, out) { if (!n) return; post(n.left, out); post(n.right, out); out.push(n.val); }</code></pre>
+    <p>Iteratively, preorder pushes right then left onto an explicit stack so left pops first; postorder is easiest as a reversed root-right-left preorder.</p>
+  </div>
 </div>
-`}
-]
+<div class="qa-block">
+  <div class="qa-question">Q2. Write level-order BFS that processes the tree one level at a time.</div>
+  <div class="qa-answer">
+    <p>Snapshot <code>levelSize</code> at the top of each level so this level's nodes are separated from the children being added. Use an index head pointer instead of <code>shift()</code>, which is <code>O(n)</code> and would make BFS <code>O(n²)</code>.</p>
+    <pre><code class="language-js">function levelOrder(root) {
+  if (!root) return [];
+  const q = [root], levels = [];
+  let head = 0;
+  while (head &lt; q.length) {
+    const levelSize = q.length - head, level = [];
+    for (let i = 0; i &lt; levelSize; i++) {
+      const n = q[head++];
+      level.push(n.val);
+      if (n.left) q.push(n.left);
+      if (n.right) q.push(n.right);
+    }
+    levels.push(level);
+  }
+  return levels;
+}</code></pre>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. When do you use preorder versus postorder?</div>
+  <div class="qa-answer">
+    <p>Preorder handles the node before its children, so it fits carry-down problems where parent state flows into the call: serialize or copy a tree, path sum from the root, validate a BST with min/max bounds passed down. Postorder needs the children's answers first, so it fits carry-up aggregates: height, subtree sums, diameter, balanced checks and deletion. Inorder is the special case for BSTs, where it yields sorted output.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. What is the time and space complexity of a tree traversal?</div>
+  <div class="qa-answer">
+    <p>Time is <code>O(n)</code>, since every node is visited once. Space for recursive DFS is <code>O(h)</code> for the call stack: <code>O(log n)</code> on a balanced tree but <code>O(n)</code> on a skewed one, which can overflow V8's stack around 10,000 frames, so iterate on very deep trees. BFS space is bounded by the widest level held in the queue.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. What is the null-node base-case trap in tree recursion?</div>
+  <div class="qa-answer">
+    <p>Every recursive call eventually reaches a null child, and it must return the right identity value for the problem: 0 for depth or sum, <code>true</code> for validation, <code>[]</code> for lists. Forgetting it, or returning <code>undefined</code>, poisons the combine step; for example <code>Math.max(undefined, 1)</code> is <code>NaN</code>. Handle the empty tree and the single node first, and decide the base value before writing the combine.</p>
+  </div>
+</div>
+` },
+
+  ]
 });

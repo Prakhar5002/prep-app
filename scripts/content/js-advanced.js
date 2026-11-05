@@ -1,32 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'js-advanced',
-  module: 'js',
-  title: 'Advanced (Proxy, Symbol, Intl)',
-  estimatedReadTime: '45 min',
-  tags: ['proxy', 'reflect', 'symbol', 'iterator', 'generator', 'intl', 'weakmap', 'weakset', 'meta-programming'],
+  id: "js-advanced",
+  module: "js",
+  title: "Advanced (Proxy, Symbol, Intl)",
+  estimatedReadTime: "45 min",
+  tags: ["proxy","reflect","symbol","iterator","generator","intl","weakmap","weakset","meta-programming"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Past the everyday surface of JavaScript sits a "metaprogramming" layer: <strong>Symbol</strong> for unforgeable keys, <strong>Proxy</strong>/<strong>Reflect</strong> for intercepting object operations, <strong>iterators &amp; generators</strong> for custom traversal, <strong>WeakMap</strong>/<strong>WeakSet</strong> for memory-safe associations, and <strong>Intl</strong> for locale-correct formatting. These features power libraries (Vue's reactivity, Mobx, Zod), the language internals you depend on, and the bug surface you'll meet in interview deep-dives.</p>
-<ul>
-  <li><strong>Symbol:</strong> primitive that's <em>unique</em> per instantiation. Use as object keys to prevent collisions; well-known symbols (<code>Symbol.iterator</code>, <code>Symbol.asyncIterator</code>, <code>Symbol.toPrimitive</code>) are protocol hooks.</li>
-  <li><strong>Proxy:</strong> wraps an object with a "trap" handler that intercepts <code>get</code>, <code>set</code>, <code>has</code>, <code>deleteProperty</code>, <code>apply</code>, etc. The foundation of Vue 3 reactivity, Immer, and most observability libraries.</li>
-  <li><strong>Reflect:</strong> the canonical, non-throwing API for low-level object operations. Always pair with Proxy traps to forward defaults.</li>
-  <li><strong>Iterators / generators:</strong> any object with <code>[Symbol.iterator]() → { next() }</code> works in <code>for...of</code>. <code>function*</code> compiles to such an object; <code>yield</code> pauses execution.</li>
-  <li><strong>WeakMap / WeakSet:</strong> keys held weakly — entries vanish when the key has no other references. Memory-leak-safe caches and per-DOM-node metadata storage.</li>
-  <li><strong>Intl:</strong> built-in localized formatting — numbers, dates, currencies, plurals, list joining, segmentation. Replaces 90% of moment.js use cases at zero bundle cost.</li>
-  <li><strong>FinalizationRegistry / WeakRef</strong> exist but are intentionally limited; use sparingly.</li>
-</ul>
-<p><strong>Mantra:</strong> "Symbols for protocols. Proxy for observation. Iterators for traversal. Weak collections for memory safety. Intl for the world."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Symbols are for <strong>protocols</strong>, Proxy for <strong>observing operations</strong> (forward each trap via <code>Reflect</code>), iterators/generators for <strong>traversal</strong>, weak collections for <strong>memory safety</strong>, and Intl for <strong>i18n</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Symbol</strong> is a primitive that is unique per creation — two <code>Symbol('x')</code> are never equal. As object keys they never collide, are invisible to <code>JSON.stringify</code> and <code>Object.keys</code>, and surface only via <code>Object.getOwnPropertySymbols</code>.</li>
+    <li><strong>Well-known symbols are protocol hooks:</strong> <code>Symbol.iterator</code> (<code>for...of</code>), <code>Symbol.asyncIterator</code> (<code>for await...of</code>), <code>Symbol.toPrimitive</code>, <code>Symbol.toStringTag</code>, <code>Symbol.hasInstance</code>, <code>Symbol.species</code>.</li>
+    <li><strong>Proxy</strong> intercepts an object's essential internal operations via traps (<code>get</code>, <code>set</code>, <code>has</code>, <code>deleteProperty</code>, <code>apply</code>, <code>construct</code>, …). It's the foundation of Vue 3 reactivity, MobX, and Immer.</li>
+    <li><strong>Always forward from a trap with the matching <code>Reflect.*</code> call</strong> (passing <code>receiver</code>) to preserve correct semantics — e.g. getters that walk the prototype chain.</li>
+    <li><strong>Iterator protocol:</strong> any object with <code>[Symbol.iterator]()</code> returning <code>{ next() → {value, done} }</code> works in <code>for...of</code>, spread, and destructuring. Generators (<code>function*</code>) desugar to exactly this; <code>yield</code> pauses execution.</li>
+    <li>Sync iterator's <code>next()</code> returns <code>{value, done}</code>; async iterator's returns a Promise of it — async generators combine <code>await</code> and <code>yield</code>.</li>
+    <li><strong><code>WeakMap</code>/<code>WeakSet</code> hold keys weakly</strong> → GC-safe caches and per-object metadata. Keys must be objects; there's no <code>.size</code>/iteration because the count is non-deterministic.</li>
+    <li>A Proxy is <strong>not <code>===</code> to its target</strong>; keeping both the proxy and the target around splits reactivity — route everything through one.</li>
+    <li>Symbols are <strong>discoverable</strong> (<code>getOwnPropertySymbols</code>), so Symbol keys are collision-safe but NOT truly private; use <code>#private</code> fields or a <code>WeakMap</code> for real privacy.</li>
+    <li>Symbols don't implicitly coerce to string — a template literal on a Symbol throws; use <code>String(sym)</code>.</li>
+    <li><strong>Intl</strong> is the built-in i18n layer (<code>NumberFormat</code>, <code>DateTimeFormat</code>, <code>PluralRules</code>, <code>ListFormat</code>, <code>Segmenter</code>) — locale-correct formatting at near-zero bundle cost. Don't hand-roll currency or pluralization.</li>
+    <li><code>WeakRef</code>/<code>FinalizationRegistry</code> are intentionally limited — never depend on the finalizer running for correctness, and don't use <code>WeakRef</code> for caching (use an LRU). Don't over-trap: most Proxies need only <code>get</code>/<code>set</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Treating <strong>Symbol keys as private</strong> — they're discoverable via <code>Object.getOwnPropertySymbols</code>, so they're collision-safe but not secret; use <code>#private</code> fields or a <code>WeakMap</code> for real privacy. Also a Proxy is <strong>not <code>===</code></strong> its target, so route every access through the proxy or reactivity splits.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Symbols are for protocols, Proxy is for observing operations, iterators are for traversal, weak collections are for memory safety, and Intl is for the world."</div>
+  <div class="revision-say">"A Proxy traps the engine's essential internal operations, and you forward each trap through the matching <code>Reflect</code> call to keep the default semantics intact."</div>
+  <div class="revision-say">"<code>WeakMap</code> keys are held weakly so entries die with their key — that's why it has no <code>.size</code> and can't leak, unlike a plain <code>Map</code> cache."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "advanced" means here</h3>
 <p>This topic groups features that exist in modern JS engines (ES2015+) but rarely show up in everyday product code. They're the level you operate at when you're <em>writing</em> the library that other developers consume — or when you're debugging that library's internals.</p>
 
@@ -65,12 +75,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>What this topic is NOT</h3>
 <p>It's not a kitchen sink of every ES feature. We skip <code>BigInt</code>, <code>regex</code> deep dives, top-level <code>await</code>, decorators, and tagged templates — they each warrant their own topic. We focus on the meta-programming axis: features that change <em>how the engine evaluates code</em>, not features that just add new syntax for the same semantics.</p>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "object operation" abstraction</h3>
 <p>Every line of JS that touches an object compiles down to one of a small set of <em>internal operations</em> the spec calls "essential internal methods":</p>
 <table>
@@ -170,12 +178,10 @@ p.foo;         // logs: get foo, returns 1
 
 <h3>Intl — the runtime's i18n library</h3>
 <p>Browsers and Node ship with full ICU data (or close to it). Node's flag <code>--icu=full-icu</code> ensures all locales are available; Node 13+ (2019) ships with full ICU by default. RN ships with Hermes which has Intl support since Hermes 0.10.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Symbol basics</h3>
 <pre><code class="language-js">// Local symbol — unique forever
 const a = Symbol('id');
@@ -397,12 +403,10 @@ new Intl.ListFormat('en-US', { type: 'disjunction' }).format(['Mon', 'Tue', 'Wed
 const seg = new Intl.Segmenter('ja-JP', { granularity: 'word' });
 [...seg.segment('東京は美しい')].map(s =&gt; s.segment);   // ['東京', 'は', '美しい']
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: A reactive object in 20 lines</h3>
 <pre><code class="language-js">const subscribers = new Map();   // proxy → Set&lt;callback&gt;
 
@@ -567,12 +571,11 @@ function ago(date) {
 ago(new Date(Date.now() - 30_000));    // "30 seconds ago"
 ago(new Date(Date.now() - 3_600_000)); // "1 hour ago"
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Symbols and JSON</h3>
 <p><code>JSON.stringify</code> ignores symbol-keyed properties. If you need to serialize them, use a custom <code>toJSON</code> or <code>replacer</code>.</p>
 
@@ -663,12 +666,9 @@ const x = g();
 
 <h3>Symbol.iterator on arrays is built-in</h3>
 <p>Arrays already implement <code>Symbol.iterator</code>. <code>arr[Symbol.iterator]()</code> returns the array iterator. You don't need to add it.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Forgetting to forward via Reflect</h3>
 <pre><code class="language-js">// BAD — breaks getters that look up via prototype chain
 const p = new Proxy(target, {
@@ -793,12 +793,10 @@ new Money() + 1;             // 10000
 
 <h3>Anti-pattern 10: trapping every operation</h3>
 <p>Defining all 13 Proxy traps is a sign of over-engineering. Most libraries only need <code>get</code> and <code>set</code>. Any extras should be justified by a real use case.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -898,57 +896,32 @@ new Money() + 1;             // 10000
   <li>"I'd convert legacy private-via-WeakMap patterns to class private fields where readable and migrate gradually."</li>
   <li>"I'd add a small generator-based test harness for streaming protocols (server-sent events, chat) — async iteration reads cleaner than callback-heavy code."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Symbols are for <strong>protocols</strong>, Proxy for <strong>observing operations</strong> (forward each trap via <code>Reflect</code>), iterators/generators for <strong>traversal</strong>, weak collections for <strong>memory safety</strong>, and Intl for <strong>i18n</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Symbol</strong> is a primitive that is unique per creation — two <code>Symbol('x')</code> are never equal. As object keys they never collide, are invisible to <code>JSON.stringify</code> and <code>Object.keys</code>, and surface only via <code>Object.getOwnPropertySymbols</code>.</li>
-    <li><strong>Well-known symbols are protocol hooks:</strong> <code>Symbol.iterator</code> (<code>for...of</code>), <code>Symbol.asyncIterator</code> (<code>for await...of</code>), <code>Symbol.toPrimitive</code>, <code>Symbol.toStringTag</code>, <code>Symbol.hasInstance</code>, <code>Symbol.species</code>.</li>
-    <li><strong>Proxy</strong> intercepts an object's essential internal operations via traps (<code>get</code>, <code>set</code>, <code>has</code>, <code>deleteProperty</code>, <code>apply</code>, <code>construct</code>, …). It's the foundation of Vue 3 reactivity, MobX, and Immer.</li>
-    <li><strong>Always forward from a trap with the matching <code>Reflect.*</code> call</strong> (passing <code>receiver</code>) to preserve correct semantics — e.g. getters that walk the prototype chain.</li>
-    <li><strong>Iterator protocol:</strong> any object with <code>[Symbol.iterator]()</code> returning <code>{ next() → {value, done} }</code> works in <code>for...of</code>, spread, and destructuring. Generators (<code>function*</code>) desugar to exactly this; <code>yield</code> pauses execution.</li>
-    <li>Sync iterator's <code>next()</code> returns <code>{value, done}</code>; async iterator's returns a Promise of it — async generators combine <code>await</code> and <code>yield</code>.</li>
-    <li><strong><code>WeakMap</code>/<code>WeakSet</code> hold keys weakly</strong> → GC-safe caches and per-object metadata. Keys must be objects; there's no <code>.size</code>/iteration because the count is non-deterministic.</li>
-    <li>A Proxy is <strong>not <code>===</code> to its target</strong>; keeping both the proxy and the target around splits reactivity — route everything through one.</li>
-    <li>Symbols are <strong>discoverable</strong> (<code>getOwnPropertySymbols</code>), so Symbol keys are collision-safe but NOT truly private; use <code>#private</code> fields or a <code>WeakMap</code> for real privacy.</li>
-    <li>Symbols don't implicitly coerce to string — a template literal on a Symbol throws; use <code>String(sym)</code>.</li>
-    <li><strong>Intl</strong> is the built-in i18n layer (<code>NumberFormat</code>, <code>DateTimeFormat</code>, <code>PluralRules</code>, <code>ListFormat</code>, <code>Segmenter</code>) — locale-correct formatting at near-zero bundle cost. Don't hand-roll currency or pluralization.</li>
-    <li><code>WeakRef</code>/<code>FinalizationRegistry</code> are intentionally limited — never depend on the finalizer running for correctness, and don't use <code>WeakRef</code> for caching (use an LRU). Don't over-trap: most Proxies need only <code>get</code>/<code>set</code>.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Treating <strong>Symbol keys as private</strong> — they're discoverable via <code>Object.getOwnPropertySymbols</code>, so they're collision-safe but not secret; use <code>#private</code> fields or a <code>WeakMap</code> for real privacy. Also a Proxy is <strong>not <code>===</code></strong> its target, so route every access through the proxy or reactivity splits.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Symbols are for protocols, Proxy is for observing operations, iterators are for traversal, weak collections are for memory safety, and Intl is for the world."</div>
-  <div class="revision-say">"A Proxy traps the engine's essential internal operations, and you forward each trap through the matching <code>Reflect</code> call to keep the default semantics intact."</div>
-  <div class="revision-say">"<code>WeakMap</code> keys are held weakly so entries die with their key — that's why it has no <code>.size</code> and can't leak, unlike a plain <code>Map</code> cache."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Why are two <code>Symbol('x')</code> values never equal, and where are Symbol keys visible?</div>
+  <div class="qa-answer">
+    <p>A Symbol is a primitive that is unique by construction: every <code>Symbol()</code> call makes a new value, and the description (<code>'x'</code>) is only a debugging label, so <code>Symbol('x') === Symbol('x')</code> is false. As object keys, symbols never collide with string keys, are skipped by <code>Object.keys</code>, <code>for...in</code> and <code>JSON.stringify</code> (silently dropped), and show up only through <code>Object.getOwnPropertySymbols</code> (or <code>Reflect.ownKeys</code>). The exception is <code>Symbol.for('a')</code>, which uses a global registry shared across realms, so <code>Symbol.for('a') === Symbol.for('a')</code> is true — it gives up the uniqueness guarantee.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why two <code>Symbol('x')</code> are never equal and where Symbol keys are and aren't visible?</li>
-    <li>Can you name three well-known symbols and the protocol each one hooks into?</li>
-    <li>Can you explain why every Proxy trap should forward via the matching <code>Reflect.*</code> call?</li>
-    <li>Can you write an object that works in <code>for...of</code> by implementing the iterator protocol?</li>
-    <li>Can you explain why <code>WeakMap</code> has no <code>.size</code> and when to reach for it over <code>Map</code>?</li>
-    <li>Can you explain why Symbol keys aren't truly private and what gives you real privacy?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Name three well-known symbols and the protocol each one hooks into.</div>
+  <div class="qa-answer">
+    <p><code>Symbol.iterator</code> makes an object iterable, so it works with <code>for...of</code>, spread and destructuring; <code>Symbol.asyncIterator</code> does the same for <code>for await...of</code>. <code>Symbol.toPrimitive</code> controls coercion to a primitive in <code>+</code>, <code>String()</code> and similar, receiving a hint of number, string or default. <code>Symbol.toStringTag</code> sets what <code>Object.prototype.toString.call(obj)</code> reports, and <code>Symbol.hasInstance</code> overrides <code>x instanceof MyClass</code>. <code>Symbol.species</code> lets subclasses of Array or Promise choose the constructor used by <code>.map</code>/<code>.filter</code>/<code>.then</code>.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. Why should every Proxy trap forward through the matching <code>Reflect.*</code> call?</div>
+  <div class="qa-answer">
+    <p><code>Reflect</code> mirrors the trap names one-to-one (<code>Reflect.get</code>, <code>Reflect.set</code>, <code>Reflect.has</code>, <code>Reflect.ownKeys</code>, ...) and performs the default internal operation with the correct <strong>receiver</strong>. A naive <code>get(t, key) { return t[key]; }</code> reads from the raw target, so a getter on the target or its prototype runs with <code>this</code> = the target instead of the proxy, and its nested reads bypass your traps — breaking things like reactivity tracking. Writing <code>get(t, key, receiver) { return Reflect.get(t, key, receiver); }</code> keeps the default semantics intact. One known exception: class <code>#private</code> fields look up the slot on the receiver, which a proxy doesn't have, so there you pass the target as the receiver.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Why aren't Symbol keys truly private, and what gives you real privacy?</div>
+  <div class="qa-answer">
+    <p>Symbol keys are hidden from normal enumeration but still discoverable: anyone holding the object can call <code>Object.getOwnPropertySymbols(obj)</code> and read the value. They prevent accidental collisions, not deliberate access. For real privacy use class private fields (<code>#count</code>), which can't be reached from outside the class body at all, or an external <code>WeakMap</code> keyed by the instance, which only code holding that map can read and which doesn't keep the instance alive.</p>
+  </div>
+</div>
+` },
+
   ]
 });

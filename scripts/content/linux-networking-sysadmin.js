@@ -1,26 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'linux-networking-sysadmin',
-  module: 'linux',
-  title: 'Networking, Packages & Sysadmin',
-  estimatedReadTime: '32 min',
-  tags: ['linux', 'networking', 'sysadmin', 'packages', 'ssh', 'devops'],
+  id: "linux-networking-sysadmin",
+  module: "linux",
+  title: "Networking, Packages & Sysadmin",
+  estimatedReadTime: "32 min",
+  tags: ["linux","networking","sysadmin","packages","ssh","devops"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>This is the "day-2 operations" topic: once you can navigate a filesystem, manage permissions, pipe text around, control processes, and script the shell, the last skill set is talking to <em>other</em> machines and keeping <em>this</em> machine healthy — networking, remote access, installing software, watching disk space, reading logs, and packing files up for transport.</p>
-<ul>
-  <li><strong>Networking basics:</strong> <code>ip a</code> / <code>ip r</code> tell you your machine's addresses and routes; <code>ss -tulpn</code> tells you what's listening on which ports; <code>ping</code>, <code>curl</code>/<code>wget</code>, and <code>dig</code>/<code>host</code>/<code>nslookup</code> let you test reachability, fetch data over HTTP, and query DNS.</li>
-  <li><strong>Remote access & transfer:</strong> <code>ssh user@&lt;host&gt;</code> gives you an encrypted remote shell; <code>scp</code> and <code>rsync -avz</code> copy files over that same encrypted channel — <code>rsync</code> additionally only transfers what changed.</li>
-  <li><strong>Package managers differ per distro, same three verbs everywhere:</strong> update the local index of what's available, install a package, remove a package. Debian/Ubuntu uses <code>apt</code>, Fedora/RHEL uses <code>dnf</code> (or the older <code>yum</code>), Arch uses <code>pacman</code>. Different spelling, identical job — covered with a full equivalence table below.</li>
-  <li><strong>Disks, environment, logs, archives:</strong> <code>df -h</code>/<code>du -sh</code>/<code>lsblk</code>/<code>mount</code> for storage; <code>env</code>/<code>export</code>/<code>$PATH</code>/<code>~/.bashrc</code> vs <code>~/.profile</code> for how your shell environment is built; <code>journalctl</code> and <code>/var/log</code> for what happened and when; <code>tar</code>/<code>gzip</code>/<code>zip</code> for bundling and compressing files to move around.</li>
-  <li><strong>This is the last hands-on Linux topic before the command reference.</strong> Everything here assumes you're already comfortable with the filesystem, permissions, pipelines, and processes from earlier topics — this one is about reaching outside a single machine and keeping it running.</li>
-</ul>
-<p><strong>Mantra:</strong> "Every server is just a machine you reach over SSH, every package manager does the same three things with different spelling, and every problem leaves a trace in a log somewhere."</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Day-2 ops: reach other machines over <strong>SSH</strong>, install software with the same three <strong>package-manager verbs</strong>, and find every problem's trace in a <strong>log</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Networking basics:</strong> <code>ip a</code>/<code>ip r</code> show addresses and routes; <code>ss -tulpn</code> shows what's listening on which ports; <code>ping</code>, <code>curl</code>/<code>wget</code>, and <code>dig</code>/<code>host</code>/<code>nslookup</code> test reachability, fetch HTTP, and query DNS.</li>
+    <li><strong>Remote access:</strong> <code>ssh</code> gives an encrypted shell; <code>scp</code> and <code>rsync -avz</code> copy over it — and <code>rsync</code> only transfers what changed.</li>
+    <li>Package managers do the same three jobs (update the index, install, remove) with different spelling: <code>apt</code> (Debian/Ubuntu), <code>dnf</code>/<code>yum</code> (Fedora/RHEL), <code>pacman</code> (Arch).</li>
+    <li><strong>Storage/logs/archives:</strong> <code>df -h</code> (free), <code>du -sh</code> (used), <code>lsblk</code>/<code>mount</code>; <code>journalctl</code> and <code>/var/log</code>; <code>tar</code>/<code>gzip</code>/<code>zip</code>.</li>
+    <li>Environment: <code>env</code>/<code>export</code>/<code>$PATH</code>, and <code>~/.bashrc</code> vs <code>~/.profile</code> control how the shell is built.</li>
+    <li>Key-based SSH auth beats passwords; a private key must be <code>chmod 600</code> or SSH refuses it.</li>
+    <li><code>ss -tulpn</code>: TCP + UDP, listening only, owning process/PID, numeric ports — pipe through <code>grep :443</code> for one port; it's the modern replacement for <code>netstat</code>.</li>
+    <li>In <code>ip r</code>, the <code>default via &lt;gateway-ip&gt;</code> line is the route for everything off your local network; <code>ifconfig</code> ≈ <code>ip a</code> and <code>route -n</code> ≈ <code>ip r</code> are the deprecated net-tools equivalents.</li>
+    <li>Package verbs: refresh = <code>apt update</code> / automatic in <code>dnf</code> / <code>pacman -Sy</code>; install = <code>apt install</code> / <code>dnf install</code> / <code>pacman -S</code>; remove = <code>apt remove</code> / <code>dnf remove</code> / <code>pacman -R</code>.</li>
+    <li><code>tar -czvf</code> create, <code>-xzvf</code> extract, <code>-tzvf</code> list; <code>z</code> adds gzip and <code>f</code> goes last because it takes the filename.</li>
+    <li><code>rsync -avz</code> beats <code>scp</code> for anything repeated: it transfers only what changed (<code>-a</code> preserves perms/timestamps/symlinks, <code>-z</code> compresses in transit).</li>
+    <li><code>~/.bashrc</code> runs for every interactive non-login shell; <code>~/.profile</code> runs once at login (console or SSH) — the reason a setting "works in my terminal but not over SSH or in cron."</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>"update" means different things.</strong> <code>apt update</code> only refreshes the local index — it upgrades nothing (that's a separate <code>apt upgrade</code>), while <code>pacman -Syu</code> does both at once. And <code>df</code> vs <code>du</code> can legitimately disagree: a deleted file still held open by a running process keeps occupying space in <code>df</code> but is gone from any <code>du</code> total.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Every server is a machine I reach over SSH, and every package manager does the same three things with different spelling."</div>
+  <div class="revision-say">"apt update only refreshes the index — it doesn't upgrade anything; that's a separate apt upgrade."</div>
+  <div class="revision-say">"If df says the disk is full but du doesn't add up, a process is probably still holding a deleted file open."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why this is the topic that turns "I know Linux commands" into "I can run a server"</h3>
 <p>Everything in earlier topics happens on one machine, talking to files that already exist. Real infrastructure work is different: your code needs to run on a server you've never physically touched, talk to other services over a network, have its dependencies installed correctly, and keep running while you're asleep. That requires a distinct set of skills:</p>
 <ul>
@@ -36,10 +52,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why remote work happens over SSH specifically</h3>
 <p>Early remote-login tools (like <code>telnet</code> and <code>rsh</code>) sent everything — including your password — as plain, unencrypted text over the network, readable by anyone able to intercept the traffic. <strong>SSH</strong> ("Secure SHell") replaced them by encrypting the entire session and supporting public-key authentication that never sends a secret over the wire at all. Because <code>ssh</code> establishes a secure, authenticated channel, both <code>scp</code> and <code>rsync</code> are built to run <em>over</em> an SSH connection rather than invent their own transport security — one secure channel, reused for remote shells, file copies, and even port forwarding.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>A request to a remote machine has layers — know which one broke</h3>
 <p>"The server isn't responding" can fail at several distinct layers, and the diagnostic tools each target one of them. Working top-down through this list is the single most useful troubleshooting habit in this whole topic:</p>
 <pre><code class="language-text">Your machine                         The network                    Remote machine
@@ -64,10 +80,10 @@ Does the service answer HTTP?   curl -I &lt;url&gt;  ─────────
 
 <h3>Two logging worlds coexist: the journal, and plain text files</h3>
 <p>Modern Linux distros using <strong>systemd</strong> (the init system that starts everything at boot — covered in the Processes & Services topic) keep a structured, binary, queryable log called <strong>the journal</strong>, read with <code>journalctl</code>. Alongside it, many applications (web servers, databases, cron, and older tools) still write their own plain-text log files under <strong>/var/log</strong>, readable with the same <code>cat</code>/<code>less</code>/<code>tail</code> tools from earlier topics. In practice you'll use both: <code>journalctl -u &lt;service&gt;</code> for anything managed by systemd, and <code>tail -f /var/log/&lt;something&gt;.log</code> for anything that logs to its own file. Neither one fully replaced the other — knowing which world a given piece of software logs to is half the battle when debugging.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Interfaces and routes: <code>ip a</code>, <code>ip r</code> (legacy: <code>ifconfig</code>, <code>route</code>)</h3>
 <pre><code class="language-bash"># Show every network interface and its assigned IP address(es):
 ip a
@@ -313,10 +329,10 @@ uname -a
 # architecture details — the systemd-based tool for this:
 hostnamectl</code></pre>
 <p><code>uname -a</code> ("Unix name," all fields) is the fastest way to answer "what kernel and architecture am I actually running?" — useful when a downloaded binary or driver needs to match your exact platform. <code>hostnamectl</code> covers similar ground but is systemd's dedicated tool specifically for the machine's hostname — showing it, and (with <code>hostnamectl set-hostname &lt;name&gt;</code>) changing it persistently, replacing the older, more limited standalone <code>hostname</code> command.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — "The API isn't responding," diagnosed layer by layer</h3>
 <pre><code class="language-bash"># Can I even resolve the name?
 dig +short api.example.com
@@ -391,10 +407,11 @@ rm -rf /var/log/app/*.log
 # Confirm space was reclaimed:
 df -h</code></pre>
 <p><code>df -h</code> confirmed which filesystem is the actual problem (not always the obvious one — <code>/var</code> is sometimes a separate mount from <code>/</code>), <code>du -sh</code> narrowed down which directory is responsible, and the archive-before-delete pattern with <code>tar -czvf</code> then <code>tar -tzvf</code> to double-check its contents is exactly the kind of caution worth having as a habit before any destructive cleanup on a production box.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3><code>curl -I</code> vs. <code>curl -i</code> — one capital letter, very different behavior</h3>
 <p>These look almost identical and are a classic source of confusion: <strong><code>-I</code></strong> (capital) sends a <code>HEAD</code> request and shows <em>only</em> the response headers — the body is never even fetched from the server. <strong><code>-i</code></strong> (lowercase) sends a normal <code>GET</code> (or whatever <code>-X</code> specifies) and prints the headers <em>in addition to</em> the full body — nothing is skipped. Reach for <code>-I</code> when you only care about status code/headers and want to avoid downloading a large body; reach for <code>-i</code> when you need to see both the headers and the actual response content together.</p>
 
@@ -412,10 +429,10 @@ df -h</code></pre>
 
 <h3><code>~/.bashrc</code> silently not applying over SSH</h3>
 <p>Because non-interactive or non-login contexts (some SSH invocations, cron jobs, CI runners) may only read <code>~/.profile</code>/<code>~/.bash_profile</code> and skip <code>~/.bashrc</code> entirely (or the reverse, depending on exact configuration), a <code>PATH</code> addition or alias that works perfectly in a normal terminal can mysteriously "not exist" when the same command runs via <code>ssh host command</code> or inside a cron job. When something works interactively but not in a script or automated context, checking which of the two files actually ran is usually the fastest way to find the gap.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'cheat-sheet', title: '📋 Cheat Sheet', html: `
+{ id: "cheat-sheet", title: "📋 Cheat Sheet", collapsible: true, html: `
 <table>
   <thead><tr><th>Command</th><th>Purpose</th><th>Key flags</th></tr></thead>
   <tbody>
@@ -456,10 +473,10 @@ df -h</code></pre>
     <tr><td><code>hostnamectl</code></td><td>Show/set the system hostname and OS info</td><td>systemd-based; replaces plain <code>hostname</code></td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">How would you check what's listening on a given port on a Linux server?</div>
 <div class="qa-a">
@@ -515,42 +532,29 @@ df -h</code></pre>
 <p><code>scp</code> is a straightforward one-shot copy — fine for a single file or a one-time transfer. <code>rsync -avz</code> is the better choice for anything repeated, like deploying updated build output or syncing a backup regularly, because it compares source and destination first and transfers only what's changed, rather than re-sending everything on every run — meaningfully faster for large trees where most files haven't changed. <code>-a</code> bundles recursive copying with preserving permissions, timestamps, and symlinks; <code>-z</code> compresses data in transit, which helps over slower connections. Both ultimately run over the same encrypted SSH channel.</p>
 </div>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Day-2 ops: reach other machines over <strong>SSH</strong>, install software with the same three <strong>package-manager verbs</strong>, and find every problem's trace in a <strong>log</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Networking basics:</strong> <code>ip a</code>/<code>ip r</code> show addresses and routes; <code>ss -tulpn</code> shows what's listening on which ports; <code>ping</code>, <code>curl</code>/<code>wget</code>, and <code>dig</code>/<code>host</code>/<code>nslookup</code> test reachability, fetch HTTP, and query DNS.</li>
-    <li><strong>Remote access:</strong> <code>ssh</code> gives an encrypted shell; <code>scp</code> and <code>rsync -avz</code> copy over it — and <code>rsync</code> only transfers what changed.</li>
-    <li>Package managers do the same three jobs (update the index, install, remove) with different spelling: <code>apt</code> (Debian/Ubuntu), <code>dnf</code>/<code>yum</code> (Fedora/RHEL), <code>pacman</code> (Arch).</li>
-    <li><strong>Storage/logs/archives:</strong> <code>df -h</code> (free), <code>du -sh</code> (used), <code>lsblk</code>/<code>mount</code>; <code>journalctl</code> and <code>/var/log</code>; <code>tar</code>/<code>gzip</code>/<code>zip</code>.</li>
-    <li>Environment: <code>env</code>/<code>export</code>/<code>$PATH</code>, and <code>~/.bashrc</code> vs <code>~/.profile</code> control how the shell is built.</li>
-    <li>Key-based SSH auth beats passwords; a private key must be <code>chmod 600</code> or SSH refuses it.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>"update" means different things.</strong> <code>apt update</code> only refreshes the local index — it upgrades nothing (that's a separate <code>apt upgrade</code>), while <code>pacman -Syu</code> does both at once. And <code>df</code> vs <code>du</code> can legitimately disagree: a deleted file still held open by a running process keeps occupying space in <code>df</code> but is gone from any <code>du</code> total.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Every server is a machine I reach over SSH, and every package manager does the same three things with different spelling."</div>
-  <div class="revision-say">"apt update only refreshes the index — it doesn't upgrade anything; that's a separate apt upgrade."</div>
-  <div class="revision-say">"If df says the disk is full but du doesn't add up, a process is probably still holding a deleted file open."</div>
+<div class="qa-block">
+  <div class="qa-question">Q9. How do you find your machine's IP addresses, its routes, and what's listening on which ports?</div>
+  <div class="qa-answer">
+    <p><code>ip a</code> shows every network interface and its addresses. <code>lo</code> is loopback (127.0.0.1), and something like <code>eth0</code>, <code>enp0s3</code> or <code>wlan0</code> is the real connection. <code>ip r</code> shows the routing table, and its <code>default via &lt;gateway-ip&gt;</code> line is the route for everything outside the local network. <code>ss -tulpn</code> lists listening TCP and UDP sockets with their owning process and numeric ports. All three come from iproute2 and replace the deprecated <code>ifconfig</code>, <code>route -n</code> and <code>netstat</code>.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you find your machine's IP, its routes, and what's listening on which ports?</li>
-    <li>Can you copy files to a remote host with <code>scp</code> and <code>rsync</code>, and say why <code>rsync</code> is cheaper?</li>
-    <li>Can you map <code>apt</code> / <code>dnf</code> / <code>pacman</code> onto update-index, install, and remove?</li>
-    <li>Can you explain why <code>apt update</code> does not upgrade anything?</li>
-    <li>Can you explain how <code>df</code> and <code>du</code> can legitimately disagree?</li>
-    <li>Can you explain why a private SSH key needs <code>chmod 600</code>?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q10. Map apt, dnf, and pacman onto refreshing the index, installing, and removing a package.</div>
+  <div class="qa-answer">
+    <p><strong>Refresh index:</strong> <code>apt update</code> on Debian/Ubuntu. dnf needs no manual step because it refreshes as needed. pacman uses <code>pacman -Sy</code>, normally bundled into <code>-Syu</code>.</p>
+    <p><strong>Install:</strong> <code>apt install &lt;pkg&gt;</code>, <code>dnf install &lt;pkg&gt;</code> (or <code>yum install</code> on older RHEL), <code>pacman -S &lt;pkg&gt;</code>.</p>
+    <p><strong>Remove:</strong> <code>apt remove</code>, <code>dnf remove</code>, <code>pacman -R</code>.</p>
+    <p>It's the same three jobs with different spelling. Arch stands out because it uses combined single-letter flags instead of subcommand words.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q11. Why doesn't apt update upgrade anything?</div>
+  <div class="qa-answer">
+    <p>Because <code>apt update</code> only refreshes the local package index, which is the list of what's available. It doesn't touch a single installed package. Upgrading is a separate <code>apt upgrade</code>. "Update" is a trap across distros: dnf has no manual index-refresh step at all, and <code>pacman -Syu</code> refreshes (<code>y</code>) and upgrades (<code>u</code>) in one go. On Arch, running only <code>pacman -Sy</code>, a "partial upgrade", is discouraged because it can leave inconsistent package versions.</p>
+  </div>
+</div>
+` },
 
-]});
+  ]
+});

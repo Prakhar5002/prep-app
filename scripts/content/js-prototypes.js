@@ -1,30 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'js-prototypes',
-  module: 'JavaScript Deep',
-  title: 'Prototypes & Inheritance',
-  estimatedReadTime: '30 min',
-  tags: ['prototype', 'inheritance', 'proto', 'class', 'constructor', 'prototype-chain', 'instanceof', 'fundamentals'],
+  id: "js-prototypes",
+  module: "JavaScript Deep",
+  title: "Prototypes & Inheritance",
+  estimatedReadTime: "30 min",
+  tags: ["prototype","inheritance","proto","class","constructor","prototype-chain","instanceof","fundamentals"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>JavaScript has <strong>prototypal inheritance</strong>, not classical inheritance. Every object has a hidden internal slot <code>[[Prototype]]</code> (accessible via <code>Object.getPrototypeOf(obj)</code> or the legacy <code>obj.__proto__</code>) pointing at <em>another object</em>. When you read <code>obj.x</code>, the engine walks this chain until it finds <code>x</code> or hits <code>null</code>.</p>
-<ul>
-  <li><code>ClassName.prototype</code> is the object that will become the <code>[[Prototype]]</code> of every <code>new ClassName()</code> instance.</li>
-  <li><code>new Fn()</code> creates an object whose <code>[[Prototype]]</code> is <code>Fn.prototype</code> and calls <code>Fn</code> with <code>this</code> bound to that new object.</li>
-  <li><code>class Foo {}</code> is <strong>syntactic sugar</strong> over a function constructor plus prototype assignment — with a few real differences (strict by default, non-callable without <code>new</code>, proper <code>extends</code>/<code>super</code>, private fields).</li>
-  <li><code>instanceof</code> checks whether <code>C.prototype</code> appears anywhere in the object's prototype chain.</li>
-  <li>Writing to <code>obj.x</code> creates/updates <code>x</code> directly on <code>obj</code>; it does NOT modify the prototype (the <em>write shadows</em>, read walks up).</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Objects inherit from objects. Classes are a syntax on top. Read goes up the chain; write stays on the instance. That's 90% of the model.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">JS has <strong>prototypal inheritance</strong> — objects link to other objects via a hidden <code>[[Prototype]]</code>; reads walk up the chain, writes shadow on the instance, and <code>class</code> is (mostly) sugar over a constructor + prototype.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>JS has prototypal inheritance, not classical.</strong> Every object has a hidden <code>[[Prototype]]</code> slot pointing at another object (or <code>null</code>), read via <code>Object.getPrototypeOf(obj)</code> (legacy <code>obj.__proto__</code>).</li>
+    <li><strong>Read walks up the chain, write shadows.</strong> A property read climbs prototypes until found or <code>null</code> (returns <code>undefined</code>, never a ReferenceError); a write creates/updates an <em>own</em> property on the instance — it never mutates the prototype.</li>
+    <li>Two different "prototype"s: <code>obj.[[Prototype]]</code>/<code>__proto__</code> is on <em>every object</em> (the lookup link); <code>Fn.prototype</code> is only on <em>functions</em> and becomes the <code>[[Prototype]]</code> of <code>new Fn()</code> instances. <code>Fn.prototype</code> matters only with <code>new</code>.</li>
+    <li>Arrow functions have <strong>no</strong> <code>prototype</code> property → <code>new (() =&gt; {})()</code> throws TypeError.</li>
+    <li><code>new Fn()</code> in 4 steps: create an object linked to <code>Fn.prototype</code> → call <code>Fn</code> with <code>this</code> = that object → if <code>Fn</code> returns an object that wins, else the new object → return it.</li>
+    <li><strong><code>class</code> is sugar over a constructor function + prototype — but NOT zero sugar:</strong> class bodies are strict, throw if called without <code>new</code>, sit in the TDZ (not hoisted like function declarations), have non-enumerable methods, and add <code>super</code>, <code>#private</code> fields, and static blocks.</li>
+    <li><code>instanceof</code> checks whether <code>C.prototype</code> appears anywhere in the object's chain (overridable via <code>Symbol.hasInstance</code>; watch the cross-realm pitfall).</li>
+    <li>Define methods on the <strong>prototype</strong> (one shared function object), not per-instance in the constructor (one function per instance — wasteful).</li>
+    <li><strong>Never put mutable state (arrays/objects) on the prototype</strong> — it is shared across all instances; initialize it in the constructor (<code>this.tags = []</code>).</li>
+    <li><strong>Prototype pollution</strong> is a real CVE class: merging untrusted input with <code>__proto__</code>/<code>constructor</code> keys can poison <code>Object.prototype</code>. Guard with <code>Object.hasOwn</code>, reject those keys, or merge into <code>Object.create(null)</code>.</li>
+    <li>In a subclass constructor, <code>this</code> is in the TDZ until <code>super()</code> runs.</li>
+    <li>Don't type-check with <code>obj.constructor</code> (overwritable) — prefer <code>instanceof</code>. Avoid <code>Object.setPrototypeOf</code> in hot code and never extend built-in prototypes (deopts + collisions).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Putting <strong>mutable state (arrays/objects) on the prototype</strong> — it's shared across every instance, so one instance's <code>push</code> shows up on all. Initialize it in the constructor (<code>this.tags = []</code>). And don't confuse <code>obj.__proto__</code> (the lookup link on every object) with <code>Fn.prototype</code> (only used by <code>new</code>).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"JavaScript has prototypal inheritance — objects inherit from other objects through a hidden <code>[[Prototype]]</code> link, and classes are just syntax layered on top of that."</div>
+  <div class="revision-say">"Reads walk up the prototype chain; writes always land on the instance and shadow the prototype."</div>
+  <div class="revision-say">"<code>class</code> isn't pure sugar — it adds strict mode, new-only calling, a TDZ, and non-enumerable methods that a plain constructor function doesn't have."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a prototype, precisely?</h3>
 <p>Every JavaScript object has an <strong>internal slot</strong> called <code>[[Prototype]]</code>. It is either another object or <code>null</code>. That slot is the object's link to its "parent" object — not a parent class, a parent <em>object</em>.</p>
 
@@ -71,10 +83,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Class is sugar — but not zero sugar</div>
   <p>If an interviewer asks "is class just syntactic sugar?", the precise answer is <em>"yes at the inheritance/chain level, no at the semantics level"</em> — classes add stricter invariants (strict mode, new-only, TDZ, non-enumerable methods) that bare functions don't.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "linked list of objects" picture</h3>
 <p>Draw any object as a box with its own properties inside and an arrow labeled <code>[[Prototype]]</code> pointing up to another box. That's it. Lookup walks arrows; writes happen in the starting box.</p>
 
@@ -145,10 +157,10 @@ User.prototype.greet = function () { return 'hi ' + this.name; };
     <li><strong>Replacing <code>Fn.prototype</code> wholesale breaks instanceof for existing instances.</strong> They still point at the old object.</li>
   </ul>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Creating prototype links — four ways</h3>
 <pre><code class="language-js">// 1. Object literal — [[Prototype]] defaults to Object.prototype
 const a = { x: 1 };
@@ -241,10 +253,10 @@ dict.toString; // undefined</code></pre>
 }
 const c = new Counter();
 c.#n; // SyntaxError — not in this class</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — manual prototype chain with Object.create</h3>
 <pre><code class="language-js">const animal = {
   type: 'animal',
@@ -403,10 +415,11 @@ new C().greet(); // 'ABC'</code></pre>
 const c = new Counter();
 Object.getPrototypeOf(c); // Counter.prototype — has inc, no #n
 c.inc(); // 1</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Arrow functions have no <code>prototype</code></h3>
 <pre><code class="language-js">const F = () =&gt; {};
 F.prototype;    // undefined
@@ -540,10 +553,9 @@ A.prototype.s;          // undefined — s is not on the prototype either</code>
 <pre><code class="language-js">Object.freeze(Object.prototype);
 // now nothing can extend Object.prototype — defensive in trusted runtimes</code></pre>
 <p>SES / Realms use this pattern to protect core prototypes from prototype pollution attacks.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — extending built-in prototypes</h3>
 <pre><code class="language-js">// BAD
 Array.prototype.first = function () { return this[0]; };</code></pre>
@@ -629,10 +641,10 @@ const a = new User(), b = new User();
 a.tags.push('x');
 b.tags; // ['x']  ← cross-instance pollution</code></pre>
 <p>Arrays/objects on the prototype are shared across all instances. Initialize mutable state in the constructor: <code>this.tags = []</code>.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Explain how <code>new</code> works under the hood.</div>
   <div class="qa-answer">
@@ -807,50 +819,7 @@ setTimeout(c.inc, 100);
     <li>You warn against mutable state on the prototype.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">JS has <strong>prototypal inheritance</strong> — objects link to other objects via a hidden <code>[[Prototype]]</code>; reads walk up the chain, writes shadow on the instance, and <code>class</code> is (mostly) sugar over a constructor + prototype.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>JS has prototypal inheritance, not classical.</strong> Every object has a hidden <code>[[Prototype]]</code> slot pointing at another object (or <code>null</code>), read via <code>Object.getPrototypeOf(obj)</code> (legacy <code>obj.__proto__</code>).</li>
-    <li><strong>Read walks up the chain, write shadows.</strong> A property read climbs prototypes until found or <code>null</code> (returns <code>undefined</code>, never a ReferenceError); a write creates/updates an <em>own</em> property on the instance — it never mutates the prototype.</li>
-    <li>Two different "prototype"s: <code>obj.[[Prototype]]</code>/<code>__proto__</code> is on <em>every object</em> (the lookup link); <code>Fn.prototype</code> is only on <em>functions</em> and becomes the <code>[[Prototype]]</code> of <code>new Fn()</code> instances. <code>Fn.prototype</code> matters only with <code>new</code>.</li>
-    <li>Arrow functions have <strong>no</strong> <code>prototype</code> property → <code>new (() =&gt; {})()</code> throws TypeError.</li>
-    <li><code>new Fn()</code> in 4 steps: create an object linked to <code>Fn.prototype</code> → call <code>Fn</code> with <code>this</code> = that object → if <code>Fn</code> returns an object that wins, else the new object → return it.</li>
-    <li><strong><code>class</code> is sugar over a constructor function + prototype — but NOT zero sugar:</strong> class bodies are strict, throw if called without <code>new</code>, sit in the TDZ (not hoisted like function declarations), have non-enumerable methods, and add <code>super</code>, <code>#private</code> fields, and static blocks.</li>
-    <li><code>instanceof</code> checks whether <code>C.prototype</code> appears anywhere in the object's chain (overridable via <code>Symbol.hasInstance</code>; watch the cross-realm pitfall).</li>
-    <li>Define methods on the <strong>prototype</strong> (one shared function object), not per-instance in the constructor (one function per instance — wasteful).</li>
-    <li><strong>Never put mutable state (arrays/objects) on the prototype</strong> — it is shared across all instances; initialize it in the constructor (<code>this.tags = []</code>).</li>
-    <li><strong>Prototype pollution</strong> is a real CVE class: merging untrusted input with <code>__proto__</code>/<code>constructor</code> keys can poison <code>Object.prototype</code>. Guard with <code>Object.hasOwn</code>, reject those keys, or merge into <code>Object.create(null)</code>.</li>
-    <li>In a subclass constructor, <code>this</code> is in the TDZ until <code>super()</code> runs.</li>
-    <li>Don't type-check with <code>obj.constructor</code> (overwritable) — prefer <code>instanceof</code>. Avoid <code>Object.setPrototypeOf</code> in hot code and never extend built-in prototypes (deopts + collisions).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Putting <strong>mutable state (arrays/objects) on the prototype</strong> — it's shared across every instance, so one instance's <code>push</code> shows up on all. Initialize it in the constructor (<code>this.tags = []</code>). And don't confuse <code>obj.__proto__</code> (the lookup link on every object) with <code>Fn.prototype</code> (only used by <code>new</code>).</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"JavaScript has prototypal inheritance — objects inherit from other objects through a hidden <code>[[Prototype]]</code> link, and classes are just syntax layered on top of that."</div>
-  <div class="revision-say">"Reads walk up the prototype chain; writes always land on the instance and shadow the prototype."</div>
-  <div class="revision-say">"<code>class</code> isn't pure sugar — it adds strict mode, new-only calling, a TDZ, and non-enumerable methods that a plain constructor function doesn't have."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the difference between an object's <code>[[Prototype]]</code>/<code>__proto__</code> and a function's <code>prototype</code> property?</li>
-    <li>Can you explain why a property read walks the chain but a write shadows on the instance?</li>
-    <li>Can you list the four steps <code>new Fn()</code> performs?</li>
-    <li>Can you explain how <code>class</code> differs from a plain constructor function — beyond "it's just sugar"?</li>
-    <li>Can you explain why putting a mutable array/object on the prototype is a bug and where it belongs instead?</li>
-    <li>Can you explain what prototype pollution is and how to guard against it?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

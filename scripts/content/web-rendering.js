@@ -1,33 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'web-rendering',
-  module: 'web',
-  title: 'Rendering Pipeline',
-  estimatedReadTime: '40 min',
-  tags: ['rendering', 'pipeline', 'reflow', 'repaint', 'composite', 'parser', 'critical-rendering-path', 'browser'],
+  id: "web-rendering",
+  module: "web",
+  title: "Rendering Pipeline",
+  estimatedReadTime: "40 min",
+  tags: ["rendering","pipeline","reflow","repaint","composite","parser","critical-rendering-path","browser"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>The <strong>browser rendering pipeline</strong> turns HTML/CSS/JS into pixels in 5 phases: <strong>Parse → Style → Layout → Paint → Composite</strong>. Knowing exactly what triggers what is the foundation of frontend performance: animation that runs on the compositor stays smooth even when JS is busy; layout property changes cause re-flow that ripples up the tree; paint changes redraw bitmaps. This topic is the rendering equivalent of "OS internals for engineers."</p>
-<ul>
-  <li><strong>Parse:</strong> HTML → DOM. CSS → CSSOM. The two combine into the render tree.</li>
-  <li><strong>Style:</strong> compute the cascade for each element; produces ComputedStyle.</li>
-  <li><strong>Layout (reflow):</strong> compute geometry — position and size of every box.</li>
-  <li><strong>Paint:</strong> rasterize layers — compute the pixel color for each fragment.</li>
-  <li><strong>Composite:</strong> assemble layers into the final frame; handed to the GPU.</li>
-  <li><strong>The compositor thread</strong> handles the final composite step — independent of the main thread. Animations of <code>transform</code>/<code>opacity</code> can skip layout AND paint.</li>
-  <li><strong>Reflow is expensive</strong>; it cascades through descendants. Avoid layout-thrashing patterns (read → write → read in a loop).</li>
-  <li><strong>Render-blocking resources:</strong> CSS (always); sync scripts (parse + render). The Critical Rendering Path is what runs before First Contentful Paint.</li>
-</ul>
-<p><strong>Mantra:</strong> "Parse, Style, Layout, Paint, Composite. Animate transform/opacity to skip layout and paint. Avoid layout thrashing. Defer non-critical resources."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>The pipeline is Parse → Style → Layout → Paint → Composite — animate <code>transform</code>/<code>opacity</code> to skip layout AND paint and stay on the compositor thread at 60fps.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Five phases:</strong> Parse (HTML→DOM, CSS→CSSOM), Style (compute the cascade), Layout/reflow (geometry), Paint (rasterize into layers), Composite (assemble the frame). Each phase feeds the next. Threads (simplified Chromium): <strong>main</strong> runs JS, DOM, parse, style, layout and paint recording; the <strong>compositor</strong> assembles layers; the <strong>GPU</strong> rasterizes.</li>
+    <li><strong>Property → phase map:</strong> geometry (<code>width</code>, <code>top</code>, <code>margin</code>, <code>font-size</code>) → Layout + Paint + Composite; <code>color</code>/<code>background</code>/<code>box-shadow</code> → Paint + Composite; <strong><code>transform</code>/<code>opacity</code> → Composite only</strong>. Higher up the chain = more expensive.</li>
+    <li><strong>The compositor is a separate thread</strong> — animations of compositor-only properties keep running even when the main thread is blocked by JS. That's why <code>transform</code>/<code>opacity</code> are the "fast lane."</li>
+    <li><strong>Reflow cascades:</strong> changing one element's geometry can re-layout ancestors, descendants, and following siblings — layout is never local by default.</li>
+    <li><strong>Layout thrashing:</strong> alternating reads (which force layout) and writes (which invalidate it) in a loop = one layout per iteration, O(n). Fix by batching: read all, then write all.</li>
+    <li><strong>Forced synchronous layout</strong> is triggered by reading <code>offsetWidth</code>/<code>offsetHeight</code>, <code>scrollTop</code>, <code>getBoundingClientRect()</code>, or <code>getComputedStyle()</code> after a write — it flushes pending style + layout immediately.</li>
+    <li><strong>Render-blocking:</strong> external CSS in <code>&lt;head&gt;</code> and sync scripts block; <code>defer</code>/<code>async</code>/module scripts and <code>media="print"</code> stylesheets don't. The Critical Rendering Path is what runs before First Contentful Paint.</li>
+    <li>Both DOM and CSSOM must be ready before the render tree, so <strong>CSS is render-blocking</strong>; the preload scanner fetches resources ahead while the main parser is blocked.</li>
+    <li>Modern primitives: <code>contain</code> (isolate a subtree's layout/paint), <code>content-visibility: auto</code> (skip rendering off-screen elements — huge for long lists), <code>will-change</code> (promote a layer just before animating, then remove).</li>
+    <li>Budget is <strong>~16.7ms/frame</strong> at 60fps; the Performance panel shows which phase blew it. Web Vitals map to phases: FCP/LCP → Paint, CLS → post-render Layout shifts, INP → the whole pipeline from an input.</li>
+    <li>Prevent CLS by reserving space — set <code>width</code>/<code>height</code> or <code>aspect-ratio</code> on images and avoid inserting content above the fold.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Animating layout/paint properties — <code>left</code>/<code>top</code>/<code>width</code>/<code>height</code> or <code>box-shadow</code> — instead of <code>transform</code>/<code>opacity</code>.</strong> Each frame re-runs Layout (and Paint) on the main thread, so the animation janks the moment JS is busy. Fix: animate <code>transform</code> (e.g. <code>translateX</code>, <code>scaleX</code>) and <code>opacity</code>, which run compositor-only. Sibling trap: reading <code>offsetWidth</code>/<code>getBoundingClientRect()</code> inside a write loop forces a synchronous layout every iteration — batch reads before writes.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The pipeline is Parse, Style, Layout, Paint, Composite — I animate transform and opacity because they're compositor-only, so they skip layout and paint and keep running even when the main thread is busy."</div>
+  <div class="revision-say">"Layout thrashing is interleaving reads that force layout with writes that invalidate it; I fix it by batching — read all the measurements first, then do all the writes, so the browser lays out once."</div>
+  <div class="revision-say">"For long lists I reach for content-visibility: auto and contain so the browser can skip off-screen work and keep reflow local."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "rendering pipeline" means</h3>
 <p>The browser is a complex system that turns markup into pixels. The pipeline is a sequence of phases — each phase produces an artifact that the next phase consumes. Understanding the pipeline tells you which operations are cheap, which are expensive, and what triggers re-doing work you thought was done.</p>
 
@@ -91,12 +99,10 @@ CSS byte stream → parse → CSSOM
   <li>You know what's render-blocking vs deferrable.</li>
   <li>You understand layer promotion and its cost.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Phase 1 — Parse</h3>
 <pre><code class="language-text">Bytes → Characters → Tokens → Nodes → DOM tree
 
@@ -224,12 +230,10 @@ If composite is the offender: too many layers.
 
 <h3>The "renders are cheap, layouts are not" mental model</h3>
 <p>React's virtual DOM diffing minimizes DOM operations, but the cost of a DOM operation isn't constant. Setting <code>style.color</code> = paint. Setting <code>style.width</code> = layout. The browser reflow cost dominates; React's reconciliation cost is usually small.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Inspecting the pipeline in DevTools</h3>
 <ol>
   <li>Open Chrome DevTools → Performance panel.</li>
@@ -369,12 +373,10 @@ Cascade order: !important &gt; specificity &gt; source order
   </tbody>
 </table>
 <p>All frameworks face the same pipeline. Their job is to issue the right DOM mutations efficiently; the browser's pipeline does the rest.</p>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Animating a sidebar slide</h3>
 <pre><code class="language-css">/* BAD — animating left triggers layout every frame */
 .sidebar {
@@ -506,12 +508,11 @@ console.log('Render took', m.duration, 'ms');
   ...
 &lt;/body&gt;
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Style recalc bottlenecks</h3>
 <p>Pages with thousands of elements + complex selectors + frequent class toggles can spend significant time in style recalc. Lighthouse calls these out.</p>
 
@@ -571,12 +572,9 @@ console.log('Render took', m.duration, 'ms');
 
 <h3>Backface-visibility</h3>
 <p>3D-rotated elements may show their flipped side without <code>backface-visibility: hidden</code>. Mostly cosmetic but related to rendering.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Animating layout properties</h3>
 <pre><code class="language-css">/* BAD — width animation triggers layout per frame */
 .bar {
@@ -695,12 +693,10 @@ items.forEach(i =&gt; {
 
 <h3>Anti-pattern 10: Ignoring layer count</h3>
 <p>The Layers panel can reveal hundreds of unintended layers. Clean them up; promote only what genuinely needs it.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -790,53 +786,26 @@ items.forEach(i =&gt; {
   <li>"I'd evaluate Speculation Rules for prerender opportunities."</li>
   <li>"I'd profile our top components for paint cost — drop shadows / filters that hurt frame rates."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>The pipeline is Parse → Style → Layout → Paint → Composite — animate <code>transform</code>/<code>opacity</code> to skip layout AND paint and stay on the compositor thread at 60fps.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Five phases:</strong> Parse (HTML→DOM, CSS→CSSOM), Style (compute the cascade), Layout/reflow (geometry), Paint (rasterize into layers), Composite (assemble the frame). Each phase feeds the next.</li>
-    <li><strong>Property → phase map:</strong> geometry (<code>width</code>, <code>top</code>, <code>margin</code>, <code>font-size</code>) → Layout + Paint + Composite; <code>color</code>/<code>background</code>/<code>box-shadow</code> → Paint + Composite; <strong><code>transform</code>/<code>opacity</code> → Composite only</strong>. Higher up the chain = more expensive.</li>
-    <li><strong>The compositor is a separate thread</strong> — animations of compositor-only properties keep running even when the main thread is blocked by JS. That's why <code>transform</code>/<code>opacity</code> are the "fast lane."</li>
-    <li><strong>Reflow cascades:</strong> changing one element's geometry can re-layout ancestors, descendants, and following siblings — layout is never local by default.</li>
-    <li><strong>Layout thrashing:</strong> alternating reads (which force layout) and writes (which invalidate it) in a loop = one layout per iteration, O(n). Fix by batching: read all, then write all.</li>
-    <li><strong>Forced synchronous layout</strong> is triggered by reading <code>offsetWidth</code>/<code>offsetHeight</code>, <code>scrollTop</code>, <code>getBoundingClientRect()</code>, or <code>getComputedStyle()</code> after a write — it flushes pending style + layout immediately.</li>
-    <li><strong>Render-blocking:</strong> external CSS in <code>&lt;head&gt;</code> and sync scripts block; <code>defer</code>/<code>async</code>/module scripts and <code>media="print"</code> stylesheets don't. The Critical Rendering Path is what runs before First Contentful Paint.</li>
-    <li>Both DOM and CSSOM must be ready before the render tree, so <strong>CSS is render-blocking</strong>; the preload scanner fetches resources ahead while the main parser is blocked.</li>
-    <li>Modern primitives: <code>contain</code> (isolate a subtree's layout/paint), <code>content-visibility: auto</code> (skip rendering off-screen elements — huge for long lists), <code>will-change</code> (promote a layer just before animating, then remove).</li>
-    <li>Budget is <strong>~16.7ms/frame</strong> at 60fps; the Performance panel shows which phase blew it. Web Vitals map to phases: FCP/LCP → Paint, CLS → post-render Layout shifts, INP → the whole pipeline from an input.</li>
-    <li>Prevent CLS by reserving space — set <code>width</code>/<code>height</code> or <code>aspect-ratio</code> on images and avoid inserting content above the fold.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Animating layout/paint properties — <code>left</code>/<code>top</code>/<code>width</code>/<code>height</code> or <code>box-shadow</code> — instead of <code>transform</code>/<code>opacity</code>.</strong> Each frame re-runs Layout (and Paint) on the main thread, so the animation janks the moment JS is busy. Fix: animate <code>transform</code> (e.g. <code>translateX</code>, <code>scaleX</code>) and <code>opacity</code>, which run compositor-only. Sibling trap: reading <code>offsetWidth</code>/<code>getBoundingClientRect()</code> inside a write loop forces a synchronous layout every iteration — batch reads before writes.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"The pipeline is Parse, Style, Layout, Paint, Composite — I animate transform and opacity because they're compositor-only, so they skip layout and paint and keep running even when the main thread is busy."</div>
-  <div class="revision-say">"Layout thrashing is interleaving reads that force layout with writes that invalidate it; I fix it by batching — read all the measurements first, then do all the writes, so the browser lays out once."</div>
-  <div class="revision-say">"For long lists I reach for content-visibility: auto and contain so the browser can skip off-screen work and keep reflow local."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the five pipeline phases and which thread runs each?</li>
-    <li>Can you map a CSS property to the phase(s) it triggers — layout, paint, or composite?</li>
-    <li>Can you explain layout thrashing and how batching reads then writes fixes it?</li>
-    <li>Can you say why animating <code>transform</code> and <code>opacity</code> is cheaper than <code>top</code>/<code>left</code>?</li>
-    <li>Can you explain layer promotion and its memory cost?</li>
-    <li>Can you diagnose a janky animation by reading the Performance panel?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. Name the five rendering pipeline phases and which thread runs each.</div>
+  <div class="qa-answer">
+    <p>Parse (HTML to DOM, CSS to CSSOM), Style (compute the cascade), Layout (geometry of every box), Paint (record and rasterize layers) and Composite (assemble layers into the frame). In the simplified Chromium model, the main thread runs JS, DOM, parsing, styling, layout and paint recording; the compositor thread does layer assembly and keeps running even when main is busy; the GPU does the actual rasterization where supported. That is why compositor-only animations keep going when the main thread is hung.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q2. Which pipeline phases does changing a given CSS property trigger?</div>
+  <div class="qa-answer">
+    <p>Geometry properties (<code>width</code>, <code>height</code>, <code>top</code>, <code>left</code>, <code>margin</code>, <code>padding</code>, <code>border</code>, <code>font-size</code>) trigger Layout + Paint + Composite. Visual-only properties (<code>color</code>, <code>background</code>, <code>box-shadow</code>, <code>outline</code>, <code>visibility</code>) trigger Paint + Composite. <code>transform</code>, <code>opacity</code> and most <code>filter</code>s trigger Composite only. The higher up the chain a change starts, the more expensive it is.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. What is layout thrashing, and how does batching reads and writes fix it?</div>
+  <div class="qa-answer">
+    <p>Reading a layout property such as <code>offsetWidth</code>, <code>scrollHeight</code>, <code>getBoundingClientRect()</code> or <code>getComputedStyle()</code> after a write forces a synchronous layout to give you a fresh value. In a loop that alternates read, write, read, write, every iteration forces a layout, so n items cost n layouts. Batch instead: read every measurement first (<code>const widths = items.map(i =&gt; i.offsetWidth)</code>, one layout), then do all the writes, so the browser lays out once.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

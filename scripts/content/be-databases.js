@@ -1,33 +1,39 @@
 window.PREP_SITE.registerTopic({
-  id: 'be-databases',
-  module: 'backend',
-  title: 'Databases',
-  estimatedReadTime: '55 min',
-  tags: ['database', 'sql', 'postgres', 'nosql', 'indexes', 'transactions', 'isolation', 'acid', 'query-optimization', 'schema-design'],
+  id: "be-databases",
+  module: "backend",
+  title: "Databases",
+  estimatedReadTime: "55 min",
+  tags: ["database","sql","postgres","nosql","indexes","transactions","isolation","acid","query-optimization","schema-design"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>For a frontend / RN engineer, "knowing databases" means having the literacy to design a schema, read a query plan, pick the right index, understand transactions + isolation, and choose between SQL and NoSQL deliberately. You don't need DBA depth — you need enough to design a feature, debug a slow endpoint, and pass system-design rounds.</p>
-<ul>
-  <li><strong>SQL by default.</strong> Postgres specifically — most flexible, JSON support, strong defaults, free. NoSQL when you have a specific access pattern that SQL hurts.</li>
-  <li><strong>Schema design:</strong> normalize for write integrity; denormalize for read speed. Real apps do both.</li>
-  <li><strong>Indexes are the single biggest perf lever.</strong> Wrong index = full table scan; right index = millisecond lookup.</li>
-  <li><strong>Transactions:</strong> ACID guarantees. Isolation levels (READ COMMITTED, REPEATABLE READ, SERIALIZABLE) trade consistency for concurrency.</li>
-  <li><strong>Query plans</strong> (<code>EXPLAIN ANALYZE</code>) are your debugger. Read them.</li>
-  <li><strong>NoSQL families:</strong> document (Mongo/Firestore), key-value (DynamoDB/Redis), wide-column (Cassandra), graph (Neo4j), search (Elastic). Each solves a specific shape.</li>
-  <li><strong>Connection pooling, prepared statements, read replicas, partitioning</strong> — the standard scaling levers.</li>
-  <li><strong>Data modeling</strong> is forever. Schema migrations are politically expensive in production; design carefully day one.</li>
-</ul>
-<p><strong>Mantra:</strong> "Postgres unless you have a reason. Index for queries. Transactions for invariants. Read query plans. Migrate carefully."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Postgres unless you have a reason.</strong> Index for the queries you run, use transactions for invariants, read query plans, and migrate carefully — schema decisions are forever.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>SQL by default — Postgres specifically:</strong> strong ACID, JSON/JSONB for document-style flexibility inside a relational store, built-in full-text search, extensions (PostGIS, pgvector, Timescale), mature optimizer with readable EXPLAIN.</li>
+    <li><strong>Schema design:</strong> normalize for write integrity (one source of truth per fact), denormalize selectively for hot reads — real apps do both.</li>
+    <li><strong>Indexes are the single biggest perf lever</strong> — wrong index (or none) = full table scan; right index = millisecond lookup. Always index FK and common query columns.</li>
+    <li><strong>Transactions give ACID;</strong> isolation levels (READ COMMITTED, REPEATABLE READ, SERIALIZABLE) trade consistency for concurrency.</li>
+    <li><strong>Query plans (<code>EXPLAIN ANALYZE</code>) are your debugger</strong> — read them to find the bottleneck in a slow endpoint.</li>
+    <li><strong>NoSQL families each solve a specific shape:</strong> document (Mongo/Firestore), key-value (DynamoDB/Redis), wide-column (Cassandra), graph (Neo4j), search (Elastic), time-series, vector (pgvector/Pinecone). Pick one only when you can name the access pattern.</li>
+    <li><strong>Data modeling is forever:</strong> schema migrations are politically expensive in production, so design carefully on day one.</li>
+    <li>Standard scaling levers: <strong>connection pooling, prepared statements, read replicas, partitioning</strong>.</li>
+    <li>Good hygiene: sensible types (<code>NUMERIC</code> for money, never <code>FLOAT</code>; <code>UUID</code> for ids), <code>NOT NULL</code>/<code>CHECK</code>/<code>UNIQUE</code> constraints, <code>created_at</code>/<code>updated_at</code> on every table, and every change as a versioned, reversible migration.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Picking NoSQL prematurely</strong> — "it scales better" (true only at huge scale) or "schema-less iterates faster" (until you're six months in and need to query something the schema doesn't support). The senior signal is "Postgres unless I can name the access pattern that justifies the alternative." Runner-up traps: money as <code>FLOAT</code> (rounding errors compound) and no index on FK / common query columns (silent full scans).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Postgres unless I can name the specific access pattern that justifies something else — its JSONB gives me document flexibility without giving up transactions."</div>
+  <div class="revision-say">"When an endpoint is slow I run EXPLAIN ANALYZE first — the plan tells me whether it's a missing index, a full scan, or a bad join before I guess."</div>
+  <div class="revision-say">"I normalize for write correctness and denormalize deliberately for hot reads — and I store money as NUMERIC, never FLOAT."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "knowing databases" means for FE engineers</h3>
 <p>Not "I can administer a Postgres cluster." It's:</p>
 <ul>
@@ -97,12 +103,10 @@ window.PREP_SITE.registerTopic({
   <li>No <code>created_at</code> on tables; can't audit anything.</li>
   <li>Schema drift between dev / staging / prod (no migrations).</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>ACID — what transactions guarantee</h3>
 <table>
   <thead><tr><th>Letter</th><th>Means</th></tr></thead>
@@ -248,12 +252,10 @@ ORDER BY created_at DESC LIMIT 20;
 <p>"Pick 2 of: Consistency, Availability, Partition tolerance." In practice all real distributed systems must choose between C and A under partition. Postgres = CP (consistent, may be unavailable during failover). DynamoDB = AP (always available, eventually consistent unless you opt into strong reads).</p>
 
 <p>For most apps: pick the DB that fits the workload; learn its actual consistency story; don't theorize about CAP.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Schema design — a real example</h3>
 <pre><code class="language-sql">-- users
 CREATE TABLE users (
@@ -534,12 +536,10 @@ ORDER BY distance ASC LIMIT 5;
 </code></pre>
 
 <p>Postgres + pgvector covers most RAG use cases without standing up a separate vector DB.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Schema for a feed app</h3>
 <pre><code class="language-sql">CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -787,12 +787,11 @@ FROM document_chunks
 ORDER BY embedding &lt;=&gt; $1::vector
 LIMIT 5;
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>N+1 query problem</h3>
 <pre><code class="language-typescript">// BAD — fires N+1 queries
 const posts = await db.posts.findMany({ take: 20 });
@@ -935,12 +934,9 @@ posts.forEach(p =&gt; p.author = byId.get(p.authorId));
   <li>Same indexing / transaction principles apply locally.</li>
   <li>Sync: design backend schema with idempotency / conflict resolution in mind for mobile-offline writes.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common DB mistakes</h3>
 <ol>
   <li><strong>Money as <code>FLOAT</code>.</strong> Rounding errors compound.</li>
@@ -1107,12 +1103,10 @@ async function updateWithRetry(id, title, maxAttempts = 3) {
 
 <h3>Anti-pattern: schema drift</h3>
 <p>Production schema not matching dev / staging because of manual changes. Symptom: works in staging, broken in prod. Fix: migrations only; treat schema as code; CI checks <code>pg_dump --schema-only</code> matches expected.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common DB-related interview prompts</h3>
 <ol>
   <li>Design the schema for [feed / chat / e-commerce / orders].</li>
@@ -1241,53 +1235,44 @@ async function updateWithRetry(id, title, maxAttempts = 3) {
   <li>"Try DynamoDB single-table design on a real schema."</li>
   <li>"Practice EXPLAIN reading on a real production-shaped dataset."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Postgres unless you have a reason.</strong> Index for the queries you run, use transactions for invariants, read query plans, and migrate carefully — schema decisions are forever.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>SQL by default — Postgres specifically:</strong> strong ACID, JSON/JSONB for document-style flexibility inside a relational store, built-in full-text search, extensions (PostGIS, pgvector, Timescale), mature optimizer with readable EXPLAIN.</li>
-    <li><strong>Schema design:</strong> normalize for write integrity (one source of truth per fact), denormalize selectively for hot reads — real apps do both.</li>
-    <li><strong>Indexes are the single biggest perf lever</strong> — wrong index (or none) = full table scan; right index = millisecond lookup. Always index FK and common query columns.</li>
-    <li><strong>Transactions give ACID;</strong> isolation levels (READ COMMITTED, REPEATABLE READ, SERIALIZABLE) trade consistency for concurrency.</li>
-    <li><strong>Query plans (<code>EXPLAIN ANALYZE</code>) are your debugger</strong> — read them to find the bottleneck in a slow endpoint.</li>
-    <li><strong>NoSQL families each solve a specific shape:</strong> document (Mongo/Firestore), key-value (DynamoDB/Redis), wide-column (Cassandra), graph (Neo4j), search (Elastic), time-series, vector (pgvector/Pinecone). Pick one only when you can name the access pattern.</li>
-    <li>Standard scaling levers: <strong>connection pooling, prepared statements, read replicas, partitioning</strong>.</li>
-    <li>Good hygiene: sensible types (<code>NUMERIC</code> for money, never <code>FLOAT</code>; <code>UUID</code> for ids), <code>NOT NULL</code>/<code>CHECK</code>/<code>UNIQUE</code> constraints, <code>created_at</code>/<code>updated_at</code> on every table, and every change as a versioned, reversible migration.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Picking NoSQL prematurely</strong> — "it scales better" (true only at huge scale) or "schema-less iterates faster" (until you're six months in and need to query something the schema doesn't support). The senior signal is "Postgres unless I can name the access pattern that justifies the alternative." Runner-up traps: money as <code>FLOAT</code> (rounding errors compound) and no index on FK / common query columns (silent full scans).</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Postgres unless I can name the specific access pattern that justifies something else — its JSONB gives me document flexibility without giving up transactions."</div>
-  <div class="revision-say">"When an endpoint is slow I run EXPLAIN ANALYZE first — the plan tells me whether it's a missing index, a full scan, or a bad join before I guess."</div>
-  <div class="revision-say">"I normalize for write correctness and denormalize deliberately for hot reads — and I store money as NUMERIC, never FLOAT."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Why Postgres by default, and what access patterns would justify a NoSQL alternative?</div>
+  <div class="qa-answer">
+    <p>Postgres covers relational data, transactions, mixed access patterns and the ad-hoc queries you'll inevitably need: strong ACID, JSONB for document-style flexibility inside a relational store, built-in full-text search, extensions like PostGIS and pgvector, and a mature optimizer with readable <code>EXPLAIN</code>. A NoSQL store is justified only when you can name the access pattern: a document DB (Mongo, Firestore) for self-contained documents with no cross-document joins; key-value (DynamoDB, Redis) for single-key access at huge scale with predictable latency; wide-column (Cassandra, Bigtable) for write-heavy time-series with billions of rows accessed by partition key; plus graph, search and vector stores for their shapes. Choosing NoSQL because "it scales" or "schema-less iterates faster" is the trap.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you justify "Postgres by default" and name the access patterns that justify a NoSQL alternative?</li>
-    <li>Can you explain when to normalize versus denormalize, and why real apps do both?</li>
-    <li>Can you explain why indexes are the biggest perf lever, and which columns always need one?</li>
-    <li>Can you name the isolation levels and the consistency-vs-concurrency tradeoff they represent?</li>
-    <li>Can you read an <code>EXPLAIN ANALYZE</code> plan to find the bottleneck in a slow query?</li>
-    <li>Can you name the scaling levers — pooling, prepared statements, read replicas, partitioning — and a bad-schema smell like money as <code>FLOAT</code>?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. When do you normalize and when do you denormalize? Why do real apps do both?</div>
+  <div class="qa-answer">
+    <p>Normalize for write correctness: one source of truth per fact, enforced with foreign keys and constraints, so updates can't leave copies disagreeing. Denormalize selectively for hot reads where joins or aggregates are too expensive per request — for example a <code>follower_count</code> or like count stored on the row and periodically recounted, or precomputed feed timelines. Real apps do both: a normalized core for integrity, plus deliberate, documented denormalized copies on the few read paths that need them.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. Why are indexes the biggest performance lever, and which columns always need one?</div>
+  <div class="qa-answer">
+    <p>Without the right index the database does a full table scan; with it, a lookup takes milliseconds — no other change gives that magnitude of win. Always index foreign-key columns (Postgres does not auto-index them) and the columns your common queries filter, join or sort on. Composite index order must match the query: <code>(user_id, created_at)</code> serves <code>WHERE user_id = ? ORDER BY created_at DESC</code> but not <code>WHERE created_at</code> alone. Partial indexes (for example only rows <code>WHERE status = 'pending'</code>) keep selective sub-cases small and fast.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Name the isolation levels and the trade-off they represent.</div>
+  <div class="qa-answer">
+    <p>In Postgres: <strong>READ COMMITTED</strong> (the default) prevents dirty reads — each statement sees committed data — and suits most reads. <strong>REPEATABLE READ</strong> gives the whole transaction a snapshot from its start, preventing non-repeatable reads and, in Postgres specifically, phantom reads; use it for reports and multi-step reads. <strong>SERIALIZABLE</strong> prevents all anomalies, as if transactions ran one at a time, but is slower and you must retry on conflict. The trade-off is consistency versus concurrency: each stronger level removes anomalies at the cost of more blocking or aborted transactions.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. How do you read an EXPLAIN ANALYZE plan to find the bottleneck in a slow query?</div>
+  <div class="qa-answer">
+    <p>Run <code>EXPLAIN (ANALYZE, BUFFERS)</code> on the real query to get actual time and I/O per node, then find the node with high actual time deep in the tree. A <code>Seq Scan</code> with many rows on a big table usually means a missing index; an <code>Index Scan</code> with many heap fetches means you retrieved most rows anyway, so the index didn't help; a <code>Sort</code> over large rows suggests a covering index; a high-cost join suggests a missing index on the join column; and a <code>Nested Loop</code> with many outer rows means a bad plan choice — check statistics with <code>ANALYZE</code>. If it's only slow in production, get the production plan, since data shape and stats drive plan choice.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. What are the standard scaling levers, and what's an example of a bad-schema smell?</div>
+  <div class="qa-answer">
+    <p>The levers: <strong>connection pooling</strong> (app pool within the DB's <code>max_connections</code>; with many app instances use an external pooler such as PgBouncer to multiplex onto fewer DB connections), <strong>prepared statements</strong>, <strong>read replicas</strong> (reads go to replicas, writes to the primary, accepting replication lag of milliseconds to seconds, so reads may be stale), and <strong>partitioning</strong> (range by time or id for time-series and archiving, hash for even distribution across shards). A classic schema smell is money stored as <code>FLOAT</code>: rounding errors compound, so use <code>NUMERIC(10,2)</code>. Others are missing indexes on FK columns, a JSON blob for everything, and EAV tables.</p>
+  </div>
+</div>
+` },
+
   ]
 });

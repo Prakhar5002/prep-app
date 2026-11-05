@@ -1,29 +1,46 @@
 window.PREP_SITE.registerTopic({
-  id: 'iosn-plist-entry',
-  module: 'iOS Native (Deep)',
-  title: 'Plist, Entitlements & Entry Code',
-  estimatedReadTime: '24 min',
-  tags: ['info-plist', 'entitlements', 'appdelegate', 'main', 'ats', 'url-scheme', 'capabilities', 'privacy', 'react-native', 'ios', 'xcode', 'cfbundleidentifier', 'nsapptransportsecurity', 'privacy-manifest', 'universal-links', 'push-notifications', 'app-groups', 'main-jsbundle', 'rctappdelegate', 'expo', 'scenedelegate'],
+  id: "iosn-plist-entry",
+  module: "iOS Native (Deep)",
+  title: "Plist, Entitlements & Entry Code",
+  estimatedReadTime: "24 min",
+  tags: ["info-plist","entitlements","appdelegate","main","ats","url-scheme","capabilities","privacy","react-native","ios","xcode","cfbundleidentifier","nsapptransportsecurity","privacy-manifest","universal-links","push-notifications","app-groups","main-jsbundle","rctappdelegate","expo","scenedelegate"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Three things configure how an iOS app declares itself to the system and how it boots:</p>
-<ul>
-  <li><strong>Info.plist</strong> — the app's runtime metadata dictionary (an XML property list of key/value pairs). Bundle id, display name, versions, custom URL schemes, allowed orientations, background modes, and the <strong>privacy usage-description strings</strong> that iOS reads before it lets you touch the camera, location, mic, photos, or tracking. Miss a required one and you get a runtime crash or an App Store rejection.</li>
-  <li><strong>Entitlements (.entitlements)</strong> — signed capabilities baked into the code signature: Push Notifications (<code>aps-environment</code>), App Groups (<code>group.*</code>), Keychain Sharing, Associated Domains (<code>applinks:</code> for Universal Links), Sign in with Apple. They must match your provisioning profile or the app won't sign.</li>
-  <li><strong>Entry code</strong> — <code>main.m</code> calls <code>UIApplicationMain</code>, which hands control to your <strong>AppDelegate</strong>. In React Native the AppDelegate builds the bridge / <code>RCTRootView</code> (old arch) or the <code>RCTReactNativeFactory</code> (new arch) and points <code>sourceURLForBridge</code> at Metro in debug or the embedded <code>main.jsbundle</code> in release.</li>
-</ul>
-<p>In Expo managed projects you never hand-write these — <code>app.json</code> (<code>ios.infoPlist</code>, <code>ios.entitlements</code>, <code>ios.bundleIdentifier</code>) plus config plugins generate them at <code>prebuild</code> time.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Info.plist <em>declares</em> what the app is and what it wants to touch; the .entitlements file <em>signs</em> the capabilities the OS must grant; main.m + AppDelegate <em>boot</em> the app and hand it to React Native. Plist misses crash at runtime; entitlement mismatches fail at signing; AppDelegate mistakes fail at launch.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Info.plist <strong>declares</strong> what the app is and wants to touch (crash if a usage string is missing), the <strong>.entitlements</strong> file <strong>signs</strong> the capabilities the OS must grant (fails code signing if unprovisioned), and <strong>main.m → AppDelegate</strong> boots React Native and picks the JS bundle URL (Metro in debug, main.jsbundle in release).</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Info.plist</strong> is an XML property-list dictionary the OS reads at runtime + App Review; edit via Xcode's Info tab, raw source, or <code>plutil</code>/PlistBuddy.</li>
+    <li><strong>Identity keys:</strong> <code>CFBundleIdentifier</code> (reverse-DNS id), <code>CFBundleName</code>/<code>CFBundleDisplayName</code> (icon label), <code>CFBundleShortVersionString</code> = marketing version (3.4.1), <code>CFBundleVersion</code> = build number (218, must increase per upload).</li>
+    <li><strong>Deep links:</strong> <code>CFBundleURLTypes</code> registers custom schemes (<code>myapp://</code>); <code>LSApplicationQueriesSchemes</code> whitelists schemes you can <code>canOpenURL:</code>. Universal Links use the Associated Domains entitlement, not the plist.</li>
+    <li><strong>Launch/behavior keys:</strong> <code>UILaunchStoryboardName</code>, <code>UISupportedInterfaceOrientations</code>, <code>UIBackgroundModes</code> (remote-notification, fetch, location, audio, voip), <code>UIApplicationSceneManifest</code> (multi-window → SceneDelegate path).</li>
+    <li><strong>Privacy usage strings</strong> are mandatory purpose text: <code>NSCameraUsageDescription</code>, <code>NSPhotoLibraryUsageDescription</code>, <code>NSLocationWhenInUseUsageDescription</code>, <code>NSMicrophoneUsageDescription</code>, <code>NSFaceIDUsageDescription</code>, <code>NSUserTrackingUsageDescription</code>. Missing one = SIGABRT crash on access + review rejection.</li>
+    <li><strong>ATS</strong> (<code>NSAppTransportSecurity</code>) blocks cleartext HTTP since iOS 9; use scoped <code>NSExceptionDomains</code> with <code>NSExceptionAllowsInsecureHTTPLoads</code> rather than the blanket <code>NSAllowsArbitraryLoads</code>. Explains HTTP failing on iOS but not Android.</li>
+    <li><strong>$(VARIABLE)</strong> tokens (<code>$(PRODUCT_BUNDLE_IDENTIFIER)</code>, <code>$(MARKETING_VERSION)</code>, <code>$(CURRENT_PROJECT_VERSION)</code>) are substituted from Build Settings / xcconfig at build time.</li>
+    <li><strong>PrivacyInfo.xcprivacy</strong> — Apple-required manifest declaring collected data, required-reason APIs (UserDefaults, file timestamps, disk space, boot time) with reason codes, and tracking domains; missing on app or a pod blocks upload.</li>
+    <li><strong>.entitlements</strong> are signed capabilities matched to the provisioning profile: <code>aps-environment</code> (push; development vs production), <code>com.apple.security.application-groups</code> (<code>group.*</code>), <code>com.apple.developer.associated-domains</code> (<code>applinks:</code>), <code>keychain-access-groups</code>, <code>com.apple.developer.applesignin</code>. Xcode's Signing &amp; Capabilities tab edits the file AND the App ID together.</li>
+    <li><strong>Entry code:</strong> <code>main.m</code> calls <code>UIApplicationMain</code> → creates UIApplication + AppDelegate → <code>application:didFinishLaunchingWithOptions:</code>. Failure modes differ by file: plist misses crash at runtime, entitlement mismatches fail at signing, AppDelegate mistakes fail at launch.</li>
+    <li><strong>RN in AppDelegate:</strong> old arch builds <code>RCTBridge</code> + <code>RCTRootView</code>; new arch (bridgeless) uses <code>RCTReactNativeFactory</code>/<code>RCTAppDelegate</code>. You set <code>moduleName</code> and override <code>bundleURL</code>. Cross-reference <code>rn-architecture</code> for bridge/JSI internals.</li>
+    <li><strong>bundleURL:</strong> DEBUG → Metro (<code>localhost:8081/index.bundle</code>), RELEASE → embedded <code>main.jsbundle</code>. Wrong branch = "No bundle URL present" / white screen.</li>
+    <li><strong>main.jsbundle</strong> is produced by the "Bundle React Native code and images" build phase (react-native-xcode.sh → Metro → Hermes bytecode) and copied into the .app for release.</li>
+    <li><strong>Delegate hooks:</strong> <code>openURL:</code> (custom scheme) and <code>continueUserActivity:</code> (Universal Links) forward to <code>RCTLinkingManager</code>; <code>didRegisterForRemoteNotificationsWithDeviceToken:</code> for push.</li>
+    <li><strong>Expo reality:</strong> all four artifacts are generated at <code>expo prebuild</code> from <code>app.json</code> (<code>ios.bundleIdentifier</code>, <code>ios.buildNumber</code>, <code>ios.infoPlist</code>, <code>ios.entitlements</code>, <code>ios.associatedDomains</code>) + config plugins. Hand edits to <code>ios/</code> are wiped by <code>--clean</code>. The sw-mobile iOS 26 fix coupled AppDelegate.h + AppDelegate.mm + Podfile.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Confusing "declare" with "sign".</strong> You can add any key to Info.plist freely, but you cannot self-grant an entitlement — it must be provisioned on your App ID or code signing fails. And a missing privacy usage string is a <strong>crash</strong>, not a silent permission denial. Secondary trap: hardcoding the Metro URL (or leaving <code>aps-environment</code> as <code>development</code>) in the release build.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Info.plist declares what the app is and what protected resources it wants — miss a usage string and the OS crashes the app on first access. Entitlements are different: they're signed capabilities like push and App Groups that must match the provisioning profile, or code signing fails."</div>
+  <div class="revision-say">"Boot goes main.m → UIApplicationMain → AppDelegate's didFinishLaunchingWithOptions, which builds the RN root and resolves the bundle URL — Metro in debug, the embedded main.jsbundle in release."</div>
+  <div class="revision-say">"ATS blocks cleartext HTTP on iOS since iOS 9, which is why an http API works on Android but silently fails on iOS unless you add a scoped exception domain — I avoid the blanket NSAllowsArbitraryLoads."</div>
+  <div class="revision-say">"In Expo these files aren't hand-written — they're generated at prebuild from app.json's ios.infoPlist and ios.entitlements plus config plugins, so editing ios/ directly gets wiped on a clean prebuild."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What Info.plist is</h3>
 <p>Every iOS app bundle ships an <code>Info.plist</code> — an XML <strong>property list</strong> (a serialized dictionary) that the operating system reads to learn about your app <em>before and while</em> it runs. It lives at the root of the built <code>.app</code> bundle. The launcher, Springboard, the App Store, and dozens of system frameworks consult it: to know your bundle identifier, your display name under the icon, your supported orientations, which URL schemes you can open, and — crucially — which sensitive resources you intend to use and the human-readable reason you'll show the user.</p>
 
@@ -46,10 +63,10 @@ window.PREP_SITE.registerTopic({
   </tbody>
 </table>
 <p>Every one of these surfaces during native debugging — the exact skill you're sharpening. When a push token never arrives, when a deep link doesn't open the app, when a release build shows a white screen, the root cause is almost always in one of these three files.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "declare vs sign vs boot" picture</h3>
 <div class="diagram">
 <pre>
@@ -113,10 +130,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"Info.plist and entitlements are the same kind of settings." They are not. Info.plist is <strong>unsigned</strong> declarative metadata the OS trusts at face value. Entitlements are <strong>part of the signature</strong> and must be authorized by your Apple Developer account's App ID + provisioning profile. You can add any key to Info.plist freely; you cannot grant yourself an entitlement Apple hasn't provisioned for your App ID.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>1 — Info.plist format and how to edit it</h3>
 <p>It is an XML plist: a <code>&lt;dict&gt;</code> of <code>&lt;key&gt;</code> elements each followed by a typed value (<code>&lt;string&gt;</code>, <code>&lt;true/&gt;</code>, <code>&lt;array&gt;</code>, <code>&lt;dict&gt;</code>, <code>&lt;integer&gt;</code>). Three ways to edit it:</p>
 <ul>
@@ -414,10 +431,10 @@ self.window.rootViewController = vc;
   <div class="callout-title">Real-world: the sw-mobile iOS 26 launch fix</div>
   <p>On <code>sw-mobile</code> (Expo 53 / RN 0.79, old arch), launching on iOS 26 simulators required three coupled patches: the <strong>Podfile</strong>, <strong>AppDelegate.h</strong>, and <strong>AppDelegate.mm</strong> edited together (plus a noop Swift file). This is exactly the entry-code layer — the AppDelegate header + implementation had to change in lockstep with the pod configuration for the app to boot. Because it's a prebuild project, those native edits live behind config / patches so <code>--clean</code> doesn't erase them.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Minimal Info.plist identity block</h3>
 <pre><code class="language-xml">&lt;key&gt;CFBundleIdentifier&lt;/key&gt;   &lt;string&gt;$(PRODUCT_BUNDLE_IDENTIFIER)&lt;/string&gt;
 &lt;key&gt;CFBundleDisplayName&lt;/key&gt;  &lt;string&gt;SmartWorks&lt;/string&gt;
@@ -539,10 +556,11 @@ codesign -d --entitlements :- "MyApp.app"
 
 # Lint a plist for XML errors before building
 plutil -lint ios/SmartWorks/Info.plist</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Missing usage string = hard crash, not a warning</h3>
 <p>Call the camera without <code>NSCameraUsageDescription</code> and the app terminates immediately with a console message naming the missing key. It is not a silent denial — it is <code>SIGABRT</code>. Always add the string before shipping the feature.</p>
 
@@ -593,10 +611,9 @@ plutil -lint ios/SmartWorks/Info.plist</code></pre>
 
 <h3>17. Encryption compliance key</h3>
 <p><code>ITSAppUsesNonExemptEncryption</code> (usually <code>false</code>) avoids a manual export-compliance prompt on every TestFlight upload; omit it and App Store Connect asks each time.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — NSAllowsArbitraryLoads = true to "just make networking work"</h3>
 <p>Disabling ATS globally is the lazy fix, invites App Review questions, and hides insecure endpoints. Use scoped <code>NSExceptionDomains</code>, or fix the server to HTTPS.</p>
 
@@ -641,10 +658,10 @@ plutil -lint ios/SmartWorks/Info.plist</code></pre>
 
 <h3>Anti-pattern 15 — Blanket background modes to be "safe"</h3>
 <p>Declaring <code>audio</code>, <code>location</code>, <code>voip</code> you don't use invites rejection and battery scrutiny. Declare only the modes you actually run.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What is Info.plist and why is it central on iOS?</div>
   <div class="qa-answer">
@@ -767,55 +784,7 @@ plutil -lint ios/SmartWorks/Info.plist</code></pre>
     <li>You know Expo generates all of this from app.json at prebuild.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Info.plist <strong>declares</strong> what the app is and wants to touch (crash if a usage string is missing), the <strong>.entitlements</strong> file <strong>signs</strong> the capabilities the OS must grant (fails code signing if unprovisioned), and <strong>main.m → AppDelegate</strong> boots React Native and picks the JS bundle URL (Metro in debug, main.jsbundle in release).</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Info.plist</strong> is an XML property-list dictionary the OS reads at runtime + App Review; edit via Xcode's Info tab, raw source, or <code>plutil</code>/PlistBuddy.</li>
-    <li><strong>Identity keys:</strong> <code>CFBundleIdentifier</code> (reverse-DNS id), <code>CFBundleName</code>/<code>CFBundleDisplayName</code> (icon label), <code>CFBundleShortVersionString</code> = marketing version (3.4.1), <code>CFBundleVersion</code> = build number (218, must increase per upload).</li>
-    <li><strong>Deep links:</strong> <code>CFBundleURLTypes</code> registers custom schemes (<code>myapp://</code>); <code>LSApplicationQueriesSchemes</code> whitelists schemes you can <code>canOpenURL:</code>. Universal Links use the Associated Domains entitlement, not the plist.</li>
-    <li><strong>Launch/behavior keys:</strong> <code>UILaunchStoryboardName</code>, <code>UISupportedInterfaceOrientations</code>, <code>UIBackgroundModes</code> (remote-notification, fetch, location, audio, voip), <code>UIApplicationSceneManifest</code> (multi-window → SceneDelegate path).</li>
-    <li><strong>Privacy usage strings</strong> are mandatory purpose text: <code>NSCameraUsageDescription</code>, <code>NSPhotoLibraryUsageDescription</code>, <code>NSLocationWhenInUseUsageDescription</code>, <code>NSMicrophoneUsageDescription</code>, <code>NSFaceIDUsageDescription</code>, <code>NSUserTrackingUsageDescription</code>. Missing one = SIGABRT crash on access + review rejection.</li>
-    <li><strong>ATS</strong> (<code>NSAppTransportSecurity</code>) blocks cleartext HTTP since iOS 9; use scoped <code>NSExceptionDomains</code> with <code>NSExceptionAllowsInsecureHTTPLoads</code> rather than the blanket <code>NSAllowsArbitraryLoads</code>. Explains HTTP failing on iOS but not Android.</li>
-    <li><strong>$(VARIABLE)</strong> tokens (<code>$(PRODUCT_BUNDLE_IDENTIFIER)</code>, <code>$(MARKETING_VERSION)</code>, <code>$(CURRENT_PROJECT_VERSION)</code>) are substituted from Build Settings / xcconfig at build time.</li>
-    <li><strong>PrivacyInfo.xcprivacy</strong> — Apple-required manifest declaring collected data, required-reason APIs (UserDefaults, file timestamps, disk space, boot time) with reason codes, and tracking domains; missing on app or a pod blocks upload.</li>
-    <li><strong>.entitlements</strong> are signed capabilities matched to the provisioning profile: <code>aps-environment</code> (push; development vs production), <code>com.apple.security.application-groups</code> (<code>group.*</code>), <code>com.apple.developer.associated-domains</code> (<code>applinks:</code>), <code>keychain-access-groups</code>, <code>com.apple.developer.applesignin</code>. Xcode's Signing &amp; Capabilities tab edits the file AND the App ID together.</li>
-    <li><strong>Entry code:</strong> <code>main.m</code> calls <code>UIApplicationMain</code> → creates UIApplication + AppDelegate → <code>application:didFinishLaunchingWithOptions:</code>.</li>
-    <li><strong>RN in AppDelegate:</strong> old arch builds <code>RCTBridge</code> + <code>RCTRootView</code>; new arch (bridgeless) uses <code>RCTReactNativeFactory</code>/<code>RCTAppDelegate</code>. You set <code>moduleName</code> and override <code>bundleURL</code>. Cross-reference <code>rn-architecture</code> for bridge/JSI internals.</li>
-    <li><strong>bundleURL:</strong> DEBUG → Metro (<code>localhost:8081/index.bundle</code>), RELEASE → embedded <code>main.jsbundle</code>. Wrong branch = "No bundle URL present" / white screen.</li>
-    <li><strong>main.jsbundle</strong> is produced by the "Bundle React Native code and images" build phase (react-native-xcode.sh → Metro → Hermes bytecode) and copied into the .app for release.</li>
-    <li><strong>Delegate hooks:</strong> <code>openURL:</code> (custom scheme) and <code>continueUserActivity:</code> (Universal Links) forward to <code>RCTLinkingManager</code>; <code>didRegisterForRemoteNotificationsWithDeviceToken:</code> for push.</li>
-    <li><strong>Expo reality:</strong> all four artifacts are generated at <code>expo prebuild</code> from <code>app.json</code> (<code>ios.bundleIdentifier</code>, <code>ios.buildNumber</code>, <code>ios.infoPlist</code>, <code>ios.entitlements</code>, <code>ios.associatedDomains</code>) + config plugins. Hand edits to <code>ios/</code> are wiped by <code>--clean</code>. The sw-mobile iOS 26 fix coupled AppDelegate.h + AppDelegate.mm + Podfile.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Confusing "declare" with "sign".</strong> You can add any key to Info.plist freely, but you cannot self-grant an entitlement — it must be provisioned on your App ID or code signing fails. And a missing privacy usage string is a <strong>crash</strong>, not a silent permission denial. Secondary trap: hardcoding the Metro URL (or leaving <code>aps-environment</code> as <code>development</code>) in the release build.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Info.plist declares what the app is and what protected resources it wants — miss a usage string and the OS crashes the app on first access. Entitlements are different: they're signed capabilities like push and App Groups that must match the provisioning profile, or code signing fails."</div>
-  <div class="revision-say">"Boot goes main.m → UIApplicationMain → AppDelegate's didFinishLaunchingWithOptions, which builds the RN root and resolves the bundle URL — Metro in debug, the embedded main.jsbundle in release."</div>
-  <div class="revision-say">"ATS blocks cleartext HTTP on iOS since iOS 9, which is why an http API works on Android but silently fails on iOS unless you add a scoped exception domain — I avoid the blanket NSAllowsArbitraryLoads."</div>
-  <div class="revision-say">"In Expo these files aren't hand-written — they're generated at prebuild from app.json's ios.infoPlist and ios.entitlements plus config plugins, so editing ios/ directly gets wiped on a clean prebuild."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the difference between Info.plist and the .entitlements file, and why one crashes at runtime while the other fails at code signing?</li>
-    <li>Can you distinguish CFBundleShortVersionString from CFBundleVersion and state the App Store Connect upload rule?</li>
-    <li>Can you say what App Transport Security does and why an http API works on Android but not iOS?</li>
-    <li>Can you name five privacy usage strings and describe exactly what happens when one is missing?</li>
-    <li>Can you trace the launch chain from main.m through UIApplicationMain and the AppDelegate to the first React Native frame?</li>
-    <li>Can you explain what sourceURLForBridge / bundleURL returns in debug vs release, and how main.jsbundle is produced?</li>
-    <li>Can you explain how Expo generates all of these from app.json at prebuild, and why hand-editing ios/ is wiped?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

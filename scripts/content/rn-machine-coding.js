@@ -1,30 +1,46 @@
 window.PREP_SITE.registerTopic({
-  id: 'rn-machine-coding',
-  module: 'rn',
-  title: 'Machine Coding (React Native)',
-  estimatedReadTime: '50 min',
-  tags: ['machine-coding', 'react-native', 'flatlist', 'forms', 'infinite-scroll', 'otp', 'live-coding', 'interview-build'],
+  id: "rn-machine-coding",
+  module: "rn",
+  title: "Machine Coding (React Native)",
+  estimatedReadTime: "50 min",
+  tags: ["machine-coding","react-native","flatlist","forms","infinite-scroll","otp","live-coding","interview-build"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>A <strong>machine-coding round</strong> in a React Native interview is a 60–90 minute live build of a small, runnable feature. The interviewer is grading three things at once: <strong>can you ship a working thing</strong>, <strong>can you make principled architectural calls under time pressure</strong>, and <strong>can you talk through tradeoffs while typing</strong>.</p>
-<ul>
-  <li><strong>Most common asks:</strong> infinite-scroll feed, OTP input, autocomplete with debounce, swipe-to-delete row, image carousel, multi-step form, todo + offline persistence, pull-to-refresh, tabs, search.</li>
-  <li><strong>Skeleton in 5 minutes:</strong> screen file → layout → state model → wire data → polish. Don't get stuck on styling early.</li>
-  <li><strong>Default stack:</strong> Functional components + hooks, FlatList for any list, MMKV/AsyncStorage for persistence, React Query or a tiny <code>useFetch</code> for data, Reanimated for non-trivial animation.</li>
-  <li><strong>Always demo:</strong> empty state, loading state, error state, golden path, edge case. If you don't show these, the interviewer assumes they don't work.</li>
-  <li><strong>Always say:</strong> "If I had more time I would…" — testing, accessibility, retries, virtualization budget, theming. Naming gaps you didn't fill is worth points.</li>
-</ul>
-<p><strong>Mantra:</strong> "Working &gt; pretty &gt; clever. Narrate every tradeoff."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Working &gt; pretty &gt; clever — narrate every tradeoff</strong>: hardcode data first, budget the 60 minutes across 5 phases, and demo loading, error, empty, golden-path, and one edge case.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Mantra:</strong> "Working &gt; pretty &gt; clever — narrate every tradeoff." The interviewer grades whether you ship a working thing, make principled calls under pressure, and talk while typing.</li>
+    <li><strong>5-phase, 60-min budget:</strong> clarify (0–5) → layout skeleton (5–15) → wire state &amp; data (15–35) → edge cases (35–50) → polish &amp; narrate (50–60). Biggest mistake is over-spending on layout — <strong>hardcode 5 fake items</strong> to build the same UI shell.</li>
+    <li><strong>Open with a scope monologue:</strong> confirm hardcoded-first, monochrome-if-no-design, which states you'll handle, and the three things (tests, theming, a11y) you'd do for prod but skip. That one sentence reads senior.</li>
+    <li><strong>Always demo loading, error, empty, golden path, and one edge case</strong> — if you don't show a state, the interviewer assumes it doesn't work. Never render a bare <code>&lt;Text&gt;Error&lt;/Text&gt;</code>; give a retry.</li>
+    <li><strong>"State lives where" tree:</strong> UI-only → <code>useState</code>; shared on-screen → lift (or <code>useReducer</code> for &gt;3 fields); server data → React Query (never <code>useState</code> for fetched data); cross-screen → Context/Zustand (avoid Redux unless inherited); persisted → MMKV/AsyncStorage.</li>
+    <li><strong>Default stack:</strong> function components + hooks, FlatList for any list, MMKV for persistence, React Query or a tiny <code>useFetch</code> for data, Reanimated for non-trivial animation. Common asks: infinite-scroll feed, OTP input, debounced autocomplete, swipe-to-delete, multi-step form, persisted todo, image carousel, chat list.</li>
+    <li><strong>Infinite scroll:</strong> guard <code>onEndReached</code> with <code>if (loading || done) return</code> (it fires repeatedly near the bottom), <code>keyExtractor</code> from a stable id, <code>ListEmptyComponent</code> / <code>ListFooterComponent</code> for states.</li>
+    <li><strong>Search box race:</strong> a slow earlier request can overwrite a fast later one — fix with <code>AbortController</code> in the effect cleanup (or check the response still matches state). Debounce input ~300ms.</li>
+    <li><strong>OTP details:</strong> <code>textContentType="oneTimeCode"</code> + <code>autoComplete="sms-otp"</code> for SMS auto-fill, allow paste in the first cell, backspace jumps to the previous box.</li>
+    <li><strong>Swipe/animation:</strong> Reanimated worklets + Gesture Handler run on the UI thread (JS-thread animation janks immediately on device); <code>runOnJS</code> to call back into React.</li>
+    <li><strong>Keyboard is the silent killer:</strong> <code>KeyboardAvoidingView</code> (<code>behavior="padding"</code> iOS), tap-outside <code>Keyboard.dismiss()</code>, <code>keyboardShouldPersistTaps="handled"</code>, and <code>autoCorrect={false}</code> + <code>autoCapitalize="none"</code> on email fields.</li>
+    <li><strong>Common bugs to pre-empt:</strong> index-as-key, derived state in <code>useState</code> (compute with <code>useMemo</code>), <code>setState</code> in render (infinite loop), <code>async</code> effect callback (use an inner async + <code>alive</code> flag), and fetch without abort/guard.</li>
+    <li><strong>MMKV over AsyncStorage</strong> for persistence: synchronous reads, ~30× faster on cold start — no await chain blocking startup.</li>
+    <li><strong>Scale-up answers:</strong> FlashList for 10k+ rows (same API, ~5× perf), thumbnails not full-res images, FastImage/expo-image for caching + off-JS-thread decode, and profile with the React DevTools Profiler.</li>
+    <li><strong>Close with "If I had more time I would…"</strong> — tests, accessibility, retries, a virtualization budget, theming. Naming the gaps you didn't fill is worth points.</li>
+    <li><strong>Anti-patterns:</strong> reaching for Redux on day one, a 500-line single component (extract past ~150 lines), inventing a half-built data layer, cleverness over readability, "it's the same as web React," and silent failures.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Over-spending on layout and pixel-perfect polish, then running out of time for state and edge cases</strong> — and if you never render a state, the interviewer assumes it doesn't work. Fix: hardcode 5 fake items to build the UI shell fast, spend the saved time wiring state/data and handling loading/error/empty, and demo each state out loud.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Let me confirm scope first — hardcoded data to start, monochrome unless there's a design, and I'll handle loading, error, and empty states; tests, theming, and a11y I'd add for prod."</div>
+  <div class="revision-say">"I'll use FlatList for virtualization, guard onEndReached against double-paginating, and put an AbortController in the cleanup so the search doesn't race."</div>
+  <div class="revision-say">"Working beats pretty beats clever — I'll get the golden path running, then narrate what I'd do with more time: FlashList at scale, MMKV for persistence, Reanimated worklets for smooth animation."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a React Native machine-coding round?</h3>
 <p>Unlike DSA rounds (one function, one return value) or system design (whiteboard only, no code), machine coding is a <em>build</em>. You open an editor — usually a sandbox like Expo Snack, CodeSandbox, or a starter repo cloned to your machine — and produce a working feature in 60 to 90 minutes. The interviewer watches you type.</p>
 
@@ -65,12 +81,10 @@ window.PREP_SITE.registerTopic({
   <li>Not "ship a polished design." If the design isn't given, default to a clean monochrome with adequate spacing.</li>
   <li>Not "use every library you know." Reaching for Redux + Zustand + Recoil + React Query in a 60-minute build is a red flag, not a green one.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The 5-phase build (60-min budget)</h3>
 <table>
   <thead><tr><th>Phase</th><th>Time</th><th>Output</th></tr></thead>
@@ -141,12 +155,10 @@ Is it persisted across app launches?
   <li>"I'm extracting <code>usePosts</code> because the screen will get cluttered if I keep this in line."</li>
   <li>"This handler doesn't memoize — fine here because PostCard isn't memoized either, no win."</li>
 </ul>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Pattern 1: Infinite-scroll feed (the canonical problem)</h3>
 <pre><code class="language-tsx">// hooks/usePosts.ts
 import { useState, useCallback, useEffect } from 'react';
@@ -436,12 +448,10 @@ export function TodosScreen() {
 }
 </code></pre>
 <p><strong>Why MMKV:</strong> synchronous reads, ~30× faster than AsyncStorage on cold start, and the API is dead simple. Async-only candidates often forget how disruptive the AsyncStorage await chain is on app startup.</p>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: "Build a chat list" (full 60-minute walkthrough)</h3>
 <p><strong>Prompt:</strong> "Build a chat list screen. Each row shows avatar, name, last message, time, and unread count. Tapping a row opens a detail screen. Long-press reveals delete. Pull to refresh, infinite scroll, online indicator on avatar."</p>
 
@@ -608,12 +618,11 @@ export function Skeleton({ width, height }: { width: number; height: number }) {
   );
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Always demo these states</h3>
 <table>
   <thead><tr><th>State</th><th>How to surface</th></tr></thead>
@@ -696,12 +705,9 @@ export function Skeleton({ width, height }: { width: number; height: number }) {
   <li>Don't show "Retry" if there's no connection — show "You're offline."</li>
   <li>Background fetches: cancel on screen blur (<code>useFocusEffect</code> with cleanup).</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: useEffect fetching without abort or guard</h3>
 <pre><code class="language-tsx">// BAD — stale results, memory leak warnings, retried setState on unmounted component
 useEffect(() =&gt; {
@@ -839,12 +845,10 @@ renderItem={({ item }) =&gt; &lt;Row item={item} onPress={() =&gt; doThing(item.
 
 <h3>Anti-pattern 7: silent failures</h3>
 <p>Wrapping every async in <code>try/catch</code> with no UI surfacing — user sees nothing, taps again, breaks more. Always render an error UI, even if it's a one-liner.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 most common RN machine-coding prompts</h3>
 <table>
   <thead><tr><th>Prompt</th><th>Skills tested</th></tr></thead>
@@ -948,57 +952,44 @@ renderItem={({ item }) =&gt; &lt;Row item={item} onPress={() =&gt; doThing(item.
   <li>Reaching for libraries you can't explain — "I'd use Redux because it's the standard" is worse than "I'll use useState — for this size of state, Redux is overkill."</li>
   <li>Not running the code. Type-checking is not running.</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Working &gt; pretty &gt; clever — narrate every tradeoff</strong>: hardcode data first, budget the 60 minutes across 5 phases, and demo loading, error, empty, golden-path, and one edge case.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Mantra:</strong> "Working &gt; pretty &gt; clever — narrate every tradeoff." The interviewer grades whether you ship a working thing, make principled calls under pressure, and talk while typing.</li>
-    <li><strong>5-phase, 60-min budget:</strong> clarify (0–5) → layout skeleton (5–15) → wire state &amp; data (15–35) → edge cases (35–50) → polish &amp; narrate (50–60). Biggest mistake is over-spending on layout — <strong>hardcode 5 fake items</strong> to build the same UI shell.</li>
-    <li><strong>Open with a scope monologue:</strong> confirm hardcoded-first, monochrome-if-no-design, which states you'll handle, and the three things (tests, theming, a11y) you'd do for prod but skip. That one sentence reads senior.</li>
-    <li><strong>Always demo loading, error, empty, golden path, and one edge case</strong> — if you don't show a state, the interviewer assumes it doesn't work. Never render a bare <code>&lt;Text&gt;Error&lt;/Text&gt;</code>; give a retry.</li>
-    <li><strong>"State lives where" tree:</strong> UI-only → <code>useState</code>; shared on-screen → lift (or <code>useReducer</code> for &gt;3 fields); server data → React Query (never <code>useState</code> for fetched data); cross-screen → Context/Zustand (avoid Redux unless inherited); persisted → MMKV/AsyncStorage.</li>
-    <li><strong>Default stack:</strong> function components + hooks, FlatList for any list, MMKV for persistence, React Query or a tiny <code>useFetch</code> for data, Reanimated for non-trivial animation. Common asks: infinite-scroll feed, OTP input, debounced autocomplete, swipe-to-delete, multi-step form, persisted todo, image carousel, chat list.</li>
-    <li><strong>Infinite scroll:</strong> guard <code>onEndReached</code> with <code>if (loading || done) return</code> (it fires repeatedly near the bottom), <code>keyExtractor</code> from a stable id, <code>ListEmptyComponent</code> / <code>ListFooterComponent</code> for states.</li>
-    <li><strong>Search box race:</strong> a slow earlier request can overwrite a fast later one — fix with <code>AbortController</code> in the effect cleanup (or check the response still matches state). Debounce input ~300ms.</li>
-    <li><strong>OTP details:</strong> <code>textContentType="oneTimeCode"</code> + <code>autoComplete="sms-otp"</code> for SMS auto-fill, allow paste in the first cell, backspace jumps to the previous box.</li>
-    <li><strong>Swipe/animation:</strong> Reanimated worklets + Gesture Handler run on the UI thread (JS-thread animation janks immediately on device); <code>runOnJS</code> to call back into React.</li>
-    <li><strong>Keyboard is the silent killer:</strong> <code>KeyboardAvoidingView</code> (<code>behavior="padding"</code> iOS), tap-outside <code>Keyboard.dismiss()</code>, <code>keyboardShouldPersistTaps="handled"</code>, and <code>autoCorrect={false}</code> + <code>autoCapitalize="none"</code> on email fields.</li>
-    <li><strong>Common bugs to pre-empt:</strong> index-as-key, derived state in <code>useState</code> (compute with <code>useMemo</code>), <code>setState</code> in render (infinite loop), <code>async</code> effect callback (use an inner async + <code>alive</code> flag), and fetch without abort/guard.</li>
-    <li><strong>MMKV over AsyncStorage</strong> for persistence: synchronous reads, ~30× faster on cold start — no await chain blocking startup.</li>
-    <li><strong>Scale-up answers:</strong> FlashList for 10k+ rows (same API, ~5× perf), thumbnails not full-res images, FastImage/expo-image for caching + off-JS-thread decode, and profile with the React DevTools Profiler.</li>
-    <li><strong>Anti-patterns:</strong> reaching for Redux on day one, a 500-line single component (extract past ~150 lines), inventing a half-built data layer, cleverness over readability, "it's the same as web React," and silent failures.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Over-spending on layout and pixel-perfect polish, then running out of time for state and edge cases</strong> — and if you never render a state, the interviewer assumes it doesn't work. Fix: hardcode 5 fake items to build the UI shell fast, spend the saved time wiring state/data and handling loading/error/empty, and demo each state out loud.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Let me confirm scope first — hardcoded data to start, monochrome unless there's a design, and I'll handle loading, error, and empty states; tests, theming, and a11y I'd add for prod."</div>
-  <div class="revision-say">"I'll use FlatList for virtualization, guard onEndReached against double-paginating, and put an AbortController in the cleanup so the search doesn't race."</div>
-  <div class="revision-say">"Working beats pretty beats clever — I'll get the golden path running, then narrate what I'd do with more time: FlashList at scale, MMKV for persistence, Reanimated worklets for smooth animation."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you get a golden-path feature working first, then narrate the trade-offs you would improve with more time?</li>
-    <li>Can you build a debounced search-with-results screen from scratch under time pressure?</li>
-    <li>Can you separate component, state, and data layers so the interviewer sees a clean structure?</li>
-    <li>Can you explain when you would swap FlatList for FlashList and AsyncStorage for MMKV at scale?</li>
-    <li>Can you handle loading, empty, and error states without being reminded?</li>
-    <li>Can you talk through what you would test and refactor if given another twenty minutes?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. How do you approach a 60-minute RN machine-coding round so a golden-path feature works before time runs out?</div>
+  <div class="qa-answer">
+    <p>Budget the hour in five phases: clarify scope (0–5 min), a layout skeleton with hardcoded data (5–15), wire state and data so the happy path works (15–35), edge cases — error, empty, loading, offline, validation (35–50), then polish and narrate (50–60). Open with a scope monologue: hardcoded data first, monochrome unless there's a design, which states you'll handle, and the production items you'll skip (tests, theming, a11y). The biggest mistake is over-spending on layout — five fake items render the same shell as 50,000 real ones. Talk while typing ("FlatList for virtualization", "AbortController on cleanup so we don't race"), and finish with an "if I had more time" list: working beats pretty beats clever.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q2. Build a debounced search-with-results screen. What are the key pieces?</div>
+  <div class="qa-answer">
+    <p>Keep the raw query in <code>useState</code>, derive a debounced copy with a small <code>useDebouncedValue(q, 300)</code> hook (a <code>setTimeout</code> in an effect, cleared in cleanup), and fetch in an effect keyed on the debounced value. In that effect create an <code>AbortController</code>, pass its signal to <code>fetch</code>, ignore <code>AbortError</code>, and call <code>ctrl.abort()</code> in cleanup — otherwise a slow earlier request can land after a fast later one and overwrite fresh results. Clear results when the query is empty, track loading, and render with a FlatList keyed by a stable id. Set <code>autoCorrect={false}</code> on the input and show loading, empty ("no results") and error-with-retry states.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. How do you separate component, state and data layers so the interviewer sees a clean structure?</div>
+  <div class="qa-answer">
+    <p>Use a simple folder split: <code>screens/</code> (the screen owns layout), <code>components/</code> (dumb, prop-driven pieces like <code>PostCard</code>, <code>EmptyState</code>, <code>ErrorState</code>), <code>hooks/</code> (custom hooks such as <code>usePosts</code> that own fetching and pagination state), <code>api/</code> (fetch wrappers) and <code>types/</code> (the domain type you write first). Place state by the decision tree: UI-only in <code>useState</code>, shared on-screen state lifted (or <code>useReducer</code> past ~3 fields), server data in React Query, cross-screen in Context/Zustand, persisted in MMKV behind a hook. Before a component passes ~150 lines, extract subcomponents, move non-trivial effects into hooks and pure computations into utils. One file is fine for a 30-minute round; for 60+, split.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. When would you swap FlatList for FlashList and AsyncStorage for MMKV as the app scales?</div>
+  <div class="qa-answer">
+    <p>FlatList is the default for any list in the round — it virtualizes and keeps memory bounded — and you memoize heavy rows and add <code>getItemLayout</code> when heights are constant. For 10,000+ rows or scroll-heavy feeds, swap to Shopify's FlashList: same API, roughly 5× the performance because it recycles cells. For persistence, MMKV is the better default over AsyncStorage: its reads are synchronous and about 30× faster, so cold-start restores don't sit behind an await chain. Pair those with thumbnails instead of full-res images and FastImage / expo-image for caching and off-JS-thread decode, and profile with the React DevTools Profiler before claiming wins.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. How do you handle loading, empty and error states without being reminded?</div>
+  <div class="qa-answer">
+    <p>Plan them in phase 4 and demo each one out loud — if you don't show a state, the interviewer assumes it doesn't work. Initial loading gets a skeleton, ActivityIndicator or shimmer; pagination loading a spinner in <code>ListFooterComponent</code>; refresh a <code>RefreshControl</code>; empty a <code>ListEmptyComponent</code> with friendly copy and a CTA; errors an inline message with a Retry button — never a bare <code>&lt;Text&gt;Error&lt;/Text&gt;</code>; offline a banner saying cached results are shown. Guard <code>onEndReached</code> with <code>if (loading || done) return</code> so the footer state doesn't double-paginate. Staff-level signal: build them as reusable shells rather than one-offs.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. With another twenty minutes, what would you test and refactor?</div>
+  <div class="qa-answer">
+    <p>Tests: a render test of the screen with mock data asserting the row count, the empty and error states, and an integration test of the happy path with fetch mocked via msw or <code>jest.mock</code> — pagination can be driven with <code>fireEvent.scroll</code>. Refactors: extract any oversized component, move effects into custom hooks, add <code>getItemLayout</code> or swap to FlashList, and memoize heavy rows. Then name the remaining production items: <code>accessibilityLabel</code> / <code>accessibilityRole</code> on touchables, strings through <code>t()</code>, theme tokens with a dark-mode pass, exponential-backoff retries with queue-and-replay for writes, and telemetry. Also name the worst bug you can imagine in your own code — a race on duplicate calls, a wrong key on reorder, a leak on unmount — to show you can audit it.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

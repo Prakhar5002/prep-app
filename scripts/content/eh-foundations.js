@@ -1,29 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'eh-foundations',
-  module: 'eh',
-  title: 'Foundations, Ethics & Legal',
-  estimatedReadTime: '26 min',
-  tags: ['ethical-hacking', 'security', 'pentest', 'ethics', 'legal', 'methodology'],
+  id: "eh-foundations",
+  module: "eh",
+  title: "Foundations, Ethics & Legal",
+  estimatedReadTime: "26 min",
+  tags: ["ethical-hacking","security","pentest","ethics","legal","methodology"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<div class="callout danger">
-  <div class="callout-title">⚠️ Read this before anything else in this module</div>
-  <p>Everything taught across this Ethical Hacking module assumes you have <strong>explicit, written authorization</strong> to test the systems involved — your own lab VMs, an employer's asset you've been contracted to test under a signed agreement, or a platform (Hack The Box, TryHackMe, a bug-bounty program's published scope) that has already agreed to be tested. Running any of these techniques against a system you don't own and haven't been authorized to test is a crime in most of the world, regardless of intent. This module is for authorized testing, personal labs, and CTF/practice platforms only.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Ethical hacking is authorized, in-scope attacking to find flaws before real attackers do — the technical skills are identical to a criminal's, and authorization, scope, and intent are the entire difference.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>The rule above all others: only test systems you own or have explicit, written, in-scope authorization to test — no exceptions for "it looked insecure" or "I did no harm."</li>
+    <li>White, grey, and black hats differ in intent, but only authorization decides legality — a well-intentioned grey-hat "I found it and told them" story still describes an unauthorized-access crime.</li>
+    <li>The engagement lifecycle is pre-engagement, reconnaissance, scanning/enumeration, exploitation, post-exploitation, and reporting.</li>
+    <li>Every methodology names the same shape: PTES (7 phases), NIST SP 800-115 (Planning/Discovery/Attack/Reporting), the Cyber Kill Chain (attacker view, used defensively), MITRE ATT&amp;CK (Tactics + Techniques knowledge base, not linear), and OSSTMM (metrics-driven RAV score, not phase-based).</li>
+    <li>Pentest vs vulnerability assessment vs red team vs bug bounty are distinct engagement shapes: manual exploit-to-prove-impact vs broad automated coverage vs stealthy goal-oriented (also tests the blue team) vs continuous crowd-sourced with safe harbor.</li>
+    <li>Black-box / grey-box / white-box describe how much the tester knows going in; grey-box is the most common real-world choice because it balances realism against discovery cost.</li>
+    <li>The CIA triad (Confidentiality, Integrity, Availability) is what every finding ultimately threatens — DoS threatens availability, which is why it's usually excluded from scope by default.</li>
+    <li>The legal core is written authorization (signed by someone with real authority over the asset), an explicit in- and out-of-scope list, a Rules of Engagement document, and a "get-out-of-jail-free" letter for physical work.</li>
+    <li>An RoE typically covers scope, the testing window and blackout periods, permitted/prohibited techniques, emergency contacts and escalation, data-handling rules, and signatures.</li>
+    <li>The CFAA (US, 18 U.S.C. § 1030) criminalizes access "without authorization or exceeding authorized access"; equivalents include the UK Computer Misuse Act 1990, EU Directive 2013/40/EU, the Budapest Convention, and India's IT Act 2000.</li>
+    <li>Responsible/coordinated disclosure means reporting privately first, agreeing a remediation timeline (commonly ~90 days), and not going public before the fix ships.</li>
+    <li>Practice only in an isolated host-only lab (Kali/Parrot on VirtualBox/VMware) against vulnerable targets (DVWA, Metasploitable, Juice Shop, VulnHub) or on pre-authorized platforms (Hack The Box, TryHackMe); certs run roughly eJPT → CEH → PNPT → OSCP.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The colored "hats" describe intent, but good intentions and "no damage done" are not a legal defense — grey-hat unauthorized poking is still a crime. Authorization, not skill or intent or outcome, is the line between a legitimate engagement and an offense.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Get it in writing, stay in scope, report what you find — authorization is what makes it ethical and legal, not skill or intent."</div>
+  <div class="revision-say">"Every methodology — PTES, NIST 800-115, the kill chain, ATT&amp;CK — describes the same lifecycle shape, just in its own language."</div>
+  <div class="revision-say">"A pentest's real deliverable isn't the exploit, it's a prioritized, reproducible report tied to real business impact."</div>
 </div>
-<p><strong>Ethical hacking</strong> (also called <strong>penetration testing</strong> or "pentesting") is the practice of legally and systematically attacking computer systems, networks, and applications — with the owner's permission — to find security weaknesses before someone without permission finds and exploits them. It's the same technical skill set as malicious hacking; the entire difference is <strong>authorization, scope, and intent</strong>.</p>
-<ul>
-  <li><strong>The one rule above all others:</strong> only test systems you own, or that you have explicit written permission to test, within an agreed scope. No exceptions — not "it looked insecure," not "I was just curious," not "I didn't cause any damage."</li>
-  <li><strong>A pentest follows a lifecycle, not a random walk.</strong> Every serious methodology — PTES, NIST SP 800-115, the Cyber Kill Chain, MITRE ATT&amp;CK — describes broadly the same shape: agree scope and get authorization, reconnaissance, scanning/enumeration, exploitation, post-exploitation, and reporting. This module's later topics are organized around exactly this lifecycle.</li>
-  <li><strong>This topic is topic 1 of the Ethical Hacking module — beginner start, zero assumptions.</strong> It covers the legal and ethical framing every other topic depends on, the major methodologies you'll hear referenced constantly (PTES, OSSTMM, NIST, the kill chain, ATT&amp;CK), the phases of an engagement, and how to build a safe, isolated practice lab (Kali/Parrot + deliberately vulnerable targets) so every later topic has somewhere legal to practice against.</li>
-  <li><strong>Later topics assume a lab, not a target.</strong> Reconnaissance, scanning, web app hacking, exploitation, and everything else in this module will be demonstrated and practiced against the vulnerable-by-design targets and platforms set up in this topic (DVWA, Metasploitable, Juice Shop, Hack The Box, TryHackMe) — never against real, unauthorized systems.</li>
-</ul>
-<p><strong>Mantra:</strong> "Get it in writing, stay in scope, report what you find — the hacking is the easy part; the authorization is what makes it ethical and legal."</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What ethical hacking / penetration testing actually is</h3>
 <p>A <strong>penetration test</strong> ("pentest") is a time-boxed, authorized, simulated attack against a system, network, or application, performed by someone skilled in attacker techniques, under a signed agreement that defines exactly what may be tested, when, and how. The goal isn't to "break things for fun" — it's to answer a concrete business question: <em>if a real attacker came after this target, what could they actually reach, and how bad would it be?</em> The output is a report: concrete, reproducible findings, how severe each one is, and what to fix first.</p>
 <p><strong>Ethical hacking</strong> is the broader umbrella term for using attacker skills for defensive, authorized purposes — penetration testing is the most common form of it, but the umbrella also covers red teaming, bug-bounty hunting, and security research, all covered in the distinctions below.</p>
@@ -53,10 +66,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>What a pentest actually delivers</h3>
 <p>The value isn't the exploit — it's the report. A credible pentest delivers prioritized, reproducible findings (not raw scanner output), a severity rating (commonly via CVSS or a business-impact rating) tied to real exploited impact, clear remediation guidance the client's engineers can act on, and — very often — evidence needed for a compliance requirement (PCI-DSS, SOC 2, ISO 27001, HIPAA, and similar frameworks frequently mandate periodic third-party testing). This whole module builds toward being able to produce exactly that kind of finding and report.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>One lifecycle, described by several methodologies</h3>
 <p>Every real engagement moves through roughly the same shape, from "agree what we're doing" to "here's the report." Different methodologies and frameworks name the stages slightly differently — the flow underneath is consistent:</p>
 <pre><code class="language-text">Pre-engagement  →  Reconnaissance  →  Scanning &amp; Enumeration  →  Exploitation  →  Post-Exploitation  →  Reporting
@@ -94,10 +107,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>Availability</strong> — authorized users can actually get to the system when they need it (a denial-of-service attack breaks this — and is exactly why DoS/DDoS testing is almost always explicitly excluded from a pentest's Rules of Engagement, covered next).</li>
 </ul>
 <p>Every phase of every methodology above ultimately exists to find where one of these three properties can be broken — and every finding in a report should be traceable back to which one (or more) is at risk.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Methodology & Lab Setup', html: `
+{ id: "mechanics", title: "⚙️ Methodology & Lab Setup", collapsible: true, html: `
 <h3>Engagement types: how much does the tester know going in?</h3>
 <table>
   <thead><tr><th>Type</th><th>Tester's starting knowledge</th><th>Simulates</th></tr></thead>
@@ -168,10 +181,10 @@ docker run --rm -p 3000:3000 bkimminich/juice-shop
 # then browse to http://localhost:3000 on the lab network</code></pre>
 <p><strong>Online practice platforms</strong> (no local lab required): <strong>Hack The Box (HTB)</strong> — cloud-hosted retired/active vulnerable machines plus structured HTB Academy courses; <strong>TryHackMe (THM)</strong> — guided, beginner-friendly "rooms" and learning paths. Both provide their own pre-authorized, legal scope to practice against.</p>
 <p><strong>Certifications</strong> commonly pursued alongside this kind of self-study, roughly beginner to advanced: <strong>eJPT</strong> (INE/eLearnSecurity Junior Penetration Tester — entry-level, practical) → <strong>CEH</strong> (Certified Ethical Hacker, EC-Council — broad, knowledge-based) → <strong>PNPT</strong> (Practical Network Penetration Tester, TCM Security — hands-on, report-graded) → <strong>OSCP</strong> (Offensive Security Certified Professional — a demanding, hands-on ~23h45m proctored practical exam, followed by a separate 24-hour window to submit the written report, widely respected in the industry).</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — A scoping and authorization checklist before any engagement starts</h3>
 <p>Before a single tool runs against anything other than your own personal lab, confirm every item below:</p>
 <ul>
@@ -210,10 +223,11 @@ ip a
 ping -c 3 &lt;target-vm-ip&gt;
 ping -c 3 192.168.56.102</code></pre>
 <p>Notice the sequencing: the isolated network is created <em>first</em>, both VMs are pinned to it <em>before</em> either boots with real network access, and the very first thing done inside Kali is confirm the address really is on the isolated lab subnet — that verification step is the safety habit worth keeping for every lab session, in every later topic of this module.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Legal & Safety', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <div class="callout danger">
   <div class="callout-title">⚠️ The one rule that overrides everything else in this module</div>
   <p><strong>Only test systems you own, or that you have explicit, written, in-scope authorization to test.</strong> This applies even if the system looks obviously insecure, even if you don't intend to cause harm, even if you plan to report anything you find, and even if you "just" run a scan without exploiting anything. Unauthorized access — or authorized access used beyond its granted scope — is what the CFAA and its international equivalents criminalize, regardless of intent or outcome. When in doubt, don't — get authorization first, or use one of the legal practice platforms covered in Methodology &amp; Lab Setup (your own lab, DVWA/Metasploitable/Juice Shop locally, Hack The Box, TryHackMe).</p>
@@ -230,10 +244,10 @@ ping -c 3 192.168.56.102</code></pre>
 
 <h3>Production systems are real systems — treat availability as a real risk</h3>
 <p>Unlike a personal lab, a real target may be a production system serving real users. Techniques that risk denial-of-service (aggressive scanning, brute-forcing, fuzzing that could crash a service) are commonly excluded from scope by default precisely because they threaten <strong>availability</strong> (one leg of the CIA triad from the Mental Model section) — confirm explicitly in the RoE whether such techniques are permitted, and prefer testing during agreed low-traffic windows when they are.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'cheat-sheet', title: '📋 Cheat Sheet', html: `
+{ id: "cheat-sheet", title: "📋 Cheat Sheet", collapsible: true, html: `
 <table>
   <thead><tr><th>Category</th><th>Item</th><th>What it means</th></tr></thead>
   <tbody>
@@ -265,10 +279,10 @@ ping -c 3 192.168.56.102</code></pre>
     <tr><td>Legal must-have</td><td>Responsible disclosure</td><td>Report privately, agree a remediation timeline (commonly ~90 days), don't disclose publicly before it's fixed</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What are the phases of a penetration test?</div>
 <div class="qa-a">
@@ -310,50 +324,14 @@ ping -c 3 192.168.56.102</code></pre>
 <p>It's the practice of reporting a discovered vulnerability privately to the vendor or asset owner first — rather than publishing it immediately — and agreeing on a reasonable remediation timeline before any public disclosure (a common industry convention, popularized by Google Project Zero, is around 90 days). This gives the affected party a fair chance to fix the issue before attackers can learn about and exploit it. Bug-bounty platforms like HackerOne and Bugcrowd formalize this process and typically provide researchers a legal "safe harbor" as long as they stay within the program's published scope and rules.</p>
 </div>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Ethical hacking is authorized, in-scope attacking to find flaws before real attackers do — the technical skills are identical to a criminal's, and authorization, scope, and intent are the entire difference.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>The rule above all others: only test systems you own or have explicit, written, in-scope authorization to test — no exceptions for "it looked insecure" or "I did no harm."</li>
-    <li>White, grey, and black hats differ in intent, but only authorization decides legality — a well-intentioned grey-hat "I found it and told them" story still describes an unauthorized-access crime.</li>
-    <li>The engagement lifecycle is pre-engagement, reconnaissance, scanning/enumeration, exploitation, post-exploitation, and reporting.</li>
-    <li>Every methodology names the same shape: PTES (7 phases), NIST SP 800-115 (Planning/Discovery/Attack/Reporting), the Cyber Kill Chain (attacker view, used defensively), MITRE ATT&amp;CK (Tactics + Techniques knowledge base, not linear), and OSSTMM (metrics-driven RAV score, not phase-based).</li>
-    <li>Pentest vs vulnerability assessment vs red team vs bug bounty are distinct engagement shapes: manual exploit-to-prove-impact vs broad automated coverage vs stealthy goal-oriented (also tests the blue team) vs continuous crowd-sourced with safe harbor.</li>
-    <li>Black-box / grey-box / white-box describe how much the tester knows going in; grey-box is the most common real-world choice because it balances realism against discovery cost.</li>
-    <li>The CIA triad (Confidentiality, Integrity, Availability) is what every finding ultimately threatens — DoS threatens availability, which is why it's usually excluded from scope by default.</li>
-    <li>The legal core is written authorization (signed by someone with real authority over the asset), an explicit in- and out-of-scope list, a Rules of Engagement document, and a "get-out-of-jail-free" letter for physical work.</li>
-    <li>An RoE typically covers scope, the testing window and blackout periods, permitted/prohibited techniques, emergency contacts and escalation, data-handling rules, and signatures.</li>
-    <li>The CFAA (US, 18 U.S.C. § 1030) criminalizes access "without authorization or exceeding authorized access"; equivalents include the UK Computer Misuse Act 1990, EU Directive 2013/40/EU, the Budapest Convention, and India's IT Act 2000.</li>
-    <li>Responsible/coordinated disclosure means reporting privately first, agreeing a remediation timeline (commonly ~90 days), and not going public before the fix ships.</li>
-    <li>Practice only in an isolated host-only lab (Kali/Parrot on VirtualBox/VMware) against vulnerable targets (DVWA, Metasploitable, Juice Shop, VulnHub) or on pre-authorized platforms (Hack The Box, TryHackMe); certs run roughly eJPT → CEH → PNPT → OSCP.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">The colored "hats" describe intent, but good intentions and "no damage done" are not a legal defense — grey-hat unauthorized poking is still a crime. Authorization, not skill or intent or outcome, is the line between a legitimate engagement and an offense.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Get it in writing, stay in scope, report what you find — authorization is what makes it ethical and legal, not skill or intent."</div>
-  <div class="revision-say">"Every methodology — PTES, NIST 800-115, the kill chain, ATT&amp;CK — describes the same lifecycle shape, just in its own language."</div>
-  <div class="revision-say">"A pentest's real deliverable isn't the exploit, it's a prioritized, reproducible report tied to real business impact."</div>
+<div class="qa-block">
+  <div class="qa-question">Q7. What is the CIA triad, and why is DoS testing usually out of scope?</div>
+  <div class="qa-answer">
+    <p>The CIA triad is the three properties nearly every pentest finding ultimately threatens: <strong>Confidentiality</strong> (only authorized people can see the data; a SQL injection dumping customer records breaks it), <strong>Integrity</strong> (data and systems are accurate and unmodified; silently altering an invoice amount breaks it), and <strong>Availability</strong> (authorized users can reach the system when they need it). Denial-of-service attacks break availability, and on a real engagement the target may be a production system serving real users, so DoS/DDoS and other techniques that risk crashing services (aggressive scanning, brute-forcing, crash-prone fuzzing) are usually excluded in the Rules of Engagement by default. Every finding in a report should trace back to which of the three is at risk.</p>
+  </div>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you list the phases of a penetration test and map them onto PTES and NIST SP 800-115?</li>
-    <li>Can you explain why authorization — not intent or damage — is what makes hacking legal or illegal?</li>
-    <li>Can you distinguish black-box, grey-box, and white-box testing and say which is most common and why?</li>
-    <li>Can you name what a Rules of Engagement document must contain?</li>
-    <li>Can you explain the CIA triad and why DoS testing is usually out of scope?</li>
-    <li>Can you describe responsible/coordinated disclosure and what a bug-bounty "safe harbor" provides?</li>
-  </ul>
-</div>
-`}
-
-]});
+  ]
+});

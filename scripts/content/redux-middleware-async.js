@@ -1,25 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'redux-middleware-async',
-  module: 'redux',
-  title: 'Middleware & Async',
-  estimatedReadTime: '24 min',
-  tags: ['redux', 'middleware', 'async', 'thunk', 'listener-middleware', 'saga'],
+  id: "redux-middleware-async",
+  module: "redux",
+  title: "Middleware & Async",
+  estimatedReadTime: "24 min",
+  tags: ["redux","middleware","async","thunk","listener-middleware","saga"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>Middleware</strong> is the layer Redux runs every action through <em>between</em> <code>dispatch(action)</code> and the reducer. Reducers must stay pure (no async, no side effects) — middleware is where fetching data, logging, retries, and other side effects actually live.</p>
-<ul>
-  <li><strong>The signature:</strong> every middleware is a function shaped <code>store => next => action</code>. It gets the store, gets a handle to the rest of the chain (<code>next</code>), and receives each action — with the choice to forward it, transform it, delay it, or swallow it entirely.</li>
-  <li><strong>Thunks are the default.</strong> Redux Toolkit's <code>configureStore</code> wires in thunk middleware automatically, giving you <code>dispatch(someFunction)</code> — a plain, imperative way to run async logic (fetch, then dispatch more actions) whenever <em>you</em> call it.</li>
-  <li><strong><code>createListenerMiddleware</code> is the modern, RTK-recommended tool</strong> for <em>reactive</em> side effects — "when this action happens, run this effect" — via <code>startListening({ actionCreator | matcher | predicate, effect })</code>. Its effect API (<code>condition</code>, <code>fork</code>, <code>cancelActiveListeners</code>, <code>unsubscribe</code>, <code>take</code>, <code>delay</code>) covers most of what teams used to reach for redux-saga for.</li>
-  <li><strong>Sagas (redux-saga) and Observables (redux-observable) are niche in 2026</strong> — still genuinely useful for gnarly concurrent orchestration (races, cancellation trees, retry/backoff graphs) or teams already fluent in generators/RxJS, but not a default choice for typical apps anymore.</li>
-  <li><strong>Enhancers are a different, bigger lever</strong> than middleware: an enhancer wraps the whole store-creation process and can override any store method, not just intercept dispatched actions. <code>applyMiddleware(...)</code> is itself an enhancer — it's how middleware gets wired in underneath.</li>
-</ul>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Middleware is the layer Redux runs every action through <strong>between <code>dispatch</code> and the reducer</strong> — since reducers must stay pure, <strong>middleware is where side effects (fetch, logging, retries, debounce) actually live</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The signature is triple-curried: <code>store =&gt; next =&gt; action</code>.</strong> <code>store</code> gives <code>getState</code>/<code>dispatch</code>; <code>next</code> forwards the action down the chain (to the next middleware, or the reducer if last); <code>action</code> is what was dispatched.</li>
+    <li><strong>Calling <code>next(action)</code> forwards it; NOT calling it stops the action</strong> — it never reaches the reducer and nothing after it runs. Middleware can forward, transform, delay, dispatch more, or swallow.</li>
+    <li><strong>Thunks are the default</strong> (RTK's <code>configureStore</code> wires in thunk middleware). A thunk is an action creator that returns a <em>function</em>; thunk middleware sees <code>typeof action === 'function'</code>, calls it with <code>(dispatch, getState)</code>, and doesn't call <code>next</code>. Thunks are <strong>imperative</strong> — they run when you call them.</li>
+    <li><strong><code>createListenerMiddleware</code> is RTK's modern tool for <em>reactive</em> side effects</strong> — "whenever action X is dispatched anywhere, run this effect" via <code>startListening({ actionCreator | matcher | predicate, effect })</code>. Ships in <code>@reduxjs/toolkit</code>; must be <code>.prepend()</code>-ed (before the serializability check).</li>
+    <li><strong>The <code>listenerApi</code> covers most saga use cases:</strong> <code>condition</code>, <code>take</code>, <code>fork</code>, <code>cancelActiveListeners</code>, <code>delay</code>, <code>unsubscribe</code>. Debounce / "take latest" = <code>cancelActiveListeners()</code> + <code>delay(ms)</code>.</li>
+    <li><strong>Thunks and listeners compose, they don't compete</strong> — imperative vs reactive; a listener effect commonly dispatches a thunk internally.</li>
+    <li><strong>Sagas (generators yielding effect descriptions) and redux-observable (RxJS epics) are niche in 2026</strong> — worth it only for genuinely complex concurrency (races, cancellation trees, retry graphs) or existing codebases; most apps cover it with thunks + listeners and never install either.</li>
+    <li><strong>Middleware vs enhancer:</strong> middleware only intercepts <code>dispatch</code>; a store <em>enhancer</em> wraps the whole store-creation process and can override any method (<code>dispatch</code>, <code>getState</code>, <code>subscribe</code>). <code>applyMiddleware</code> is itself an enhancer.</li>
+    <li><strong>Middleware order matters:</strong> a logger <em>before</em> thunk logs the thunk function; <em>after</em> logs the plain actions it eventually dispatches (usually what you want).</li>
+    <li><strong>Never sneak async into a reducer</strong> — it returns before the promise resolves and mutates state outside any dispatch, invisible to DevTools and <code>useSelector</code>. All async belongs in a thunk or listener effect.</li>
+    <li><strong>Watch for listener leaks:</strong> an effect that dispatches the action it listens for re-triggers forever; a listener registered but never <code>unsubscribe()</code>d runs for the store's lifetime — store the returned unsubscribe and call it on cleanup.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Writing middleware that forgets <code>next(action)</code> — or forgets to return its result.</strong> Skip the call and the action silently never reaches the reducer (or any middleware after it). Swallow the return value and <code>dispatch(someThunk())</code> that code <code>await</code>s (often a promise) breaks, because <code>dispatch</code>'s return has to propagate back up through every middleware. Always <code>const result = next(action); ...; return result;</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Middleware sits between dispatch and the reducer with a store =&gt; next =&gt; action signature — it's where side effects live because reducers have to stay pure."</div>
+  <div class="revision-say">"Thunks are for imperative async I trigger myself; createListenerMiddleware is for reactive async — 'when this action fires anywhere, run this effect' — and its listenerApi handles debounce and cancellation without a saga."</div>
+  <div class="revision-say">"I reach for sagas or redux-observable only when the concurrency itself is the hard part; for typical apps thunks plus listener middleware cover it with no extra dependency."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The gap reducers leave behind</h3>
 <p>The <a href="#/topic/redux-core">Core Concepts</a> topic was firm about one rule: reducers must be pure — <code>(state, action) => newState</code>, no <code>fetch</code>, no <code>Date.now()</code>, no side effects of any kind. That rule is what makes state changes deterministic and replayable. But real apps unavoidably need exactly the things reducers are forbidden from doing: fetch a user profile, log every action for debugging, retry a failed request, debounce a search box, redirect after a login succeeds.</p>
 <p>None of that can happen in the reducer. So where does it happen?</p>
@@ -38,10 +54,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">🧠 One-liner</div>
   <p>Reducers compute; middleware <em>acts</em>. If a piece of logic needs to wait, fetch, retry, or log — it belongs in middleware, not the reducer.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The chain: <code>store => next => action</code></h3>
 <p>Every middleware has the same three-layer, curried shape:</p>
 <pre><code class="language-js">const exampleMiddleware = (storeAPI) => (next) => (action) => {
@@ -80,10 +96,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">🔥 Key insight</div>
   <p>Middleware reshapes what happens to a <em>dispatched action</em>. An enhancer reshapes the <em>store itself</em>. Middleware is the tool for "run this side effect when X is dispatched"; enhancers are the tool for "change how the store fundamentally behaves."</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Thunk middleware — already wired in by RTK</h3>
 <p>To see the mechanism, here's essentially the whole of thunk middleware — a handful of lines:</p>
 <pre><code class="language-js">const thunkMiddleware = (storeAPI) => (next) => (action) => {
@@ -173,10 +189,10 @@ const store = configureStore({
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(logger),
 });</code></pre>
 <p>Two details matter here: always call <code>next(action)</code> (otherwise the action never reaches the reducer), and always <code>return</code> what <code>next(action)</code> gives back (a thunk's <code>dispatch(someThunk())</code> call returns whatever that thunk's function returns — often a promise — and a middleware that swallows the return value silently breaks any code awaiting it).</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — A thunk that fetches a user profile</h3>
 <pre><code class="language-js">// action creator returning a thunk
 function fetchUserProfile(userId) {
@@ -261,10 +277,11 @@ store.dispatch({ type: 'counter/incremented' });
 //     prev state: { count: 0 }
 //     action: { type: 'counter/incremented' }
 //     next state: { count: 1 }</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Sneaking async into a reducer</h3>
 <pre><code class="language-js">// ❌ BUG — async work and mutation smuggled into what looks like a reducer
 function badReducer(state = { user: null }, action) {
@@ -288,10 +305,10 @@ function badReducer(state = { user: null }, action) {
   <div class="callout-title">Common misconception</div>
   <p>"<code>createListenerMiddleware</code> replaces thunks." It doesn't — they solve different problems and most codebases use both. Thunks are for <em>imperative</em> async you trigger yourself ("fetch this now, because the user just clicked submit"). Listener middleware is for <em>reactive</em> async triggered by something else happening in the store ("whenever this action fires, anywhere, do this"). A listener's effect commonly dispatches a thunk internally, as Example 2 shows — they compose.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What is Redux middleware, and what does the <code>store => next => action</code> signature mean?</div>
 <div class="qa-a">
@@ -326,47 +343,14 @@ function badReducer(state = { user: null }, action) {
 <p>Calling <code>next(action)</code> is what hands the action to the rest of the chain — skip it, and the action silently never reaches the reducer (or any middleware registered after this one). Returning what <code>next(action)</code> gives back matters too: <code>dispatch(...)</code>'s return value is whatever the last thing in the chain returned, and code that calls <code>dispatch(someThunk())</code> and <code>await</code>s the result depends on that value propagating all the way back up through every middleware in between.</p>
 </div>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Middleware is the layer Redux runs every action through <strong>between <code>dispatch</code> and the reducer</strong> — since reducers must stay pure, <strong>middleware is where side effects (fetch, logging, retries, debounce) actually live</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>The signature is triple-curried: <code>store =&gt; next =&gt; action</code>.</strong> <code>store</code> gives <code>getState</code>/<code>dispatch</code>; <code>next</code> forwards the action down the chain (to the next middleware, or the reducer if last); <code>action</code> is what was dispatched.</li>
-    <li><strong>Calling <code>next(action)</code> forwards it; NOT calling it stops the action</strong> — it never reaches the reducer and nothing after it runs. Middleware can forward, transform, delay, dispatch more, or swallow.</li>
-    <li><strong>Thunks are the default</strong> (RTK's <code>configureStore</code> wires in thunk middleware). A thunk is an action creator that returns a <em>function</em>; thunk middleware sees <code>typeof action === 'function'</code>, calls it with <code>(dispatch, getState)</code>, and doesn't call <code>next</code>. Thunks are <strong>imperative</strong> — they run when you call them.</li>
-    <li><strong><code>createListenerMiddleware</code> is RTK's modern tool for <em>reactive</em> side effects</strong> — "whenever action X is dispatched anywhere, run this effect" via <code>startListening({ actionCreator | matcher | predicate, effect })</code>. Ships in <code>@reduxjs/toolkit</code>; must be <code>.prepend()</code>-ed (before the serializability check).</li>
-    <li><strong>The <code>listenerApi</code> covers most saga use cases:</strong> <code>condition</code>, <code>take</code>, <code>fork</code>, <code>cancelActiveListeners</code>, <code>delay</code>, <code>unsubscribe</code>. Debounce / "take latest" = <code>cancelActiveListeners()</code> + <code>delay(ms)</code>.</li>
-    <li><strong>Thunks and listeners compose, they don't compete</strong> — imperative vs reactive; a listener effect commonly dispatches a thunk internally.</li>
-    <li><strong>Sagas (generators yielding effect descriptions) and redux-observable (RxJS epics) are niche in 2026</strong> — worth it only for genuinely complex concurrency (races, cancellation trees, retry graphs) or existing codebases; most apps cover it with thunks + listeners and never install either.</li>
-    <li><strong>Middleware vs enhancer:</strong> middleware only intercepts <code>dispatch</code>; a store <em>enhancer</em> wraps the whole store-creation process and can override any method (<code>dispatch</code>, <code>getState</code>, <code>subscribe</code>). <code>applyMiddleware</code> is itself an enhancer.</li>
-    <li><strong>Middleware order matters:</strong> a logger <em>before</em> thunk logs the thunk function; <em>after</em> logs the plain actions it eventually dispatches (usually what you want).</li>
-    <li><strong>Never sneak async into a reducer</strong> — it returns before the promise resolves and mutates state outside any dispatch, invisible to DevTools and <code>useSelector</code>. All async belongs in a thunk or listener effect.</li>
-    <li><strong>Watch for listener leaks:</strong> an effect that dispatches the action it listens for re-triggers forever; a listener registered but never <code>unsubscribe()</code>d runs for the store's lifetime — store the returned unsubscribe and call it on cleanup.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Writing middleware that forgets <code>next(action)</code> — or forgets to return its result.</strong> Skip the call and the action silently never reaches the reducer (or any middleware after it). Swallow the return value and <code>dispatch(someThunk())</code> that code <code>await</code>s (often a promise) breaks, because <code>dispatch</code>'s return has to propagate back up through every middleware. Always <code>const result = next(action); ...; return result;</code>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Middleware sits between dispatch and the reducer with a store =&gt; next =&gt; action signature — it's where side effects live because reducers have to stay pure."</div>
-  <div class="revision-say">"Thunks are for imperative async I trigger myself; createListenerMiddleware is for reactive async — 'when this action fires anywhere, run this effect' — and its listenerApi handles debounce and cancellation without a saga."</div>
-  <div class="revision-say">"I reach for sagas or redux-observable only when the concurrency itself is the hard part; for typical apps thunks plus listener middleware cover it with no extra dependency."</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. How does listenerApi handle debounce and cancellation without a saga?</div>
+  <div class="qa-answer">
+    <p>Each dispatch of the matching action starts a new effect instance. Calling <code>listenerApi.cancelActiveListeners()</code> at the top cancels any earlier instance of the same listener that is still running, and <code>await listenerApi.delay(300)</code> is a cancellation-aware timeout, so a cancelled instance aborts cleanly instead of firing late. In a search box, only the last keystroke's effect survives its delay and hits the network, which is the "take latest" behavior teams used to need a saga's <code>takeLatest</code> for. For more control, <code>fork</code> spawns a cancellable child task and <code>condition</code>/<code>take</code> wait for a later action or state.</p>
+  </div>
 </div>
-`},
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain where middleware sits (between dispatch and reducer) and why side effects live there?</li>
-    <li>Can you write the <code>store =&gt; next =&gt; action</code> signature and explain why you must call and return <code>next(action)</code>?</li>
-    <li>Can you explain what breaks if middleware forgets <code>next(action)</code> or swallows its return value?</li>
-    <li>Can you contrast thunks (imperative async) with listener middleware (reactive async)?</li>
-    <li>Can you say how <code>listenerApi</code> handles debounce and cancellation without a saga?</li>
-    <li>Can you decide when sagas or redux-observable are actually justified?</li>
-  </ul>
-</div>
-`}
-
-]});
+  ]
+});

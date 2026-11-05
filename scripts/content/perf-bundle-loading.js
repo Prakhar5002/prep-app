@@ -1,35 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'perf-bundle-loading',
-  module: 'Frontend Performance',
-  title: 'Bundle & Loading',
-  estimatedReadTime: '32 min',
-  tags: ['performance', 'bundle', 'code-splitting', 'tree-shaking', 'webpack', 'vite', 'rollup', 'esbuild', 'cdn', 'http2'],
+  id: "perf-bundle-loading",
+  module: "Frontend Performance",
+  title: "Bundle & Loading",
+  estimatedReadTime: "32 min",
+  tags: ["performance","bundle","code-splitting","tree-shaking","webpack","vite","rollup","esbuild","cdn","http2"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Bundle and loading optimization is about <strong>shipping less JavaScript and shipping it smarter</strong>. Every kilobyte costs download, parse, compile, and execute time — exponentially worse on mid-range mobile devices.</p>
-<ul>
-  <li><strong>Measure first</strong> — bundle analyzer (source-map-explorer, webpack-bundle-analyzer, vite-bundle-visualizer) reveals what's actually shipped.</li>
-  <li><strong>Code splitting</strong>: route-based (lazy import per route), component-based (lazy modal, lazy chart), vendor splitting.</li>
-  <li><strong>Tree shaking</strong>: only ESM imports (named) get dead-code-eliminated; CJS (<code>require</code>) doesn't tree-shake.</li>
-  <li><strong>Dynamic <code>import()</code></strong> creates async chunks; bundler outputs separate JS files loaded on demand.</li>
-  <li><strong>Modern bundlers</strong>: <strong>Vite</strong> (esbuild + Rollup), <strong>esbuild</strong>, <strong>swc</strong>, <strong>Rspack</strong>, <strong>Turbopack</strong>. Replace Webpack for new projects — order-of-magnitude faster builds.</li>
-  <li><strong>Compression</strong>: serve Brotli (better) with gzip fallback. Always.</li>
-  <li><strong>Long cache + content hashing</strong>: <code>app.[hash].js</code> with <code>Cache-Control: public, max-age=31536000, immutable</code>.</li>
-  <li><strong>HTTP/2 + HTTP/3</strong>: multiplexed streams. Bundling matters less than it did, but a balance still helps (one giant bundle is bad; 1000 tiny chunks is also bad).</li>
-  <li><strong>Polyfills only when needed</strong>: <code>module/nomodule</code> pattern serves modern code to modern browsers.</li>
-  <li><strong>Third-party scripts</strong> are often the biggest perf killers — analytics, tag managers. Async / defer / Partytown.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Don't ship code your users don't run. Tree-shake; route-split; lazy-load below-the-fold features; compress with Brotli; cache forever with content hashes; defer third-parties. Measure with a bundle analyzer — you'll find a 200KB lib someone forgot.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Don't ship code your users don't run</strong> — measure first, then tree-shake, code-split, compress with Brotli, and cache forever with content hashes.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Measure before optimizing.</strong> A bundle analyzer (source-map-explorer, webpack-bundle-analyzer, vite-bundle-visualizer) shows what's actually shipped — you'll usually find a 200KB library someone forgot.</li>
+    <li><strong>Bundle size hurts most on mobile, and CPU is the bigger half.</strong> A 1MB bundle is ~200ms parse+compile on desktop but 3-5s on a mid-range Android — network is only part of the cost.</li>
+    <li><strong>Code-split three ways:</strong> route-level (lazy-import per route), feature-level (lazy chart/editor/modal), and vendor (stable libs in their own long-cached chunk).</li>
+    <li><strong>Tree shaking needs ESM.</strong> <code>import { foo } from 'lib'</code> is statically analyzable so unused exports drop; CommonJS (<code>require</code>) is dynamic and can't be shaken. Add <code>"sideEffects": false</code> so imports can be dropped entirely.</li>
+    <li>Dynamic <code>import()</code> emits a separate chunk loaded on demand — the core mechanism behind route/feature splitting (React <code>lazy</code> + <code>Suspense</code>).</li>
+    <li><strong>Compression beats minification.</strong> Minify saves ~50%; Brotli/gzip on top saves another 70-80%. Serve <strong>Brotli with gzip fallback</strong>, always.</li>
+    <li><strong>Content hash + immutable cache:</strong> <code>app.[hash].js</code> with <code>Cache-Control: public, max-age=31536000, immutable</code>; HTML stays <code>no-cache</code> so it revalidates and points at fresh hashes.</li>
+    <li>HTTP/2 and HTTP/3 multiplex, so bundling matters less for the network — but parse+compile still favor smaller bundles; aim for ~5-15 well-sized chunks, not one giant file or 1000 tiny ones.</li>
+    <li>Serve modern code to modern browsers via <strong>module/nomodule</strong> (or a modern-only browserslist) so polyfills only ship where needed.</li>
+    <li><strong>Third-party scripts are often the biggest killer.</strong> Always <code>async</code>/<code>defer</code>, load on interaction, or relocate to a Web Worker with <strong>Partytown</strong>.</li>
+    <li>Set a <strong>bundle budget in CI</strong> (bundlewatch, size-limit, Lighthouse CI) so a PR fails when it bloats past the limit.</li>
+    <li><strong>Modern bundlers</strong> — Vite (esbuild + Rollup), esbuild, swc, Rspack, Turbopack — replace Webpack for new projects with order-of-magnitude faster builds. Every KB still costs download, parse, compile and execute.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Default-importing a heavy library and assuming it tree-shakes.</strong> <code>import _ from 'lodash'</code> or <code>import moment from 'moment'</code> pulls the whole library (~230KB for moment) into the bundle — tree shaking can't help a namespace/default import or a CJS-only package. Fix: named ESM imports (<code>import { debounce } from 'lodash-es'</code>) or lighter alternatives (dayjs ~2KB, date-fns), and verify with the analyzer rather than trusting that "tree shaking will handle it."</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I measure with a bundle analyzer first — you almost always find a heavy library nobody meant to ship — then tree-shake, route- and feature-split with lazy + Suspense, and drop legacy polyfills."</div>
+  <div class="revision-say">"Tree shaking needs ESM and <code>sideEffects: false</code>; CommonJS can't be shaken, and a default import like full lodash defeats it entirely."</div>
+  <div class="revision-say">"Compress with Brotli, cache hashed assets forever as immutable, keep HTML on no-cache, and defer or Partytown the third-party scripts that usually dominate the damage."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "bundle" means</h3>
 <p>Modern apps ship many JS modules. The browser can't import a thousand small files efficiently — request overhead per file. Bundlers (Webpack, Vite, esbuild) walk the dependency graph and produce one or a few <code>.js</code> files. Trade-offs:</p>
 <ul>
@@ -64,10 +71,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why third-party scripts are the elephant</h3>
 <p>Average site loads ~30 third-party scripts (analytics, ads, chat, A/B tests, fingerprinting, social embeds). Often unsized, unbudgeted, on critical render path. They can dominate INP and LCP regressions. Strategies: defer or async; load only on interaction; tag manager governance; Partytown to relocate to Web Worker.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "bundle anatomy" picture</h3>
 <div class="diagram">
 <pre>
@@ -142,10 +149,10 @@ async function showChart() {
   <div class="callout-title">Common misconception</div>
   <p>"Bigger CDN tier with HTTP/2 means I can stop bundling." Mostly true at the network layer — but parse + compile time still favor smaller bundles, and most asset pipelines benefit from chunking strategy. Don't ship 1000 native ES modules to production.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Bundle analysis tools</h3>
 <pre><code># Webpack / CRA
 npx webpack-bundle-analyzer ./dist/stats.json
@@ -315,10 +322,10 @@ app.a1b2c3.js → Cache-Control: public, max-age=31536000, immutable</code></pre
   ]
 }</code></pre>
 <p>CI fails the PR if bundle exceeds the limit. Forces conscious decisions about new dependencies. Tools: bundlewatch, size-limit, lighthouse-ci.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — finding a bloat dependency</h3>
 <pre><code># Build with stats
 npm run build -- --stats
@@ -485,10 +492,11 @@ setTimeout(loadChat, 5000);  // fallback: load after 5s if no interaction
     ]
   }
 ]</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Tree shaking blocked by side effects</h3>
 <p>If a library imports another module for its side effects (polyfill registration, CSS injection), tree shaking can't drop it. <code>sideEffects: false</code> in package.json signals safety. Missing → bundler keeps everything.</p>
 
@@ -566,10 +574,9 @@ utils.foo();
 
 <h3>20. Pre-compression with mismatched encodings</h3>
 <p>Server sends Brotli to client that requested gzip → broken. Configure properly. Tools to verify: <code>curl -H "Accept-Encoding: gzip"</code> vs <code>br</code>.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — single giant bundle</h3>
 <p>1MB main.js for a 100-byte landing page. Cold start blocks render. Split.</p>
 
@@ -614,10 +621,10 @@ utils.foo();
 
 <h3>Anti-pattern 15 — stale CDN cache after deploy</h3>
 <p>Forgetting to purge CDN, or using stable URLs without content hash. Old code persists. Use hashed filenames; CDN serves immutable.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How do you reduce bundle size?</div>
   <div class="qa-answer">
@@ -798,48 +805,14 @@ utils.foo();
     <li>You're on Vite / esbuild / swc rather than vanilla Webpack for new projects.</li>
   </ul>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Don't ship code your users don't run</strong> — measure first, then tree-shake, code-split, compress with Brotli, and cache forever with content hashes.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Measure before optimizing.</strong> A bundle analyzer (source-map-explorer, webpack-bundle-analyzer, vite-bundle-visualizer) shows what's actually shipped — you'll usually find a 200KB library someone forgot.</li>
-    <li><strong>Bundle size hurts most on mobile, and CPU is the bigger half.</strong> A 1MB bundle is ~200ms parse+compile on desktop but 3-5s on a mid-range Android — network is only part of the cost.</li>
-    <li><strong>Code-split three ways:</strong> route-level (lazy-import per route), feature-level (lazy chart/editor/modal), and vendor (stable libs in their own long-cached chunk).</li>
-    <li><strong>Tree shaking needs ESM.</strong> <code>import { foo } from 'lib'</code> is statically analyzable so unused exports drop; CommonJS (<code>require</code>) is dynamic and can't be shaken. Add <code>"sideEffects": false</code> so imports can be dropped entirely.</li>
-    <li>Dynamic <code>import()</code> emits a separate chunk loaded on demand — the core mechanism behind route/feature splitting (React <code>lazy</code> + <code>Suspense</code>).</li>
-    <li><strong>Compression beats minification.</strong> Minify saves ~50%; Brotli/gzip on top saves another 70-80%. Serve <strong>Brotli with gzip fallback</strong>, always.</li>
-    <li><strong>Content hash + immutable cache:</strong> <code>app.[hash].js</code> with <code>Cache-Control: public, max-age=31536000, immutable</code>; HTML stays <code>no-cache</code> so it revalidates and points at fresh hashes.</li>
-    <li>HTTP/2 and HTTP/3 multiplex, so bundling matters less for the network — but parse+compile still favor smaller bundles; aim for ~5-15 well-sized chunks, not one giant file or 1000 tiny ones.</li>
-    <li>Serve modern code to modern browsers via <strong>module/nomodule</strong> (or a modern-only browserslist) so polyfills only ship where needed.</li>
-    <li><strong>Third-party scripts are often the biggest killer.</strong> Always <code>async</code>/<code>defer</code>, load on interaction, or relocate to a Web Worker with <strong>Partytown</strong>.</li>
-    <li>Set a <strong>bundle budget in CI</strong> (bundlewatch, size-limit, Lighthouse CI) so a PR fails when it bloats past the limit.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Default-importing a heavy library and assuming it tree-shakes.</strong> <code>import _ from 'lodash'</code> or <code>import moment from 'moment'</code> pulls the whole library (~230KB for moment) into the bundle — tree shaking can't help a namespace/default import or a CJS-only package. Fix: named ESM imports (<code>import { debounce } from 'lodash-es'</code>) or lighter alternatives (dayjs ~2KB, date-fns), and verify with the analyzer rather than trusting that "tree shaking will handle it."</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I measure with a bundle analyzer first — you almost always find a heavy library nobody meant to ship — then tree-shake, route- and feature-split with lazy + Suspense, and drop legacy polyfills."</div>
-  <div class="revision-say">"Tree shaking needs ESM and <code>sideEffects: false</code>; CommonJS can't be shaken, and a default import like full lodash defeats it entirely."</div>
-  <div class="revision-say">"Compress with Brotli, cache hashed assets forever as immutable, keep HTML on no-cache, and defer or Partytown the third-party scripts that usually dominate the damage."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Brotli vs gzip: how do they compare, and where does compression buy the most?</div>
+  <div class="qa-answer">
+    <p>Minification (renaming identifiers, stripping whitespace) saves maybe 50%; compression on top of minified code saves another 70-80% (gzip around 70%, Brotli around 80%). So compression beats minification, and serving uncompressed JS makes each request 4-5× the bytes it needs. <strong>Brotli beats gzip</strong> for static text-based assets (JS, CSS, JSON). Serve Brotli with a gzip fallback, ideally pre-compressed (<code>brotli_static on</code> in nginx). A common miss is the server only sending gzip even when <code>Accept-Encoding</code> includes <code>br</code>; verify with <code>curl -I -H "Accept-Encoding: br"</code>.</p>
+  </div>
 </div>
-`},
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the trade-off between one giant bundle and too many tiny chunks?</li>
-    <li>Can you decide what belongs in the critical chunk versus lazy-loaded route and feature chunks?</li>
-    <li>Can you compare Brotli and gzip and say where compression buys the most?</li>
-    <li>Can you set immutable long-cache on hashed assets while keeping HTML on <code>no-cache</code>?</li>
-    <li>Can you tame a third-party script with <code>defer</code>, a facade, or Partytown?</li>
-    <li>Can you read a bundle analyzer and find the dependency inflating your bundle?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

@@ -1,32 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'api-trpc',
-  module: 'api-design',
-  title: 'tRPC / Type-Safe APIs',
-  estimatedReadTime: '40 min',
-  tags: ['trpc', 'type-safety', 'rpc', 'zod', 'react-query', 'end-to-end-types', 'monorepo'],
+  id: "api-trpc",
+  module: "api-design",
+  title: "tRPC / Type-Safe APIs",
+  estimatedReadTime: "40 min",
+  tags: ["trpc","type-safety","rpc","zod","react-query","end-to-end-types","monorepo"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>tRPC</strong> gives you end-to-end TypeScript safety from server function to React component without any code generation, schema language, or build step. You write a server <em>router</em>, infer its type, and call it on the client like a typed function. The killer feature: rename a procedure on the server and the client breaks at compile time. The trade: it's TS-only and not designed for public APIs or polyglot consumers.</p>
-<ul>
-  <li><strong>No schema language.</strong> Routes are TS functions; types flow via <code>typeof router</code>. Refactors propagate at compile time.</li>
-  <li><strong>Procedures:</strong> <code>query</code> for reads, <code>mutation</code> for writes, <code>subscription</code> for streams. Validate inputs with <code>zod</code> (or any standard-schema-compatible lib).</li>
-  <li><strong>Composable middleware:</strong> auth, logging, rate-limit, transactions, all via <code>.use()</code>.</li>
-  <li><strong>React Query under the hood</strong> on the client — caching, retry, refetch on focus, optimistic updates for free.</li>
-  <li><strong>Transport: HTTP for query/mutation, WebSocket / SSE for subscriptions.</strong> Default uses HTTP <code>POST</code> with batching link.</li>
-  <li><strong>Best fit:</strong> TS-only product, monorepo, single client, single server. <strong>Not</strong> for public APIs, mobile-Swift/Kotlin clients, or polyglot consumers.</li>
-  <li><strong>Cousins:</strong> ts-rest (REST + types), Hono RPC (RPC over Hono routes), Effect Schema, GraphQL with codegen — all solve "type safety without OpenAPI" differently.</li>
-</ul>
-<p><strong>Mantra:</strong> "TypeScript on both ends. No schema language. No codegen. The router is the contract."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>tRPC gives end-to-end TypeScript safety with no schema language and no codegen — the router IS the contract, its type flows to the client via <code>typeof appRouter</code>, so a rename breaks callers at compile time; the price is TS-only, not for public or polyglot APIs.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three procedure types:</strong> <code>query</code> for reads, <code>mutation</code> for writes, <code>subscription</code> for streams — validate every input with <code>zod</code>, never <code>z.any()</code>.</li>
+    <li><strong>Four building blocks:</strong> procedures, routers (namespaces), context (per-request DB + viewer), and middleware that wraps procedures and can <strong>narrow the context type</strong> — after <code>isAuthed</code>, downstream sees a non-null viewer at compile time.</li>
+    <li><strong>Export <code>type AppRouter = typeof appRouter</code> from the same module that builds the router</strong> — re-exporting elsewhere loses inference. Consume it via <code>inferRouterInputs</code> / <code>inferRouterOutputs</code>, not by coupling components to the router directly.</li>
+    <li><strong>Errors are <code>TRPCError</code> with a stable <code>code</code></strong> (mapped to HTTP: UNAUTHORIZED 401, FORBIDDEN 403, CONFLICT 409, TOO_MANY_REQUESTS 429) plus a <code>cause</code> for logs — a bare <code>Error</code> becomes an opaque 500.</li>
+    <li><strong>Transports are links:</strong> <code>httpBatchLink</code> coalesces concurrent calls into one POST, <code>splitLink</code> routes subscriptions to <code>wsLink</code> and everything else to HTTP — same router, two transports.</li>
+    <li><strong>React Query is under the hood</strong> — caching, retry, refetch on focus, invalidation after mutations, and optimistic updates (<code>onMutate</code> then <code>setData</code>, rollback in <code>onError</code>, <code>invalidate</code> in <code>onSettled</code>).</li>
+    <li><strong>Default JSON transformer loses <code>Date</code>, <code>Map</code>, <code>Set</code>, <code>BigInt</code>, <code>undefined</code></strong> — add <code>superjson</code> on both server and client to round-trip them.</li>
+    <li><strong><code>appRouter.createCaller(ctx)</code> calls the router as a plain function</strong> — no HTTP — for server components, scripts, and tests.</li>
+    <li><strong>Versioning is additive-only:</strong> new procedures and input fields, deprecate before removing, sunset only when telemetry shows zero usage — mobile bundles carry old <code>AppRouter</code> types for months.</li>
+    <li><strong>Best fit:</strong> TS-only monorepo, single client, single server. For polyglot or public consumers reach for REST + OpenAPI, gRPC, or bolt on <code>trpc-openapi</code>.</li>
+    <li><strong>Cousins</strong> solve "type safety without OpenAPI" differently: ts-rest (typed REST contract), Hono RPC (free on Hono, light for edge), Effect Schema, Connect (Protobuf, cross-language), GraphQL + codegen.</li>
+    <li><strong>Mantra:</strong> "TypeScript on both ends. No schema language. No codegen. The router is the contract."</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Skipping zod input validation because "it's TypeScript, the client already knows the shape" — types vanish at runtime, so a curl request with a bad body sails straight into your resolver.</strong> Validate every procedure with a concrete <code>zod</code> schema; it is both the runtime guard and the single source of truth the input type is inferred from.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"tRPC because this is a TS-only monorepo with one client and one server — if we were polyglot, REST plus OpenAPI would be the call."</div>
+  <div class="revision-say">"Auth is middleware that narrows the context, so every protected procedure sees a non-null viewer at compile time — no per-procedure checks."</div>
+  <div class="revision-say">"The router is the contract: rename a procedure on the server and every consumer breaks instantly at compile time, no codegen step to lag behind."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The pitch</h3>
 <p>You write a function on the server. You call it on the client. The types flow. There's no OpenAPI yaml, no GraphQL SDL, no codegen step. If you rename <code>getUser</code> to <code>fetchUser</code>, every caller in the monorepo breaks immediately — IDE-level instant feedback.</p>
 
@@ -108,12 +118,10 @@ mutate({ id: '42', name: 'Prakhar' }); // input type-checked
   <li>Long-lived subscriptions on a separate transport (WebSocket).</li>
   <li>Versioning policy documented (additive procedures, deprecate before remove).</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The four building blocks</h3>
 <ol>
   <li><strong>Procedures</strong> — single endpoint functions: <code>query</code> (read), <code>mutation</code> (write), <code>subscription</code> (push).</li>
@@ -219,12 +227,10 @@ export const protectedProcedure = t.procedure.use(isAuthed);
     <tr><td><code>retryLink</code></td><td>Configurable retry on failure</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Server setup (Node + Express adapter)</h3>
 <pre><code class="language-typescript">import { initTRPC, TRPCError } from '@trpc/server';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
@@ -424,12 +430,10 @@ const user = await caller.user.byId({ id: '42' }); // no HTTP, direct call
     <tr><td>GraphQL + codegen</td><td>If you want GraphQL but with tRPC-level inference; <code>graphql-codegen</code> + Apollo / Urql.</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Cursor-paginated feed</h3>
 <pre><code class="language-typescript">// Server
 const postRouter = router({
@@ -585,12 +589,11 @@ export const trpcClient = trpc.createClient({
 });
 </code></pre>
 <p>RN screens call <code>trpc.user.byId.useQuery</code> identically to web. The shared package gives RN the type without bundling server code.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Type inference pitfalls</h3>
 <ul>
   <li><strong>Async types blow up with deep recursion.</strong> Long routers (50+ procedures) can hit TS recursion limits — split into sub-routers.</li>
@@ -665,12 +668,9 @@ const t = initTRPC.context&lt;Context&gt;().create({ transformer: superjson });
   <li>Type tests with <code>expect-type</code> or <code>@ts-expect-error</code> to lock the schema.</li>
   <li>Snapshot tests for router shape: prevents accidental procedure removal.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 10 most common tRPC mistakes</h3>
 <ol>
   <li><strong>Skipping zod input validation.</strong> "It's TypeScript, the client knows the shape." Then someone calls the endpoint with curl and your server crashes.</li>
@@ -767,12 +767,10 @@ const updateUser = trpc.user.update.useMutation({
 
 <h3>Anti-pattern: leaking <code>Date</code> assumptions</h3>
 <p>Without superjson, <code>new Date()</code> on the server arrives as a string on the client. Code that does <code>data.createdAt.getTime()</code> dies silently. Either ship superjson or always serialise to ISO strings explicitly.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common tRPC design prompts</h3>
 <ol>
   <li>Design a tRPC router for a small e-commerce app.</li>
@@ -897,52 +895,38 @@ const updateUser = trpc.user.update.useMutation({
   <li>"Build a sample with <code>trpc-openapi</code> + a Go client to feel the polyglot story."</li>
   <li>"Practice writing middleware that narrows context — it's the headline TS move."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>tRPC gives end-to-end TypeScript safety with no schema language and no codegen — the router IS the contract, its type flows to the client via <code>typeof appRouter</code>, so a rename breaks callers at compile time; the price is TS-only, not for public or polyglot APIs.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Three procedure types:</strong> <code>query</code> for reads, <code>mutation</code> for writes, <code>subscription</code> for streams — validate every input with <code>zod</code>, never <code>z.any()</code>.</li>
-    <li><strong>Four building blocks:</strong> procedures, routers (namespaces), context (per-request DB + viewer), and middleware that wraps procedures and can <strong>narrow the context type</strong> — after <code>isAuthed</code>, downstream sees a non-null viewer at compile time.</li>
-    <li><strong>Export <code>type AppRouter = typeof appRouter</code> from the same module that builds the router</strong> — re-exporting elsewhere loses inference. Consume it via <code>inferRouterInputs</code> / <code>inferRouterOutputs</code>, not by coupling components to the router directly.</li>
-    <li><strong>Errors are <code>TRPCError</code> with a stable <code>code</code></strong> (mapped to HTTP: UNAUTHORIZED 401, FORBIDDEN 403, CONFLICT 409, TOO_MANY_REQUESTS 429) plus a <code>cause</code> for logs — a bare <code>Error</code> becomes an opaque 500.</li>
-    <li><strong>Transports are links:</strong> <code>httpBatchLink</code> coalesces concurrent calls into one POST, <code>splitLink</code> routes subscriptions to <code>wsLink</code> and everything else to HTTP — same router, two transports.</li>
-    <li><strong>React Query is under the hood</strong> — caching, invalidation after mutations, and optimistic updates (<code>onMutate</code> then <code>setData</code>, rollback in <code>onError</code>, <code>invalidate</code> in <code>onSettled</code>).</li>
-    <li><strong>Default JSON transformer loses <code>Date</code>, <code>Map</code>, <code>Set</code>, <code>BigInt</code>, <code>undefined</code></strong> — add <code>superjson</code> on both server and client to round-trip them.</li>
-    <li><strong><code>appRouter.createCaller(ctx)</code> calls the router as a plain function</strong> — no HTTP — for server components, scripts, and tests.</li>
-    <li><strong>Versioning is additive-only:</strong> new procedures and input fields, deprecate before removing, sunset only when telemetry shows zero usage — mobile bundles carry old <code>AppRouter</code> types for months.</li>
-    <li><strong>Best fit:</strong> TS-only monorepo, single client, single server. For polyglot or public consumers reach for REST + OpenAPI, gRPC, or bolt on <code>trpc-openapi</code>.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Skipping zod input validation because "it's TypeScript, the client already knows the shape" — types vanish at runtime, so a curl request with a bad body sails straight into your resolver.</strong> Validate every procedure with a concrete <code>zod</code> schema; it is both the runtime guard and the single source of truth the input type is inferred from.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"tRPC because this is a TS-only monorepo with one client and one server — if we were polyglot, REST plus OpenAPI would be the call."</div>
-  <div class="revision-say">"Auth is middleware that narrows the context, so every protected procedure sees a non-null viewer at compile time — no per-procedure checks."</div>
-  <div class="revision-say">"The router is the contract: rename a procedure on the server and every consumer breaks instantly at compile time, no codegen step to lag behind."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain how types flow from server to client via <code>typeof router</code> with no schema language or codegen step?</li>
-    <li>Can you say when tRPC is the wrong tool — public APIs, polyglot backends, native Swift/Kotlin clients?</li>
-    <li>Can you implement auth as middleware that narrows the context so protected procedures see a non-null viewer at compile time?</li>
-    <li>Can you explain what React Query gives the tRPC client for free — caching, retry, refetch, optimistic updates?</li>
-    <li>Can you structure routers by domain instead of one mega-router, and say why <code>z.any()</code> is banned in production?</li>
-    <li>Can you name a tRPC cousin (ts-rest, Hono RPC, GraphQL + codegen) and how it solves type safety differently?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. How do types get from a tRPC server to the client without a schema language or codegen?</div>
+  <div class="qa-answer">
+    <p>Procedures are plain TypeScript functions on a router, and the server module exports only the router's type: <code>export type AppRouter = typeof appRouter</code>. The client imports that type (a type-only import, e.g. from a shared package in the monorepo) and the tRPC client infers every procedure's input and output from it, so <code>trpc.user.byId.query({ id: '42' })</code> returns a fully inferred <code>User</code>. Inputs are inferred from the zod schema, outputs from the resolver's return type, and <code>inferRouterInputs</code> / <code>inferRouterOutputs</code> expose them as named types. There is no OpenAPI yaml, SDL or codegen step to lag behind: rename a procedure and every caller breaks at compile time. Export the type from the same module that builds the router, since re-exporting elsewhere loses inference.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q2. How do you implement auth in tRPC so protected procedures get a non-null user at compile time?</div>
+  <div class="qa-answer">
+    <p>Context is built per request by <code>createContext()</code> with a nullable <code>viewer</code>. An <code>isAuthed</code> middleware throws <code>new TRPCError({ code: 'UNAUTHORIZED' })</code> when <code>ctx.viewer</code> is missing, and otherwise calls <code>next({ ctx: { ...ctx, viewer: ctx.viewer } })</code>, which <strong>narrows the context type</strong>. Then <code>protectedProcedure = t.procedure.use(isAuthed)</code>, and an <code>adminProcedure = protectedProcedure.use(isAdmin)</code> adds a FORBIDDEN check for roles. Every resolver built on <code>protectedProcedure</code> sees <code>ctx.viewer</code> as non-null at compile time, so there are no per-procedure auth checks to forget.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. What does React Query give the tRPC client for free?</div>
+  <div class="qa-answer">
+    <p>tRPC's React client is built on React Query, so every procedure call gets caching, retry, refetch on window focus, stale-while-revalidate and invalidation without extra code. Mutations can invalidate affected queries (<code>utils.user.byId.invalidate({ id })</code>) and do optimistic updates with the usual shape: in <code>onMutate</code> cancel the query, snapshot the previous data and <code>setData</code> the optimistic value; in <code>onError</code> restore the snapshot; in <code>onSettled</code> invalidate. On mobile you can also persist the cache (e.g. with <code>react-query-async-storage-persister</code>) for offline-first behaviour.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How do you structure tRPC routers in a growing codebase, and why is z.any() banned in production?</div>
+  <div class="qa-answer">
+    <p>Group routers by domain (<code>user</code>, <code>order</code>, <code>billing</code>) and compose them under a top-level <code>appRouter</code>, instead of one mega-router, with auth and rate limiting applied as shared middleware rather than per-procedure boilerplate. Every input gets a concrete zod schema, e.g. <code>z.object({ id: z.string().uuid(), name: z.string().min(1).max(80) })</code>. <code>z.any()</code> is banned because TypeScript types vanish at runtime: a curl request with a bad body sails straight into the resolver, and the handler's input is untyped too. The zod schema is both the runtime guard and the single source of truth the input type is inferred from.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. What alternatives to tRPC give type safety, and how do they differ?</div>
+  <div class="qa-answer">
+    <p><strong>ts-rest</strong> keeps REST: you define a contract once and share it between the server (Express/Nest/Fastify) and the client, and it plays well with OpenAPI. <strong>Hono RPC</strong> gives RPC types for free if you are already on Hono and is lighter than tRPC for edge or serverless. <strong>Connect</strong> (gRPC-Web for TS) is schema-first via Protobuf and works cross-language. <strong>Effect Schema / Effect HTTP</strong> is schema-first within the Effect ecosystem. <strong>GraphQL + codegen</strong> (<code>graphql-codegen</code> with Apollo or Urql) gets close to tRPC-level types but pays for it with SDL, a codegen step and often a gateway. tRPC alone relies on pure TypeScript inference, which is also why it is TS-only.</p>
+  </div>
+</div>
+` },
+
   ]
 });

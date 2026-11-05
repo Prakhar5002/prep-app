@@ -1,30 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'react-concurrent',
-  module: 'React Deep',
-  title: 'Concurrent React (18+)',
-  estimatedReadTime: '28 min',
-  tags: ['react', 'concurrent', 'suspense', 'transitions', 'lanes', 'startTransition', 'useDeferredValue', 'streaming-ssr'],
+  id: "react-concurrent",
+  module: "React Deep",
+  title: "Concurrent React (18+)",
+  estimatedReadTime: "28 min",
+  tags: ["react","concurrent","suspense","transitions","lanes","startTransition","useDeferredValue","streaming-ssr"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>Concurrent React</strong> (shipped in React 18) is a rendering model where React can prepare multiple versions of the UI at the same time, interrupt a low-priority render to process a high-priority update, and discard abandoned work without committing it. Updates are tagged with <strong>lanes</strong> (priority tiers); the scheduler always picks the highest-priority non-empty lane.</p>
-<ul>
-  <li><strong>Opt-in APIs:</strong> <code>startTransition</code>, <code>useTransition</code>, <code>useDeferredValue</code>, <code>&lt;Suspense&gt;</code>. Other APIs are unchanged.</li>
-  <li><strong>Automatic batching</strong> now applies everywhere (promises, timeouts, native events), not just React-synthetic handlers.</li>
-  <li><strong>Suspense</strong> lets you declaratively describe loading states in the tree; components can "suspend" (throw a promise) and React shows the nearest fallback until the promise resolves.</li>
-  <li><strong>Streaming SSR</strong> with <code>renderToPipeableStream</code> / <code>renderToReadableStream</code> sends HTML chunks as they become ready — fast TTFB, selective hydration.</li>
-  <li>Concurrent rendering is safe-by-default for well-behaved components (pure render, effects do cleanup). Side effects during render become visible bugs (hence <code>StrictMode</code>'s double-invocation).</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Old React: one priority, render-to-completion, commit. New React: N priorities (lanes), interruptible render, speculative trees. Your code mostly stays the same — but the model rewards pure renders and declarative loading states.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Concurrent React (18+) lets React <strong>prepare the UI at multiple priorities and render interruptibly</strong> — updates are tagged with <em>lanes</em>, the scheduler renders the highest-priority one, and abandoned work is discarded before commit.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Old model:</strong> one priority, render-to-completion, commit. <strong>New model:</strong> N priorities (lanes), interruptible render, speculative trees — but most of your code is unchanged.</li>
+    <li><strong>Opt-in APIs only:</strong> <code>startTransition</code>, <code>useTransition</code>, <code>useDeferredValue</code>, <code>&lt;Suspense&gt;</code>. Everything else behaves as before.</li>
+    <li><strong><code>startTransition</code>/<code>useTransition</code></strong> mark an update non-urgent — <em>you</em> own the setter; urgent input (typing) stays responsive while the transition renders in the background. <code>isPending</code> drives a spinner.</li>
+    <li><strong><code>useDeferredValue</code></strong> lags a value you do <em>not</em> control the setter of (e.g. a prop) — same effect, different ownership.</li>
+    <li><strong>Concurrency changes perceived perf, not wall-clock</strong> — the heavy render still runs; it just no longer blocks urgent updates and can be interrupted or restarted.</li>
+    <li><strong>Automatic batching applies everywhere now</strong> (promises, <code>setTimeout</code>, native events), not only React event handlers. <code>flushSync</code> opts out.</li>
+    <li><strong>Suspense</strong> = a component "suspends" by throwing a thenable; the nearest <code>&lt;Suspense fallback&gt;</code> shows until it resolves, then retries — declarative loading states in the tree.</li>
+    <li><strong>Streaming SSR</strong> (<code>renderToPipeableStream</code> / <code>renderToReadableStream</code>) flushes HTML chunks as they become ready → fast TTFB and <strong>selective hydration</strong> (interactive parts hydrate first, by priority).</li>
+    <li><strong>Concurrent rendering is only safe for pure renders</strong> — render can run twice, be interrupted, or be thrown away, so side effects during render become visible bugs (why <code>StrictMode</code> double-invokes in dev).</li>
+    <li><strong>Commit is still synchronous and atomic</strong> — <code>startTransition</code> speeds the <em>render</em> phase, not a heavy commit (big DOM/layout).</li>
+    <li>Suspense (async/loading) and Error Boundaries (errors) are <strong>different mechanisms</strong> — you often pair them, but don't conflate them.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Expecting <code>startTransition</code> to make slow work <strong>faster</strong>. It doesn't — same wall-clock time; it only keeps urgent updates responsive by rendering the transition at low priority (and may restart it). Separately, any <strong>side effect during render</strong> breaks under concurrency.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Concurrent React tags updates with lanes and renders interruptibly — a low-priority transition can be paused for urgent input and even thrown away before commit."</div>
+  <div class="revision-say">"<code>startTransition</code> is for setters you own; <code>useDeferredValue</code> is for values you don't — both keep the UI responsive without reducing total work."</div>
+  <div class="revision-say">"Suspense is a component throwing a thenable that the nearest boundary catches and retries on resolve — it's about async, not errors."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What concurrent rendering is</h3>
 <p>Before React 18, a render was a single, uninterruptible traversal of the fiber tree on the main thread. If your tree took 100ms to render, the main thread was blocked for 100ms — during which the browser couldn't process input, couldn't paint, couldn't run animations. Users saw jank.</p>
 
@@ -63,10 +74,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Opt-in vs opt-out</h3>
 <p>React 18 ships concurrent <em>capabilities</em>, not concurrent <em>mode</em>. You opt in per update via <code>startTransition</code>. Other updates behave exactly like before (synchronous, uninterruptible). You can migrate incrementally. Creating the root with <code>createRoot</code> (vs legacy <code>ReactDOM.render</code>) unlocks all the opt-in features.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "lanes as tiers" picture</h3>
 <div class="diagram">
 <pre>
@@ -142,10 +153,10 @@ client hydrates progressively:
   <div class="callout-title">Common misconception</div>
   <p>"Concurrent React runs on multiple threads." No. JS is still single-threaded. Concurrent means React can <em>interleave</em> work — pause render, handle input, resume. Everything runs on the main thread; the difference is yielding granularity.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Lanes and the scheduler</h3>
 <p>A <strong>lane</strong> is a bit in a 31-bit mask. Each setState call gets a lane based on the current scheduler priority (inferred from the current event type). Major lanes:</p>
 <ul>
@@ -225,10 +236,10 @@ root.render(&lt;App/&gt;);
 // Legacy (no concurrent features)
 ReactDOM.render(&lt;App/&gt;, document.getElementById('app'));</code></pre>
 <p>Only <code>createRoot</code> unlocks concurrent features. <code>ReactDOM.render</code> (along with <code>hydrate</code> and <code>unmountComponentAtNode</code>) was <strong>removed in React 19 (Dec 2024)</strong> — <code>createRoot</code>/<code>hydrateRoot</code> are now mandatory.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — useTransition for filter responsiveness</h3>
 <pre><code class="language-js">function Filter({ items }) {
   const [text, setText] = useState('');
@@ -369,10 +380,11 @@ function navigate(id) {
 <pre><code class="language-js">// index.js
 const root = ReactDOM.createRoot(document.getElementById('app'));
 root.render(&lt;App/&gt;);</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Side effects in render become visible</h3>
 <pre><code class="language-js">// BAD in concurrent
 function Comp() {
@@ -453,10 +465,9 @@ startTransition(() =&gt; setState(data));</code></pre>
 
 <h3>20. RSC changes the picture again</h3>
 <p>React Server Components (stable in React 19) push a lot of data-fetching server-side; client components stay "dumb" and receive serialized trees. <code>use</code> + Suspense are the core primitives. Concurrent rendering is foundational to RSC — you can't do RSC without it.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — startTransition for the wrong thing</h3>
 <pre><code class="language-js">// BAD — debounces intent but doesn't update UI
 startTransition(() =&gt; setInput(e.target.value));</code></pre>
@@ -523,10 +534,10 @@ flushSync(() =&gt; setC(3));</code></pre>
 
 <h3>Anti-pattern 15 — Legacy render + concurrent APIs</h3>
 <p><code>ReactDOM.render</code> was <strong>removed in React 19 (Dec 2024)</strong>, so this legacy trap is now moot — there's no legacy root to fall into. On React 18 it created a legacy root where <code>startTransition</code> was a no-op. Either way, use <code>createRoot</code>/<code>hydrateRoot</code> to unlock concurrent features.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What does "concurrent" mean in React 18?</div>
   <div class="qa-answer">
@@ -665,48 +676,20 @@ flushSync(() =&gt; setC(3));</code></pre>
     <li>You don't conflate Suspense (async) with ErrorBoundary (errors).</li>
   </ul>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Concurrent React (18+) lets React <strong>prepare the UI at multiple priorities and render interruptibly</strong> — updates are tagged with <em>lanes</em>, the scheduler renders the highest-priority one, and abandoned work is discarded before commit.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Old model:</strong> one priority, render-to-completion, commit. <strong>New model:</strong> N priorities (lanes), interruptible render, speculative trees — but most of your code is unchanged.</li>
-    <li><strong>Opt-in APIs only:</strong> <code>startTransition</code>, <code>useTransition</code>, <code>useDeferredValue</code>, <code>&lt;Suspense&gt;</code>. Everything else behaves as before.</li>
-    <li><strong><code>startTransition</code>/<code>useTransition</code></strong> mark an update non-urgent — <em>you</em> own the setter; urgent input (typing) stays responsive while the transition renders in the background. <code>isPending</code> drives a spinner.</li>
-    <li><strong><code>useDeferredValue</code></strong> lags a value you do <em>not</em> control the setter of (e.g. a prop) — same effect, different ownership.</li>
-    <li><strong>Concurrency changes perceived perf, not wall-clock</strong> — the heavy render still runs; it just no longer blocks urgent updates and can be interrupted or restarted.</li>
-    <li><strong>Automatic batching applies everywhere now</strong> (promises, <code>setTimeout</code>, native events), not only React event handlers. <code>flushSync</code> opts out.</li>
-    <li><strong>Suspense</strong> = a component "suspends" by throwing a thenable; the nearest <code>&lt;Suspense fallback&gt;</code> shows until it resolves, then retries — declarative loading states in the tree.</li>
-    <li><strong>Streaming SSR</strong> (<code>renderToPipeableStream</code>) flushes HTML chunks as they become ready → fast TTFB and <strong>selective hydration</strong> (interactive parts hydrate first, by priority).</li>
-    <li><strong>Concurrent rendering is only safe for pure renders</strong> — render can run twice, be interrupted, or be thrown away, so side effects during render become visible bugs (why <code>StrictMode</code> double-invokes in dev).</li>
-    <li><strong>Commit is still synchronous and atomic</strong> — <code>startTransition</code> speeds the <em>render</em> phase, not a heavy commit (big DOM/layout).</li>
-    <li>Suspense (async/loading) and Error Boundaries (errors) are <strong>different mechanisms</strong> — you often pair them, but don't conflate them.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Expecting <code>startTransition</code> to make slow work <strong>faster</strong>. It doesn't — same wall-clock time; it only keeps urgent updates responsive by rendering the transition at low priority (and may restart it). Separately, any <strong>side effect during render</strong> breaks under concurrency.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Concurrent React tags updates with lanes and renders interruptibly — a low-priority transition can be paused for urgent input and even thrown away before commit."</div>
-  <div class="revision-say">"<code>startTransition</code> is for setters you own; <code>useDeferredValue</code> is for values you don't — both keep the UI responsive without reducing total work."</div>
-  <div class="revision-say">"Suspense is a component throwing a thenable that the nearest boundary catches and retries on resolve — it's about async, not errors."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. What is tearing, and how does it relate to the requirement that renders be pure?</div>
+  <div class="qa-answer">
+    <p>Under concurrent rendering React may call a component several times before committing, interrupt a render, or throw it away, so any side effect during render (writing <code>window.foo</code>, mutating an external store, pushing to an array) becomes observable and wrong. Tearing is the visible symptom of reading mutable outside state mid-render: because the render is sliced and can yield, different components in the same render can see two different snapshots of an external store, so the UI is inconsistent. The fix is to keep render pure, put side effects in effects, and subscribe to external stores (Redux, Zustand, observables) with <code>useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot?)</code>, which avoids the tearing that <code>useState</code> + <code>useEffect</code> subscriptions can exhibit.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain what lanes are and how React tags an update with a priority?</li>
-    <li>Can you explain the difference between <code>startTransition</code> and <code>useDeferredValue</code> and when you'd pick each?</li>
-    <li>Can you describe how a low-priority transition can be interrupted by urgent input, or thrown away before commit?</li>
-    <li>Can you explain how Suspense works as a component throwing a thenable that the nearest boundary catches?</li>
-    <li>Can you explain why concurrent rendering demands pure renders, and what tearing is?</li>
-    <li>Can you explain what <code>isPending</code> from <code>useTransition</code> tells you and how you'd use it in the UI?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. What does isPending from useTransition tell you, and how do you use it in the UI?</div>
+  <div class="qa-answer">
+    <p><code>const [isPending, startTransition] = useTransition()</code>: <code>isPending</code> is <code>true</code> while the transition render is in flight, so you use it for non-blocking indicators such as a subtle spinner or dimming the current content, rather than replacing the UI. Combined with Suspense it gives "show old while new loads": if the new page suspends inside a transition, React keeps the current page rendered with <code>isPending = true</code> instead of flashing the fallback. One edge case: it flips to true on the first render after the transition starts, not synchronously, so the very first urgent render may not show the indicator yet.</p>
+  </div>
 </div>
-`}
+` },
 
-]
+  ]
 });

@@ -1,26 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'linux-shell-scripting',
-  module: 'linux',
-  title: 'Shell Scripting (Bash)',
-  estimatedReadTime: '30 min',
-  tags: ['linux', 'bash', 'shell', 'scripting', 'automation'],
+  id: "linux-shell-scripting",
+  module: "linux",
+  title: "Shell Scripting (Bash)",
+  estimatedReadTime: "30 min",
+  tags: ["linux","bash","shell","scripting","automation"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>A <strong>shell script</strong> is just a text file full of the same commands you'd type at a prompt, saved so you can run the whole sequence again with one command instead of retyping it. Bash turns "things I did once" into "things that run the same way every time" — the entire point of automation.</p>
-<ul>
-  <li><strong>Every script starts with a shebang</strong> — <code>#!/usr/bin/env bash</code> on the first line — and needs <code>chmod +x script.sh</code> before you can run it as <code>./script.sh</code>. Running it as <code>bash script.sh</code> works without the executable bit or shebang at all; <code>source script.sh</code> (or <code>. script.sh</code>) is different again — it runs in your <em>current</em> shell instead of a new one, which is the only way a script can change your current directory or export variables into the shell you're typing in.</li>
-  <li><strong>Quote your variables. Always.</strong> <code>"$var"</code> expands the variable and protects it from word-splitting and glob expansion; <code>'$var'</code> (single quotes) doesn't expand anything at all — it's a literal string. Forgetting to quote a variable that might contain a space, or might be empty, is the single most common source of shell script bugs, from silently-wrong behavior to accidentally deleting the wrong files.</li>
-  <li><strong>Tests, conditionals, and loops give scripts logic.</strong> <code>[[ ]]</code> (bash's modern test) is generally safer than the POSIX <code>[ ]</code>/<code>test</code>; <code>if/elif/else</code> and <code>case</code> branch on those tests; <code>for</code>, <code>while</code>, and <code>until</code> repeat work. Functions with <code>local</code> variables let you package logic into reusable, non-leaking pieces.</li>
-  <li><strong>Robustness is opt-in, not automatic.</strong> Bash's default behavior is forgiving to a fault — it keeps running after a command fails, silently treats an unset variable as an empty string, and ignores failures in the middle of a pipeline. <code>set -euo pipefail</code> at the top of a script turns all three of those off, which is why it's the near-universal first line of any script meant to be trusted. A <code>trap 'cleanup' EXIT</code> guarantees your cleanup code runs even when the script exits early because of that stricter behavior.</li>
-  <li><strong>This is topic 5 of the Linux module.</strong> It builds directly on navigation, permissions, and text-processing/pipelines from earlier topics — a shell script is, at its core, just those same commands sequenced with variables, conditionals, and loops wrapped around them. It assumes you're comfortable with the basics and focuses on turning ad-hoc commands into a script you'd trust to run unattended.</li>
-</ul>
-<p><strong>Mantra:</strong> "Quote every variable, check every exit code, fail fast with <code>set -euo pipefail</code>, and clean up with <code>trap</code> — a script that fails loudly and safely beats one that fails silently and destructively."</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A shell script is the commands you'd type, saved to run the same way every time — <strong>quote every variable, check every exit code, and make robustness opt-in</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Every script starts with a shebang (<code>#!/usr/bin/env bash</code>) and needs <code>chmod +x</code> to run as <code>./script.sh</code>; <code>source</code> runs it in your <em>current</em> shell — the only way it can change your cwd or export vars into the shell you're in.</li>
+    <li><strong>Always quote variables:</strong> <code>"$var"</code> protects against word-splitting and globbing; <code>'$var'</code> (single quotes) is a literal string that expands nothing.</li>
+    <li><code>[[ ]]</code> is bash's safer modern test; <code>if</code>/<code>elif</code>/<code>else</code> and <code>case</code> branch; <code>for</code>/<code>while</code>/<code>until</code> loop; functions with <code>local</code> keep variables from leaking.</li>
+    <li><strong>Robustness is opt-in:</strong> <code>set -euo pipefail</code> turns off bash's forgiving defaults — keep-going on failure, unset treated as empty, ignored pipeline failures.</li>
+    <li><code>trap 'cleanup' EXIT</code> guarantees cleanup runs even when the script exits early.</li>
+    <li><code>set -e</code> has gaps — it doesn't fire inside an <code>if</code>/<code>while</code> condition or a <code>&amp;&amp;</code>/<code>||</code> chain; and <code>set -u</code> only catches a truly <em>unset</em> variable, not an empty one.</li>
+    <li><code>#!/usr/bin/env bash</code> finds bash on the PATH — more portable than hardcoding <code>/bin/bash</code>. <code>bash script.sh</code> runs without the executable bit or shebang.</li>
+    <li>Exit codes: <strong>0 = success, 1–255 = failure</strong>; <code>$?</code> holds the last one and is overwritten by the next command; <code>&amp;&amp;</code> runs on success, <code>||</code> on failure.</li>
+    <li><code>[ ]</code> is the POSIX <code>test</code> command — portable but word-splits unquoted variables ("unary operator expected"); <code>[[ ]]</code> is a bash keyword that doesn't, and supports <code>&amp;&amp;</code>/<code>||</code> inside.</li>
+    <li><code>"$@"</code> keeps each argument separate (use it to forward args); <code>"$*"</code> joins them into one string.</li>
+    <li>Functions without <code>local</code> create <strong>global</strong> variables that can silently overwrite same-named ones elsewhere.</li>
+    <li><code>/bin/sh</code> is often <code>dash</code>, not bash — it doesn't understand bash-only features like <code>[[ ]]</code> or arrays.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>An unquoted variable silently word-splits.</strong> With <code>file="my report.txt"</code>, <code>rm $file</code> tries to delete two files; and <code>rm -rf "$dir"/*</code> with an empty <code>$dir</code> expands to <code>rm -rf /*</code>. Quote everything, and guard empty values explicitly (<code>[[ -n "$dir" ]]</code>) before anything destructive runs.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A script is just sequenced commands, but robustness is opt-in — my first line is set -euo pipefail with a trap for cleanup."</div>
+  <div class="revision-say">"Quote every variable; an unquoted one that has a space or is empty is the single most common and most destructive bash bug."</div>
+  <div class="revision-say">"set -e isn't a substitute for checking — it skips conditions and boolean chains, so I still check the failures I expect."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why write a script instead of just typing commands?</h3>
 <p>You already know how to run individual commands interactively — that's everything the earlier Linux topics covered. A <strong>shell script</strong> is the next step: instead of typing a sequence of commands by hand every time, you save them into a file and run that file as a single unit. This matters for a few concrete reasons:</p>
 <ul>
@@ -35,10 +51,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>What actually happens when a script "runs"</h3>
 <p>A shell script is not compiled — it's read and executed line by line by whichever shell interprets it, exactly as if you'd typed each line at an interactive prompt (with the added ability to define variables, functions, and control flow that persist across those lines). This is why a syntax error later in a long script doesn't always stop earlier commands from having already run — bash generally parses a script top-to-bottom as it executes, not all at once ahead of time. It also explains why <em>which</em> program interprets your script matters: the exact same text file can behave differently depending on whether it's launched with <code>bash</code>, <code>sh</code>, or another shell — the shebang line (next section) is how a script pins down that choice for itself.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>A script is a sequence of expansions, then executions</h3>
 <p>The mental model that makes bash scripting click: before bash runs a line, it first <strong>expands</strong> everything on that line — variables become their values, <code>$(...)</code> becomes the output of a command, <code>~</code> becomes your home directory, <code>*</code> becomes matching filenames — and only <em>then</em> does it split the result into words and run the command. Nearly every scripting bug traces back to a mismatch between what you expected that expansion step to produce and what it actually produced. Quoting (covered in Mechanics) is entirely about controlling that expansion step.</p>
 <pre><code class="language-text">You write:      cp $file $dest
@@ -61,10 +77,10 @@ Bash runs:      cp "my file.txt" "backup/"       ← cp sees 2 arguments — cor
 
 <h3>Every command leaves behind an exit code — that's how scripts make decisions</h3>
 <p>Every single command that finishes — whether it's <code>ls</code>, <code>grep</code>, or your own function — leaves behind a small integer called its <strong>exit code</strong> (also called exit status): <code>0</code> means success, anything from <code>1</code> to <code>255</code> means some kind of failure, and the specific non-zero number is often meaningful (e.g. <code>grep</code> uses <code>1</code> specifically to mean "no match found," not an error). This one number is the entire foundation that <code>if</code>, <code>&amp;&amp;</code>, <code>||</code>, and <code>set -e</code> are built on — a script's control flow is, underneath, just a long chain of decisions based on these exit codes, covered fully in Mechanics below.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>The shebang: <code>#!/usr/bin/env bash</code></h3>
 <pre><code class="language-bash">#!/usr/bin/env bash
 echo "Hello from bash"</code></pre>
@@ -280,8 +296,8 @@ echo "First arg:   $1"      # production
 echo "Second arg:  $2"      # --force
 echo "Arg count:   $#"      # 3
 
-echo "All args (\$@): $@"    # production --force extra
-echo "All args (\$*): $*"    # production --force extra   (looks the same printed plainly)
+echo "All args ($@): $@"    # production --force extra
+echo "All args ($*): $*"    # production --force extra   (looks the same printed plainly)
 
 # The $@ vs $* difference only shows up when EXPANDED IN QUOTES and passed on:
 print_args() { for a in "$@"; do echo "  [$a]"; done; }
@@ -353,10 +369,10 @@ source ./lib/common.sh
 
 log_info "Loaded shared functions from common.sh"   # now available, defined in common.sh</code></pre>
 <p><code>export</code> promotes a plain shell variable into an <em>environment</em> variable, which means every child process this shell subsequently launches receives a copy of it in its own environment — without <code>export</code>, a variable exists only inside the current shell/script and is invisible to anything it runs. <code>source file.sh</code> is the standard way one script shares reusable variables and functions with another: it reads and executes <code>file.sh</code>'s contents directly into the current shell (as covered in Mental Model above), so any functions or variables <code>file.sh</code> defines become immediately available to the sourcing script, no <code>export</code> needed since there's no child process involved at all.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — A complete, robust script: back up a directory</h3>
 <pre><code class="language-bash">#!/usr/bin/env bash
 set -euo pipefail
@@ -457,10 +473,11 @@ else
   exit 1
 fi</code></pre>
 <p>Capturing a command's output with <code>$(...)</code> directly inside an <code>if</code> is a compact way to both grab the result <em>and</em> branch on whether the command succeeded, in one step. The second block is exactly why <code>set -o pipefail</code> (bundled into <code>set -euo pipefail</code>) matters: without it, if <code>curl</code> failed entirely, the pipeline's exit code would still come only from <code>grep</code> — which would report "no match" rather than the real underlying problem, "curl itself never even connected."</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Unquoted <code>$var</code> silently word-splits</h3>
 <pre><code class="language-bash">file="my report.txt"
 rm $file        # DANGEROUS: expands to  rm my report.txt
@@ -502,10 +519,10 @@ show "$@"   # [one two] [three]     — each original argument preserved separat
 show "$*"   # [one two three]        — all arguments joined into a single string
 show $@      # [one] [two] [three]     — unquoted: word-split, losing the original grouping entirely</code></pre>
 <p>All three look interchangeable in the simplest cases (single-word arguments, no special characters), which is exactly why this one bites people later, once a script is handed a real argument containing a space — always default to <code>"$@"</code> (quoted) when forwarding a script's own arguments on to another command.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'cheat-sheet', title: '📋 Cheat Sheet', html: `
+{ id: "cheat-sheet", title: "📋 Cheat Sheet", collapsible: true, html: `
 <table>
   <thead><tr><th>Concept</th><th>Syntax</th><th>Notes</th></tr></thead>
   <tbody>
@@ -550,10 +567,10 @@ show $@      # [one] [two] [three]     — unquoted: word-split, losing the orig
     <tr><td>Load into current shell</td><td><code>source file.sh</code></td><td>Shares functions/vars without needing export</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What's the difference between double quotes, single quotes, and no quotes around a bash variable?</div>
 <div class="qa-a">
@@ -602,42 +619,32 @@ show $@      # [one] [two] [three]     — unquoted: word-split, losing the orig
 <p>Unquoted, or printed plainly, they look identical — both represent "all the positional arguments." The difference only appears when each is quoted and then passed on to another command: <code>"$@"</code> expands to each original argument as its own separately-quoted word, exactly preserving argument boundaries (including any spaces inside a single argument); <code>"$*"</code> expands to a single string with every argument joined together, losing that original separation. In practice, <code>"$@"</code> is almost always what you want when forwarding a script's arguments to another command, since it's the only form that survives an argument containing a space without corrupting it.</p>
 </div>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A shell script is the commands you'd type, saved to run the same way every time — <strong>quote every variable, check every exit code, and make robustness opt-in</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Every script starts with a shebang (<code>#!/usr/bin/env bash</code>) and needs <code>chmod +x</code> to run as <code>./script.sh</code>; <code>source</code> runs it in your <em>current</em> shell — the only way it can change your cwd or export vars into the shell you're in.</li>
-    <li><strong>Always quote variables:</strong> <code>"$var"</code> protects against word-splitting and globbing; <code>'$var'</code> (single quotes) is a literal string that expands nothing.</li>
-    <li><code>[[ ]]</code> is bash's safer modern test; <code>if</code>/<code>elif</code>/<code>else</code> and <code>case</code> branch; <code>for</code>/<code>while</code>/<code>until</code> loop; functions with <code>local</code> keep variables from leaking.</li>
-    <li><strong>Robustness is opt-in:</strong> <code>set -euo pipefail</code> turns off bash's forgiving defaults — keep-going on failure, unset treated as empty, ignored pipeline failures.</li>
-    <li><code>trap 'cleanup' EXIT</code> guarantees cleanup runs even when the script exits early.</li>
-    <li><code>set -e</code> has gaps — it doesn't fire inside an <code>if</code>/<code>while</code> condition or a <code>&amp;&amp;</code>/<code>||</code> chain; and <code>set -u</code> only catches a truly <em>unset</em> variable, not an empty one.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>An unquoted variable silently word-splits.</strong> With <code>file="my report.txt"</code>, <code>rm $file</code> tries to delete two files; and <code>rm -rf "$dir"/*</code> with an empty <code>$dir</code> expands to <code>rm -rf /*</code>. Quote everything, and guard empty values explicitly (<code>[[ -n "$dir" ]]</code>) before anything destructive runs.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A script is just sequenced commands, but robustness is opt-in — my first line is set -euo pipefail with a trap for cleanup."</div>
-  <div class="revision-say">"Quote every variable; an unquoted one that has a space or is empty is the single most common and most destructive bash bug."</div>
-  <div class="revision-say">"set -e isn't a substitute for checking — it skips conditions and boolean chains, so I still check the failures I expect."</div>
+<div class="qa-block">
+  <div class="qa-question">Q8. What goes on the first line of a bash script, and how do you make it executable?</div>
+  <div class="qa-answer">
+    <p>The first line is the shebang, <code>#!/usr/bin/env bash</code>. It tells the OS which interpreter to use when the script is run directly. Using <code>env</code> finds bash wherever it sits on the PATH, which is more portable than hardcoding <code>/bin/bash</code>. Then run <code>chmod +x script.sh</code> to add the executable bit, which is separate from read and write. Without it, <code>./script.sh</code> fails with "Permission denied". Running <code>bash script.sh</code> needs neither the bit nor the shebang, but the shebang should still be there.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you write the shebang and make a script executable from memory?</li>
-    <li>Can you explain the difference between running a script and sourcing it?</li>
-    <li>Can you explain what each of <code>set -e</code>, <code>set -u</code>, and <code>set -o pipefail</code> does?</li>
-    <li>Can you show why an unquoted variable is dangerous inside <code>rm</code>/<code>cp</code>/<code>mv</code>?</li>
-    <li>Can you name a case where <code>set -e</code> does NOT fire?</li>
-    <li>Can you use <code>trap</code> to guarantee cleanup on exit?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q9. Show why an unquoted variable is dangerous inside rm, cp, or mv.</div>
+  <div class="qa-answer">
+    <p>Bash expands an unquoted variable and then word-splits and glob-expands the result. With <code>file="my report.txt"</code>, <code>rm $file</code> tries to delete two files, "my" and "report.txt". The empty case is worse: if <code>$dir</code> is an empty string, <code>rm -rf "$dir"/*</code> expands to <code>rm -rf /*</code>. <code>set -u</code> only catches a truly <em>unset</em> variable, not one set to "". So quote every variable, and explicitly guard against empty values with <code>[[ -n "$dir" ]]</code> before anything destructive runs.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q10. Give a case where set -e does NOT exit the script on a failing command.</div>
+  <div class="qa-answer">
+    <p><code>set -e</code> only fires when a simple command fails on its own. If the failing command's exit code is consumed by a condition (<code>if</code>, <code>while</code>, <code>until</code>) or by a boolean chain (<code>&amp;&amp;</code>, <code>||</code>), bash treats it as already handled. For example, a <code>grep</code> that finds nothing inside <code>if grep -q ...; then</code> doesn't stop the script. So <code>set -e</code> is a safety net for unexpected failures, not a replacement for explicitly checking the ones you expect.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q11. How do you guarantee cleanup runs when a script exits?</div>
+  <div class="qa-answer">
+    <p>Use <code>trap 'cleanup-command' EXIT</code>. It registers a command that runs whenever the script exits: on normal completion, on an explicit <code>exit</code>, when <code>set -e</code> aborts it, or on a signal like Ctrl+C. The typical pattern registers <code>trap 'rm -f "$tmpfile"' EXIT</code> right next to <code>tmpfile=$(mktemp)</code>, so the temp file is removed however the script ends. Put it at the top, together with <code>set -euo pipefail</code>.</p>
+  </div>
+</div>
+` },
 
-]});
+  ]
+});

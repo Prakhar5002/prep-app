@@ -1,30 +1,45 @@
 window.PREP_SITE.registerTopic({
-  id: 'mc-components',
-  module: 'machine-coding',
-  title: 'Component Library',
-  estimatedReadTime: '50 min',
-  tags: ['component-library', 'design-system', 'tokens', 'compound-components', 'polymorphic', 'a11y', 'forwardRef', 'props-api', 'theming'],
+  id: "mc-components",
+  module: "machine-coding",
+  title: "Component Library",
+  estimatedReadTime: "50 min",
+  tags: ["component-library","design-system","tokens","compound-components","polymorphic","a11y","forwardRef","props-api","theming"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>A <strong>component library round</strong> asks you to design and build a reusable component (or a small set) the way it would live in a design system. The grader is watching <strong>props API design</strong>, <strong>composition</strong>, <strong>accessibility</strong>, <strong>theming</strong>, and <strong>edge-case fluency</strong>. The "build a Button" prompt sounds trivial — they're really asking you to demonstrate every choice that separates a hobby project from a shipped library.</p>
-<ul>
-  <li><strong>The 12 components that come up most:</strong> Button, Input, Select, Checkbox, Radio, Switch, Modal, Drawer, Tooltip, Toast, Tabs, Accordion. Plus theming primitives (tokens, CSS variables).</li>
-  <li><strong>The composition toolbox:</strong> compound components (<code>Tabs</code> + <code>Tabs.List</code>), polymorphic <code>as</code> prop, <code>forwardRef</code>, <code>cloneElement</code>, slots / render props, controlled-or-uncontrolled patterns.</li>
-  <li><strong>Default API rules:</strong> small surface, sensible defaults, escape hatches (<code>className</code>, <code>style</code>, <code>...rest</code>, <code>ref</code>), consistent naming (<code>onSomething</code>, <code>isLoading</code>, variants as enums).</li>
-  <li><strong>Always demo:</strong> variants, sizes, states (default, hover, active, disabled, focus, error), controlled + uncontrolled, dark mode, keyboard, screen reader.</li>
-  <li><strong>Always close with:</strong> "If I had more time I would…" — Storybook stories, visual regression, RTL tests, animation refinement, theming layer.</li>
-</ul>
-<p><strong>Mantra:</strong> "Sensible defaults. Composable parts. Escape hatches everywhere. Accessibility is non-negotiable."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A component-library round is "build a <strong>reusable</strong> X" — the grader scores props API, composition, accessibility, theming, and edge-case fluency, not whether the pixels render.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>"Build a reusable X"</strong> — the grader watches props API, composition, accessibility, theming, edge cases, and TypeScript.</li>
+    <li><strong>Props API rules:</strong> variants as string-literal unions (not booleans), sizes as enums, states as booleans (<code>isLoading</code>, <code>disabled</code>), events as <code>onSomething</code>, default everything, and always accept <code>className</code> / <code>style</code> / <code>...rest</code> / <code>ref</code> escape hatches.</li>
+    <li><strong>5 layers:</strong> theme provider → tokens/CSS variables → primitives → composed components → patterns/recipes; naming all five is the senior signal.</li>
+    <li><strong>Tokens before colours:</strong> components reference CSS custom properties, never raw values; dark mode = toggle <code>data-theme</code> on <code>&lt;html&gt;</code>, no re-render.</li>
+    <li><strong>Composition ladder:</strong> plain props → children → compound (shared context, e.g. <code>Tabs</code> + <code>Tabs.List</code>) → render props/slots → polymorphic <code>as</code> → headless + styled.</li>
+    <li><strong>Support controlled AND uncontrolled</strong> via a <code>useControllableState</code> hook (treat an <code>undefined</code> value as uncontrolled).</li>
+    <li><strong>forwardRef</strong> every DOM-mapped component and set <code>displayName</code> so <code>focus()</code>/measure work and DevTools reads right.</li>
+    <li><strong>Native semantics:</strong> a real <code>&lt;button&gt;</code> (never <code>div onClick</code>); extend <code>...HTMLAttributes</code> so consumers get native props free; Button must default <code>type="button"</code>.</li>
+    <li><strong>A11y per component:</strong> Modal = <code>role="dialog"</code> + <code>aria-modal</code> + focus trap + ESC + return focus; Tabs = tablist/tab/tabpanel + arrow keys; Input = <code>&lt;label&gt;</code> + <code>aria-describedby</code> + <code>aria-invalid</code>; <code>useId</code> for SSR-safe ids.</li>
+    <li><strong>TypeScript for correctness:</strong> discriminated unions forbid invalid prop combos; generics preserve the consumer's value type (<code>Select&lt;UserId&gt;</code>).</li>
+    <li><strong>Restraint:</strong> don't add a prop until two consumers need it; prefer children + composition over four content props; variant unions over prop explosion.</li>
+    <li><strong>Edge cases:</strong> SSR (no <code>window</code> in render, <code>useId</code>, portals mounted in effect), RTL (logical CSS properties), <code>prefers-reduced-motion</code>, <code>:focus-visible</code> not <code>outline:none</code>.</li>
+    <li><strong>Close with:</strong> Storybook stories, RTL behaviour tests, <code>jest-axe</code>, visual regression, a semantic token layer.</li>
+    <li><strong>The 12 that come up most:</strong> Button, Input, Select, Checkbox, Radio, Switch, Modal, Drawer, Tooltip, Toast, Tabs, Accordion — plus theming primitives (tokens, CSS variables). Toolbox also includes <code>cloneElement</code> and slots.</li>
+    <li><strong>Always demo:</strong> variants, sizes, states (default, hover, active, disabled, focus, error), controlled + uncontrolled, dark mode, keyboard, screen reader.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is prop explosion — shipping 30 boolean flags (<code>isPrimary</code>, <code>isSecondary</code>, <code>isDanger</code>) that allow contradictory combinations. The fix: collapse them into closed string-literal unions (<code>variant="primary|secondary|danger"</code>, <code>size="sm|md|lg"</code>), which makes refactors safe and invalid states unrepresentable.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Sensible defaults, composable parts, escape hatches everywhere, and accessibility is non-negotiable."</div>
+  <div class="revision-say">"Variants are string-literal unions, not boolean flags — it closes the set and makes refactors safe."</div>
+  <div class="revision-say">"Every component is controllable — <code>value</code> for controlled, <code>defaultValue</code> for uncontrolled — and it's a native element underneath, so keyboard, focus, and screen readers come free."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a component-library round?</h3>
 <p>A subset of machine coding where the prompt is "design and build a <em>reusable</em> X." The signal is in the word <em>reusable</em> — you're not solving one screen, you're shipping a piece that will be used across an org by other devs you've never met.</p>
 
@@ -73,12 +88,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>Behaviour ownership</td><td>Who owns the open / value state?</td><td>uncontrolled (component) or controlled (consumer) — best libraries support both</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The 5 layers of a component library</h3>
 <pre><code class="language-text">┌─────────────────────────────┐
 │  5. Patterns / Recipes      │  modal-on-form, drawer-on-mobile
@@ -175,12 +188,10 @@ window.PREP_SITE.registerTopic({
 }
 </code></pre>
 <p>Components reference tokens, never raw values. Theme switches by toggling <code>data-theme</code> on <code>&lt;html&gt;</code>.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Anatomy of a primitive component (Button)</h3>
 <pre><code class="language-typescript">type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize    = 'sm' | 'md' | 'lg';
@@ -441,12 +452,10 @@ export { ThemeProvider, useTheme } from './theme';
 // ...
 </code></pre>
 <p>Always export both runtime and types. Library consumers need the types for their own props plumbing.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Input with label, error, helper text</h3>
 <pre><code class="language-typescript">interface InputProps extends Omit&lt;React.InputHTMLAttributes&lt;HTMLInputElement&gt;, 'size'&gt; {
   label: string;
@@ -695,12 +704,11 @@ export const Switch = forwardRef&lt;HTMLButtonElement, SwitchProps&gt;(
 );
 Switch.displayName = 'Switch';
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>The reusability trap</h3>
 <p>Every prop you add is a contract you can't easily change. Defaults:</p>
 <ul>
@@ -779,12 +787,9 @@ Switch.displayName = 'Switch';
   <li>Polyfill on demand — don't ship for IE11 if no consumer needs it.</li>
   <li>Icons: ship as separate components, not a giant sprite.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common library bugs</h3>
 <ol>
   <li><strong>Hardcoded colours.</strong> Brand changes turn into 100-PR migrations. Use tokens.</li>
@@ -899,12 +904,10 @@ createPortal(node, container ?? document.body)
 // GOOD — slot for rendering
 &lt;Select options={items} renderOption={(o) =&gt; &lt;Avatar user={o.user} /&gt;} /&gt;
 </code></pre>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 60-minute component-library round playbook</h3>
 <table>
   <thead><tr><th>Phase</th><th>Time</th><th>Output</th></tr></thead>
@@ -1073,57 +1076,54 @@ createPortal(node, container ?? document.body)
   <li><strong>RN flavour:</strong> Pressable, FlatList, KeyboardAvoidingView, MMKV, Reanimated — same patterns, different primitives.</li>
 </ul>
 <p>Together: 60–90 minute live builds where you ship a working, reusable, accessible piece. Recognise the prompt → name the pattern → build the skeleton → demo all states → close with what's missing.</p>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A component-library round is "build a <strong>reusable</strong> X" — the grader scores props API, composition, accessibility, theming, and edge-case fluency, not whether the pixels render.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>"Build a reusable X"</strong> — the grader watches props API, composition, accessibility, theming, edge cases, and TypeScript.</li>
-    <li><strong>Props API rules:</strong> variants as string-literal unions (not booleans), sizes as enums, states as booleans (<code>isLoading</code>, <code>disabled</code>), events as <code>onSomething</code>, default everything, and always accept <code>className</code> / <code>style</code> / <code>...rest</code> / <code>ref</code> escape hatches.</li>
-    <li><strong>5 layers:</strong> theme provider → tokens/CSS variables → primitives → composed components → patterns/recipes; naming all five is the senior signal.</li>
-    <li><strong>Tokens before colours:</strong> components reference CSS custom properties, never raw values; dark mode = toggle <code>data-theme</code> on <code>&lt;html&gt;</code>, no re-render.</li>
-    <li><strong>Composition ladder:</strong> plain props → children → compound (shared context, e.g. <code>Tabs</code> + <code>Tabs.List</code>) → render props/slots → polymorphic <code>as</code> → headless + styled.</li>
-    <li><strong>Support controlled AND uncontrolled</strong> via a <code>useControllableState</code> hook (treat an <code>undefined</code> value as uncontrolled).</li>
-    <li><strong>forwardRef</strong> every DOM-mapped component and set <code>displayName</code> so <code>focus()</code>/measure work and DevTools reads right.</li>
-    <li><strong>Native semantics:</strong> a real <code>&lt;button&gt;</code> (never <code>div onClick</code>); extend <code>...HTMLAttributes</code> so consumers get native props free; Button must default <code>type="button"</code>.</li>
-    <li><strong>A11y per component:</strong> Modal = <code>role="dialog"</code> + <code>aria-modal</code> + focus trap + ESC + return focus; Tabs = tablist/tab/tabpanel + arrow keys; Input = <code>&lt;label&gt;</code> + <code>aria-describedby</code> + <code>aria-invalid</code>; <code>useId</code> for SSR-safe ids.</li>
-    <li><strong>TypeScript for correctness:</strong> discriminated unions forbid invalid prop combos; generics preserve the consumer's value type (<code>Select&lt;UserId&gt;</code>).</li>
-    <li><strong>Restraint:</strong> don't add a prop until two consumers need it; prefer children + composition over four content props; variant unions over prop explosion.</li>
-    <li><strong>Edge cases:</strong> SSR (no <code>window</code> in render, <code>useId</code>, portals mounted in effect), RTL (logical CSS properties), <code>prefers-reduced-motion</code>, <code>:focus-visible</code> not <code>outline:none</code>.</li>
-    <li><strong>Close with:</strong> Storybook stories, RTL behaviour tests, <code>jest-axe</code>, visual regression, a semantic token layer.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">The #1 mistake is prop explosion — shipping 30 boolean flags (<code>isPrimary</code>, <code>isSecondary</code>, <code>isDanger</code>) that allow contradictory combinations. The fix: collapse them into closed string-literal unions (<code>variant="primary|secondary|danger"</code>, <code>size="sm|md|lg"</code>), which makes refactors safe and invalid states unrepresentable.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Sensible defaults, composable parts, escape hatches everywhere, and accessibility is non-negotiable."</div>
-  <div class="revision-say">"Variants are string-literal unions, not boolean flags — it closes the set and makes refactors safe."</div>
-  <div class="revision-say">"Every component is controllable — <code>value</code> for controlled, <code>defaultValue</code> for uncontrolled — and it's a native element underneath, so keyboard, focus, and screen readers come free."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. You're asked to build a Button for a design system. How do you design its props API before writing JSX?</div>
+  <div class="qa-answer">
+    <p>Variants are closed string-literal unions (<code>variant="primary|secondary|danger"</code>, <code>size="sm|md|lg"</code>), not boolean flags, so invalid combinations are unrepresentable. States are booleans (<code>isLoading</code>, <code>isFullWidth</code>, <code>disabled</code>), events are <code>onSomething</code>, slots like <code>leftIcon</code> / <code>rightIcon</code> take nodes, and everything has a default so <code>&lt;Button&gt;Click&lt;/Button&gt;</code> just works. Extend <code>ButtonHTMLAttributes</code> so native props come free, and keep the escape hatches: <code>className</code> (applied last so consumer overrides win), <code>style</code>, <code>...rest</code>, and a forwarded <code>ref</code>. A loading button is <code>disabled || isLoading</code> with <code>aria-busy</code>, and it should default <code>type="button"</code>.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you design a Button's props API — variant/size unions, boolean states, slots, and the <code>className</code> / <code>style</code> / <code>...rest</code> / <code>ref</code> escape hatches — before typing any JSX?</li>
-    <li>Can you write the <code>useControllableState</code> hook so one component works controlled (<code>value</code>) and uncontrolled (<code>defaultValue</code>), treating <code>undefined</code> as uncontrolled?</li>
-    <li>Can you build a compound <code>Tabs</code> with shared context (<code>Tabs.List</code> / <code>Tabs.Trigger</code> / <code>Tabs.Panel</code>) and the correct <code>tablist</code>/<code>tab</code>/<code>tabpanel</code> roles plus arrow-key nav?</li>
-    <li>Can you build a Modal with a portal, focus trap, ESC-to-close, scroll lock, and focus returned to the trigger — using <code>forwardRef</code> and <code>displayName</code> where they matter?</li>
-    <li>Can you set up a token layer of CSS custom properties and switch dark mode by toggling <code>data-theme</code> on <code>&lt;html&gt;</code> without a re-render?</li>
-    <li>Can you name the SSR, RTL, and a11y edge cases — <code>useId</code>, no <code>window</code> in render, logical CSS properties, <code>:focus-visible</code> — and close with Storybook, RTL tests, and <code>jest-axe</code>?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. How do you make one component work both controlled and uncontrolled?</div>
+  <div class="qa-answer">
+    <p>Use a <code>useControllableState</code> hook. It is controlled when <code>value !== undefined</code>, otherwise it keeps internal state seeded from <code>defaultValue</code>; the setter only updates internal state when uncontrolled, and always calls <code>onChange</code>. Treating <code>undefined</code> (not <code>null</code>) as uncontrolled avoids <code>value={null}</code> silently reading as "controlled but blank". Don't switch modes mid-life: warn, or pick the mode at mount.</p>
+<pre><code class="language-ts">function useControllableState&lt;T&gt;({ value, defaultValue, onChange }) {
+  const [internal, setInternal] = useState(defaultValue);
+  const isControlled = value !== undefined;
+  const current = isControlled ? value : internal;
+  const set = (next: T) =&gt; {
+    if (!isControlled) setInternal(next);
+    onChange?.(next);
+  };
+  return [current, set];
+}</code></pre>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q3. Build a compound Tabs component. How is it wired and what makes it accessible?</div>
+  <div class="qa-answer">
+    <p><code>Tabs</code> holds the value via <code>useControllableState</code> and provides <code>{ value, setValue }</code> through context. <code>Tabs.List</code> renders <code>role="tablist"</code>; <code>Tabs.Trigger</code> is a <code>&lt;button role="tab"&gt;</code> with <code>aria-selected</code> and <code>tabIndex</code> of 0 only when selected (-1 otherwise) so only the active tab is in the tab order, with arrow keys moving between tabs; <code>Tabs.Panel</code> renders <code>role="tabpanel"</code> only for the active value. Compound beats a one-shot <code>tabs={[]}</code> prop because consumers control order, structure and extra elements between parts.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Build a library-quality Modal. What goes into it?</div>
+  <div class="qa-answer">
+    <p>Make it controllable (<code>isOpen</code> / <code>defaultOpen</code> / <code>onOpenChange</code> via <code>useControllableState</code>) and render through <code>createPortal</code> to <code>document.body</code>. The dialog has <code>role="dialog"</code>, <code>aria-modal="true"</code>, <code>aria-label</code> from a required title, and <code>tabIndex={-1}</code>. On open, an effect stores <code>document.activeElement</code> as the trigger, focuses the dialog, adds an ESC <code>keydown</code> listener and sets body <code>overflow: hidden</code>; its cleanup removes the listener, restores scroll and refocuses the trigger. Backdrop click closes (the dialog stops propagation). Wrap DOM-mapped components in <code>forwardRef</code> and set <code>displayName</code>, otherwise DevTools shows "ForwardRef"; for a composite like Modal, forward the ref to the dialog.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. How do you set up theming so dark mode switches without a re-render?</div>
+  <div class="qa-answer">
+    <p>Define a token layer of CSS custom properties on <code>:root</code> (<code>--color-primary-500</code>, <code>--color-text</code>, <code>--color-bg</code>, spacing, radius) and redefine them under <code>[data-theme="dark"]</code>. Components reference tokens, never raw values, so a brand redesign is one change instead of 50 PRs. Switching theme is just toggling <code>data-theme</code> on <code>&lt;html&gt;</code>: the browser restyles, React doesn't re-render. Set the attribute from an inline script before React boots to avoid a hydration flash, default to <code>prefers-color-scheme</code>, and let the user override (persisted, e.g. in localStorage).</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. What SSR, RTL and accessibility edge cases do you mention, and how do you close the round?</div>
+  <div class="qa-answer">
+    <p><strong>SSR:</strong> never touch <code>window</code> / <code>document</code> in render (use an effect or a <code>typeof window</code> guard), use <code>useId</code> for ids that match between server and client, and mount portals in an effect (render null on the server). <strong>RTL:</strong> logical CSS properties (<code>margin-inline-start</code> over <code>margin-left</code>), mirrored icons via a <code>[dir="rtl"]</code> selector, and <code>Intl</code> for dates and numbers. <strong>A11y:</strong> <code>:focus-visible</code> instead of <code>outline: none</code>, errors announced with <code>role="alert"</code> and tied via <code>aria-describedby</code>, <code>prefers-reduced-motion</code> gating. Close with Storybook stories for every variant, RTL behaviour tests, <code>jest-axe</code> in CI, and visual regression.</p>
+  </div>
+</div>
+` },
+
   ]
 });

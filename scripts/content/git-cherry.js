@@ -1,33 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'git-cherry',
-  module: 'git',
-  title: 'Cherry-Pick',
-  estimatedReadTime: '30 min',
-  tags: ['git', 'cherry-pick', 'hotfix', 'backport', 'release-branch', 'workflow'],
+  id: "git-cherry",
+  module: "git",
+  title: "Cherry-Pick",
+  estimatedReadTime: "30 min",
+  tags: ["git","cherry-pick","hotfix","backport","release-branch","workflow"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Cherry-pick takes a commit (or range of commits) from one branch and applies it to another. It's the surgical tool for "I want this specific change over there." Senior engineers use it constantly: hotfixing release branches, propagating critical fixes, salvaging work from abandoned branches, building release trains.</p>
-<ul>
-  <li><strong>Cherry-pick replays a commit's diff</strong> on top of the current branch and creates a new commit with a new SHA but the same content (and usually message).</li>
-  <li><strong>Use case 1 (most common):</strong> hotfix on main → cherry-pick to active release branch (mobile v3.5 in production while main is on v3.6 dev).</li>
-  <li><strong>Use case 2:</strong> teammate's PR has a fix you need; cherry-pick before their PR merges.</li>
-  <li><strong>Use case 3:</strong> rescue a commit from an abandoned branch.</li>
-  <li><strong>Mark cherry-picked commits</strong> with <code>-x</code> to add a "(cherry picked from commit ...)" line; aids future archeology.</li>
-  <li><strong>Cherry-picking creates duplicate work,</strong> not branch reconciliation. The picked commit and its source remain separate; if you later merge / rebase, Git may detect duplication or may leave both as separate commits.</li>
-  <li><strong>Conflicts in cherry-pick are common</strong> when source and target branches have diverged significantly.</li>
-  <li><strong>Mobile / RN context:</strong> cherry-pick is your primary hotfix workflow when you have a release branch in production and main on a newer dev cycle.</li>
-</ul>
-<p><strong>Mantra:</strong> "Cherry-pick is surgical. Use <code>-x</code> to record provenance. Resolve conflicts carefully. Test after picking. Don't cherry-pick the same fix twice."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Cherry-pick is surgical: it replays one commit's diff onto the current branch as a new commit with a new SHA</strong> — the canonical tool for backporting a single fix to a release branch.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Cherry-pick applies a commit's <em>diff</em> (commit minus its parent) onto current HEAD</strong> and makes a new commit — same content/message, <strong>new SHA</strong>. It's about the diff, not absolute file content.</li>
+    <li><strong>Canonical use case: the mobile hotfix.</strong> Production on v3.5 while main is on v3.6 dev — fix on main, then cherry-pick to <code>release/v3.5</code>, tag, ship.</li>
+    <li>Other uses: <strong>grab a fix from a teammate's open PR before it merges</strong>, <strong>rescue a commit from an abandoned branch</strong>, and building release trains.</li>
+    <li><strong>Always use <code>-x</code> for cross-branch picks</strong> — it appends "(cherry picked from commit &lt;sha&gt;)" so future engineers can trace provenance and detect duplicates.</li>
+    <li><strong>Cherry-pick duplicates work; it doesn't reconcile branches.</strong> The pick and its source stay separate commits — this is the "shadow" problem for later merges and bisects.</li>
+    <li><strong>Test after every pick</strong> — a re-applied diff plus different surrounding code can behave differently than the original; run the full suite + manual verification, then push.</li>
+    <li><strong>Conflicts are common when branches diverged</strong>: resolve with <code>git status</code> → edit → <code>git add</code> → <code>git cherry-pick --continue</code>; bail with <code>--abort</code>, skip with <code>--skip</code>.</li>
+    <li><strong>The critical conflict question: does the bug even exist in the target?</strong> If the target already has a different fix, blindly picking can <em>regress</em> it — sometimes the right call is "don't pick."</li>
+    <li>Range picks: <code>A..B</code> is exclusive of A; <code>A^..B</code> includes A. Each commit replays and may conflict in turn.</li>
+    <li><strong>Cherry-picking a merge commit needs <code>-m 1</code></strong> (or <code>-m 2</code>) to choose a parent — Git refuses without it; often cleaner to pick the individual commits instead.</li>
+    <li><strong>Don't cherry-pick what should be merged</strong> — 10+ sequential picks from one branch means you really want a merge.</li>
+    <li>Undo: <code>git reset --hard HEAD~1</code> before push; <code>git revert</code> after it's shared. Avoid double-picking — check <code>git log target --grep="cherry picked from &lt;sha&gt;"</code> first.</li>
+    <li><strong><code>git cherry</code> (no hyphen) is a query tool, not the action</strong> — it lists commits in one branch not yet equivalent in another (<code>+</code> = missing, <code>-</code> = already present).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Blindly resolving a cherry-pick conflict</strong> ("use ours / use theirs") or picking a fix into a branch where the bug doesn't apply — a silent regression. Fix: understand what the target's code does, confirm the bug actually exists there, test after picking, and be willing to conclude "no pick needed" and document why.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Cherry-pick replays one commit's diff onto the current branch as a new commit — surgical, for backporting a single fix to a release branch."</div>
+  <div class="revision-say">"I always use <code>-x</code> to record provenance, test after every pick, and check the bug actually exists in the target before resolving conflicts mechanically."</div>
+  <div class="revision-say">"If I'm picking many commits from one branch I'd merge instead; and I'd pick a merge commit's individual commits rather than wrestle with <code>-m 1</code>."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What cherry-pick does</h3>
 <p>Mechanically, <code>git cherry-pick &lt;sha&gt;</code>:</p>
 <ol>
@@ -111,12 +121,10 @@ Process:
     <tr><td>Surprised by conflicts</td><td>Anticipate: "main has refactored this code, conflict expected"</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "diff replay" model</h3>
 <p>Cherry-pick is essentially: "Compute commit X's diff (X minus its parent). Apply that diff to current HEAD. Make a new commit." Internalize:</p>
 <ul>
@@ -199,12 +207,10 @@ git cherry-pick A^..B   # picks commits A through B (inclusive both)</code></pre
   <li>Manual QA: likely needed for hotfixes.</li>
   <li>Smoke tests: critical for release branches before tagging.</li>
 </ul>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Basic cherry-pick</h3>
 <pre><code># Pick a single commit:
 git cherry-pick &lt;sha&gt;
@@ -408,12 +414,10 @@ git cherry release/v3.5 main
   cpc = cherry-pick --continue
   cpa = cherry-pick --abort
   picked = log --grep="cherry picked from" --oneline</code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🔍 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Mobile hotfix to release branch</h3>
 <p><strong>Setup:</strong> v3.5.0 in App Store. Crash report shows iOS 16 users hitting NPE on logout. Fix is small.</p>
 
@@ -655,12 +659,11 @@ Approved-by: [release manager]
 (cherry picked from commit abc1234)"
 
 # Save. Commit happens with new message.</code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Cherry-picking a commit that depends on earlier commits</h3>
 <p>If commit B builds on commit A, cherry-picking only B may fail or produce broken code:</p>
 <ul>
@@ -803,12 +806,9 @@ done
   <li>Verify the dep exists in target's allowed version range.</li>
   <li>Test on both iOS and Android since dep behavior may differ.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern: cherry-pick without -x</h3>
 <p><strong>Looks like:</strong> Pick commit; don't record source.</p>
 <p><strong>Why bad:</strong> Future archeology can't trace the pick. Duplicate-pick prevention harder.</p>
@@ -883,12 +883,10 @@ done
 <p><strong>Looks like:</strong> Engineer doesn't understand what cherry-pick does; uses it for things copy-paste would handle (e.g., copying code patterns within same branch).</p>
 <p><strong>Why bad:</strong> Cherry-pick is for moving commits across branches; not for code re-use.</p>
 <p><strong>Fix:</strong> Understand the model. For code re-use, use abstraction / shared modules.</p>
-`
-    },
-    {
-      id: 'interview',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>"Explain cherry-pick"</h3>
 <p>Often follows rebase/merge questions. Strong answer connects to use cases.</p>
 <pre><code>"Cherry-pick takes a specific commit from one branch and applies
@@ -1069,47 +1067,14 @@ and follows it consistently."</code></pre>
 <h3>The 30-second mantra</h3>
 <p><em>"Cherry-pick is surgical: one commit's diff applied to current branch. Use -x to record provenance. Test after every pick. Don't pick what should be merged. Document which branches got the pick. The mobile hotfix workflow lives on cherry-pick."</em></p>
 <p>Cherry-pick is one of those skills you don't appreciate until your first urgent production hotfix at 11pm on a Friday. Master it now; it's calmer that way.</p>
-`
-    },
-    { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Cherry-pick is surgical: it replays one commit's diff onto the current branch as a new commit with a new SHA</strong> — the canonical tool for backporting a single fix to a release branch.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Cherry-pick applies a commit's <em>diff</em> (commit minus its parent) onto current HEAD</strong> and makes a new commit — same content/message, <strong>new SHA</strong>. It's about the diff, not absolute file content.</li>
-    <li><strong>Canonical use case: the mobile hotfix.</strong> Production on v3.5 while main is on v3.6 dev — fix on main, then cherry-pick to <code>release/v3.5</code>, tag, ship.</li>
-    <li><strong>Always use <code>-x</code> for cross-branch picks</strong> — it appends "(cherry picked from commit &lt;sha&gt;)" so future engineers can trace provenance and detect duplicates.</li>
-    <li><strong>Cherry-pick duplicates work; it doesn't reconcile branches.</strong> The pick and its source stay separate commits — this is the "shadow" problem for later merges and bisects.</li>
-    <li><strong>Test after every pick</strong> — a re-applied diff plus different surrounding code can behave differently than the original; run the full suite + manual verification, then push.</li>
-    <li><strong>Conflicts are common when branches diverged</strong>: resolve with <code>git status</code> → edit → <code>git add</code> → <code>git cherry-pick --continue</code>; bail with <code>--abort</code>, skip with <code>--skip</code>.</li>
-    <li><strong>The critical conflict question: does the bug even exist in the target?</strong> If the target already has a different fix, blindly picking can <em>regress</em> it — sometimes the right call is "don't pick."</li>
-    <li>Range picks: <code>A..B</code> is exclusive of A; <code>A^..B</code> includes A. Each commit replays and may conflict in turn.</li>
-    <li><strong>Cherry-picking a merge commit needs <code>-m 1</code></strong> (or <code>-m 2</code>) to choose a parent — Git refuses without it; often cleaner to pick the individual commits instead.</li>
-    <li><strong>Don't cherry-pick what should be merged</strong> — 10+ sequential picks from one branch means you really want a merge.</li>
-    <li>Undo: <code>git reset --hard HEAD~1</code> before push; <code>git revert</code> after it's shared. Avoid double-picking — check <code>git log target --grep="cherry picked from &lt;sha&gt;"</code> first.</li>
-    <li><strong><code>git cherry</code> (no hyphen) is a query tool, not the action</strong> — it lists commits in one branch not yet equivalent in another (<code>+</code> = missing, <code>-</code> = already present).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Blindly resolving a cherry-pick conflict</strong> ("use ours / use theirs") or picking a fix into a branch where the bug doesn't apply — a silent regression. Fix: understand what the target's code does, confirm the bug actually exists there, test after picking, and be willing to conclude "no pick needed" and document why.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Cherry-pick replays one commit's diff onto the current branch as a new commit — surgical, for backporting a single fix to a release branch."</div>
-  <div class="revision-say">"I always use <code>-x</code> to record provenance, test after every pick, and check the bug actually exists in the target before resolving conflicts mechanically."</div>
-  <div class="revision-say">"If I'm picking many commits from one branch I'd merge instead; and I'd pick a merge commit's individual commits rather than wrestle with <code>-m 1</code>."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. How does cherry-pick differ from both merge and rebase, and when do you choose each?</div>
+  <div class="qa-answer">
+    <p>Merge brings in all of a branch's commits since divergence and creates one merge commit, so history is branchy. Use it to integrate a whole branch. Rebase replays your current branch onto another branch's history, creating N new commits that replace N old ones, so history is linear. Use it to catch your local work up with main. Cherry-pick applies one specific commit (or a range) as one new commit per pick, so history is linear but the picked change now exists twice. Use it for surgical "just this one thing" cases like a release-branch hotfix. That duplication is the "shadow" problem: a later merge, bisect, or cherry-pick may treat the two copies as unrelated, so if you'd be picking many commits from one branch, merge instead.</p>
+  </div>
 </div>
-`},
-    { id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain what cherry-pick does mechanically, and why the new commit has a new SHA?</li>
-    <li>Can you walk through a release-branch hotfix workflow using cherry-pick?</li>
-    <li>Can you say what <code>-x</code> does and why provenance matters?</li>
-    <li>Can you explain how cherry-pick differs from merge and rebase, and when to choose each?</li>
-    <li>Can you handle a cherry-pick conflict and know when the right answer is "don't pick"?</li>
-    <li>Can you distinguish <code>git cherry-pick</code> from <code>git cherry</code>, and undo a pick before vs. after push?</li>
-  </ul>
-</div>
-`}
+` },
+
   ]
 });

@@ -1,25 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'redux-advanced-testing',
-  module: 'redux',
-  title: 'Advanced Patterns & Testing',
-  estimatedReadTime: '35 min',
-  tags: ['redux', 'testing', 'performance', 'normalization', 'code-splitting', 'migration'],
+  id: "redux-advanced-testing",
+  module: "redux",
+  title: "Advanced Patterns & Testing",
+  estimatedReadTime: "35 min",
+  tags: ["redux","testing","performance","normalization","code-splitting","migration"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>This topic covers the patterns that separate "I've used Redux" from "I've maintained Redux at scale": <strong>normalizing</strong> state so nested/duplicated data doesn't rot, keeping <strong>selectors fast</strong> so a growing store doesn't mean growing re-renders, <strong>splitting reducers</strong> so a big app's store isn't one monolithic bundle, <strong>migrating</strong> a legacy <code>connect()</code>-and-switch-statements codebase without a rewrite, and <strong>testing</strong> every layer of a Redux app with confidence.</p>
-<ul>
-  <li><strong>Normalization:</strong> store entities keyed by id (<code>byId</code>/<code>allIds</code>, or RTK's <code>createEntityAdapter</code> equivalent) instead of nested/duplicated objects — dedupe, O(1) lookups, one place to update.</li>
-  <li><strong>Selector performance:</strong> <code>useSelector</code> re-runs your selector on <em>every</em> dispatched action, but only re-renders if the result is <code>!==</code> the last one. Returning a fresh array/object each call defeats that check — memoize with <code>createSelector</code>, or compare with <code>shallowEqual</code>.</li>
-  <li><strong>Code-splitting reducers:</strong> don't bundle every feature's reducer into the initial store. Inject reducers on demand with RTK's <code>combineSlices().inject()</code>, or the classic hand-rolled <code>reducerManager</code> pattern.</li>
-  <li><strong>Migrating legacy Redux:</strong> <code>connect()</code> → hooks, and action-constants-plus-switch-reducers → <code>createSlice</code>, both done feature-by-feature — old and new code can coexist against the same store during the migration.</li>
-  <li><strong>Testing:</strong> reducers/slices are pure functions — test them directly, no mocking. Thunks — mock the API, assert what got dispatched. RTK Query — mock the network with MSW, not the hook. Components — render against a <em>real</em> (but disposable, per-test) store via a <code>renderWithProviders</code> helper.</li>
-</ul>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Maintaining Redux at scale is one move applied everywhere — <strong>keep reference identity stable when nothing meaningfully changed</strong> — so <code>===</code> comparisons stay meaningful: normalize data, memoize selectors, split reducers, migrate incrementally, and test each layer where it's cheapest.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Normalize like a database table:</strong> store each entity once in a <code>byId</code>/<code>allIds</code> shape (RTK's <code>ids</code>/<code>entities</code> via <code>createEntityAdapter</code>) and reference relationships by id (a foreign key), never by copying the object — gives O(1) lookup and one place to update.</li>
+    <li><strong><code>useSelector</code> is a two-step gate:</strong> it re-runs your selector on <em>every</em> dispatched action (unavoidable), but only re-renders if the result is <code>!==</code> the previous one (reference equality by default).</li>
+    <li><strong>A selector that builds a fresh array/object each call fails that check every time</strong> — even with identical contents — causing re-render storms across the app.</li>
+    <li><strong>Fix selectors with <code>createSelector</code></strong> (memoizes last inputs/result; Reselect 5 defaults to <code>weakMapMemoize</code>, caching per-argument and GC-ing via WeakMap), or pass <code>shallowEqual</code> as <code>useSelector</code>'s 2nd arg for one-off inline objects. Best of all: derive primitives, which compare by value.</li>
+    <li><strong>Code-split reducers</strong> so features aren't all in the initial bundle: <code>combineSlices().inject()</code> (RTK 2.x) or the classic hand-rolled <code>reducerManager</code>. Gotcha: <code>.inject()</code> doesn't dispatch, so the new slice's state only appears after the next action.</li>
+    <li><strong>Migrate legacy Redux incrementally</strong> — old switch reducers and <code>createSlice</code> reducers are both <code>(state, action) =&gt; newState</code>, so they coexist in one combined reducer; <code>connect()</code> and hooks coexist in one tree. Convert feature-by-feature, then delete old constants once nothing reads them.</li>
+    <li><strong>Watch action-type strings during migration</strong> — sagas/analytics/logging may match literal strings; <code>createSlice</code> generates <code>name/reducerName</code>, so name things to reproduce the old string if needed.</li>
+    <li><strong>Test by layer:</strong> reducers/slices are pure → call directly, no mocking; thunks → mock the API, assert dispatched actions; RTK Query → mock the network with MSW (not the hook); components → render against a real but disposable per-test store.</li>
+    <li><strong>Never mock <code>useSelector</code>/<code>useDispatch</code></strong> — a <code>renderWithProviders</code> helper wrapping RTL's <code>render</code> in a fresh <code>&lt;Provider&gt;</code> (with optional <code>preloadedState</code>) tests the component's real wiring.</li>
+    <li><strong>Over-normalizing hurts too:</strong> a static 5-item list or write-once config gets nothing from <code>byId</code>/<code>allIds</code> but boilerplate — normalize only data that behaves like a table (added/updated/removed by id, referenced from many places).</li>
+    <li>Migrating legacy Redux has two tracks: <code>connect()</code> → hooks, and action-constants-plus-switch-reducers → <code>createSlice</code>, both done feature-by-feature against the same store.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Testing against the app's real singleton store</strong> (importing <code>store</code> from <code>app/store</code>) instead of a fresh one per test. Every test then shares state, test order starts to matter, tests pass alone but fail in a full run, and RTK Query's cache leaks one test's mocked response into the next. Fix: build a fresh store per test (<code>setupStore</code>/<code>renderWithProviders</code>), or reset the cross-dispatch state (<code>store.dispatch(api.util.resetApiState())</code>) in <code>beforeEach</code>. (Sibling trap: a selector returning a new array every call → re-render storm; memoize with <code>createSelector</code>.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Every scaling pattern is the same idea — keep reference identity stable when nothing changed — so normalization, memoized selectors, and useSelector's === check all reinforce each other."</div>
+  <div class="revision-say">"useSelector re-runs on every action but only re-renders on a reference change, so a selector that builds a new array each call causes re-render storms — I fix it with createSelector or shallowEqual."</div>
+  <div class="revision-say">"I test each Redux layer where it's cheapest: reducers as pure functions, thunks by mocking the API, RTK Query by mocking the network with MSW, and components against a fresh per-test store — never by mocking useSelector."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The problem: nested, duplicated state</h3>
 <p>Imagine a store shaped like the API response you fetched it from:</p>
 <pre><code class="language-js">{
@@ -46,10 +62,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">🧠 One-liner</div>
   <p>Every pattern in this topic is really the same move applied in a different place: keep the thing that changes often (data, code, tests) small, isolated, and provably correct on its own — instead of one big tangled blob you can only verify by running the whole app.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Normalized shape: a database table, not a nested document</h3>
 <p>Think of normalized state the way you'd think of relational database tables, not nested JSON:</p>
 <pre><code class="language-js">{
@@ -91,10 +107,10 @@ Component       →  reads/writes the store    →  render with a REAL, disposab
   <div class="callout-title">🔥 Key insight</div>
   <p>Every pattern here has the same shape: <strong>keep reference identity stable when nothing meaningfully changed.</strong> Normalization keeps entity references stable across updates to unrelated entities. Memoized selectors keep derived-data references stable across unrelated dispatches. Both exist so <code>===</code> comparisons — the ones <code>useSelector</code> relies on — stay meaningful.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Normalization, plus the <code>createEntityAdapter</code> recap</h3>
 <p>Hand-rolling the normalized shape from the mental model looks like this in a reducer:</p>
 <pre><code class="language-js">function postsReducer(state = { byId: {}, allIds: [] }, action) {
@@ -268,7 +284,7 @@ function Counter() {
   <li><strong>Don't rewrite the store.</strong> Old switch reducers and new <code>createSlice</code> reducers are both just <code>(state, action) => newState</code> functions — they can sit side by side in the same <code>combineReducers</code>/<code>combineSlices</code> call indefinitely.</li>
   <li><strong>Migrate one feature at a time</strong>, starting with whichever slice changes most often or is best covered by tests — that's where the payoff (less boilerplate, Immer-safe updates) is highest soonest.</li>
   <li><strong><code>connect()</code> and hooks can coexist</strong> in the same component tree during the migration, since both ultimately read from and dispatch to the same store. Convert component-by-component, not tree-by-tree.</li>
-  <li><strong>Watch action-type strings if other code depends on them</strong> (sagas, analytics middleware, logging matched on literal strings). <code>createSlice</code> generates types as <code>${'${name}/${reducerName}'}</code> — name the slice and reducer to reproduce the old string if anything outside the slice still matches on it.</li>
+  <li><strong>Watch action-type strings if other code depends on them</strong> (sagas, analytics middleware, logging matched on literal strings). <code>createSlice</code> generates types as <code>\${name}/\${reducerName}</code> — name the slice and reducer to reproduce the old string if anything outside the slice still matches on it.</li>
   <li><strong>Delete the old reducer only once nothing dispatches through it or reads its slice</strong> — grep for the old action constants and the old state key before removing them.</li>
 </ul>
 
@@ -306,10 +322,10 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());</code></pre>
 <p>If a test suite reuses one store instance across tests, reset RTK Query's cache between tests so one test's cached response can't leak into the next: <code>store.dispatch(petApi.util.resetApiState())</code>.</p>
 <p><strong>Components</strong> that read/dispatch to the store need a <em>real</em> store in the test — mocking <code>useSelector</code>/<code>useDispatch</code> means you're no longer testing the component's actual wiring. The standard approach is a <code>renderWithProviders</code> helper that wraps React Testing Library's <code>render</code> in a fresh <code>&lt;Provider&gt;</code> per test (full code in the next section).</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — <code>renderWithProviders</code> test helper</h3>
 <p>A reusable helper that creates a fresh store per test (optionally seeded with <code>preloadedState</code>) and wraps the component under test in a real <code>&lt;Provider&gt;</code>:</p>
 <pre><code class="language-jsx">// test-utils.jsx
@@ -415,10 +431,11 @@ test('starting with a preloaded todo renders it immediately', () => {
   expect(screen.getByText('Existing')).toBeInTheDocument();
 });</code></pre>
 <p>Notice what none of these tests do: mock <code>useSelector</code>, mock <code>useDispatch</code>, or mock the reducer. The component test above runs the <em>real</em> reducer, inside a <em>real</em> (if disposable) store — the only thing swapped out anywhere is the network layer (the fake <code>api</code> object in the thunk test, MSW for RTK Query).</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>A selector that returns a new array every call</h3>
 <pre><code class="language-js">// ❌ every call allocates a new array, even when state.todos didn't change
 const selectCompletedTodos = (state) => state.todos.filter((t) => t.completed);</code></pre>
@@ -436,10 +453,10 @@ test('adds a todo', () => {
 
 <h3>Over-normalizing state that's small and never updated by id</h3>
 <p>Normalization earns its keep when entities are added, updated, or removed individually and referenced from more than one place — user profiles, posts, cart line items. A static list of 5 dropdown options, or a one-shot config object fetched once and never patched by id, gets nothing out of a <code>byId</code>/<code>allIds</code> shape except extra selectors and adapter boilerplate to maintain. Normalize entities that behave like a database table; leave small, static, or write-once data as a plain array or object.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">Why normalize state instead of nesting it the way the API returns it?</div>
 <div class="qa-a">
@@ -474,46 +491,20 @@ test('adds a todo', () => {
 <p>Match the test to the layer. <strong>Reducers/slices</strong> are pure functions — call <code>reducer(state, action)</code> directly and assert on the return value, no mocking needed. <strong>Thunks</strong> orchestrate dispatches around async work — mock the API they call, then assert what got dispatched and in what order. <strong>RTK Query</strong> endpoints are best tested by mocking the network itself with something like Mock Service Worker, rather than mocking the generated hook, so the real caching/request logic still runs. <strong>Components</strong> that read from or dispatch to the store need a real (but fresh, per-test) store — a <code>renderWithProviders</code> helper that wraps React Testing Library's <code>render</code> in a <code>&lt;Provider store={setupStore(preloadedState)}&gt;</code> is the standard pattern, so the component's actual Redux wiring runs unmocked.</p>
 </div>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Maintaining Redux at scale is one move applied everywhere — <strong>keep reference identity stable when nothing meaningfully changed</strong> — so <code>===</code> comparisons stay meaningful: normalize data, memoize selectors, split reducers, migrate incrementally, and test each layer where it's cheapest.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Normalize like a database table:</strong> store each entity once in a <code>byId</code>/<code>allIds</code> shape (RTK's <code>ids</code>/<code>entities</code> via <code>createEntityAdapter</code>) and reference relationships by id (a foreign key), never by copying the object — gives O(1) lookup and one place to update.</li>
-    <li><strong><code>useSelector</code> is a two-step gate:</strong> it re-runs your selector on <em>every</em> dispatched action (unavoidable), but only re-renders if the result is <code>!==</code> the previous one (reference equality by default).</li>
-    <li><strong>A selector that builds a fresh array/object each call fails that check every time</strong> — even with identical contents — causing re-render storms across the app.</li>
-    <li><strong>Fix selectors with <code>createSelector</code></strong> (memoizes last inputs/result; Reselect 5 defaults to <code>weakMapMemoize</code>, caching per-argument and GC-ing via WeakMap), or pass <code>shallowEqual</code> as <code>useSelector</code>'s 2nd arg for one-off inline objects. Best of all: derive primitives, which compare by value.</li>
-    <li><strong>Code-split reducers</strong> so features aren't all in the initial bundle: <code>combineSlices().inject()</code> (RTK 2.x) or the classic hand-rolled <code>reducerManager</code>. Gotcha: <code>.inject()</code> doesn't dispatch, so the new slice's state only appears after the next action.</li>
-    <li><strong>Migrate legacy Redux incrementally</strong> — old switch reducers and <code>createSlice</code> reducers are both <code>(state, action) =&gt; newState</code>, so they coexist in one combined reducer; <code>connect()</code> and hooks coexist in one tree. Convert feature-by-feature, then delete old constants once nothing reads them.</li>
-    <li><strong>Watch action-type strings during migration</strong> — sagas/analytics/logging may match literal strings; <code>createSlice</code> generates <code>name/reducerName</code>, so name things to reproduce the old string if needed.</li>
-    <li><strong>Test by layer:</strong> reducers/slices are pure → call directly, no mocking; thunks → mock the API, assert dispatched actions; RTK Query → mock the network with MSW (not the hook); components → render against a real but disposable per-test store.</li>
-    <li><strong>Never mock <code>useSelector</code>/<code>useDispatch</code></strong> — a <code>renderWithProviders</code> helper wrapping RTL's <code>render</code> in a fresh <code>&lt;Provider&gt;</code> (with optional <code>preloadedState</code>) tests the component's real wiring.</li>
-    <li><strong>Over-normalizing hurts too:</strong> a static 5-item list or write-once config gets nothing from <code>byId</code>/<code>allIds</code> but boilerplate — normalize only data that behaves like a table (added/updated/removed by id, referenced from many places).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Testing against the app's real singleton store</strong> (importing <code>store</code> from <code>app/store</code>) instead of a fresh one per test. Every test then shares state, test order starts to matter, tests pass alone but fail in a full run, and RTK Query's cache leaks one test's mocked response into the next. Fix: build a fresh store per test (<code>setupStore</code>/<code>renderWithProviders</code>), or reset the cross-dispatch state (<code>store.dispatch(api.util.resetApiState())</code>) in <code>beforeEach</code>. (Sibling trap: a selector returning a new array every call → re-render storm; memoize with <code>createSelector</code>.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Every scaling pattern is the same idea — keep reference identity stable when nothing changed — so normalization, memoized selectors, and useSelector's === check all reinforce each other."</div>
-  <div class="revision-say">"useSelector re-runs on every action but only re-renders on a reference change, so a selector that builds a new array each call causes re-render storms — I fix it with createSelector or shallowEqual."</div>
-  <div class="revision-say">"I test each Redux layer where it's cheapest: reducers as pure functions, thunks by mocking the API, RTK Query by mocking the network with MSW, and components against a fresh per-test store — never by mocking useSelector."</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. What is the one idea behind every Redux scaling pattern?</div>
+  <div class="qa-answer">
+    <p>Keep reference identity stable when nothing meaningfully changed. Normalization keeps entity references stable across updates to unrelated entities, and memoized selectors keep derived-data references stable across unrelated dispatches. Both exist so the <code>===</code> comparisons that <code>useSelector</code> relies on stay meaningful: it re-runs every selector on every action but only re-renders when the result's reference changes.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the one idea behind every scaling pattern — keep reference identity stable when nothing changed?</li>
-    <li>Can you explain why <code>useSelector</code> re-runs on every action but re-renders only on a reference change?</li>
-    <li>Can you fix a selector that builds a new array each call and causes a re-render storm?</li>
-    <li>Can you explain why testing against the app’s singleton store makes test order matter?</li>
-    <li>Can you build a fresh store per test and reset RTK Query’s cache between tests?</li>
-    <li>Can you say where to test each Redux layer most cheaply (reducers, thunks, RTK Query, components)?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q7. Why does testing against the app's singleton store make test order matter, and how do you fix it?</div>
+  <div class="qa-answer">
+    <p>If tests import the real store from <code>app/store</code>, every test shares state with every other test that touches it: test order starts to matter, tests pass alone but fail in a full run, and RTK Query's cache carries one test's mocked network response into the next test's assertions. Build a fresh store per test with the <code>setupStore</code>/<code>renderWithProviders</code> pattern. If a store genuinely must be shared, reset the pieces that carry state across dispatches in a <code>beforeEach</code>, for example <code>store.dispatch(api.util.resetApiState())</code> for RTK Query.</p>
+  </div>
 </div>
-`}
+` },
 
-]});
+  ]
+});

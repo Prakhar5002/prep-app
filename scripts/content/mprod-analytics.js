@@ -1,32 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'mprod-analytics',
-  module: 'mobile-prod',
-  title: 'Analytics',
-  estimatedReadTime: '40 min',
-  tags: ['analytics', 'tracking', 'ga4', 'amplitude', 'mixpanel', 'event-taxonomy', 'funnels', 'retention', 'privacy', 'react-native'],
+  id: "mprod-analytics",
+  module: "mobile-prod",
+  title: "Analytics",
+  estimatedReadTime: "40 min",
+  tags: ["analytics","tracking","ga4","amplitude","mixpanel","event-taxonomy","funnels","retention","privacy","react-native"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Analytics</strong> is how product, growth, marketing, and engineering see how a mobile app is actually used. The job: capture user behavior as a stream of <em>events</em> with structured properties, attribute those events to a user (or anonymous device), and aggregate them into funnels, retention, segmentation, and revenue dashboards.</p>
-<ul>
-  <li><strong>Three pieces:</strong> SDK in the app fires events → ingestion service buffers → warehouse (Snowflake/BigQuery/Redshift) or product-analytics tool (Amplitude/Mixpanel/PostHog) materializes funnels &amp; cohorts.</li>
-  <li><strong>Event = name + properties.</strong> "<code>purchase_completed</code>" with <code>{ amount, currency, sku }</code>. Names are nouns/verbs; properties are stable keys with stable types.</li>
-  <li><strong>Two identity tracks:</strong> anonymous device id (pre-login) → user id (post-login). Always alias the two so funnels survive sign-up.</li>
-  <li><strong>Default tools:</strong> <strong>Amplitude</strong> (best for product analytics, free up to 10M events/mo), <strong>Mixpanel</strong> (similar; strong cohort UX), <strong>Firebase GA4</strong> (free, deep Google Ads integration), <strong>PostHog</strong> (open source, self-host option), <strong>Segment</strong> (router that fans events to multiple tools).</li>
-  <li><strong>Event taxonomy is the hard part.</strong> A messy schema renders the data useless. A tracking plan + governance review per release is non-negotiable.</li>
-  <li><strong>Privacy:</strong> ATT on iOS, consent banners in EU, opt-out toggles, PII scrubbing on the way out.</li>
-  <li><strong>Cost:</strong> events are billed; you can hemorrhage budget by over-tracking. Sample noisy events, not signal events.</li>
-</ul>
-<p><strong>Mantra:</strong> "Events are forever. Define them once, document them always, scrub PII at the seam, and never name two events the same thing."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Analytics = <strong>capture user behavior as a stream of structured events, attribute them to an identity, and aggregate into funnels, retention, and revenue</strong> — where a governed event taxonomy, not the tool, is the hard part.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three pieces:</strong> SDK fires events → ingestion service buffers → warehouse (Snowflake/BigQuery/Redshift) or product-analytics tool (Amplitude/Mixpanel/PostHog) materializes funnels, retention and cohorts.</li>
+    <li><strong>Event = name + properties + identity + auto-context</strong> (app version, OS, locale). Every event shares the same shape; only <code>event_name</code> and <code>properties</code> vary.</li>
+    <li><strong>Two identity tracks:</strong> anonymous <code>device_id</code> pre-login → <code>user_id</code> post-login. Always <strong>alias</strong> the two on sign-in (idempotent) or pre-signup history is lost forever.</li>
+    <li><strong>Event taxonomy is the hard part:</strong> a <code>tracking-plan.yaml</code> in source control is the single source of truth; codegen typed wrappers so an unknown event name or missing property fails to compile; CI lint enforces it.</li>
+    <li><strong>Lock property types</strong> — <code>amount_cents</code> always integer, <code>currency</code> always an ISO string. Type drift (<code>"14.99"</code> vs <code>14.99</code>) silently breaks <code>SUM</code> and fragments funnels.</li>
+    <li>Pick <strong>one naming convention</strong> (usually object_action snake_case) and code-review against it; inconsistency is the most expensive analytics bug.</li>
+    <li><strong>Privacy at the seam:</strong> never put PII in event names, keys, or values; honor ATT on iOS (≈50–70% deny → no IDFA), gate SDK init on GDPR consent, keep the App Store privacy nutrition label current.</li>
+    <li><strong>Cost:</strong> events are billed and over-tracking burns budget; sample <em>noisy</em> events, never <em>signal</em> events — sample noisy events (scroll/render) at 1–5% and push engineering/perf telemetry to an APM (Datadog/OpenTelemetry), not the product-analytics tool.</li>
+    <li><strong>Fire purchases/refunds server-side</strong> — the server is the source of truth and avoids duplicate events from flaky-network retries.</li>
+    <li>Use <strong>client-time</strong> for behavioral funnels/cohorts and <strong>server-time</strong> for revenue reconciliation; standardize cohort buckets on UTC.</li>
+    <li>Tools: Amplitude (free up to 10M events/mo) / Mixpanel (product analytics, strong cohorts), Firebase GA4 (free + Google Ads attribution), PostHog (open source), Segment (fan-out router).</li>
+    <li><strong>Mantra:</strong> events are forever — define them once, document them always, scrub PII at the seam, never name two events the same thing.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>No tracking plan + drift:</strong> letting each engineer name events by feel gives you 1,200 distinct events, <code>checkout_started</code> vs <code>chekout_started</code> vs per-platform <code>purchase_complete</code>, and type drift that breaks every aggregate. A plan costs a day; the schema-migration recovery costs months. The durable fix is a versioned plan → codegen typed wrapper → CI lint, so deviation is a compile error, not a silent split.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"An event is a name plus typed properties plus identity — and I'd write a tracking plan in source control and codegen typed wrappers so an unknown event or missing property fails to compile."</div>
+  <div class="revision-say">"I keep two identity tracks — an anonymous device_id pre-login aliased to the user_id on sign-in — so a user's pre-signup funnel survives account creation."</div>
+  <div class="revision-say">"I scrub PII at the SDK boundary, honor ATT and GDPR consent, and sample noisy events while firing purchases server-side from the source of truth."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is "analytics" in this context?</h3>
 <p>Product analytics is the practice of <em>instrumenting</em> a mobile app — emitting structured events at every meaningful user action — and then querying that stream to answer business questions. "What % of new signups complete onboarding?" "Which screen has the worst bounce?" "Did Day-30 retention improve in 1.5.0 vs 1.4.0?" Every answer comes from event data.</p>
 
@@ -79,12 +89,10 @@ window.PREP_SITE.registerTopic({
   <li>Per-release <strong>QA pass</strong> uses the tool's "live event stream" feature to verify the funnel fires correctly.</li>
   <li>Event budget is monitored; the team rejects "track everything" attitudes.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The event model</h3>
 <pre><code class="language-text">user_id: "u_1234"
 device_id: "anon_xyz"
@@ -176,12 +184,10 @@ User signs up → emit "alias(device_id, user_id)".
 Tool merges past device_id events into the new user_id history.
 </code></pre>
 <p>Without alias, a user's pre-signup activity is lost forever. Always alias on first login AND on every sign-in (idempotent).</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Amplitude — the canonical setup</h3>
 <pre><code class="language-bash">yarn add @amplitude/analytics-react-native
 cd ios &amp;&amp; pod install
@@ -358,12 +364,10 @@ export function logEventSafe&lt;K extends keyof EventMap&gt;(name: K, props: Eve
 
 <h3>Server-side events</h3>
 <p>For purchases, refunds, churn — fire from the server (the source of truth) not the device. Server-side events use the same identity model (user_id) and feed the same warehouse. Avoids duplicate purchase events when the user retries on a flaky network.</p>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: A clean purchase funnel</h3>
 <pre><code class="language-tsx">// PDP screen
 &lt;Button onPress={() =&gt; {
@@ -524,12 +528,11 @@ function sampleTrack(rate: number, name: string, props: any) {
 
 sampleTrack(0.01, 'feed_scrolled', { row: 100 });
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Event ordering on poor networks</h3>
 <p>SDKs persist events to disk and replay them on retry. Replays may arrive out of order, hours later, even after a reinstall. Implications:</p>
 <ul>
@@ -591,12 +594,9 @@ Amplitude/Mixpanel merge histories on alias. But:
 
 <h3>Daylight savings / timezone</h3>
 <p>"Day 7 retention" — what timezone? Standardize on UTC for cohort buckets; localize only for display.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: PII in event names</h3>
 <pre><code class="language-tsx">// BAD — user email in event name
 logEvent(\`checkout_started_\${user.email}\`, {});
@@ -717,12 +717,10 @@ logEvent('search', { category: 'pizza', query_length: 5 });
 
 <h3>Anti-pattern 8: relying on the dashboard for ground truth</h3>
 <p>Dashboards have caching, sampling, and timezone quirks. Always validate suspicious findings with raw SQL on the warehouse. The dashboard is convenient; the warehouse is authoritative.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -820,55 +818,38 @@ logEvent('search', { category: 'pizza', query_length: 5 });
   <li>"I'd integrate event data with Sentry sessions — when a crash happens we see the user's last 50 analytics events."</li>
   <li>"I'd build a 'session replay' for top funnels with PostHog or LogRocket — the cheapest way to find UX bugs."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Analytics = <strong>capture user behavior as a stream of structured events, attribute them to an identity, and aggregate into funnels, retention, and revenue</strong> — where a governed event taxonomy, not the tool, is the hard part.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Event = name + properties + identity + auto-context</strong> (app version, OS, locale). Every event shares the same shape; only <code>event_name</code> and <code>properties</code> vary.</li>
-    <li><strong>Two identity tracks:</strong> anonymous <code>device_id</code> pre-login → <code>user_id</code> post-login. Always <strong>alias</strong> the two on sign-in (idempotent) or pre-signup history is lost forever.</li>
-    <li><strong>Event taxonomy is the hard part:</strong> a <code>tracking-plan.yaml</code> in source control is the single source of truth; codegen typed wrappers so an unknown event name or missing property fails to compile; CI lint enforces it.</li>
-    <li><strong>Lock property types</strong> — <code>amount_cents</code> always integer, <code>currency</code> always an ISO string. Type drift (<code>"14.99"</code> vs <code>14.99</code>) silently breaks <code>SUM</code> and fragments funnels.</li>
-    <li>Pick <strong>one naming convention</strong> (usually object_action snake_case) and code-review against it; inconsistency is the most expensive analytics bug.</li>
-    <li><strong>Privacy at the seam:</strong> never put PII in event names, keys, or values; honor ATT on iOS (≈50–70% deny → no IDFA), gate SDK init on GDPR consent, keep the App Store privacy nutrition label current.</li>
-    <li><strong>Cost:</strong> events are billed; sample noisy events (scroll/render) at 1–5% and push engineering/perf telemetry to an APM (Datadog/OpenTelemetry), not the product-analytics tool.</li>
-    <li><strong>Fire purchases/refunds server-side</strong> — the server is the source of truth and avoids duplicate events from flaky-network retries.</li>
-    <li>Use <strong>client-time</strong> for behavioral funnels/cohorts and <strong>server-time</strong> for revenue reconciliation; standardize cohort buckets on UTC.</li>
-    <li>Tools: Amplitude/Mixpanel (product analytics), Firebase GA4 (free + Google Ads attribution), PostHog (open source), Segment (fan-out router).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>No tracking plan + drift:</strong> letting each engineer name events by feel gives you 1,200 distinct events, <code>checkout_started</code> vs <code>chekout_started</code> vs per-platform <code>purchase_complete</code>, and type drift that breaks every aggregate. A plan costs a day; the schema-migration recovery costs months. The durable fix is a versioned plan → codegen typed wrapper → CI lint, so deviation is a compile error, not a silent split.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"An event is a name plus typed properties plus identity — and I'd write a tracking plan in source control and codegen typed wrappers so an unknown event or missing property fails to compile."</div>
-  <div class="revision-say">"I keep two identity tracks — an anonymous device_id pre-login aliased to the user_id on sign-in — so a user's pre-signup funnel survives account creation."</div>
-  <div class="revision-say">"I scrub PII at the SDK boundary, honor ATT and GDPR consent, and sample noisy events while firing purchases server-side from the source of truth."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. What goes into an analytics event, and why must property types be locked?</div>
+  <div class="qa-answer">
+    <p>Every event has the same shape: identity (<code>user_id</code>, <code>device_id</code>), <code>event_name</code>, <code>timestamp</code>, typed <code>properties</code> (e.g. <code>amount_cents</code>, <code>currency</code>, <code>sku</code>) and a <code>context</code> block the SDK auto-injects (app version, build, platform, OS version, device model, locale, network). Only the name and properties vary. Types must be locked because drift silently breaks aggregates: if some releases send <code>amount: "14.99"</code> and others <code>amount: 14.99</code>, <code>SUM(amount)</code> is wrong and funnels split. So <code>amount_cents</code> is always an integer and <code>currency</code> always an ISO 4217 string, and a typed wrapper is the only durable enforcement.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you list what goes into an event and explain why property types must be locked?</li>
-    <li>Can you explain the device_id → user_id alias step and what breaks without it?</li>
-    <li>Can you describe a tracking plan and how codegen + CI lint enforce it?</li>
-    <li>Can you compute D1/D7/D30 retention and lay out a 4-step purchase funnel?</li>
-    <li>Can you name your defaults for ATT, GDPR consent, PII scrubbing, and the App Privacy label?</li>
-    <li>Can you say which events to sample, which to fire server-side, and how you'd keep event cost down?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Explain the device_id to user_id alias step. What breaks without it?</div>
+  <div class="qa-answer">
+    <p>Before login the SDK emits events under an anonymous <code>device_id</code>. When the user signs up or signs in you call <code>alias(device_id, user_id)</code>, and the tool merges the earlier device history into the user's history. Without it, all pre-signup activity is lost: the funnel from first open to sign-up breaks, and dashboards show a third of events with a null <code>user_id</code>. Alias on first login and on every sign-in (it's idempotent), send <code>previous_id</code> defensively, and verify the tool's merge semantics, because a failed alias orphans earlier events and a shared device aliased to two users can overwrite or split histories.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. What is a tracking plan, and how do codegen and CI lint enforce it?</div>
+  <div class="qa-answer">
+    <p>A tracking plan is a version-controlled file such as <code>tracking-plan.yaml</code> that is the single source of truth: for each event, a description and every property with its type, whether it's required, and allowed enum values. Codegen turns it into typed wrappers (an <code>EventMap</code> for <code>logEvent</code>), so an unknown event name or a missing or wrongly typed property fails to compile. A CI lint compares emitted events against the plan and fails on unknown events. The wrapper can also refuse forbidden PII keys. The result is that deviation becomes a build error instead of a silent funnel split like <code>checkout_started</code> vs <code>chekout_started</code>.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How do you compute D1/D7/D30 retention, and how would you lay out a 4-step purchase funnel?</div>
+  <div class="qa-answer">
+    <p>Define the cohort as users who fired <code>app_opened</code> on day 0; Day N retention is the share of that cohort who fired <code>app_opened</code> again on day N (e.g. 100% / 52% / 31% for D1 / D7 / D30 in the topic's example), and tagging each cohort row with the release makes "retention went up after 1.5.0" visible. Standardise cohort buckets on UTC. A purchase funnel is <code>checkout_started</code> → <code>payment_method_selected</code> → <code>payment_attempted</code> → <code>payment_succeeded</code>, with <code>payment_method</code>, <code>amount_cents</code>, <code>currency</code> and <code>error_code</code> on failure. The final purchase event is fired server-side as the source of truth, and the funnel question is phrased with a window, e.g. "of users who fired checkout_started today, what % completed a purchase within 30 minutes?"</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. What are your defaults for ATT, GDPR consent, PII scrubbing and the App Privacy label?</div>
+  <div class="qa-answer">
+    <p><strong>ATT:</strong> add <code>NSUserTrackingUsageDescription</code>, prompt explicitly, attach IDFA only on grant; on deny, configure the SDK not to collect IDFA and accept reduced attribution accuracy. <strong>GDPR:</strong> show a consent sheet on first launch and gate SDK init on it, initialising analytics and marketing SDKs separately per consent, and respect opt-out toggles. <strong>PII:</strong> never put email/name/phone in event names, keys or values; a typed wrapper drops forbidden keys such as <code>email</code>, <code>phone</code>, <code>token</code> (and throws in dev). <strong>Privacy label:</strong> declare in App Store Connect which identifiers you collect, whether they're linked to the user, and whether they're used for cross-app tracking, and update it whenever you add an SDK, or Apple may reject the next release.</p>
+  </div>
+</div>
+` },
+
   ]
 });

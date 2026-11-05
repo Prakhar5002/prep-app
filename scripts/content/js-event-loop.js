@@ -1,29 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'js-event-loop',
-  module: 'JavaScript Deep',
-  title: 'Event Loop',
-  estimatedReadTime: '35 min',
-  tags: ['event-loop', 'microtasks', 'macrotasks', 'async', 'promises', 'settimeout', 'concurrency', 'fundamentals'],
+  id: "js-event-loop",
+  module: "JavaScript Deep",
+  title: "Event Loop",
+  estimatedReadTime: "35 min",
+  tags: ["event-loop","microtasks","macrotasks","async","promises","settimeout","concurrency","fundamentals"],
   sections: [
 
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>JavaScript is <strong>single-threaded</strong> — one call stack. Yet it handles async (timers, fetch, events) without blocking. The secret is the <strong>Event Loop</strong>: a coordinator between the JS thread, external APIs, and a set of queues.</p>
-<p>Key components:</p>
-<ul>
-  <li><strong>Call stack</strong> — synchronous execution.</li>
-  <li><strong>Web APIs / Host APIs</strong> — timers, fetch, DOM events (browser); fs, net (Node). Run OUTSIDE the JS thread.</li>
-  <li><strong>Task queue (macrotask)</strong> — <code>setTimeout</code>, <code>setInterval</code>, I/O, UI events, <code>MessageChannel</code>.</li>
-  <li><strong>Microtask queue</strong> — <code>Promise.then</code>, <code>queueMicrotask</code>, <code>MutationObserver</code>. <em>Higher priority</em> than macrotasks.</li>
-  <li><strong>Animation frame queue</strong> — <code>requestAnimationFrame</code>, fires before next paint.</li>
-</ul>
-<p>The loop's cadence: <strong>run sync code → drain ALL microtasks → maybe render → run ONE macrotask → drain microtasks → ...</strong></p>
-<div class="callout insight">
-  <div class="callout-title">🧠 The one rule</div>
-  <p>Microtasks are drained <em>completely</em> between macrotasks. A microtask that schedules another microtask will run it before any macrotask.</p>
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Run all sync code → <strong>drain the ENTIRE microtask queue</strong> → maybe render → run <strong>ONE</strong> macrotask → repeat; microtasks (promise callbacks) always beat macrotasks (<code>setTimeout</code>).</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>JS is single-threaded — one call stack.</strong> The event loop coordinates the JS thread, external (Web/host) APIs, and the queues.</li>
+    <li>Async work runs on other browser threads; when done, its callback is <strong>handed back to JS via a queue</strong> — it doesn't run mid-sync-code.</li>
+    <li><strong>Macrotasks</strong>: <code>setTimeout</code>, <code>setInterval</code>, I/O, UI events, <code>MessageChannel</code>.</li>
+    <li><strong>Microtasks</strong>: <code>Promise.then</code>/<code>.catch</code>/<code>.finally</code>, <code>queueMicrotask</code>, <code>MutationObserver</code>, and <code>async</code>/<code>await</code> resumptions.</li>
+    <li>Cadence: <strong>run sync to completion → drain ALL microtasks → maybe render → run ONE macrotask → drain microtasks → repeat.</strong></li>
+    <li><strong>The whole microtask queue drains between each macrotask</strong> — a microtask that schedules another microtask runs it before any pending timer.</li>
+    <li>A resolved promise's <code>.then</code> always beats a pending <code>setTimeout</code>, because microtasks have higher priority.</li>
+    <li><code>requestAnimationFrame</code> is its own bucket that fires just before paint — it is NOT a macrotask.</li>
+    <li>The <strong>Promise constructor's executor runs synchronously</strong>; only the <code>.then</code> callbacks are microtasks.</li>
+    <li>Each <code>await</code> suspends the function and re-queues the rest as a microtask (even <code>await</code> on a non-promise).</li>
+    <li><strong><code>setTimeout(fn, 0)</code> is never immediate</strong>: sync code must finish, microtasks drain first, and nested timers clamp to ~4ms.</li>
+    <li>Synchronous code blocks everything — <code>while(true){}</code> freezes rendering and input; an infinite microtask loop starves macrotasks and rendering entirely.</li>
+    <li>Node differs: libuv phases (timers → poll → check → close) and <code>process.nextTick</code> runs at higher priority than promise microtasks.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Believing <code>setTimeout(fn, 0)</code> runs immediately or before a resolved promise's <code>.then</code>. It never does — sync code finishes, <strong>all microtasks drain first</strong>, and nested timers clamp to ~4ms. It's just the soonest <em>macrotask</em>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"JS is single-threaded; the event loop runs sync code to completion, drains the entire microtask queue, then takes exactly one macrotask, and repeats."</div>
+  <div class="revision-say">"Microtasks like promise callbacks always beat macrotasks like <code>setTimeout</code>, because the whole microtask queue drains between every macrotask."</div>
+  <div class="revision-say">"<code>setTimeout(fn, 0)</code> isn't immediate — sync code finishes, microtasks drain, and there's a ~4ms clamp; it's just the soonest macrotask."</div>
 </div>
-`},
+` },
 
-{ id: 'what-why', title: '🧠 What & Why', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The problem JS solves</h3>
 <p>JavaScript was designed to be single-threaded in the browser (to avoid DOM race conditions). But web pages need to handle clicks, timers, and network requests concurrently. The Event Loop is the answer: a cooperative scheduler.</p>
 
@@ -40,9 +54,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>Node</strong> — V8 + libuv. The loop has distinct phases (timers, pending callbacks, idle, poll, check, close). Microtasks drained between <em>every</em> macrotask within a phase.</li>
 </ul>
 <p>For interviews: focus on the browser model unless the question is explicitly Node.</p>
-`},
+` },
 
-{ id: 'mental-model', title: '🪜 Mental Model', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🪜 Mental Model", collapsible: true, html: `
 <h3>The big picture</h3>
 <div class="diagram">
            ┌──────────────┐   browser/host APIs
@@ -128,9 +143,10 @@ window.PREP_SITE.registerTopic({
 </table>
 
 <p><code>requestAnimationFrame</code> is in its own bucket, NOT a macrotask. It runs just before paint.</p>
-`},
+` },
 
-{ id: 'mechanics', title: '⚙️ Step-by-Step Mechanics', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Step-by-Step Mechanics", collapsible: true, html: `
 <h3>When you call <code>setTimeout(fn, 100)</code>:</h3>
 <ol>
   <li>The JS call to <code>setTimeout</code> runs synchronously. It hands <code>fn</code> and the delay to the browser's timer API.</li>
@@ -171,9 +187,10 @@ foo();
 console.log('4');</code></pre>
 
 <p>Output: <code>1 4 2 3</code>. Each <code>await</code> suspends and re-queues the rest of the function as a microtask.</p>
-`},
+` },
 
-{ id: 'examples', title: '📦 Examples (progressive)', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Classic interleave</h3>
 <pre><code class="language-js">console.log('1');
 setTimeout(() =&gt; console.log('2'), 0);
@@ -356,9 +373,11 @@ q
 t</code></pre>
 
 <p><code>queueMicrotask</code> is equivalent to <code>Promise.resolve().then</code> minus the promise overhead.</p>
-`},
+` },
 
-{ id: 'edge-cases', title: '🔍 All Edge Cases', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. setTimeout minimum delay</h3>
 <pre><code class="language-js">setTimeout(() =&gt; ..., 0);   // actually clamped to 4ms after 5 nested timeouts</code></pre>
 <p>HTML spec clamps nested timer delays to 4ms after the 5th nesting.</p>
@@ -444,9 +463,9 @@ console.log('s');
 
 <h3>17. Node's libuv phases</h3>
 <p>Node's loop has distinct phases: timers → pending callbacks → idle → <strong>poll</strong> → check → close. Microtasks drain between each phase AND between every macrotask.</p>
-`},
 
-{ id: 'bugs-anti', title: '🐛 Common Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1 — Blocking the event loop</h3>
 <pre><code class="language-js">function heavy() {
   for (let i = 0; i &lt; 1e9; i++) {}   // blocks ~5 seconds
@@ -516,9 +535,10 @@ animate();</code></pre>
 <pre><code class="language-js">for (let i = 0; i &lt; 10; i++) setState(i);
 // React 18 batches these — only one render
 // React 17 caused one render per call — janky</code></pre>
-`},
+` },
 
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common ask formats</h3>
 <ol>
   <li>"What does this code log?" — classic ordering puzzle.</li>
@@ -688,51 +708,45 @@ console.log('sync');</code></pre>
   <li>"What's a 'long task' and why does it matter?" (>50ms; hurts INP, blocks interactions.)</li>
   <li>"How would you detect frame drops?" (<code>PerformanceObserver</code> with entry type 'longtask' or 'event-timing'.)</li>
 </ul>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Run all sync code → <strong>drain the ENTIRE microtask queue</strong> → maybe render → run <strong>ONE</strong> macrotask → repeat; microtasks (promise callbacks) always beat macrotasks (<code>setTimeout</code>).</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>JS is single-threaded — one call stack.</strong> The event loop coordinates the JS thread, external (Web/host) APIs, and the queues.</li>
-    <li>Async work runs on other browser threads; when done, its callback is <strong>handed back to JS via a queue</strong> — it doesn't run mid-sync-code.</li>
-    <li><strong>Macrotasks</strong>: <code>setTimeout</code>, <code>setInterval</code>, I/O, UI events, <code>MessageChannel</code>.</li>
-    <li><strong>Microtasks</strong>: <code>Promise.then</code>/<code>.catch</code>/<code>.finally</code>, <code>queueMicrotask</code>, <code>MutationObserver</code>, and <code>async</code>/<code>await</code> resumptions.</li>
-    <li>Cadence: <strong>run sync to completion → drain ALL microtasks → maybe render → run ONE macrotask → drain microtasks → repeat.</strong></li>
-    <li><strong>The whole microtask queue drains between each macrotask</strong> — a microtask that schedules another microtask runs it before any pending timer.</li>
-    <li>A resolved promise's <code>.then</code> always beats a pending <code>setTimeout</code>, because microtasks have higher priority.</li>
-    <li><code>requestAnimationFrame</code> is its own bucket that fires just before paint — it is NOT a macrotask.</li>
-    <li>The <strong>Promise constructor's executor runs synchronously</strong>; only the <code>.then</code> callbacks are microtasks.</li>
-    <li>Each <code>await</code> suspends the function and re-queues the rest as a microtask (even <code>await</code> on a non-promise).</li>
-    <li><strong><code>setTimeout(fn, 0)</code> is never immediate</strong>: sync code must finish, microtasks drain first, and nested timers clamp to ~4ms.</li>
-    <li>Synchronous code blocks everything — <code>while(true){}</code> freezes rendering and input; an infinite microtask loop starves macrotasks and rendering entirely.</li>
-    <li>Node differs: libuv phases (timers → poll → check → close) and <code>process.nextTick</code> runs at higher priority than promise microtasks.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Believing <code>setTimeout(fn, 0)</code> runs immediately or before a resolved promise's <code>.then</code>. It never does — sync code finishes, <strong>all microtasks drain first</strong>, and nested timers clamp to ~4ms. It's just the soonest <em>macrotask</em>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"JS is single-threaded; the event loop runs sync code to completion, drains the entire microtask queue, then takes exactly one macrotask, and repeats."</div>
-  <div class="revision-say">"Microtasks like promise callbacks always beat macrotasks like <code>setTimeout</code>, because the whole microtask queue drains between every macrotask."</div>
-  <div class="revision-say">"<code>setTimeout(fn, 0)</code> isn't immediate — sync code finishes, microtasks drain, and there's a ~4ms clamp; it's just the soonest macrotask."</div>
+<div class="qa-block">
+  <div class="qa-question">Q10. Describe one full tick of the event loop.</div>
+  <div class="qa-answer">
+    <p>First the current synchronous code runs to completion on the single call stack. Then the loop drains the <em>entire</em> microtask queue — including any microtasks scheduled by those microtasks. Then the browser may render (rAF callbacks → style → layout → paint), and then it takes exactly <strong>one</strong> macrotask, such as a timer callback or UI event, runs it, and drains all microtasks again before the next macrotask. That's why a resolved promise's <code>.then</code> always runs before a pending <code>setTimeout</code>.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you describe one full tick — run sync to completion, drain all microtasks, maybe render, run one macrotask?</li>
-    <li>Can you classify <code>setTimeout</code>, <code>Promise.then</code>, <code>queueMicrotask</code>, and <code>requestAnimationFrame</code> into their buckets?</li>
-    <li>Can you predict the output order of interleaved <code>setTimeout(fn, 0)</code> and a resolved <code>.then</code>?</li>
-    <li>Can you explain why <code>setTimeout(fn, 0)</code> is never truly immediate?</li>
-    <li>Can you explain why an infinite microtask loop starves rendering while a single slow macrotask does not?</li>
-    <li>Can you explain how each <code>await</code> re-queues the rest of a function as a microtask, and how Node's <code>process.nextTick</code>/libuv phases differ?</li>
-    <li>Can you implement sleep, debounce, and a yield-to-browser helper?</li>
-    <li>Do you know how to keep a slow task from blocking the loop (Web Workers, chunking, rAF)?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q11. Which queue do <code>setTimeout</code>, <code>Promise.then</code>, <code>queueMicrotask</code> and <code>requestAnimationFrame</code> go into?</div>
+  <div class="qa-answer">
+    <p><code>setTimeout</code> (and <code>setInterval</code>, I/O, UI events, <code>MessageChannel</code>) schedules a <strong>macrotask</strong>. <code>Promise.then</code>/<code>.catch</code>/<code>.finally</code>, <code>queueMicrotask</code>, <code>MutationObserver</code> and <code>async</code>/<code>await</code> resumptions are <strong>microtasks</strong>, which have higher priority. <code>requestAnimationFrame</code> is neither: it's its own animation-frame bucket that fires just before the next paint, so its order relative to a <code>setTimeout(fn, 0)</code> depends on when the next frame is scheduled.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q12. Why does an infinite microtask loop starve rendering while a single slow macrotask does not?</div>
+  <div class="qa-answer">
+    <p>The loop only moves on to rendering and the next macrotask once the microtask queue is completely empty. If a microtask keeps queuing another (<code>function f() { queueMicrotask(f); }</code>), the queue never empties, so the page never paints and no timer or input event runs — the UI freezes forever. A slow macrotask blocks only while it runs: once it finishes, microtasks drain and the browser gets its chance to render before the next macrotask. It still hurts — tasks over 50ms are "long tasks" that harm INP — but it ends.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q13. How does <code>await</code> interact with the microtask queue, and how does Node's event loop differ?</div>
+  <div class="qa-answer">
+    <p>Each <code>await</code> suspends the async function and queues the rest of its body as a microtask — even <code>await</code> on a non-promise like <code>await null</code>. Control returns to the caller, so the code after the call runs first, and the function resumes when microtasks drain. Node's loop (V8 + libuv) runs in distinct phases — timers → pending callbacks → idle → poll → check → close — and drains microtasks between each phase and between every macrotask. <code>process.nextTick</code> callbacks run with even higher priority than promise microtasks, so in Node <code>nextTick</code> logs before a resolved <code>.then</code>, and the order of <code>setTimeout(fn, 0)</code> versus <code>setImmediate</code> can vary.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q14. How do you keep a slow task from blocking the event loop? Write a yield-to-browser helper.</div>
+  <div class="qa-answer">
+    <p>Split the work into chunks and yield between them so the browser can render and handle input; move heavy CPU work to a Web Worker, which has its own thread and loop and talks via <code>postMessage</code>; and do visual updates in <code>requestAnimationFrame</code> so they line up with paint. A yield helper is just a promise resolved by a macrotask, so the microtask queue drains and a render can happen first:</p>
+    <pre><code class="language-js">const yieldToBrowser = () =&gt; new Promise(r =&gt; setTimeout(r, 0));
 
-]});
+for (let i = 0; i &lt; items.length; i += 1000) {
+  items.slice(i, i + 1000).forEach(doWork);
+  await yieldToBrowser();
+}</code></pre>
+    <p>Newer Chrome offers <code>scheduler.yield()</code> for the same purpose. <code>sleep(ms)</code> is the same shape with a delay, and a debounce clears and reschedules a <code>setTimeout</code>, so the debounced function runs as a macrotask.</p>
+  </div>
+</div>
+` },
+
+  ]
+});

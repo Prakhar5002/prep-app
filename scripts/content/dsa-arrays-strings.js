@@ -1,35 +1,48 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-arrays-strings',
-  module: 'DSA',
-  title: 'Arrays & Strings',
-  estimatedReadTime: '28 min',
-  tags: ['dsa', 'array', 'string', 'patterns', 'in-place', 'reverse', 'rotate'],
+  id: "dsa-arrays-strings",
+  module: "DSA",
+  title: "Arrays & Strings",
+  estimatedReadTime: "28 min",
+  tags: ["dsa","array","string","patterns","in-place","reverse","rotate"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Arrays and strings are the most-asked categories in interviews. Master a small set of patterns and you've covered 60% of array-related problems.</p>
-<ul>
-  <li><strong>Two pointers</strong> — opposite ends or same direction with different speeds.</li>
-  <li><strong>Sliding window</strong> — variable or fixed-size window over the array.</li>
-  <li><strong>Prefix sums</strong> — preprocess for O(1) range sum queries.</li>
-  <li><strong>In-place operations</strong> — modify the array without extra space.</li>
-  <li><strong>Sorting first</strong> — many problems become trivial after a sort.</li>
-  <li><strong>Hash maps for lookups</strong> — O(1) presence checks; trade space for time.</li>
-  <li><strong>Rotation</strong> — three reverses (reverse all, reverse left part, reverse right part).</li>
-  <li><strong>Reverse</strong> — two pointers from both ends, swap.</li>
-  <li><strong>Cyclic sort</strong> — for "find missing/duplicate in [1..n]" problems.</li>
-  <li><strong>String-specific</strong>: char counts, palindrome (two pointers), anagram (sorted or count), substring patterns.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Identify the pattern, write the template, handle edges (empty, single element, all-same, sorted, reverse-sorted). Most array/string problems are 1-2 patterns from the canonical list applied to a specific question.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Almost every array/string problem is <strong>one of a small pattern set — two pointers, sliding window, prefix sum, hash map, sort-first, cyclic sort, reverse/rotate, Kadane's</strong> — so name the pattern, write its template, then handle the edges.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A small pattern set covers ~60% of array/string problems:</strong> two pointers, sliding window, prefix sums, hash map, sort-first, cyclic sort, reverse/rotate, Kadane's.</li>
+    <li><strong>Two pointers:</strong> opposite ends converging (sorted array, palindrome, two-sum-sorted, container) OR slow/fast same direction (dedup, move zeros, partition). Typically <code>O(n)</code> time, <code>O(1)</code> space.</li>
+    <li><strong>Sliding window</strong> for a contiguous subarray/substring with a property: expand <code>r</code>, contract <code>l</code> when the invariant breaks. <code>O(n)</code>.</li>
+    <li><strong>Prefix sums:</strong> <code>O(n)</code> prep for <code>O(1)</code> range-sum queries — range sum <code>[l, r]</code> = <code>prefix[r+1] - prefix[l]</code>.</li>
+    <li><strong>Rotation = three reverses</strong> (whole, first k, rest); do <code>k = k % n</code> first. In-place <code>O(n)</code> time, <code>O(1)</code> space.</li>
+    <li><strong>Kadane's</strong> for max subarray sum; it handles an all-negative array (returns the max single element) — don't write a version that returns 0.</li>
+    <li><strong>Cyclic sort</strong> for numbers in <code>[1..n]</code> (find missing / duplicate) in <code>O(n)</code>.</li>
+    <li><strong>Strings are immutable:</strong> <code>s += x</code> in a loop is <code>O(n²)</code> (use <code>join</code>); <code>str.split('')</code> for in-place work; fixed count arrays (26 lowercase, 256 ASCII) beat hash maps for bounded charsets. Anagram = sorted string or char count; palindrome = two pointers.</li>
+    <li><strong>Use Set/Map for <code>O(1)</code> presence</strong> — never <code>arr.includes</code> inside a loop (that's <code>O(n²)</code>).</li>
+    <li><strong>Product-except-self:</strong> a prefix pass then a suffix pass, <code>O(n)</code> time and <code>O(1)</code> extra, no division.</li>
+    <li><strong>Sort first</strong> when it simplifies the problem (3-sum, merge intervals) at <code>O(n log n)</code>; skip duplicates in pointer solutions to avoid repeated tuples.</li>
+    <li><strong>Always test edges:</strong> empty, single element, all-same, sorted ascending, sorted descending; guard off-by-one in <code>l</code>/<code>r</code> init and termination.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> most patterns are <code>O(n)</code>; sort-based approaches <code>O(n log n)</code>; nested-pointer solutions like 3-sum <code>O(n²)</code>.</li>
+    <li><strong>Space:</strong> two pointers / Kadane's / rotate are <code>O(1)</code>; hash and prefix-sum approaches are <code>O(n)</code>.</li>
+    <li><strong>Signal → reach for it:</strong> sorted + pair/triplet → two pointers · contiguous subarray/substring with a property → sliding window · range-sum queries → prefix sum · presence/frequency/complement → hash map · numbers in <code>[1..n]</code> → cyclic sort · max subarray → Kadane's · in-place rearrange → reverse/rotate.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Hidden <code>O(n²)</code> from immutable strings and linear built-ins, plus unhandled edges.</strong> Candidates build strings with <code>s += x</code> in a loop (<code>O(n²)</code> — use <code>join</code>) and call <code>arr.includes</code> inside a loop (<code>O(n²)</code> — use a Set for <code>O(1)</code> presence). The other classic miss: Kadane's returning 0 on an all-negative array, forgetting <code>k = k % n</code> before rotating, and skipping the empty / single-element / all-same cases and the off-by-one in <code>l</code>/<code>r</code> init and termination.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I first identify the pattern — two pointers, sliding window, prefix sum, or hash — then write the template and handle empty / single / all-same up front."</div>
+  <div class="revision-say">"Two pointers and sliding window both use multiple indices, but sliding window maintains a region with a property while two pointers do pointwise work from the ends or at two speeds."</div>
+  <div class="revision-say">"Strings are immutable, so I avoid <code>+=</code> in a loop (that's O(n²)) — I split to a char array or join, and I use a fixed 26-slot count array for lowercase-letter problems."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why arrays / strings dominate</h3>
 <ul>
   <li>Universal, language-agnostic, fundamental.</li>
@@ -62,10 +75,10 @@ window.PREP_SITE.registerTopic({
   <li>Convert to array of chars for in-place: <code>str.split('')</code>.</li>
   <li>Char counts are bounded (256 for ASCII, 26 for lowercase letters) → can use fixed-size arrays instead of hash maps.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "two pointers" picture</h3>
 <div class="diagram">
 <pre>
@@ -135,10 +148,10 @@ window.PREP_SITE.registerTopic({
     <li><strong>Sliding window</strong>: maintaining a region with a property (sum, distinct count), expanding and contracting.</li>
   </ul>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Two pointers — opposite ends</h3>
 <pre><code class="language-js">// Reverse in place
 function reverse(arr) {
@@ -368,10 +381,10 @@ function productExceptSelf(nums) {
     <tr><td>str in loop with += </td><td>O(n²) total</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Two Sum</h3>
 <pre><code class="language-js">// Find two indices that sum to target
 function twoSum(nums, target) {
@@ -591,10 +604,11 @@ function decode(s) {
   return result;
 }
 // Length prefix avoids escaping concerns. Common pattern.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Empty input</h3>
 <p>Many algorithms break on length 0. Always handle: return early, return default value (0 for sum, [] for list, null for first element).</p>
 
@@ -654,10 +668,9 @@ function decode(s) {
 
 <h3>20. Spaces / special chars in strings</h3>
 <p>Palindromes, anagrams: ignore spaces / case? Read the prompt. <code>"A man a plan"</code> needs preprocessing.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — string concatenation in loop</h3>
 <pre><code class="language-js">// BAD: O(n²)
 let s = '';
@@ -744,10 +757,10 @@ for (let i = 0; i &lt; n; i++) {
 // Fast — hoist the function
 const helper = (x) =&gt; x * 2;
 for (let i = 0; i &lt; n; i++) helper(arr[i]);</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Two Sum — best approach?</div>
   <div class="qa-answer">
@@ -991,55 +1004,26 @@ for (let i = 0; i &lt; n; i++) helper(arr[i]);</code></pre>
     <li>You implement rotation as three reverses.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Almost every array/string problem is <strong>one of a small pattern set — two pointers, sliding window, prefix sum, hash map, sort-first, cyclic sort, reverse/rotate, Kadane's</strong> — so name the pattern, write its template, then handle the edges.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>A small pattern set covers ~60% of array/string problems:</strong> two pointers, sliding window, prefix sums, hash map, sort-first, cyclic sort, reverse/rotate, Kadane's.</li>
-    <li><strong>Two pointers:</strong> opposite ends converging (sorted array, palindrome, two-sum-sorted, container) OR slow/fast same direction (dedup, move zeros, partition). Typically <code>O(n)</code> time, <code>O(1)</code> space.</li>
-    <li><strong>Sliding window</strong> for a contiguous subarray/substring with a property: expand <code>r</code>, contract <code>l</code> when the invariant breaks. <code>O(n)</code>.</li>
-    <li><strong>Prefix sums:</strong> <code>O(n)</code> prep for <code>O(1)</code> range-sum queries — range sum <code>[l, r]</code> = <code>prefix[r+1] - prefix[l]</code>.</li>
-    <li><strong>Rotation = three reverses</strong> (whole, first k, rest); do <code>k = k % n</code> first. In-place <code>O(n)</code> time, <code>O(1)</code> space.</li>
-    <li><strong>Kadane's</strong> for max subarray sum; it handles an all-negative array (returns the max single element) — don't write a version that returns 0.</li>
-    <li><strong>Cyclic sort</strong> for numbers in <code>[1..n]</code> (find missing / duplicate) in <code>O(n)</code>.</li>
-    <li><strong>Strings are immutable:</strong> <code>s += x</code> in a loop is <code>O(n²)</code> (use <code>join</code>); <code>str.split('')</code> for in-place work; fixed count arrays (26 lowercase, 256 ASCII) beat hash maps for bounded charsets.</li>
-    <li><strong>Use Set/Map for <code>O(1)</code> presence</strong> — never <code>arr.includes</code> inside a loop (that's <code>O(n²)</code>).</li>
-    <li><strong>Product-except-self:</strong> a prefix pass then a suffix pass, <code>O(n)</code> time and <code>O(1)</code> extra, no division.</li>
-    <li><strong>Sort first</strong> when it simplifies the problem (3-sum, merge intervals) at <code>O(n log n)</code>; skip duplicates in pointer solutions to avoid repeated tuples.</li>
-    <li><strong>Always test edges:</strong> empty, single element, all-same, sorted ascending, sorted descending; guard off-by-one in <code>l</code>/<code>r</code> init and termination.</li>
-  </ul>
-  <h4>Complexity &amp; when to reach for it</h4>
-  <ul>
-    <li><strong>Time:</strong> most patterns are <code>O(n)</code>; sort-based approaches <code>O(n log n)</code>; nested-pointer solutions like 3-sum <code>O(n²)</code>.</li>
-    <li><strong>Space:</strong> two pointers / Kadane's / rotate are <code>O(1)</code>; hash and prefix-sum approaches are <code>O(n)</code>.</li>
-    <li><strong>Signal → reach for it:</strong> sorted + pair/triplet → two pointers · contiguous subarray/substring with a property → sliding window · range-sum queries → prefix sum · presence/frequency/complement → hash map · numbers in <code>[1..n]</code> → cyclic sort · max subarray → Kadane's · in-place rearrange → reverse/rotate.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Hidden <code>O(n²)</code> from immutable strings and linear built-ins, plus unhandled edges.</strong> Candidates build strings with <code>s += x</code> in a loop (<code>O(n²)</code> — use <code>join</code>) and call <code>arr.includes</code> inside a loop (<code>O(n²)</code> — use a Set for <code>O(1)</code> presence). The other classic miss: Kadane's returning 0 on an all-negative array, forgetting <code>k = k % n</code> before rotating, and skipping the empty / single-element / all-same cases and the off-by-one in <code>l</code>/<code>r</code> init and termination.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I first identify the pattern — two pointers, sliding window, prefix sum, or hash — then write the template and handle empty / single / all-same up front."</div>
-  <div class="revision-say">"Two pointers and sliding window both use multiple indices, but sliding window maintains a region with a property while two pointers do pointwise work from the ends or at two speeds."</div>
-  <div class="revision-say">"Strings are immutable, so I avoid <code>+=</code> in a loop (that's O(n²)) — I split to a char array or join, and I use a fixed 26-slot count array for lowercase-letter problems."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Why is building a string with += in a loop O(n²) in JavaScript?</div>
+  <div class="qa-answer">
+    <p>JS strings are immutable, so each concatenation creates a new string, and <code>str + str</code> costs <code>O(n)</code>. Doing that n times inside a loop adds up to <code>O(n²)</code> total. Collect the pieces in an array and <code>join</code> once at the end, and for in-place character work convert with <code>str.split('')</code> first.</p>
+  </div>
 </div>
-`},
+<div class="qa-block">
+  <div class="qa-question">Q17. What does access, insert and delete cost on a JavaScript array?</div>
+  <div class="qa-answer">
+    <p>Index access <code>arr[i]</code> is <code>O(1)</code>. Insert or delete at the end with <code>push</code>/<code>pop</code> is <code>O(1)</code> amortized. Insert or delete at the front or in the middle (<code>shift</code>, <code>unshift</code>, <code>splice</code>) is <code>O(n)</code> because every later element has to move. Searching with <code>includes</code>/<code>indexOf</code> is <code>O(n)</code>, which is why it shouldn't sit inside a loop; use a Set for <code>O(1)</code> average presence checks.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q18. When does a prefix-sum array help, and how does it work?</div>
+  <div class="qa-answer">
+    <p>When you need many range-sum (or range-count) queries over a fixed array. Summing each range directly is <code>O(n)</code> per query, so <code>O(n²)</code> overall; with a prefix array you pay <code>O(n)</code> once and every query is <code>O(1)</code>. Build it 1-indexed with <code>prefix[0] = 0</code> and <code>prefix[i+1] = prefix[i] + arr[i]</code>; then the sum of <code>[l, r]</code> inclusive is <code>prefix[r + 1] - prefix[l]</code>.</p>
+  </div>
+</div>
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why strings are immutable and why <code>+=</code> in a loop is O(n&sup2;)?</li>
-    <li>Can you use a fixed 26-slot count array for lowercase-letter problems?</li>
-    <li>Can you state the time cost of access, insert, and delete on an array?</li>
-    <li>Can you recognize when a prefix-sum array turns an O(n&sup2;) range query into O(1)?</li>
-    <li>Can you reverse an array in place with two pointers from memory?</li>
-    <li>Can you name 2 classic array/string problems and the pattern each uses?</li>
-  </ul>
-</div>
-`}
-]
+  ]
 });

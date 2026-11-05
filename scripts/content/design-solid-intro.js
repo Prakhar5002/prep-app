@@ -1,27 +1,39 @@
 window.PREP_SITE.registerTopic({
-  id: 'design-solid-intro',
-  module: 'design',
-  title: 'SOLID: Overview & Why',
-  estimatedReadTime: '16 min',
-  tags: ['design', 'solid', 'oop', 'clean-code', 'principles'],
+  id: "design-solid-intro",
+  module: "design",
+  title: "SOLID: Overview & Why",
+  estimatedReadTime: "16 min",
+  tags: ["design","solid","oop","clean-code","principles"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>SOLID</strong> is a set of five <strong>object-oriented design guidelines</strong> — not laws, not syntax rules — aimed at one thing: making code easier to <strong>change</strong>, <strong>extend</strong>, and <strong>test</strong> as a system grows. Each letter names one principle, each with a one-line rule:</p>
-<ul>
-  <li><strong>S — Single Responsibility:</strong> a class/module should have one reason to change — it should answer to one actor.</li>
-  <li><strong>O — Open/Closed:</strong> open for extension, closed for modification — add new behavior without editing working code.</li>
-  <li><strong>L — Liskov Substitution:</strong> a subtype must be usable anywhere its base type is expected, without surprises.</li>
-  <li><strong>I — Interface Segregation:</strong> don't force a client to depend on methods it doesn't use — prefer several small interfaces over one fat one.</li>
-  <li><strong>D — Dependency Inversion:</strong> depend on abstractions, not concrete implementations — let details plug into policy, not the other way around.</li>
-</ul>
-<p><strong>This is topic 1 of the Design Principles module — zero to hero.</strong> From here, each following topic takes one letter and goes deep: <code>design-srp</code> next, then Open/Closed, Liskov Substitution, Interface Segregation, and Dependency Inversion, finishing with a capstone that ties all five together in one running example.</p>
-<p><strong>Mantra:</strong> "SOLID isn't a checklist to satisfy — it's a set of answers to 'why did this small change just take down half the app?'"</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>SOLID is five object-oriented design guidelines</strong> — not laws or syntax — aimed at making code easier to <strong>change, extend, and test</strong> as a system grows.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>The five, one line each: <strong>S</strong> — one reason to change / one actor; <strong>O</strong> — open for extension, closed for modification; <strong>L</strong> — a subtype must be usable anywhere its base is expected; <strong>I</strong> — don't force clients to depend on methods they don't use; <strong>D</strong> — depend on abstractions, not concretions.</li>
+    <li>History is a <strong>three-person credit</strong>: Robert C. Martin articulated four of the five and collected the set; the <strong>L is Barbara Liskov's</strong> (1987 keynote, formalized with Wing in 1994); <strong>Michael Feathers</strong> coined the SOLID acronym, which Martin then popularized.</li>
+    <li>SOLID exists to fix nameable smells: <strong>rigidity</strong> (small changes cascade), <strong>fragility</strong> (a change breaks something unrelated), <strong>immobility</strong> (logic can't be reused cleanly), and <strong>needless complexity/repetition</strong>.</li>
+    <li>These are guidelines for <strong>managing dependencies and coupling</strong> in OO code — they assume classes, interfaces, and polymorphism, and most fixes use <strong>composition</strong>, not inheritance.</li>
+    <li>The one question tying all five together: <strong>"when the change I actually expect shows up, is it easy to make?"</strong> — not "could this handle any conceivable future requirement."</li>
+    <li>The counterweight is <strong>YAGNI</strong>: every abstraction has a real cost (another file, another jump, another contract to keep consistent), so don't build extensibility before there's a real reason.</li>
+    <li><strong>Premature abstraction is often worse than a little duplication</strong> — two things that look alike but change for unrelated reasons are not "the same responsibility."</li>
+    <li>Mantra: <strong>SOLID isn't a checklist to satisfy</strong> &mdash; it's a set of answers to &quot;why did this small change just take down half the app?&quot;</li>
+    <li>Rule of thumb: <strong>apply a principle when you feel real pain from its absence</strong> (a class you dread touching, a test needing a live DB, a switch edited five times this month), not speculatively.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Treating SOLID as <strong>laws or a checklist to satisfy on every class</strong> — extracting collaborators, adding an interface per dependency, and wrapping every construction behind a factory regardless of whether any symptom is present. That's premature abstraction: it pays the full cost of indirection for a change that may never come, and is its own design smell.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"SOLID is five guidelines for keeping the cost of a typical future change low — they target specific smells like rigidity, fragility, and immobility, not elegance for its own sake."</div>
+  <div class="revision-say">"Every letter is one angle on the same question: when the change I actually expect arrives, is this design ready for it?"</div>
+  <div class="revision-say">"The counterweight is YAGNI — I apply a principle when I feel real pain from its absence, because a single-implementation interface added 'just in case' is indirection with no payoff."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Where these principles came from</h3>
 <p><strong>Robert C. Martin</strong> ("Uncle Bob") articulated most of these principles individually across papers and talks in the late 1990s and early 2000s, and collected them in his book <em>Agile Software Development: Principles, Patterns, and Practices</em> (2002). SRP, OCP, ISP, and DIP each existed as a named idea in his writing before there was a single acronym covering all five. The "L" is the one exception: the <strong>Liskov Substitution Principle</strong> originates with <strong>Barbara Liskov</strong>, who introduced the substitutability idea in her 1987 OOPSLA keynote "Data Abstraction and Hierarchy," later formalized with Jeannette Wing in 1994 — the principle is literally named after her; Martin adopted her idea for the "L" rather than originating it himself.</p>
 <p><strong>Michael Feathers</strong> — later well known for <em>Working Effectively with Legacy Code</em> — is credited with rearranging Martin's five principles into the memorable <strong>SOLID</strong> mnemonic in the early 2000s. Martin himself popularized the acronym afterward, and it's the name that stuck. Worth keeping straight: collecting/popularizing the set, originating the L, and naming the acronym are three separate credits, not one.</p>
@@ -38,10 +50,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Who SOLID is for</h3>
 <p>These are guidelines for <em>managing dependencies and coupling</em> in object-oriented code specifically — they assume you already have classes, interfaces, and polymorphism to work with (a quick refresher on all three is next, in Mental Model). They're most useful in code that's expected to change over time and has more than one person or team touching it; a one-off script you'll delete next week doesn't need any of this.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>OOP refresher, just enough to follow this module</h3>
 <p>If your object-oriented vocabulary is rusty, here's the minimum you need for the rest of this module:</p>
 <ul>
@@ -55,10 +67,10 @@ window.PREP_SITE.registerTopic({
 <h3>The one question that ties all five together</h3>
 <p>Every one of the five letters is a different angle on the same underlying question: <strong>"when the change I actually expect shows up, is it easy to make?"</strong> Not "could this theoretically handle any future requirement" — that's premature abstraction, covered below — but "for the kind of change this code plausibly will need, is the design ready for it?" SRP asks that question about a single class's reasons to change. OCP asks it about adding new behavior. LSP asks it about swapping implementations safely. ISP asks it about what a client is forced to know about. DIP asks it about which direction the "depends-on" arrows point.</p>
 <p>Keep coming back to this framing as you go topic by topic — it explains <em>why</em> each rule exists, which is worth more in an interview (and in real design decisions) than reciting a definition from memory.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ The Five, and the Smells They Fix', html: `
+{ id: "mechanics", title: "⚙️ The Five, and the Smells They Fix", collapsible: true, html: `
 <h3>A single-glance reference</h3>
 <p>Each row below gets its own full topic later in this module — this table is just the map before the territory:</p>
 <table>
@@ -83,10 +95,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>A practical rule of thumb:</strong> apply a principle when you feel real pain from its absence — a class you dread touching, a test you can't write without a live database, a <code>switch</code> statement you've edited five times this month — not speculatively, before that pain exists. A 200-line prototype rarely needs the same rigor as a payments module three teams depend on.</li>
 </ul>
 <p>Every topic that follows will show the "fix" for its principle, but will also call out where applying that fix everywhere, unconditionally, becomes its own smell.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 A Taste (before → after)', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Before: a switch on type, edited every time a tier is added</h3>
 <pre><code class="language-typescript">type CustomerType = 'regular' | 'premium' | 'vip';
 
@@ -131,10 +143,10 @@ function calculateDiscount(customerType: CustomerType, amount: number): number {
 }
 </code></pre>
 <p>Adding a "student" tier now means adding one new class and one map entry — <code>calculateDiscount</code> itself never changes again, and nothing about the existing three tiers is at risk from the new one. This is a preview of the Open/Closed principle's shape (its own topic later in this module) — the point here is just to show what "applying SOLID" concretely looks like in code: not a switch statement disappearing by magic, but a small, deliberate restructuring around a stable interface.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What does SOLID stand for, and can you give a one-line definition of each?</div>
 <div class="qa-a">
@@ -162,45 +174,20 @@ function calculateDiscount(customerType: CustomerType, amount: number): number {
 <p>Robert C. Martin ("Uncle Bob") articulated most of the five principles individually, across papers and his book <em>Agile Software Development: Principles, Patterns, and Practices</em> — with one exception: the Liskov Substitution Principle originates with Barbara Liskov, from her 1987 OOPSLA keynote "Data Abstraction and Hierarchy" (later formalized with Jeannette Wing in 1994); Martin adopted her substitutability idea for the "L" rather than coining it. Michael Feathers is credited with rearranging the five principles into the memorable SOLID mnemonic; Martin then popularized the acronym himself. It's a three-person history worth knowing precisely — Martin for the set and four of the five principles, Liskov for the L, Feathers for the acronym — since interviewers sometimes specifically ask who coined the acronym versus who defined the underlying principles.</p>
 </div>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>SOLID is five object-oriented design guidelines</strong> — not laws or syntax — aimed at making code easier to <strong>change, extend, and test</strong> as a system grows.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>The five, one line each: <strong>S</strong> — one reason to change / one actor; <strong>O</strong> — open for extension, closed for modification; <strong>L</strong> — a subtype must be usable anywhere its base is expected; <strong>I</strong> — don't force clients to depend on methods they don't use; <strong>D</strong> — depend on abstractions, not concretions.</li>
-    <li>History is a <strong>three-person credit</strong>: Robert C. Martin articulated four of the five and collected the set; the <strong>L is Barbara Liskov's</strong> (1987 keynote, formalized with Wing in 1994); <strong>Michael Feathers</strong> coined the SOLID acronym, which Martin then popularized.</li>
-    <li>SOLID exists to fix nameable smells: <strong>rigidity</strong> (small changes cascade), <strong>fragility</strong> (a change breaks something unrelated), <strong>immobility</strong> (logic can't be reused cleanly), and <strong>needless complexity/repetition</strong>.</li>
-    <li>These are guidelines for <strong>managing dependencies and coupling</strong> in OO code — they assume classes, interfaces, and polymorphism, and most fixes use <strong>composition</strong>, not inheritance.</li>
-    <li>The one question tying all five together: <strong>"when the change I actually expect shows up, is it easy to make?"</strong> — not "could this handle any conceivable future requirement."</li>
-    <li>The counterweight is <strong>YAGNI</strong>: every abstraction has a real cost (another file, another jump, another contract to keep consistent), so don't build extensibility before there's a real reason.</li>
-    <li><strong>Premature abstraction is often worse than a little duplication</strong> — two things that look alike but change for unrelated reasons are not "the same responsibility."</li>
-    <li>Rule of thumb: <strong>apply a principle when you feel real pain from its absence</strong> (a class you dread touching, a test needing a live DB, a switch edited five times this month), not speculatively.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Treating SOLID as <strong>laws or a checklist to satisfy on every class</strong> — extracting collaborators, adding an interface per dependency, and wrapping every construction behind a factory regardless of whether any symptom is present. That's premature abstraction: it pays the full cost of indirection for a change that may never come, and is its own design smell.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"SOLID is five guidelines for keeping the cost of a typical future change low — they target specific smells like rigidity, fragility, and immobility, not elegance for its own sake."</div>
-  <div class="revision-say">"Every letter is one angle on the same question: when the change I actually expect arrives, is this design ready for it?"</div>
-  <div class="revision-say">"The counterweight is YAGNI — I apply a principle when I feel real pain from its absence, because a single-implementation interface added 'just in case' is indirection with no payoff."</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. What single question ties all five SOLID principles together?</div>
+  <div class="qa-answer">
+    <p>"When the change I actually expect shows up, is it easy to make?", not "could this theoretically handle any future requirement", which is premature abstraction. Each letter asks it from a different angle: SRP about a single class's reasons to change, OCP about adding new behaviour, LSP about swapping implementations safely, ISP about what a client is forced to know about, and DIP about which direction the depends-on arrows point. That framing explains why each rule exists, which is worth more in an interview than reciting definitions.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you say what SOLID stands for and give a one-line rule for each letter?</li>
-    <li>Can you name the three-person history — Martin for the set and four principles, Liskov for the L, Feathers for the acronym?</li>
-    <li>Can you name the design smells SOLID exists to fix — rigidity, fragility, immobility, needless complexity?</li>
-    <li>Can you state the one question that ties all five principles together?</li>
-    <li>Can you explain the YAGNI tension and when applying SOLID would be a mistake?</li>
-    <li>Can you explain why premature abstraction can be worse than a little duplication?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q6. Why can premature abstraction be worse than a little duplication?</div>
+  <div class="qa-answer">
+    <p>Two pieces of code that look alike today but change for unrelated reasons are not "the same responsibility". Forcing them into one shared abstraction to avoid repeating a few lines couples them, which is exactly the coupling SRP warns against, just one level higher up. Every abstraction also costs indirection, more files and another contract to keep consistent, so apply a principle when you feel real pain from its absence. A 200-line prototype rarely needs the rigour of a payments module three teams depend on.</p>
+  </div>
 </div>
-`}
+` },
 
-]});
+  ]
+});

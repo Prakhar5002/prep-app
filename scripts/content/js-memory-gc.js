@@ -1,31 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'js-memory-gc',
-  module: 'JavaScript Deep',
-  title: 'Memory & Garbage Collection',
-  estimatedReadTime: '28 min',
-  tags: ['memory', 'gc', 'garbage-collection', 'heap', 'stack', 'leak', 'weakmap', 'weakref', 'performance', 'fundamentals'],
+  id: "js-memory-gc",
+  module: "JavaScript Deep",
+  title: "Memory & Garbage Collection",
+  estimatedReadTime: "28 min",
+  tags: ["memory","gc","garbage-collection","heap","stack","leak","weakmap","weakref","performance","fundamentals"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>JavaScript is a <strong>memory-managed</strong> language. You don't <code>malloc</code>/<code>free</code>; the engine's garbage collector (GC) does it for you. The algorithm is conceptually simple: trace from a set of <strong>roots</strong> (the global object, the current call stack, and a few internal slots); every object reachable from those roots is <em>live</em>; everything else is <em>garbage</em> and may be reclaimed.</p>
-<ul>
-  <li><strong>Primitives</strong> (number, string, boolean, bigint, symbol, null, undefined) are typically stack-resident (or interned); they have value semantics.</li>
-  <li><strong>Objects</strong> (including arrays, functions, maps, closures) live in the heap; you hold <em>references</em>.</li>
-  <li>Modern engines use <strong>generational, tracing GC</strong>: most objects die young (in a small "nursery" / young generation); survivors are promoted to the old generation, which is collected less frequently.</li>
-  <li>You can't force GC from user code (browsers intentionally don't expose it). You can only stop holding references.</li>
-  <li><strong>Memory leaks</strong> in JS are references you forgot about: closures over big state, detached DOM nodes still in arrays, timers that keep running, event listeners never removed.</li>
-  <li><code>WeakMap</code>, <code>WeakSet</code>, <code>WeakRef</code>, <code>FinalizationRegistry</code> let you reference objects without pinning them — useful for caches and observers.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>The GC doesn't collect objects you're "done with" — it collects objects <em>unreachable from any root</em>. If you still hold a path to an object, it's live, no matter how little you care about it. Leaks = forgotten references.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The GC frees objects <strong>unreachable from any root</strong> — not the ones you're "done with" — so a leak is always a reference you forgot: timers, listeners, detached DOM, closures over big state, or an uncapped cache.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>JS is memory-managed</strong> — no <code>malloc</code>/<code>free</code>; the GC reclaims memory based on <strong>reachability</strong>, not on whether you're "done with" an object.</li>
+    <li><strong>Roots</strong> = the global object, the call stack, closures over live functions, the DOM tree, registered timers/listeners, and internal engine slots. Anything reachable from a root is <em>live</em>; everything else is garbage.</li>
+    <li><strong>A leak is a reference you forgot:</strong> closures over big state, detached DOM nodes still referenced, intervals/timeouts never cleared, listeners never removed, ever-growing global or module-level collections.</li>
+    <li>Primitives are value-typed (often stack-resident/interned); objects live on the heap and you hold <em>references</em> — assignment copies the pointer, not the object.</li>
+    <li>Modern engines use <strong>generational, tracing GC</strong>: most objects die young in a nursery (fast, frequent scavenge); survivors are promoted to the old generation (mark-sweep-compact, infrequent).</li>
+    <li>Tracing GC handles <strong>cycles</strong> naturally because it starts from roots; naive reference counting can't free a cycle.</li>
+    <li><strong>You cannot force GC from user code</strong> (security, determinism, performance) — you can only stop holding references. <code>--expose-gc</code> / DevTools "Collect garbage" are for debugging only.</li>
+    <li>Closures <strong>capture by reference and pin</strong> their captured variables for as long as the closure is reachable — return only what you need, not a closure over a huge array.</li>
+    <li><code>WeakMap</code>/<code>WeakSet</code> hold keys <strong>weakly</strong> → entries vanish once the key is otherwise unreachable; ideal for caches and per-object metadata. Keys must be objects; no <code>.size</code>/iteration by design.</li>
+    <li>Uncapped caches (a <code>Map</code> that never evicts) grow forever — use an LRU or a size cap.</li>
+    <li><strong>Always clean up:</strong> <code>clearInterval</code>/<code>clearTimeout</code>, <code>removeEventListener</code>, unsubscribe on unmount (React effect cleanup return).</li>
+    <li>Don't rely on <code>FinalizationRegistry</code> for correctness — its callback may never run; use explicit <code>.close()</code> in <code>try/finally</code>. Avoid <code>delete</code> on hot objects (invalidates the hidden class) — set to <code>null</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Expecting an object to be collected while a <strong>closure, timer, listener, or global collection still references it</strong>. You can't force GC — you can only drop references: <code>clearInterval</code>/<code>clearTimeout</code>, <code>removeEventListener</code>, and return cleanup from React effects.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The garbage collector doesn't free objects you're done with — it frees objects unreachable from any root, so a leak is always a reference you forgot to drop."</div>
+  <div class="revision-say">"Modern engines use generational tracing GC: most objects die young in the nursery, and tracing naturally reclaims reference cycles that plain reference counting can't."</div>
+  <div class="revision-say">"Reach for <code>WeakMap</code> when you want metadata that dies with its key, and always clean up timers and listeners so their closures don't pin everything they captured."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Stack vs Heap</h3>
 <p>JavaScript runtimes divide working memory into two regions:</p>
 <ul>
@@ -66,10 +77,10 @@ console.log(a.n); // 99 — same object</code></pre>
   <li><strong>Performance:</strong> application-level GC triggering is almost always worse than the engine's heuristics.</li>
 </ul>
 <p>Node exposes <code>--expose-gc</code> flag + <code>global.gc()</code> for testing only. Chrome DevTools has a "Collect Garbage" button, also for debugging.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "root set → reachable graph" picture</h3>
 <div class="diagram">
 <pre>
@@ -125,10 +136,10 @@ const c = makeCounter();
   <div class="callout-title">Not all closures are equal</div>
   <p>V8 tries to only capture variables a closure actually uses (called "context-sensitive escape analysis" in some engines). But it's a heuristic; complex code can surprise you. When in doubt, pass a minimal value instead of closing over the source.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>How V8's GC actually works (high-level)</h3>
 <ul>
   <li><strong>Orinoco</strong> is the name of V8's mostly-parallel, incremental, concurrent GC.</li>
@@ -209,10 +220,10 @@ registry.register(someObject, 'some-label');</code></pre>
   <li>Avoid adding properties to an object after it's "in use."</li>
   <li>Avoid <code>delete obj.prop</code> (invalidates shape). Set to <code>null</code> or <code>undefined</code> instead.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — reachability basics</h3>
 <pre><code class="language-js">let a = { n: 1 };
 let b = a;         // same object, two refs
@@ -353,10 +364,11 @@ const view = new Uint8Array(buf);
 }
 const c = new Canvas2D(8192, 8192);
 c.destroy(); // critical for big backbuffers — don't wait for GC</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Closure captures more than you think</h3>
 <p>V8 typically captures only used variables in a closure. But in some older engines and in certain patterns (e.g., <code>eval</code> inside the closure, function declarations that reference each other), the entire enclosing environment can be pinned. When in doubt, destructure what you need.</p>
 <pre><code class="language-js">// Subtle: inner closes over entire scope because of eval
@@ -459,10 +471,9 @@ const it = stream();
 
 <h3>20. Workers have their own heap</h3>
 <p>Web Workers / worker_threads run in separate JS realms with separate heaps. Moving heavy allocations into a worker can isolate GC pauses from the main thread.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — global caches that never evict</h3>
 <pre><code class="language-js">// BAD
 const userCache = new Map();
@@ -578,10 +589,10 @@ function Comp({ id }) {
   useEffect(() =&gt; subscribe(opts), [opts]); // opts is new every render → re-subscribes
 }</code></pre>
 <p>Leaks aren't always about bytes — they're also about lifecycle. Stable references prevent leak-shaped behavior like repeated subscriptions never cleaned up.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How does JavaScript garbage collection work?</div>
   <div class="qa-answer">
@@ -736,50 +747,7 @@ close() {
     <li>You warn against relying on <code>FinalizationRegistry</code> for correctness.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">The GC frees objects <strong>unreachable from any root</strong> — not the ones you're "done with" — so a leak is always a reference you forgot: timers, listeners, detached DOM, closures over big state, or an uncapped cache.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>JS is memory-managed</strong> — no <code>malloc</code>/<code>free</code>; the GC reclaims memory based on <strong>reachability</strong>, not on whether you're "done with" an object.</li>
-    <li><strong>Roots</strong> = the global object, the call stack, closures over live functions, the DOM tree, registered timers/listeners, and internal engine slots. Anything reachable from a root is <em>live</em>; everything else is garbage.</li>
-    <li><strong>A leak is a reference you forgot:</strong> closures over big state, detached DOM nodes still referenced, intervals/timeouts never cleared, listeners never removed, ever-growing global or module-level collections.</li>
-    <li>Primitives are value-typed (often stack-resident/interned); objects live on the heap and you hold <em>references</em> — assignment copies the pointer, not the object.</li>
-    <li>Modern engines use <strong>generational, tracing GC</strong>: most objects die young in a nursery (fast, frequent scavenge); survivors are promoted to the old generation (mark-sweep-compact, infrequent).</li>
-    <li>Tracing GC handles <strong>cycles</strong> naturally because it starts from roots; naive reference counting can't free a cycle.</li>
-    <li><strong>You cannot force GC from user code</strong> (security, determinism, performance) — you can only stop holding references. <code>--expose-gc</code> / DevTools "Collect garbage" are for debugging only.</li>
-    <li>Closures <strong>capture by reference and pin</strong> their captured variables for as long as the closure is reachable — return only what you need, not a closure over a huge array.</li>
-    <li><code>WeakMap</code>/<code>WeakSet</code> hold keys <strong>weakly</strong> → entries vanish once the key is otherwise unreachable; ideal for caches and per-object metadata. Keys must be objects; no <code>.size</code>/iteration by design.</li>
-    <li>Uncapped caches (a <code>Map</code> that never evicts) grow forever — use an LRU or a size cap.</li>
-    <li><strong>Always clean up:</strong> <code>clearInterval</code>/<code>clearTimeout</code>, <code>removeEventListener</code>, unsubscribe on unmount (React effect cleanup return).</li>
-    <li>Don't rely on <code>FinalizationRegistry</code> for correctness — its callback may never run; use explicit <code>.close()</code> in <code>try/finally</code>. Avoid <code>delete</code> on hot objects (invalidates the hidden class) — set to <code>null</code>.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Expecting an object to be collected while a <strong>closure, timer, listener, or global collection still references it</strong>. You can't force GC — you can only drop references: <code>clearInterval</code>/<code>clearTimeout</code>, <code>removeEventListener</code>, and return cleanup from React effects.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"The garbage collector doesn't free objects you're done with — it frees objects unreachable from any root, so a leak is always a reference you forgot to drop."</div>
-  <div class="revision-say">"Modern engines use generational tracing GC: most objects die young in the nursery, and tracing naturally reclaims reference cycles that plain reference counting can't."</div>
-  <div class="revision-say">"Reach for <code>WeakMap</code> when you want metadata that dies with its key, and always clean up timers and listeners so their closures don't pin everything they captured."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why the GC frees by reachability, not by whether you're "done" with an object?</li>
-    <li>Can you list the common leak sources — timers, listeners, detached DOM, closures over big state, uncapped caches?</li>
-    <li>Can you explain why a tracing GC reclaims cycles but naive reference counting cannot?</li>
-    <li>Can you explain how generational GC works — nursery scavenge versus old-generation mark-sweep-compact?</li>
-    <li>Can you explain why you can't force GC from user code and what you can do instead?</li>
-    <li>Can you explain why <code>WeakMap</code> entries vanish with their key and when that beats a plain <code>Map</code> cache?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

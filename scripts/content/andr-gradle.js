@@ -1,29 +1,45 @@
 window.PREP_SITE.registerTopic({
-  id: 'andr-gradle',
-  module: 'Android Native (Deep)',
-  title: 'Gradle & Build System',
-  estimatedReadTime: '26 min',
-  tags: ['gradle', 'agp', 'android-gradle-plugin', 'groovy', 'kotlin-dsl', 'build-gradle', 'settings-gradle', 'gradle-properties', 'gradle-wrapper', 'autolinking', 'r8', 'proguard', 'sdk-versions', 'compilesdk', 'minsdk', 'targetsdk', 'ndk', 'jvm', 'jdk', 'hermes', 'newarchenabled', '16kb-page-size', 'expo-build-properties', 'react-native', 'android'],
+  id: "andr-gradle",
+  module: "Android Native (Deep)",
+  title: "Gradle & Build System",
+  estimatedReadTime: "26 min",
+  tags: ["gradle","agp","android-gradle-plugin","groovy","kotlin-dsl","build-gradle","settings-gradle","gradle-properties","gradle-wrapper","autolinking","r8","proguard","sdk-versions","compilesdk","minsdk","targetsdk","ndk","jvm","jdk","hermes","newarchenabled","16kb-page-size","expo-build-properties","react-native","android"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Gradle is the build system that turns your <code>android/</code> folder — Java/Kotlin, resources, native <code>.so</code> libs, and the JS bundle — into an installable APK or an uploadable AAB. Everything about how an Android RN app compiles lives in a handful of files:</p>
-<ul>
-  <li><strong>gradle-wrapper.properties</strong> pins the exact <em>Gradle</em> version.</li>
-  <li>The <strong>Android Gradle Plugin (AGP)</strong> — versioned separately from Gradle — teaches Gradle how to build Android.</li>
-  <li><strong>Root build.gradle</strong> declares plugin classpaths and the SDK-version <code>ext</code> block; <strong>settings.gradle</strong> wires in autolinking; <strong>app/build.gradle</strong> configures the app module; <strong>gradle.properties</strong> flips JVM and feature flags.</li>
-</ul>
-<p>Three version numbers must agree or the build dies before it starts: <strong>Gradle ↔ AGP ↔ JDK</strong>. Most "works on my machine" Android failures are a mismatch in that triangle or a stale build cache.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Gradle is the engine, the Gradle Wrapper pins the engine's version, and AGP is the Android plugin that drives it. In Expo prebuild apps you almost never hand-edit these files — <code>expo-build-properties</code> in <code>app.json</code> sets the SDK versions and <code>expo prebuild</code> regenerates the whole <code>android/</code> folder.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Gradle is the JVM build engine, the <strong>wrapper pins its version</strong>, <strong>AGP</strong> is the Android plugin that drives it, and <strong>Gradle ↔ AGP ↔ JDK must agree</strong> — in Expo apps you set these via <code>expo-build-properties</code>, never by hand-editing the regenerated <code>android/</code>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Gradle</strong> = JVM build tool modeling the build as a DAG of tasks with inputs/outputs → incremental builds (UP-TO-DATE skips) + build cache + parallel execution. Three phases: initialization → configuration → execution.</li>
+    <li><strong>Gradle Wrapper:</strong> <code>./gradlew</code> reads <code>distributionUrl</code> in <code>gradle-wrapper.properties</code> to download/run a pinned Gradle version. Commit <code>gradlew</code>, <code>gradle-wrapper.jar</code>, <code>gradle-wrapper.properties</code>. Wrapper &gt; local gradle = reproducible builds, no install step, CI needs only a JDK. Never run bare <code>gradle</code>.</li>
+    <li><strong>AGP</strong> (<code>com.android.tools.build:gradle</code>) adds the <code>android {}</code> DSL, R8/D8, aapt2, manifest merge, variants — versioned separately from Gradle.</li>
+    <li><strong>Compatibility triangle AGP ↔ Gradle ↔ JDK</strong>: RN 0.79/Expo 53 ≈ AGP 8.6 + Gradle 8.7+ + JDK 17 (older RN = JDK 11). Mismatch fails before compiling ("requires Java 17", "Minimum supported Gradle version…"). Most "works on my machine" Android build failures are a mismatch in this triangle or a stale build cache.</li>
+    <li><strong>Groovy DSL</strong> (<code>.gradle</code>, RN default, dynamic) vs <strong>Kotlin DSL</strong> (<code>.gradle.kts</code>, static, IDE-friendly, double quotes + <code>=</code>).</li>
+    <li><strong>Root build.gradle:</strong> <code>buildscript</code> + <code>ext</code> block centralizes <code>buildToolsVersion</code>, <code>minSdkVersion</code>, <code>compileSdkVersion</code>, <code>targetSdkVersion</code>, <code>ndkVersion</code>, <code>kotlinVersion</code>; <code>repositories { google(); mavenCentral() }</code>; classpath deps; <code>allprojects</code>.</li>
+    <li><strong>settings.gradle:</strong> <code>pluginManagement</code>, <code>include ':app'</code>, RN autolinking via the <code>com.facebook.react.settings</code> plugin (older: <code>apply from native_modules.gradle</code>) — scans <code>node_modules</code> and pulls community libs into the build automatically.</li>
+    <li><strong>app/build.gradle:</strong> <code>apply plugin</code>, <code>android {}</code> (<code>compileSdk</code>, <code>defaultConfig</code> with <code>applicationId</code>/<code>minSdk</code>/<code>targetSdk</code>/<code>versionCode</code>/<code>versionName</code>, <code>buildTypes</code>, <code>signingConfigs</code>, <code>buildFeatures</code>, <code>packagingOptions</code>, <code>splits</code>/<code>abiFilters</code>), <code>react {}</code>, <code>dependencies {}</code>.</li>
+    <li><strong>SDK versions:</strong> compileSdk = API you compile against; minSdk = oldest device; targetSdk = tested-against behavior level (Play forces upward); buildToolsVersion = aapt2/dexer; ndkVersion = C++/Hermes/JSI.</li>
+    <li><strong>Dependency keywords:</strong> <code>implementation</code> (no transitive leak, default), <code>api</code> (re-exported), <code>compileOnly</code>, <code>runtimeOnly</code>, <code>debugImplementation</code>, <code>testImplementation</code> (JVM/JUnit), <code>androidTestImplementation</code> (device/Espresso), <code>annotationProcessor</code>/<code>kapt</code>/<code>ksp</code>.</li>
+    <li><strong>gradle.properties:</strong> <code>org.gradle.jvmargs</code>, <code>org.gradle.parallel</code>, <code>org.gradle.configureondemand</code>, <code>org.gradle.caching</code>, <code>android.useAndroidX</code>, plus RN flags <code>newArchEnabled</code>, <code>hermesEnabled</code>, <code>reactNativeArchitectures</code> (arm64-v8a, armeabi-v7a, x86, x86_64).</li>
+    <li><strong>Tasks:</strong> <code>assembleDebug</code>/<code>assembleRelease</code> (APK), <code>bundleRelease</code> (AAB for Play), <code>installDebug</code>, <code>clean</code>, <code>app:dependencies</code>, <code>signingReport</code>, <code>tasks</code>; flags <code>--stacktrace</code>, <code>--info</code>, <code>-x lint</code>.</li>
+    <li><strong>R8</strong> (<code>minifyEnabled true</code>) shrinks/obfuscates → release-only crashes from stripped reflection targets → fix with keep rules in <code>proguard-rules.pro</code>, not by disabling minify.</li>
+    <li><strong>16 KB page size:</strong> Android 15+/Play (Nov 2025) needs 16 KB-aligned <code>.so</code>s; RN 0.76 prebuilts were 4 KB and couldn't be re-aligned → <code>sw-ticketing</code> upgraded to Expo 53/RN 0.79 (NDK r27+/AGP 8.5.1+), plus <code>jniLibs { useLegacyPackaging false }</code>.</li>
+    <li><strong>Expo reality:</strong> <code>android/</code> is regenerated by <code>expo prebuild</code> (CNG); set compileSdk/ndkVersion/etc. via <code>expo-build-properties</code> in <code>app.json</code>; hand-edits are wiped by <code>--clean</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Bumping AGP alone (or running the wrong JDK) and expecting it to work.</strong> AGP, Gradle, and the JDK move together — change one and the build dies with "requires Java 17" or "Minimum supported Gradle version…". Read the Gradle version from <code>gradle-wrapper.properties</code> and the AGP version from the root <code>build.gradle</code> classpath — they are two different numbers. And in Expo apps, editing <code>android/</code> directly is wiped on the next <code>expo prebuild --clean</code>; set values in <code>expo-build-properties</code> instead.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Gradle is the JVM build engine, the wrapper pins its exact version so everyone builds identically, and AGP is the separately-versioned Android plugin that drives it — they're not the same number."</div>
+  <div class="revision-say">"AGP, Gradle, and the JDK form a compatibility triangle — RN 0.79 is AGP 8.6-ish on Gradle 8.7+ with JDK 17; a mismatch fails before any of my code compiles."</div>
+  <div class="revision-say">"compileSdk is what I compile against, minSdk is the oldest device, targetSdk is the behavior level Play forces upward. And in my Expo apps I set all of these through expo-build-properties, because prebuild regenerates the android folder."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What Gradle actually is</h3>
 <p>Gradle is a general-purpose, JVM-based build automation tool. It runs on the JVM, and its build scripts are written in a JVM language — Groovy (the <code>.gradle</code> files) or Kotlin (<code>.gradle.kts</code>). It is not Android-specific; it also builds plain Java, Kotlin, Spring, and Gradle-plugin projects. Android just happens to use it as its official build system, driven by a plugin (AGP).</p>
 <p>Gradle's core model is a <strong>directed acyclic graph (DAG) of tasks</strong>. A "task" is a unit of work — <code>compileDebugKotlin</code>, <code>mergeReleaseResources</code>, <code>packageRelease</code>. Each task declares inputs and outputs. Gradle computes the graph, orders tasks by their dependencies, and runs them. Two features make this fast:</p>
@@ -47,10 +63,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why version alignment matters</h3>
 <p>Gradle, AGP, and the JDK evolve on separate schedules but are tightly coupled. A given AGP version requires a minimum Gradle version and a specific JDK range. Ship RN 0.79 (Expo 53) and you are on a JDK 17 + AGP 8.x + Gradle 8.x world; older RN pinned JDK 11. Mismatches produce cryptic errors ("Unsupported class file major version", "AGP requires Gradle X") long before your code compiles.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "who drives whom" picture</h3>
 <div class="diagram">
 <pre>
@@ -100,10 +116,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"Gradle and AGP are the same version." They are not. Gradle might be 8.10 while AGP is 8.6 — two independent version lines with their own compatibility rules. Reading the "Gradle version" from <code>gradle-wrapper.properties</code> and the "AGP version" from the root <code>build.gradle</code> classpath are two different lookups.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>The Gradle Wrapper — gradle-wrapper.properties</h3>
 <p>This one-file pins the Gradle engine version for the whole repo:</p>
 <pre><code class="language-properties"># android/gradle/wrapper/gradle-wrapper.properties
@@ -357,10 +373,10 @@ reactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64</code></pre>
 }</code></pre>
   <p><code>newArchEnabled</code> and <code>hermesEnabled</code> are set at the top level of <code>app.json</code> (or via the RN version defaults), not by editing <code>gradle.properties</code>.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — reading your three key versions</h3>
 <pre><code class="language-bash"># Gradle version:
 grep distributionUrl android/gradle/wrapper/gradle-wrapper.properties
@@ -445,10 +461,11 @@ ls app/build/outputs/bundle/release/    # app-release.aab</code></pre>
 <pre><code class="language-json">// app.json — then run: npx expo prebuild --clean &amp;&amp; npx expo run:android
 { "expo": { "plugins": [["expo-build-properties",
   { "android": { "compileSdkVersion": 35, "minSdkVersion": 24 } }]] } }</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Wrong JDK (the #1 failure)</h3>
 <p>"Unsupported class file major version 65" or "requires Java 17" means Gradle is running under the wrong JDK. Fix: install JDK 17, set <code>JAVA_HOME</code>, and set Android Studio's Gradle JDK (Settings → Build → Gradle). RN 0.79 needs 17; older RN needed 11.</p>
 
@@ -499,10 +516,9 @@ ls app/build/outputs/bundle/release/    # app-release.aab</code></pre>
 
 <h3>17. Editing android/ in an Expo app</h3>
 <p>Hand-edits to <code>android/</code> survive until the next <code>expo prebuild --clean</code>, which regenerates the folder and silently discards them. Move changes into a config plugin or <code>expo-build-properties</code>.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — running system gradle instead of ./gradlew</h3>
 <p>Typing <code>gradle assembleDebug</code> uses whatever version Homebrew installed, not the pinned one. Always <code>./gradlew</code>. The wrapper exists precisely to avoid version drift.</p>
 
@@ -546,10 +562,10 @@ ls app/build/outputs/bundle/release/    # app-release.aab</code></pre>
   <div class="callout-title">🐛 The 16 KB page-size requirement (a real build constraint)</div>
   <p>Historically Android used a <strong>4 KB memory page size</strong>. Android 15+ devices (and Play Store policy, enforced from Nov 2025) require apps to support a <strong>16 KB page size</strong>, meaning every bundled native library (<code>.so</code>) must be aligned to a 16 KB ELF segment boundary. RN 0.76-era prebuilt native libraries (React Native core, Hermes, and many third-party <code>.so</code>s) were compiled 4 KB-aligned and <strong>could not simply be re-aligned</strong> — the fix required rebuilding those prebuilts with an NDK/AGP that emits 16 KB-aligned segments (NDK r27+, AGP 8.5.1+). This is why <code>sw-ticketing</code> was <strong>upgraded in place to Expo 53 / RN 0.79</strong> rather than patched on RN 0.76: the older prebuilts couldn't be made 16 KB-compliant. Practically you also set <code>packagingOptions { jniLibs { useLegacyPackaging false } }</code> so <code>.so</code>s are stored uncompressed and page-aligned in the APK/AAB. Verify with <code>zipalign -c -P 16 -v 4 app.apk</code> or check segment alignment on each <code>.so</code>.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What is Gradle and why does Android use it?</div>
   <div class="qa-answer">
@@ -670,54 +686,20 @@ ls app/build/outputs/bundle/release/    # app-release.aab</code></pre>
     <li>You know Expo prebuild regenerates <code>android/</code> and that <code>expo-build-properties</code> is where SDK values belong.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Gradle is the JVM build engine, the <strong>wrapper pins its version</strong>, <strong>AGP</strong> is the Android plugin that drives it, and <strong>Gradle ↔ AGP ↔ JDK must agree</strong> — in Expo apps you set these via <code>expo-build-properties</code>, never by hand-editing the regenerated <code>android/</code>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Gradle</strong> = JVM build tool modeling the build as a DAG of tasks with inputs/outputs → incremental builds (UP-TO-DATE skips) + build cache + parallel execution. Three phases: initialization → configuration → execution.</li>
-    <li><strong>Gradle Wrapper:</strong> <code>./gradlew</code> reads <code>distributionUrl</code> in <code>gradle-wrapper.properties</code> to download/run a pinned Gradle version. Commit <code>gradlew</code>, <code>gradle-wrapper.jar</code>, <code>gradle-wrapper.properties</code>. Wrapper &gt; local gradle = reproducible builds, no install step, CI needs only a JDK. Never run bare <code>gradle</code>.</li>
-    <li><strong>AGP</strong> (<code>com.android.tools.build:gradle</code>) adds the <code>android {}</code> DSL, R8/D8, aapt2, manifest merge, variants — versioned separately from Gradle.</li>
-    <li><strong>Compatibility triangle AGP ↔ Gradle ↔ JDK</strong>: RN 0.79/Expo 53 ≈ AGP 8.6 + Gradle 8.7+ + JDK 17 (older RN = JDK 11). Mismatch fails before compiling ("requires Java 17", "Minimum supported Gradle version…").</li>
-    <li><strong>Groovy DSL</strong> (<code>.gradle</code>, RN default, dynamic) vs <strong>Kotlin DSL</strong> (<code>.gradle.kts</code>, static, IDE-friendly, double quotes + <code>=</code>).</li>
-    <li><strong>Root build.gradle:</strong> <code>buildscript</code> + <code>ext</code> block centralizes <code>buildToolsVersion</code>, <code>minSdkVersion</code>, <code>compileSdkVersion</code>, <code>targetSdkVersion</code>, <code>ndkVersion</code>, <code>kotlinVersion</code>; <code>repositories { google(); mavenCentral() }</code>; classpath deps; <code>allprojects</code>.</li>
-    <li><strong>settings.gradle:</strong> <code>pluginManagement</code>, <code>include ':app'</code>, RN autolinking via the <code>com.facebook.react.settings</code> plugin (older: <code>apply from native_modules.gradle</code>) — scans <code>node_modules</code> and pulls community libs into the build automatically.</li>
-    <li><strong>app/build.gradle:</strong> <code>apply plugin</code>, <code>android {}</code> (<code>compileSdk</code>, <code>defaultConfig</code> with <code>applicationId</code>/<code>minSdk</code>/<code>targetSdk</code>/<code>versionCode</code>/<code>versionName</code>, <code>buildTypes</code>, <code>signingConfigs</code>, <code>buildFeatures</code>, <code>packagingOptions</code>, <code>splits</code>/<code>abiFilters</code>), <code>react {}</code>, <code>dependencies {}</code>.</li>
-    <li><strong>SDK versions:</strong> compileSdk = API you compile against; minSdk = oldest device; targetSdk = tested-against behavior level (Play forces upward); buildToolsVersion = aapt2/dexer; ndkVersion = C++/Hermes/JSI.</li>
-    <li><strong>Dependency keywords:</strong> <code>implementation</code> (no transitive leak, default), <code>api</code> (re-exported), <code>compileOnly</code>, <code>runtimeOnly</code>, <code>debugImplementation</code>, <code>testImplementation</code> (JVM/JUnit), <code>androidTestImplementation</code> (device/Espresso), <code>annotationProcessor</code>/<code>kapt</code>/<code>ksp</code>.</li>
-    <li><strong>gradle.properties:</strong> <code>org.gradle.jvmargs</code>, <code>org.gradle.parallel</code>, <code>org.gradle.configureondemand</code>, <code>org.gradle.caching</code>, <code>android.useAndroidX</code>, plus RN flags <code>newArchEnabled</code>, <code>hermesEnabled</code>, <code>reactNativeArchitectures</code> (arm64-v8a, armeabi-v7a, x86, x86_64).</li>
-    <li><strong>Tasks:</strong> <code>assembleDebug</code>/<code>assembleRelease</code> (APK), <code>bundleRelease</code> (AAB for Play), <code>installDebug</code>, <code>clean</code>, <code>app:dependencies</code>, <code>signingReport</code>, <code>tasks</code>; flags <code>--stacktrace</code>, <code>--info</code>, <code>-x lint</code>.</li>
-    <li><strong>R8</strong> (<code>minifyEnabled true</code>) shrinks/obfuscates → release-only crashes from stripped reflection targets → fix with keep rules in <code>proguard-rules.pro</code>, not by disabling minify.</li>
-    <li><strong>16 KB page size:</strong> Android 15+/Play (Nov 2025) needs 16 KB-aligned <code>.so</code>s; RN 0.76 prebuilts were 4 KB and couldn't be re-aligned → <code>sw-ticketing</code> upgraded to Expo 53/RN 0.79 (NDK r27+/AGP 8.5.1+), plus <code>jniLibs { useLegacyPackaging false }</code>.</li>
-    <li><strong>Expo reality:</strong> <code>android/</code> is regenerated by <code>expo prebuild</code> (CNG); set compileSdk/ndkVersion/etc. via <code>expo-build-properties</code> in <code>app.json</code>; hand-edits are wiped by <code>--clean</code>.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Bumping AGP alone (or running the wrong JDK) and expecting it to work.</strong> AGP, Gradle, and the JDK move together — change one and the build dies with "requires Java 17" or "Minimum supported Gradle version…". Read the Gradle version from <code>gradle-wrapper.properties</code> and the AGP version from the root <code>build.gradle</code> classpath — they are two different numbers. And in Expo apps, editing <code>android/</code> directly is wiped on the next <code>expo prebuild --clean</code>; set values in <code>expo-build-properties</code> instead.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Gradle is the JVM build engine, the wrapper pins its exact version so everyone builds identically, and AGP is the separately-versioned Android plugin that drives it — they're not the same number."</div>
-  <div class="revision-say">"AGP, Gradle, and the JDK form a compatibility triangle — RN 0.79 is AGP 8.6-ish on Gradle 8.7+ with JDK 17; a mismatch fails before any of my code compiles."</div>
-  <div class="revision-say">"compileSdk is what I compile against, minSdk is the oldest device, targetSdk is the behavior level Play forces upward. And in my Expo apps I set all of these through expo-build-properties, because prebuild regenerates the android folder."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Beyond implementation and api, which dependency configurations should you know, and what is the difference between kapt and ksp?</div>
+  <div class="qa-answer">
+    <p><code>compileOnly</code> is on the compile classpath but not packaged (annotations, provided libs); <code>runtimeOnly</code> is packaged but not visible at compile time. <code>debugImplementation</code>/<code>releaseImplementation</code> are variant-scoped (e.g. a debug-only tool). <code>testImplementation</code> is for local JVM unit tests (JUnit) and <code>androidTestImplementation</code> for instrumented device/emulator tests (Espresso). For annotation processors, Java uses <code>annotationProcessor</code>; Kotlin uses <code>kapt</code>, which is slow, or the newer, faster <code>ksp</code> (Kotlin Symbol Processing).</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain what Gradle is, its task-graph model, and how incremental builds + caching make it fast?</li>
-    <li>Can you say what the Gradle Wrapper pins, which files to commit, and why it beats a locally installed gradle?</li>
-    <li>Can you distinguish Gradle from AGP and describe the AGP ↔ Gradle ↔ JDK compatibility triangle?</li>
-    <li>Can you contrast compileSdk, minSdk, and targetSdk, and say where they're centralized?</li>
-    <li>Can you explain autolinking and point to where it's wired in <code>settings.gradle</code>?</li>
-    <li>Can you name the dependency configurations (implementation vs api, kapt vs ksp) and the common <code>./gradlew</code> tasks (assemble vs bundle)?</li>
-    <li>Can you explain the 16 KB page-size requirement, why RN 0.76 prebuilts failed it, and how Expo apps set build values without hand-editing android/?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. Which ./gradlew tasks and flags do you use day to day?</div>
+  <div class="qa-answer">
+    <p><code>assembleDebug</code>/<code>assembleRelease</code> build APKs, <code>bundleRelease</code> builds the AAB for Play, <code>installDebug</code> builds and installs on a connected device, and <code>clean</code> wipes build output. For diagnosis: <code>app:dependencies</code> prints the full dependency tree to resolve conflicts, <code>signingReport</code> prints keystore SHA-1/SHA-256 for Firebase/Maps, and <code>tasks</code> lists what's available. Useful flags are <code>--stacktrace</code> and <code>--info</code> for detail on a failure, and <code>-x lint</code> to exclude the lint task.</p>
+  </div>
 </div>
-`}
+` },
 
-]
+  ]
 });

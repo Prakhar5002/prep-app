@@ -1,32 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'off-bg-sync',
-  module: 'offline',
-  title: 'Background Sync',
-  estimatedReadTime: '40 min',
-  tags: ['background-sync', 'periodic-sync', 'service-worker', 'workbox', 'offline', 'queue', 'idempotency', 'mobile'],
+  id: "off-bg-sync",
+  module: "offline",
+  title: "Background Sync",
+  estimatedReadTime: "40 min",
+  tags: ["background-sync","periodic-sync","service-worker","workbox","offline","queue","idempotency","mobile"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Background Sync</strong> is a Service Worker API that lets you <em>defer</em> work — typically a queued mutation — until the device has a stable network connection. It's how an offline-aware web app makes "send tweet" feel instant: the UI succeeds locally, the request goes into a queue, and the SW retries the fetch when connectivity returns, even if the user has closed the tab. <strong>Periodic Background Sync</strong> is a related API that fires a SW event at regular intervals (subject to user engagement signals) — useful for daily content refresh.</p>
-<ul>
-  <li><strong>Two specs:</strong> <code>SyncManager</code> (one-shot, for "send when online") and <code>PeriodicSyncManager</code> (recurring, for "refresh data every few hours").</li>
-  <li><strong>Browser support is uneven.</strong> Background Sync: Chrome / Edge / Opera. <em>Not</em> Safari, <em>not</em> Firefox. Periodic Sync: Chrome / Edge only and gated on PWA install + user engagement.</li>
-  <li><strong>Always have a fallback.</strong> Try the request immediately; if it fails AND Background Sync is supported, register the sync; otherwise hold the queue and flush on next visit / online event.</li>
-  <li><strong>Workbox</strong> ships <code>BackgroundSyncPlugin</code> and a <code>Queue</code> class — the de facto implementation.</li>
-  <li><strong>Idempotency keys are mandatory.</strong> Network failures cause replays; server must dedupe.</li>
-  <li><strong>The pattern:</strong> page enqueues to IndexedDB → SW listens for <code>sync</code> event → SW iterates queue, calls fetch, retries on failure with exponential backoff.</li>
-  <li><strong>Mobile RN parallel:</strong> <code>react-native-background-fetch</code> + native task scheduling (<code>BackgroundTasks</code> on iOS, <code>WorkManager</code> on Android).</li>
-</ul>
-<p><strong>Mantra:</strong> "Enqueue locally, fire-and-forget, retry on reconnect, dedupe with idempotency keys, fall back gracefully where the API isn't supported."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Background Sync defers a queued mutation until the device is online — <strong>enqueue locally, fire-and-forget, retry on reconnect, dedupe with idempotency keys, and fall back where the API isn't supported</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>It makes "send tweet" feel instant: the UI succeeds locally, the request is queued, and the SW retries when connectivity returns — even after the user closes the tab.</li>
+    <li>Two specs: <code>SyncManager</code> (one-shot, "send when online") and <code>PeriodicSyncManager</code> (recurring refresh, e.g. daily content; Chrome/Edge only, gated on PWA install + user engagement; <code>minInterval</code> is only a hint).</li>
+    <li>Support is uneven — Background Sync is Chrome/Edge/Opera only (not Safari, not Firefox) — so always keep a fallback that flushes on the next visit or <code>online</code> event.</li>
+    <li>Fallback flow: try the request immediately; if it fails AND Background Sync is supported, register the sync; otherwise hold the queue and flush later.</li>
+    <li>The pattern: the page enqueues to IndexedDB, the SW listens for the sync event, then iterates the queue, calls <code>fetch</code>, and retries on failure with exponential backoff.</li>
+    <li><strong>Idempotency keys are mandatory</strong> because network failures replay requests — the server must dedupe.</li>
+    <li><code>event.waitUntil</code> keeps the SW alive mid-sync; without it the browser kills the worker. On the final retry <code>event.lastChance</code> is true — surface the failure instead of throwing forever.</li>
+    <li>Optimistic UI needs a pending state and a rollback/failed path, or the UI lies when a mutation dead-letters.</li>
+    <li>Workbox ships <code>BackgroundSyncPlugin</code> and a <code>Queue</code> class — the de facto implementation.</li>
+    <li>RN parallel: <code>react-native-background-fetch</code> over native scheduling (<code>BackgroundTasks</code> on iOS, <code>WorkManager</code> on Android).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Relying on Background Sync alone silently loses Safari and Firefox submissions</strong>, and skipping idempotency keys turns every retry into a duplicate. Try the request immediately, register the sync only if it's supported, and always keep a plain fallback that flushes later.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Background Sync is enqueue-locally, retry-on-reconnect — the UI succeeds instantly and the SW flushes the queue when connectivity returns."</div>
+  <div class="revision-say">"It's Chrome and Edge only, so I always keep a fallback that flushes on the next visit; relying on it alone loses Safari and Firefox data."</div>
+  <div class="revision-say">"Retries replay requests, so idempotency keys are mandatory and the server dedupes on them."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The two background sync APIs</h3>
 <table>
   <thead><tr><th>API</th><th>Trigger</th><th>Use for</th></tr></thead>
@@ -123,12 +131,10 @@ window.PREP_SITE.registerTopic({
   <li>Periodic sync registered without checking permission; silently no-ops.</li>
   <li>One queue for everything; one bad item blocks the whole queue.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The lifecycle of a queued mutation</h3>
 <pre><code class="language-text">User submits form
    ↓
@@ -244,12 +250,10 @@ After: dead-letter, surface to user
   <li>Cross-device sync — only this browser, this profile.</li>
   <li>Notification of failure to the user — you have to surface that yourself from the queue state.</li>
 </ul>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Page side: enqueue + register sync</h3>
 <pre><code class="language-javascript">// app.js
 import { openDB } from 'idb';
@@ -499,12 +503,10 @@ await logSyncMetric('queue-flushed', {
   remaining: (await db.count('queue')),
 });
 </code></pre>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Offline-first comments app</h3>
 <pre><code class="language-typescript">// app.ts
 async function postComment(postId: string, body: string) {
@@ -738,12 +740,11 @@ async function reportQueueDepth() {
   }
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Browser support gaps</h3>
 <ul>
   <li>Safari + Firefox: no Background Sync, no Periodic Sync.</li>
@@ -848,12 +849,9 @@ async function reportQueueDepth() {
   <li>Same patterns apply: queue with idempotency, server dedupe, fallback to foreground flush.</li>
   <li>Push-triggered wake-up (silent push) is more reliable than scheduled background sync on iOS.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common Background Sync mistakes</h3>
 <ol>
   <li><strong>Relying on Background Sync only.</strong> Safari + Firefox users lose offline submissions.</li>
@@ -1022,12 +1020,10 @@ if (status.state === 'granted') {
 
 <h3>Anti-pattern: no manual retry UX</h3>
 <p>If sync fails permanently, the user needs a way to trigger another attempt — a "Retry" button on the failed item, a "Sync now" action in settings.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common Background Sync interview prompts</h3>
 <ol>
   <li>How would you handle offline form submissions in a PWA?</li>
@@ -1151,53 +1147,26 @@ if (status.state === 'granted') {
   <li>"Build the same pattern in RN with react-query persistence."</li>
   <li>"Audit a real PWA's offline mutations — does it dedupe? does it surface failures?"</li>
 </ul>
-`
-    },
 
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Background Sync defers a queued mutation until the device is online — <strong>enqueue locally, fire-and-forget, retry on reconnect, dedupe with idempotency keys, and fall back where the API isn't supported</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Two specs: <code>SyncManager</code> (one-shot, "send when online") and <code>PeriodicSyncManager</code> (recurring refresh, gated on PWA install + user engagement).</li>
-    <li>Support is uneven — Background Sync is Chrome/Edge/Opera only (not Safari, not Firefox) — so always keep a fallback that flushes on the next visit or online event.</li>
-    <li>The pattern: the page enqueues to IndexedDB, the SW listens for the sync event, then iterates the queue, calls <code>fetch</code>, and retries on failure with exponential backoff.</li>
-    <li><strong>Idempotency keys are mandatory</strong> because network failures replay requests — the server must dedupe.</li>
-    <li><code>event.waitUntil</code> keeps the SW alive mid-sync; without it the browser kills the worker.</li>
-    <li>Workbox ships <code>BackgroundSyncPlugin</code> and a <code>Queue</code> class — the de facto implementation.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Relying on Background Sync alone silently loses Safari and Firefox submissions</strong>, and skipping idempotency keys turns every retry into a duplicate. Try the request immediately, register the sync only if it's supported, and always keep a plain fallback that flushes later.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Background Sync is enqueue-locally, retry-on-reconnect — the UI succeeds instantly and the SW flushes the queue when connectivity returns."</div>
-  <div class="revision-say">"It's Chrome and Edge only, so I always keep a fallback that flushes on the next visit; relying on it alone loses Safari and Firefox data."</div>
-  <div class="revision-say">"Retries replay requests, so idempotency keys are mandatory and the server dedupes on them."</div>
+<div class="qa-block">
+  <div class="qa-question">Q1. What does <code>event.waitUntil</code> do inside a sync handler?</div>
+  <div class="qa-answer">
+    <p>It keeps the Service Worker alive until the promise you pass settles, so the browser doesn't kill the worker halfway through flushing the queue. It also reports the outcome: if the promise rejects, the browser treats the sync as failed and schedules a retry (roughly 3 attempts, the last with <code>event.lastChance === true</code>). So the handler is <code>if (event.tag === 'queue') event.waitUntil(flushQueue())</code>, and on <code>lastChance</code> you should notify the user rather than keep throwing.</p>
+  </div>
 </div>
-`
-    },
+<div class="qa-block">
+  <div class="qa-question">Q2. How does one-shot Background Sync differ from Periodic Background Sync?</div>
+  <div class="qa-answer">
+    <p>One-shot sync (<code>SyncManager</code>, <code>registration.sync.register(tag)</code>) fires a <code>sync</code> event once the device has connectivity, used for "send when online" mutations. Periodic sync (<code>PeriodicSyncManager</code>, <code>registration.periodicSync.register(tag, { minInterval })</code>) fires a <code>periodicsync</code> event repeatedly, used for refreshing content like a news feed. Periodic sync is Chrome/Edge only, fires only for installed PWAs with enough site engagement, and <code>minInterval</code> is a hint: the real interval is about 12–24 hours. It's not a substitute for push for time-sensitive updates.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Why does optimistic UI with Background Sync need a rollback path?</div>
+  <div class="qa-answer">
+    <p>With optimistic UI the user sees "sent" before the server has accepted anything. If the queued mutation keeps failing and ends up in the dead-letter store, a UI that never ties back to the result keeps showing success, so it lies. Give each optimistic item a temp id and a pending state ("Will send when online"); when sync completes, replace it with the real record, or mark it failed and offer a manual retry.</p>
+  </div>
+</div>
+` },
 
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you describe the enqueue then sync-event then retry flow end to end?</li>
-    <li>Can you explain why idempotency keys are mandatory?</li>
-    <li>Can you name which browsers support Background Sync and what your fallback is?</li>
-    <li>Can you explain what <code>event.waitUntil</code> does during a sync?</li>
-    <li>Can you distinguish one-shot Sync from Periodic Sync?</li>
-    <li>Can you explain why optimistic UI needs a rollback path here?</li>
-  </ul>
-</div>
-`
-    }
   ]
 });

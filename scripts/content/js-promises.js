@@ -1,30 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'js-promises',
-  module: 'JavaScript Deep',
-  title: 'Promises & async/await',
-  estimatedReadTime: '32 min',
-  tags: ['promise', 'async', 'await', 'microtask', 'then', 'chaining', 'error-handling', 'concurrency', 'fundamentals'],
+  id: "js-promises",
+  module: "JavaScript Deep",
+  title: "Promises & async/await",
+  estimatedReadTime: "32 min",
+  tags: ["promise","async","await","microtask","then","chaining","error-handling","concurrency","fundamentals"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>A <strong>Promise</strong> is a first-class object that represents the eventual result of an asynchronous operation. It lives in exactly one of three internal states — <code>pending</code>, <code>fulfilled</code>, or <code>rejected</code> — and transitions from <code>pending</code> to one of the other two at most once. That transition is called <em>settling</em>, and after it happens, the promise is immutable.</p>
-<ul>
-  <li><code>new Promise(executor)</code> runs <code>executor</code> synchronously and gives you <code>resolve</code> / <code>reject</code> to settle it.</li>
-  <li><code>.then(onFulfilled, onRejected)</code> returns a <strong>new</strong> promise — that's what makes chaining work.</li>
-  <li>Callbacks attached via <code>.then</code> / <code>.catch</code> / <code>.finally</code> run on the <strong>microtask queue</strong>, not the macrotask queue — after the current stack, before the next <code>setTimeout</code> / <code>setImmediate</code> / paint.</li>
-  <li><code>async function</code> always returns a promise; <code>await</code> pauses the function and schedules its resumption as a microtask when the awaited value settles.</li>
-  <li>An unhandled rejection produces a runtime warning (Node: crashes in newer versions; browsers: <code>unhandledrejection</code> event).</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>A Promise is a placeholder for a value you'll have later. <code>.then</code> returns a new placeholder. <code>async/await</code> is just a nicer way to write <code>.then</code> chains, with <code>await</code> meaning "pause this function until this promise settles, then resume as a microtask."</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A promise is a placeholder for a future value in one of three states; it <strong>settles exactly once then is immutable</strong>, every <code>.then</code> returns a new promise, and reactions always run as microtasks.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>A <strong>Promise</strong> represents the eventual result of an async op; it is in exactly one of three states — <code>pending</code>, <code>fulfilled</code>, <code>rejected</code>.</li>
+    <li><strong>It settles at most once</strong> (pending → fulfilled OR rejected) and is immutable afterward; later <code>resolve</code>/<code>reject</code> calls are ignored.</li>
+    <li><strong>The <code>new Promise</code> executor runs synchronously</strong>; only the <code>.then</code>/<code>.catch</code>/<code>.finally</code> callbacks are deferred.</li>
+    <li><code>.then</code> returns a <strong>new</strong> promise — that's what makes chaining work.</li>
+    <li>Promise reaction callbacks run on the <strong>microtask queue</strong>, always asynchronously — even for an already-settled promise.</li>
+    <li><strong><code>async</code> functions always return a promise</strong>; <code>await</code> pauses the function and resumes it as a microtask when the awaited value settles.</li>
+    <li><code>await</code> on a non-promise (e.g. <code>await 42</code>) still introduces a microtask boundary — it yields at least once.</li>
+    <li><strong>Adoption flattens promises:</strong> returning a promise/thenable from <code>.then</code> makes the new promise adopt it, so you never get <code>Promise&lt;Promise&lt;T&gt;&gt;</code>.</li>
+    <li><code>.catch(f)</code> is just <code>.then(undefined, f)</code> and can <em>recover</em> a chain; <code>.finally</code> gets no argument and passes the original settlement through unless it itself throws/rejects.</li>
+    <li>Combinators: <strong><code>all</code></strong> (all fulfill, else first rejection), <strong><code>allSettled</code></strong> (never rejects), <strong><code>race</code></strong> (first to settle either way), <strong><code>any</code></strong> (first fulfillment, else <code>AggregateError</code>).</li>
+    <li><strong>Promises are not cancellable</strong> — use <code>AbortController</code>/<code>AbortSignal</code> to cancel the underlying work (it rejects with an <code>AbortError</code>).</li>
+    <li>An unhandled rejection fires <code>unhandledrejection</code> in browsers and <strong>terminates the process in Node 15+</strong>; attach handlers synchronously.</li>
+    <li>Prefer <code>Promise.all</code> for independent work — sequential <code>await</code>s on independent calls cost N× latency; never rely on <code>async</code> callbacks in <code>forEach</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><code>await</code>-ing <strong>independent</strong> calls one after another — that's N× latency; run them together with <code>Promise.all</code>. Also an <code>async</code> callback inside <code>forEach</code> is not awaited, and promises can't be cancelled — cancel the underlying work with <code>AbortController</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A promise is a placeholder for a future value with three states; it settles exactly once and is then immutable, and every <code>.then</code> returns a new promise."</div>
+  <div class="revision-say">"<code>async</code>/<code>await</code> is sugar over <code>.then</code> chains — <code>await</code> pauses the function and resumes it as a microtask when the awaited promise settles."</div>
+  <div class="revision-say">"Promises aren't cancellable; you cancel the underlying work with <code>AbortController</code>, which rejects the promise with an <code>AbortError</code>."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a Promise, precisely?</h3>
 <p>A <strong>Promise</strong> is an object defined by the ECMAScript spec with an internal slot <code>[[PromiseState]]</code> that starts as <code>pending</code>. The object also holds:</p>
 <ul>
@@ -64,10 +77,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why Promises are not cancellable (yet)</h3>
 <p>A Promise, once created, cannot be cancelled — only ignored. The language left cancellation to the caller (via <code>AbortController</code> for fetch, or a <code>rejected</code> race). TC39 has a stage-1 proposal for first-class cancellation, but as of today, you design around <code>AbortSignal</code>.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "slot machine" picture</h3>
 <p>A promise is a machine with exactly three LEDs: <span style="color:#999">pending</span>, <span style="color:#40c057">fulfilled</span>, <span style="color:#fa5252">rejected</span>. Exactly one LED is lit at any time. It starts on <em>pending</em>. At some moment it transitions to fulfilled or rejected, and it never changes again.</p>
 
@@ -121,10 +134,10 @@ Each .then/.catch returns a NEW promise whose settlement depends on
   <div class="callout-title">Common misconception</div>
   <p>"<code>async</code> makes the function run on a background thread." No. JavaScript is single-threaded. <code>async</code> is entirely about scheduling — splitting the function body into chunks separated by microtask boundaries. All the chunks run on the same main thread.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Three ways to create a promise</h3>
 <pre><code class="language-js">// 1. Constructor — when wrapping a callback/event-based API
 const p = new Promise((resolve, reject) =&gt; {
@@ -226,10 +239,10 @@ fetch(url, { signal: ctrl.signal }).catch(e =&gt; {
 });
 setTimeout(() =&gt; ctrl.abort(), 1000);</code></pre>
 <p>The promise itself isn't cancelled — the underlying operation is aborted, and that aborted state rejects the promise with an <code>AbortError</code>.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — basic creation and consumption</h3>
 <pre><code class="language-js">const p = new Promise((resolve, reject) =&gt; {
   setTimeout(() =&gt; resolve(42), 100);
@@ -385,10 +398,11 @@ const buf = await readFile('a.txt');</code></pre>
 runAway();
 // The microtask queue never drains → event loop stalls → page freezes.
 // setTimeout would NOT cause this because each tick runs one macrotask.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Settling more than once is silently ignored</h3>
 <pre><code class="language-js">const p = new Promise((resolve, reject) =&gt; {
   resolve(1);
@@ -516,10 +530,9 @@ await Promise.any([]); // rejects immediately with AggregateError — no candida
 <pre><code class="language-js">new Promise((resolve) =&gt; resolve(Promise.reject('boom')))
   .catch(e =&gt; console.log(e)); // 'boom'
 // resolve(promise) causes adoption — including adopting a rejection.</code></pre>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — the Promise constructor antipattern</h3>
 <pre><code class="language-js">// BAD
 function getData() {
@@ -643,10 +656,10 @@ useEffect(() =&gt; {
   fetch(url, { signal: ctrl.signal }).then(setState).catch(() =&gt; {});
   return () =&gt; ctrl.abort();
 }, []);</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What are the three states of a Promise?</div>
   <div class="qa-answer">
@@ -868,51 +881,20 @@ console.log('main');</code></pre>
     <li>You warn against <code>async</code> inside <code>forEach</code> and against sequential awaits on independent work.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A promise is a placeholder for a future value in one of three states; it <strong>settles exactly once then is immutable</strong>, every <code>.then</code> returns a new promise, and reactions always run as microtasks.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>A <strong>Promise</strong> represents the eventual result of an async op; it is in exactly one of three states — <code>pending</code>, <code>fulfilled</code>, <code>rejected</code>.</li>
-    <li><strong>It settles at most once</strong> (pending → fulfilled OR rejected) and is immutable afterward; later <code>resolve</code>/<code>reject</code> calls are ignored.</li>
-    <li><strong>The <code>new Promise</code> executor runs synchronously</strong>; only the <code>.then</code>/<code>.catch</code>/<code>.finally</code> callbacks are deferred.</li>
-    <li><code>.then</code> returns a <strong>new</strong> promise — that's what makes chaining work.</li>
-    <li>Promise reaction callbacks run on the <strong>microtask queue</strong>, always asynchronously — even for an already-settled promise.</li>
-    <li><strong><code>async</code> functions always return a promise</strong>; <code>await</code> pauses the function and resumes it as a microtask when the awaited value settles.</li>
-    <li><code>await</code> on a non-promise (e.g. <code>await 42</code>) still introduces a microtask boundary — it yields at least once.</li>
-    <li><strong>Adoption flattens promises:</strong> returning a promise/thenable from <code>.then</code> makes the new promise adopt it, so you never get <code>Promise&lt;Promise&lt;T&gt;&gt;</code>.</li>
-    <li><code>.catch(f)</code> is just <code>.then(undefined, f)</code> and can <em>recover</em> a chain; <code>.finally</code> gets no argument and passes the original settlement through unless it itself throws/rejects.</li>
-    <li>Combinators: <strong><code>all</code></strong> (all fulfill, else first rejection), <strong><code>allSettled</code></strong> (never rejects), <strong><code>race</code></strong> (first to settle either way), <strong><code>any</code></strong> (first fulfillment, else <code>AggregateError</code>).</li>
-    <li><strong>Promises are not cancellable</strong> — use <code>AbortController</code>/<code>AbortSignal</code> to cancel the underlying work (it rejects with an <code>AbortError</code>).</li>
-    <li>An unhandled rejection fires <code>unhandledrejection</code> in browsers and <strong>terminates the process in Node 15+</strong>; attach handlers synchronously.</li>
-    <li>Prefer <code>Promise.all</code> for independent work — sequential <code>await</code>s on independent calls cost N× latency; never rely on <code>async</code> callbacks in <code>forEach</code>.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><code>await</code>-ing <strong>independent</strong> calls one after another — that's N× latency; run them together with <code>Promise.all</code>. Also an <code>async</code> callback inside <code>forEach</code> is not awaited, and promises can't be cancelled — cancel the underlying work with <code>AbortController</code>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A promise is a placeholder for a future value with three states; it settles exactly once and is then immutable, and every <code>.then</code> returns a new promise."</div>
-  <div class="revision-say">"<code>async</code>/<code>await</code> is sugar over <code>.then</code> chains — <code>await</code> pauses the function and resumes it as a microtask when the awaited promise settles."</div>
-  <div class="revision-say">"Promises aren't cancellable; you cancel the underlying work with <code>AbortController</code>, which rejects the promise with an <code>AbortError</code>."</div>
+<div class="qa-block">
+  <div class="qa-question">Q18. Why does the Promise executor run synchronously while <code>.then</code> callbacks always run as microtasks?</div>
+  <div class="qa-answer">
+    <p><code>new Promise(executor)</code> calls the executor immediately, during the constructor, so it can start the work and get hold of <code>resolve</code>/<code>reject</code> — logging 1, then 2 inside the executor, then 3 after it prints <code>1, 2, 3</code>. A synchronous throw inside the executor is the same as calling <code>reject(err)</code>. Reactions are different: <code>.then</code>/<code>.catch</code>/<code>.finally</code> callbacks are always queued as microtasks, even when the promise has already settled, so they run only after the current synchronous code finishes. That guarantee makes ordering predictable — a callback never runs sometimes-sync, sometimes-async — and lets a chain complete before the next macrotask or paint.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the three promise states and explain why a promise settles at most once?</li>
-    <li>Can you explain why the executor runs synchronously but <code>.then</code> callbacks always run as microtasks?</li>
-    <li>Can you explain why <code>await 42</code> still introduces a microtask boundary?</li>
-    <li>Can you contrast <code>Promise.all</code>, <code>allSettled</code>, <code>race</code>, and <code>any</code>, including how each handles rejection?</li>
-    <li>Can you explain why promises aren't cancellable and how <code>AbortController</code> helps?</li>
-    <li>Can you explain why sequential <code>await</code>s on independent calls cost N× latency and how to fix it?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q19. Why do sequential <code>await</code>s on independent calls cost N× latency, and how do you fix it?</div>
+  <div class="qa-answer">
+    <p>Writing <code>const a = await getA(); const b = await getB();</code> doesn't start <code>getB</code> until <code>getA</code> has finished, so total time is the <em>sum</em> of every call. If the calls don't depend on each other, start them all first and wait once: <code>const [a, b] = await Promise.all([getA(), getB()]);</code> — total time is roughly the slowest call. Use <code>allSettled</code> if partial failure is acceptable. Keep the sequential form only when each call needs the previous result, and never use an <code>async</code> callback in <code>forEach</code>, which isn't awaited at all.</p>
+  </div>
 </div>
-`}
+` },
 
-]
+  ]
 });

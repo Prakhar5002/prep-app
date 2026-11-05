@@ -1,33 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'web-security',
-  module: 'web',
-  title: 'Security (XSS/CSRF/CSP)',
-  estimatedReadTime: '50 min',
-  tags: ['security', 'xss', 'csrf', 'csp', 'sri', 'cors', 'cookies', 'sanitization', 'web', 'owasp'],
+  id: "web-security",
+  module: "web",
+  title: "Security (XSS/CSRF/CSP)",
+  estimatedReadTime: "50 min",
+  tags: ["security","xss","csrf","csp","sri","cors","cookies","sanitization","web","owasp"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Frontend security boils down to: <strong>don't execute attacker-controlled code</strong>, <strong>don't leak credentials</strong>, and <strong>don't perform actions on user's behalf without their intent</strong>. The OWASP top 10 maps to a small set of vulnerabilities: XSS, CSRF, clickjacking, open redirect, supply-chain attacks, weak cookies, mixed content, and (server-side) SQL injection / SSRF / authentication failures. Senior frontend engineers internalize the prevention recipes.</p>
-<ul>
-  <li><strong>XSS:</strong> attacker injects script that runs in your origin. Defense: HTML-escape output, never <code>innerHTML</code> with user content, CSP, sanitize HTML when needed.</li>
-  <li><strong>CSRF:</strong> attacker forces user to perform an action on a logged-in site. Defense: SameSite cookies, CSRF tokens, double-submit pattern, custom headers + CORS.</li>
-  <li><strong>CSP (Content Security Policy):</strong> a header that whitelists which sources can load scripts/styles/etc. Strict CSP with nonces is the modern best practice.</li>
-  <li><strong>Subresource Integrity (SRI):</strong> hash of third-party scripts; browser refuses if hash doesn't match (supply-chain protection).</li>
-  <li><strong>Clickjacking:</strong> attacker iframes your site with transparent overlays. Defense: <code>X-Frame-Options: DENY</code> or <code>frame-ancestors</code> in CSP.</li>
-  <li><strong>Cookie security:</strong> <code>Secure</code> + <code>HttpOnly</code> + <code>SameSite</code> + <code>__Host-</code> prefix.</li>
-  <li><strong>Open redirect:</strong> <code>?next=...</code> URL params unsanitized → attacker bounces user to evil site. Defense: allowlist destinations.</li>
-  <li><strong>Supply chain:</strong> npm packages can be compromised. Pin versions, audit, minimize dependencies, SRI on CDN-loaded scripts.</li>
-</ul>
-<p><strong>Mantra:</strong> "Escape on output, validate at the boundary, restrict cookies, lock down with CSP, audit dependencies, never trust the client."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Escape on output, validate at the boundary, restrict cookies, lock down with CSP, audit dependencies — and never trust the client.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>XSS = attacker script running in your origin.</strong> Three flavors: reflected (payload in the URL), stored (saved server-side, served to all), DOM-based (client JS reads an attacker value into a sink).</li>
+    <li><strong>Prevent XSS by escaping on output:</strong> use <code>textContent</code> or React's auto-escaping, never <code>innerHTML</code> / <code>dangerouslySetInnerHTML</code> with raw user content. If you must render HTML, sanitize with <strong>DOMPurify</strong> and a strict allowlist.</li>
+    <li><strong>CSP is defense-in-depth</strong> — a header that whitelists script sources so an injected script won't run even if sanitization fails. The modern recipe is a strict CSP with per-request <strong>nonces</strong> + <code>strict-dynamic</code>; avoid <code>unsafe-inline</code> / <code>unsafe-eval</code>.</li>
+    <li><strong>CSRF = the browser auto-attaches the session cookie</strong> to a forged cross-site request. Defenses: <code>SameSite=Lax/Strict</code> cookies, CSRF tokens, double-submit cookie, custom header + CORS.</li>
+    <li><strong>Cookie flags are non-negotiable:</strong> <code>Secure</code> + <code>HttpOnly</code> + <code>SameSite</code>, and the <code>__Host-</code> prefix for critical cookies. <code>HttpOnly</code> is what makes XSS unable to read the session.</li>
+    <li><strong>Where to store auth tokens:</strong> <code>HttpOnly</code> cookie (immune to XSS read) beats localStorage (any XSS exfiltrates it); the modern SPA pattern is a short-lived access token in memory + a refresh token in an <code>HttpOnly</code> cookie.</li>
+    <li><strong>SRI</strong> (integrity hash) protects against a compromised CDN; <strong>clickjacking</strong> is blocked with CSP <code>frame-ancestors</code> (or legacy <code>X-Frame-Options</code>).</li>
+    <li><strong>Open redirect:</strong> an unsanitized <code>?next=</code> lets attackers bounce users to evil sites from your domain — allowlist destinations or accept relative paths only.</li>
+    <li><strong>Validate on the server, always.</strong> Client-side validation is UX; anyone can bypass JS. Same for authorization (IDOR: verify the user owns the requested resource).</li>
+    <li>The OWASP-style frontend list is small: XSS, CSRF, clickjacking, open redirect, supply-chain attacks, weak cookies, mixed content (plus server-side SQL injection, SSRF and auth failures).</li>
+    <li>Verify <code>postMessage</code> origin on every handler; supply-chain hygiene = lockfiles + <code>npm audit</code> + pinned versions + minimal deps.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Storing the auth token in <code>localStorage</code> (or rendering user content via <code>innerHTML</code> / <code>dangerouslySetInnerHTML</code>).</strong> localStorage is readable by any JavaScript, so a single XSS bug anywhere on the origin exfiltrates the token. Fix: keep session state in an <code>HttpOnly</code> cookie the JS can't read, and render user content with <code>textContent</code> or DOMPurify — with CSP as the backstop. Sibling trap: <code>SameSite=None</code> without <code>Secure</code> is silently rejected, and <code>Access-Control-Allow-Origin: *</code> with credentials is invalid.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"XSS prevention is escape-on-output — <code>textContent</code> or React auto-escaping by default, DOMPurify when I truly need to render HTML, and a strict nonce-based CSP as defense-in-depth."</div>
+  <div class="revision-say">"I never put auth tokens in localStorage — any XSS reads them. Sessions go in an <code>HttpOnly</code> + <code>Secure</code> + <code>SameSite</code> cookie the JavaScript can't touch."</div>
+  <div class="revision-say">"CSRF works because the browser auto-sends cookies cross-site, so I lean on <code>SameSite</code> cookies plus a CSRF token or custom header — and I always re-validate on the server, because the client is just a hint."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The OWASP top 10 (2021 edition)</h3>
 <table>
   <thead><tr><th>#</th><th>Category</th></tr></thead>
@@ -109,12 +117,10 @@ window.PREP_SITE.registerTopic({
   <li>You audit dependencies; pin versions; subscribe to advisories.</li>
   <li>You allowlist redirect destinations.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "trust boundary"</h3>
 <p>Every input crosses a boundary. Outside the boundary: untrusted (URL params, form data, request bodies, third-party APIs). Inside: trusted (after validation/sanitization). Most security bugs happen when you treat outside-boundary data as inside-boundary.</p>
 
@@ -245,12 +251,10 @@ Defense:
   - Validate that next is a relative URL or in your allowlist.
   - Show "you're being redirected to https://..." confirmation page.
 </code></pre>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Escaping HTML output</h3>
 <pre><code class="language-js">function escape(str) {
   return String(str)
@@ -465,12 +469,10 @@ npm audit fix --force  # apply major-version bumps (review first)
 
 <h3>Lockfile commits</h3>
 <p>Always commit <code>package-lock.json</code> / <code>yarn.lock</code> / <code>pnpm-lock.yaml</code>. Without lockfile, transitive deps shift; you might pull a compromised version.</p>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Reflected XSS via URL param</h3>
 <pre><code class="language-js">// VULNERABLE
 const params = new URLSearchParams(location.search);
@@ -626,12 +628,11 @@ async function validateUpload(buffer, claimedMime) {
   return true;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>React's URL handling</h3>
 <p>React 16+ blocks <code>javascript:</code> in <code>href</code>; React 17 throws warnings for "URL containing javascript: scheme." But other URL contexts (CSS url()) aren't policed by React.</p>
 
@@ -704,12 +705,9 @@ otherWindow.postMessage(data, 'https://trusted.com');   // specify target origin
 
 <h3>Insecure direct object references (IDOR)</h3>
 <p><code>GET /users/123</code> — attacker tries <code>/users/124</code> and sees another user. Authorization is server-side; never trust client. Always verify the requesting user has access to the requested resource.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: <code>innerHTML</code> with user input</h3>
 <pre><code class="language-js">// XSS waiting to happen
 el.innerHTML = userMessage;
@@ -788,12 +786,10 @@ Access-Control-Allow-Credentials: true   ← rejected by browser
 
 <h3>Anti-pattern 10: Mixing security headers</h3>
 <p>Setting both <code>X-Frame-Options: DENY</code> and <code>Content-Security-Policy: frame-ancestors *</code> — modern browsers honor CSP; legacy honor X-Frame-Options. Inconsistent. Standardize on CSP frame-ancestors and let X-Frame-Options be a fallback.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 14 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -892,52 +888,32 @@ Access-Control-Allow-Credentials: true   ← rejected by browser
   <li>"I'd add Trusted Types in dev mode to catch innerHTML mistakes."</li>
   <li>"I'd run penetration tests on a quarterly basis or after major architecture changes."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Escape on output, validate at the boundary, restrict cookies, lock down with CSP, audit dependencies — and never trust the client.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>XSS = attacker script running in your origin.</strong> Three flavors: reflected (payload in the URL), stored (saved server-side, served to all), DOM-based (client JS reads an attacker value into a sink).</li>
-    <li><strong>Prevent XSS by escaping on output:</strong> use <code>textContent</code> or React's auto-escaping, never <code>innerHTML</code> / <code>dangerouslySetInnerHTML</code> with raw user content. If you must render HTML, sanitize with <strong>DOMPurify</strong> and a strict allowlist.</li>
-    <li><strong>CSP is defense-in-depth</strong> — a header that whitelists script sources so an injected script won't run even if sanitization fails. The modern recipe is a strict CSP with per-request <strong>nonces</strong> + <code>strict-dynamic</code>; avoid <code>unsafe-inline</code> / <code>unsafe-eval</code>.</li>
-    <li><strong>CSRF = the browser auto-attaches the session cookie</strong> to a forged cross-site request. Defenses: <code>SameSite=Lax/Strict</code> cookies, CSRF tokens, double-submit cookie, custom header + CORS.</li>
-    <li><strong>Cookie flags are non-negotiable:</strong> <code>Secure</code> + <code>HttpOnly</code> + <code>SameSite</code>, and the <code>__Host-</code> prefix for critical cookies. <code>HttpOnly</code> is what makes XSS unable to read the session.</li>
-    <li><strong>Where to store auth tokens:</strong> <code>HttpOnly</code> cookie (immune to XSS read) beats localStorage (any XSS exfiltrates it); the modern SPA pattern is a short-lived access token in memory + a refresh token in an <code>HttpOnly</code> cookie.</li>
-    <li><strong>SRI</strong> (integrity hash) protects against a compromised CDN; <strong>clickjacking</strong> is blocked with CSP <code>frame-ancestors</code> (or legacy <code>X-Frame-Options</code>).</li>
-    <li><strong>Open redirect:</strong> an unsanitized <code>?next=</code> lets attackers bounce users to evil sites from your domain — allowlist destinations or accept relative paths only.</li>
-    <li><strong>Validate on the server, always.</strong> Client-side validation is UX; anyone can bypass JS. Same for authorization (IDOR: verify the user owns the requested resource).</li>
-    <li>Verify <code>postMessage</code> origin on every handler; supply-chain hygiene = lockfiles + <code>npm audit</code> + pinned versions + minimal deps.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Storing the auth token in <code>localStorage</code> (or rendering user content via <code>innerHTML</code> / <code>dangerouslySetInnerHTML</code>).</strong> localStorage is readable by any JavaScript, so a single XSS bug anywhere on the origin exfiltrates the token. Fix: keep session state in an <code>HttpOnly</code> cookie the JS can't read, and render user content with <code>textContent</code> or DOMPurify — with CSP as the backstop. Sibling trap: <code>SameSite=None</code> without <code>Secure</code> is silently rejected, and <code>Access-Control-Allow-Origin: *</code> with credentials is invalid.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"XSS prevention is escape-on-output — <code>textContent</code> or React auto-escaping by default, DOMPurify when I truly need to render HTML, and a strict nonce-based CSP as defense-in-depth."</div>
-  <div class="revision-say">"I never put auth tokens in localStorage — any XSS reads them. Sessions go in an <code>HttpOnly</code> + <code>Secure</code> + <code>SameSite</code> cookie the JavaScript can't touch."</div>
-  <div class="revision-say">"CSRF works because the browser auto-sends cookies cross-site, so I lean on <code>SameSite</code> cookies plus a CSRF token or custom header — and I always re-validate on the server, because the client is just a hint."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the XSS variants — stored, reflected, DOM-based — and where each injection lands?</li>
-    <li>Can you say why escaping on output beats sanitizing on input?</li>
-    <li>Can you explain why CSRF works, and how <code>SameSite</code> cookies plus a token stop it?</li>
-    <li>Can you write a CSP that blocks inline scripts and name what it defends against?</li>
-    <li>Can you explain why an auth token in <code>localStorage</code> is an XSS liability?</li>
-    <li>Can you say why the server must re-validate even when the client already checked?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. Explain stored, reflected and DOM-based XSS, and where each injection lands.</div>
+  <div class="qa-answer">
+    <p><strong>Reflected:</strong> the payload is in an attacker-crafted URL and the server reflects it into the HTML response, so it hits whoever clicks the link. <strong>Stored:</strong> the payload is saved server-side, e.g. in a comment, and served to every user who views it. <strong>DOM-based:</strong> the server never sees it; client-side JS reads an attacker-controlled value such as <code>location.hash</code> and writes it into a DOM sink like <code>innerHTML</code>. In all three the script runs with your origin's privileges.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q2. Why is escaping on output better than sanitizing on input?</div>
+  <div class="qa-answer">
+    <p>Safe encoding depends on where the data lands: HTML text needs HTML-escaping, attributes need escaping plus quotes, an inline script context needs JSON-encoding, a URL needs URL-encoding plus a scheme check (no <code>javascript:</code>), and CSS needs <code>url(...)</code> rejected. At input time you don't know which sink the value will reach, so one input filter can't be right for all of them. Escaping at output applies the correct encoding for the actual context, which is what <code>textContent</code> and React's JSX auto-escaping do. Use a sanitizer such as DOMPurify only when you truly must render user HTML.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Write a CSP that blocks inline scripts. What does it defend against?</div>
+  <div class="qa-answer">
+    <p>A strict CSP: <code>default-src 'self'; script-src 'nonce-RANDOM' 'strict-dynamic'; object-src 'none'; base-uri 'none'</code>, with a fresh random nonce generated per request (e.g. <code>crypto.randomBytes(16)</code>) and added to each legitimate <code>&lt;script nonce="..."&gt;</code>. Injected inline or external scripts lack the nonce and won't run; <code>strict-dynamic</code> lets trusted scripts load their own dependencies. It is defense-in-depth against XSS for when escaping fails. Avoid <code>unsafe-inline</code> and <code>unsafe-eval</code>, which make it no protection at all, and add <code>frame-ancestors</code> to block clickjacking.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Why must the server re-validate input even when the client already checked it?</div>
+  <div class="qa-answer">
+    <p>Client-side validation is UX: anyone can bypass the JS and send any request directly, so everything arriving at the server is outside the trust boundary until the server validates it. The same goes for authorization: the server must verify the user owns the requested resource, or you get IDOR. WAFs don't replace this either, because creative encoding bypasses their payload rules.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

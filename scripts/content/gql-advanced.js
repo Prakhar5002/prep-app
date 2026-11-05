@@ -1,33 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'gql-advanced',
-  module: 'graphql',
-  title: 'Advanced',
-  estimatedReadTime: '50 min',
-  tags: ['graphql', 'advanced', 'persisted-queries', 'defer', 'stream', 'fragments', 'file-upload', 'batching', 'federation'],
+  id: "gql-advanced",
+  module: "graphql",
+  title: "Advanced",
+  estimatedReadTime: "50 min",
+  tags: ["graphql","advanced","persisted-queries","defer","stream","fragments","file-upload","batching","federation"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Advanced GraphQL</strong> covers the techniques that turn a working GraphQL client into a production-grade one: <strong>persisted queries</strong> for security + bandwidth, <strong>fragment masking</strong> for refactor safety, <strong>@defer / @stream</strong> for above-the-fold rendering, <strong>file uploads</strong> via multipart spec, <strong>request batching</strong>, <strong>error policies</strong>, <strong>federation from the client perspective</strong>, and the operational concerns (rate limiting, cost analysis, schema evolution, observability) every senior team has to solve.</p>
-<ul>
-  <li><strong>Persisted queries:</strong> ship a SHA-256 manifest at build time; server only honors known queries. Saves bandwidth, locks API surface, enables CDN caching via GET.</li>
-  <li><strong>Fragment masking:</strong> Relay style — components only see the fields they declared. Compiler-enforced; refactor-safe.</li>
-  <li><strong>@defer + @stream:</strong> incremental delivery. Above-the-fold renders fast; below-the-fold streams in.</li>
-  <li><strong>File upload:</strong> <code>graphql-multipart-request-spec</code> — files outside the GraphQL JSON, referenced by path.</li>
-  <li><strong>Request batching:</strong> bundle concurrent operations into one HTTP request — fewer round trips.</li>
-  <li><strong>Error policies:</strong> partial-data handling; per-field error semantics.</li>
-  <li><strong>Federation client perspective:</strong> one supergraph endpoint; entity references; <code>__resolveReference</code> stitching is server-side, transparent to client.</li>
-  <li><strong>Operational:</strong> query complexity / depth limits, rate limiting, observability via tracing extension.</li>
-</ul>
-<p><strong>Mantra:</strong> "Persist queries for production. Mask fragments for refactor safety. Defer below-fold. Batch requests. Bound query cost. Trace operations."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Production-grade GraphQL means locking the API surface with persisted queries, bounding query cost, deferring below-the-fold, batching concurrent ops, and tracing every operation.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Persisted queries ship a build-time SHA-256 manifest</strong> — client sends a 32-byte hash instead of a 4KB query; saves bandwidth, locks the API surface, and enables CDN caching via GET.</li>
+    <li><strong>APQ is forgiving, manifest-only is strict</strong> — APQ falls back to "send full query" on an unknown hash; manifest-only rejects it. Use manifest-only in production, APQ in dev/staging.</li>
+    <li><strong>Fragment masking (Relay) makes refactors safe</strong> — a component only sees fields it declared via <code>useFragment</code>; change a fragment and the compiler flags every consumer.</li>
+    <li><strong>@defer / @stream is incremental delivery over multipart/mixed</strong> — above-the-fold renders first, below-the-fold arrives in <code>incremental</code> chunks with <code>hasNext</code>. Still experimental / unratified.</li>
+    <li><strong>File uploads use graphql-multipart-request-spec</strong> — <code>operations</code> + <code>map</code> + blobs; but for files over ~10MB use a pre-signed S3 URL instead.</li>
+    <li><strong>BatchHttpLink bundles concurrent ops into one HTTP POST</strong> — set <code>batchKey</code> to keep different auth headers in separate batches; trade up to <code>batchInterval</code> ms of latency for fewer round trips.</li>
+    <li><strong>errorPolicy: 'all' surfaces partial data + errors</strong> — use it on multi-section screens so one failed field doesn't blank the whole page; 'none' throws, 'ignore' hides bugs.</li>
+    <li><strong>Federation is transparent to the client</strong> — one supergraph endpoint; the router stitches subgraphs; cache normalization still keys on <code>__typename + id</code>.</li>
+    <li><strong>Bound cost server-side</strong> — depth limit, complexity score with per-field weights, alias count, plus rate limits per OAuth client. Add schema diff in CI and per-operation tracing.</li>
+    <li><strong>Mantra:</strong> "Persist queries for production. Mask fragments for refactor safety. Defer below-fold. Batch requests. Bound query cost. Trace operations."</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Running APQ in production and thinking you've secured the API — APQ still falls back to accepting the full arbitrary query on an unknown hash, so attackers can send deeply-nested ad-hoc queries anyway.</strong> For real lockdown use manifest-only persisted queries that reject unknown hashes outright, and deploy the server (accepting old + new hashes) before the client to avoid mid-rollout hash skew.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Persisted queries with a build-time manifest in production — the server rejects unknown hashes, which locks the API surface, kills ad-hoc DoS, and enables CDN caching via GET."</div>
+  <div class="revision-say">"@defer for slow sections so the product header renders fast and reviews stream in; files over 10MB go through a pre-signed S3 URL, never GraphQL multipart."</div>
+  <div class="revision-say">"errorPolicy 'all' on multi-section pages renders what works plus per-section error UI, and I bound cost with depth plus complexity limits and rate limits per OAuth client."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The advanced toolbox</h3>
 <table>
   <thead><tr><th>Tool</th><th>Solves</th></tr></thead>
@@ -85,12 +92,10 @@ window.PREP_SITE.registerTopic({
   <li>No complexity limits; one client melts the DB.</li>
   <li>Schema changes ship without diff review; clients break in production.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Persisted queries flow</h3>
 <pre><code class="language-text">Build time:
   - Codegen extracts all queries from src/
@@ -276,12 +281,10 @@ const link = new BatchHttpLink({
 
 <h3>Tracing + observability</h3>
 <p>Server returns <code>extensions.tracing</code> per response with per-resolver durations. Apollo Studio aggregates; alert on slow queries / hot fields. Client-side: <code>onResponse</code> hook in Apollo logs operation name + duration.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Apollo APQ (automatic persisted queries)</h3>
 <pre><code class="language-typescript">import { createPersistedQueryLink } from '@apollo/client/link/persisted-queries';
 import { sha256 } from 'crypto-hash';
@@ -571,12 +574,10 @@ const tracingLink = new ApolloLink((operation, forward) =&gt; {
 </code></pre>
 
 <p>Apollo Studio aggregates per-operation stats; slow queries trigger alerts.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Persisted query manifest pipeline</h3>
 <pre><code class="language-bash"># Build step — generate hashes
 npx graphql-codegen --config codegen.yml
@@ -866,12 +867,11 @@ query ProductWithReviews($id: ID!) {
 </code></pre>
 
 <p>The client sees one supergraph endpoint. Apollo Router stitches the response across subgraphs. Cache normalization works the same — entities are still <code>__typename + id</code>.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Persisted queries — hash mismatches</h3>
 <ul>
   <li>Whitespace difference between client + server query strings → different hash → server doesn't recognize.</li>
@@ -964,12 +964,9 @@ query ProductWithReviews($id: ID!) {
   <li>Federation client behaves the same; latency matters more on cellular.</li>
   <li>Subscription tracing: log per-message duration; identify backpressure.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common advanced-GraphQL mistakes</h3>
 <ol>
   <li><strong>Production accepts non-persisted queries.</strong> Open API surface; ad-hoc DoS.</li>
@@ -1143,12 +1140,10 @@ ApolloServerPluginInlineTrace({
   samplingRate: 0.01,
 });
 </code></pre>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common advanced-GraphQL interview prompts</h3>
 <ol>
   <li>How do persisted queries work? Why use them?</li>
@@ -1289,51 +1284,14 @@ ApolloServerPluginInlineTrace({
   <li><strong>Advanced</strong> (this topic) — persisted queries, @defer/@stream, file uploads, batching, error policies, federation, complexity limits, schema diff.</li>
 </ul>
 <p>4 topics. Together with <code>api-graphql</code> (schema design from the server perspective), they cover the full GraphQL stack — language → client → cache → production-grade operational concerns.</p>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Production-grade GraphQL means locking the API surface with persisted queries, bounding query cost, deferring below-the-fold, batching concurrent ops, and tracing every operation.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Persisted queries ship a build-time SHA-256 manifest</strong> — client sends a 32-byte hash instead of a 4KB query; saves bandwidth, locks the API surface, and enables CDN caching via GET.</li>
-    <li><strong>APQ is forgiving, manifest-only is strict</strong> — APQ falls back to "send full query" on an unknown hash; manifest-only rejects it. Use manifest-only in production, APQ in dev/staging.</li>
-    <li><strong>Fragment masking (Relay) makes refactors safe</strong> — a component only sees fields it declared via <code>useFragment</code>; change a fragment and the compiler flags every consumer.</li>
-    <li><strong>@defer / @stream is incremental delivery over multipart/mixed</strong> — above-the-fold renders first, below-the-fold arrives in <code>incremental</code> chunks with <code>hasNext</code>. Still experimental / unratified.</li>
-    <li><strong>File uploads use graphql-multipart-request-spec</strong> — <code>operations</code> + <code>map</code> + blobs; but for files over ~10MB use a pre-signed S3 URL instead.</li>
-    <li><strong>BatchHttpLink bundles concurrent ops into one HTTP POST</strong> — set <code>batchKey</code> to keep different auth headers in separate batches; trade up to <code>batchInterval</code> ms of latency for fewer round trips.</li>
-    <li><strong>errorPolicy: 'all' surfaces partial data + errors</strong> — use it on multi-section screens so one failed field doesn't blank the whole page; 'none' throws, 'ignore' hides bugs.</li>
-    <li><strong>Federation is transparent to the client</strong> — one supergraph endpoint; the router stitches subgraphs; cache normalization still keys on <code>__typename + id</code>.</li>
-    <li><strong>Bound cost server-side</strong> — depth limit, complexity score with per-field weights, alias count, plus rate limits per OAuth client. Add schema diff in CI and per-operation tracing.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Running APQ in production and thinking you've secured the API — APQ still falls back to accepting the full arbitrary query on an unknown hash, so attackers can send deeply-nested ad-hoc queries anyway.</strong> For real lockdown use manifest-only persisted queries that reject unknown hashes outright, and deploy the server (accepting old + new hashes) before the client to avoid mid-rollout hash skew.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Persisted queries with a build-time manifest in production — the server rejects unknown hashes, which locks the API surface, kills ad-hoc DoS, and enables CDN caching via GET."</div>
-  <div class="revision-say">"@defer for slow sections so the product header renders fast and reviews stream in; files over 10MB go through a pre-signed S3 URL, never GraphQL multipart."</div>
-  <div class="revision-say">"errorPolicy 'all' on multi-section pages renders what works plus per-section error UI, and I bound cost with depth plus complexity limits and rate limits per OAuth client."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain how persisted queries with a build-time hash manifest lock the API surface and enable CDN caching via GET?</li>
-    <li>Can you use <code>@defer</code> / <code>@stream</code> so above-the-fold renders fast while below-the-fold streams in?</li>
-    <li>Can you explain fragment masking and why it makes component refactors safe?</li>
-    <li>Can you choose <code>errorPolicy: 'all'</code> and describe the per-section partial-data UI it enables?</li>
-    <li>Can you handle a large file upload without pushing it through GraphQL multipart?</li>
-    <li>Can you bound query cost with depth + complexity limits and per-OAuth-client rate limits?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. When would you choose errorPolicy: 'all', and what UI does it enable?</div>
+  <div class="qa-answer">
+    <p>The default <code>'none'</code> throws on any error and gives you no data, which is right for a critical query like an order page. On multi-section pages such as a dashboard, <code>'all'</code> returns both the partial data and the per-field errors, so you render every section that worked and show a section-level error banner only for the one that failed, instead of blanking the whole page. Note that with <code>'all'</code> partial data is written to the cache. Avoid <code>'ignore'</code>: it silences errors and hides bugs.</p>
+  </div>
 </div>
-`
-    }
+` },
+
   ]
 });

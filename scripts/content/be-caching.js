@@ -1,33 +1,39 @@
 window.PREP_SITE.registerTopic({
-  id: 'be-caching',
-  module: 'backend',
-  title: 'Caching',
-  estimatedReadTime: '50 min',
-  tags: ['cache', 'redis', 'memcached', 'cdn', 'cache-aside', 'write-through', 'invalidation', 'ttl', 'thundering-herd'],
+  id: "be-caching",
+  module: "backend",
+  title: "Caching",
+  estimatedReadTime: "50 min",
+  tags: ["cache","redis","memcached","cdn","cache-aside","write-through","invalidation","ttl","thundering-herd"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Caching is the universal scaling lever — it turns expensive computation into cheap memory lookup. Get it right and your system flies; get invalidation wrong and users see stale data, support tickets pile up, and you debug the worst kind of bug. Phil Karlton: <em>"There are only two hard things in computer science: cache invalidation and naming things."</em></p>
-<ul>
-  <li><strong>5 cache layers</strong> in a typical web stack: browser HTTP cache → CDN edge → reverse proxy → app memory → distributed (Redis/memcached). Each has different TTLs + invalidation rules.</li>
-  <li><strong>Cache-aside (lazy)</strong> is the default pattern: read miss → fetch from source → populate cache. Write goes to source; cache invalidated separately.</li>
-  <li><strong>Write strategies:</strong> write-through (sync; consistent, slower writes), write-behind (async; fast writes, risk of loss), write-around (skip cache on write; populate on read).</li>
-  <li><strong>Invalidation patterns:</strong> TTL-based (simple), event-driven (precise), versioned key (atomic), tags (group invalidation).</li>
-  <li><strong>Redis</strong> is the de facto distributed cache; also serves queues, pub/sub, rate-limit, locks, sorted sets (leaderboards). <em>Licensing note:</em> Redis moved off the open-source BSD license to SSPL/RSAL in March 2024, triggering the Linux Foundation's <strong>Valkey</strong> fork (backed by AWS/Google/Oracle); Redis then returned to open source under AGPLv3 with Redis 8 (May 2025). AWS ElastiCache and Google Memorystore now default new deployments to Valkey — everything here applies to both since they share the protocol.</li>
-  <li><strong>Common pitfalls:</strong> thundering herd, cache stampede, stale reads after writes, hot keys, inconsistent layered TTLs.</li>
-  <li><strong>Cache hit ratio</strong> is the primary metric — aim for &gt;95% on hot paths.</li>
-  <li><strong>Don't cache everything.</strong> Cache when reads &gt;&gt; writes, computation is expensive, and stale-by-N-seconds is acceptable.</li>
-</ul>
-<p><strong>Mantra:</strong> "Cache for read amplification. TTL by default. Invalidate by event when correctness matters. Single-flight to avoid stampedes. Measure hit rate."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Caching is the universal scaling lever — it <strong>turns expensive computation into cheap memory lookup</strong>; the hard part is <strong>invalidation</strong> (one of the two genuinely hard problems in CS). Cache for read amplification, TTL by default, invalidate by event when correctness matters, measure hit rate.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Five cache layers</strong> in a typical stack: browser HTTP cache → CDN edge → reverse proxy → app-process memory → distributed (Redis/memcached). Each has its own TTL and invalidation rules.</li>
+    <li><strong>Cache-aside (lazy)</strong> is the default: read miss → fetch from source → populate cache; writes go to the source and invalidate the cache separately.</li>
+    <li>Write strategies: <strong>write-through</strong> (sync, consistent, slower writes), <strong>write-behind</strong> (async, fast writes, risk of loss), <strong>write-around</strong> (skip cache on write, populate on read).</li>
+    <li>Invalidation patterns: <strong>TTL</strong> (simple), <strong>event-driven</strong> (precise), <strong>versioned key</strong> (atomic swap), <strong>tags</strong> (group invalidation).</li>
+    <li>The <strong>cache key must include everything that affects the result</strong> — user id, tenant, version, params — or users see each other's data.</li>
+    <li><strong>Redis</strong> is the de facto distributed cache (also queues, pub/sub, rate-limit, locks, leaderboards). Note the 2024 license move to SSPL/RSAL that spawned the <strong>Valkey</strong> fork; Redis 8 returned to open source (AGPLv3) in 2025 — everything here applies to both.</li>
+    <li>Defend hot paths with <strong>single-flight</strong> (one fetcher per key), <strong>stale-while-revalidate</strong>, <strong>TTL jitter</strong> (±10%), and <strong>negative caching</strong> for not-found results.</li>
+    <li>Watch out for <strong>hot keys</strong> (one Redis node saturates — use an L1 in-process tier or split the key) and <strong>inconsistent layered TTLs</strong> (align CDN ≥ app cache, revalidate with ETag).</li>
+    <li>Primary metric is <strong>cache hit ratio</strong> (aim &gt;95% on hot paths); and <strong>don't cache everything</strong> — cache when reads ≫ writes, compute is expensive, and stale-by-N-seconds is acceptable.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Two classic invalidation bugs: (1) <strong>forgetting a variable in the cache key</strong> (drop the user/tenant/version and users see each other's data); and (2) <strong>updating the source but forgetting to invalidate</strong>, so users see stale data for hours. And the availability trap — <strong>thundering herd / cache stampede</strong>: 1000 concurrent misses all fire the same DB query at once; single-flight fixes it.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I default to cache-aside with a TTL, and move to event-driven invalidation only where correctness actually matters."</div>
+  <div class="revision-say">"The cache key has to include everything that affects the result — the most common cache bug I've seen is a missing tenant or version leaking data between users."</div>
+  <div class="revision-say">"For hot keys I use single-flight and TTL jitter so a mass expiry doesn't stampede the database, and I watch hit rate as the primary metric."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What caching is, technically</h3>
 <p>Storing the result of an expensive operation (DB query, computation, external API call, file read) in a faster-access medium (memory, local disk, SSD, CDN) so that subsequent requests return without redoing the work.</p>
 
@@ -96,12 +102,10 @@ window.PREP_SITE.registerTopic({
   <li>Cache layer goes down; all traffic hits DB; cascading failure.</li>
   <li>Caching everything indiscriminately; complex invalidation; bugs everywhere.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The 4 main caching strategies</h3>
 <table>
   <thead><tr><th>Strategy</th><th>Read</th><th>Write</th><th>Use for</th></tr></thead>
@@ -239,12 +243,10 @@ async function getUser(id: string) {
   return user;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Cache-aside in code</h3>
 <pre><code class="language-typescript">import { Redis } from 'ioredis';
 const redis = new Redis(process.env.REDIS_URL);
@@ -511,12 +513,10 @@ CREATE INDEX ON user_stats (user_id);
     <tr><td>Geo (GEOADD)</td><td>Location-based queries</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Cache user profile (cache-aside)</h3>
 <pre><code class="language-typescript">async function getUserProfile(userId: string): Promise&lt;Profile | null&gt; {
   const key = \`profile:v2:\${userId}\`;
@@ -733,12 +733,11 @@ pgListener.on('notification', async ({ channel, payload }) =&gt; {
   }
 });
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Cache poisoning</h3>
 <ul>
   <li>Bad data written to cache; subsequent reads return bad data until TTL.</li>
@@ -854,12 +853,9 @@ Sequence B (cache-aside, double-delete):
   <li>Track hit rate per layer; alert on drops &gt; 10%.</li>
   <li>Track key size distribution; flag big keys.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common cache mistakes</h3>
 <ol>
   <li><strong>No TTL.</strong> Stale forever.</li>
@@ -1011,12 +1007,10 @@ await redis.setex(\`user:\${id}\`, 600, JSON.stringify(user));
 
 <h3>Anti-pattern: no metrics</h3>
 <p>Without hit rate, eviction rate, key size dashboards, cache problems are invisible until users complain. Instrument; alert.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common cache interview prompts</h3>
 <ol>
   <li>How would you cache [feed / user profile / leaderboard]?</li>
@@ -1144,53 +1138,44 @@ await redis.setex(\`user:\${id}\`, 600, JSON.stringify(user));
   <li>"Build a tiny LRU + LFU implementation by hand to understand eviction."</li>
   <li>"Audit a real codebase's cache usage; find missing invalidations."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Caching is the universal scaling lever — it <strong>turns expensive computation into cheap memory lookup</strong>; the hard part is <strong>invalidation</strong> (one of the two genuinely hard problems in CS).</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Five cache layers</strong> in a typical stack: browser HTTP cache → CDN edge → reverse proxy → app-process memory → distributed (Redis/memcached). Each has its own TTL and invalidation rules.</li>
-    <li><strong>Cache-aside (lazy)</strong> is the default: read miss → fetch from source → populate cache; writes go to the source and invalidate the cache separately.</li>
-    <li>Write strategies: <strong>write-through</strong> (sync, consistent, slower writes), <strong>write-behind</strong> (async, fast writes, risk of loss), <strong>write-around</strong> (skip cache on write, populate on read).</li>
-    <li>Invalidation patterns: <strong>TTL</strong> (simple), <strong>event-driven</strong> (precise), <strong>versioned key</strong> (atomic swap), <strong>tags</strong> (group invalidation).</li>
-    <li>The <strong>cache key must include everything that affects the result</strong> — user id, tenant, version, params — or users see each other's data.</li>
-    <li><strong>Redis</strong> is the de facto distributed cache (also queues, pub/sub, rate-limit, locks, leaderboards). Note the 2024 license move to SSPL/RSAL that spawned the <strong>Valkey</strong> fork; Redis 8 returned to open source (AGPLv3) in 2025 — everything here applies to both.</li>
-    <li>Defend hot paths with <strong>single-flight</strong> (one fetcher per key), <strong>stale-while-revalidate</strong>, <strong>TTL jitter</strong> (±10%), and <strong>negative caching</strong> for not-found results.</li>
-    <li>Primary metric is <strong>cache hit ratio</strong> (aim &gt;95% on hot paths); and <strong>don't cache everything</strong> — cache when reads ≫ writes, compute is expensive, and stale-by-N-seconds is acceptable.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Two classic invalidation bugs: (1) <strong>forgetting a variable in the cache key</strong> (drop the user/tenant/version and users see each other's data); and (2) <strong>updating the source but forgetting to invalidate</strong>, so users see stale data for hours. And the availability trap — <strong>thundering herd / cache stampede</strong>: 1000 concurrent misses all fire the same DB query at once; single-flight fixes it.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I default to cache-aside with a TTL, and move to event-driven invalidation only where correctness actually matters."</div>
-  <div class="revision-say">"The cache key has to include everything that affects the result — the most common cache bug I've seen is a missing tenant or version leaking data between users."</div>
-  <div class="revision-say">"For hot keys I use single-flight and TTL jitter so a mass expiry doesn't stampede the database, and I watch hit rate as the primary metric."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. What are the five cache layers in a typical web stack, and why does each have different TTL and invalidation rules?</div>
+  <div class="qa-answer">
+    <p>From the client inward: the <strong>browser HTTP cache</strong> (Cache-Control / ETag, per user), the <strong>CDN edge</strong> (Cloudflare, Fastly, CloudFront), a <strong>reverse proxy</strong> (for example Nginx), <strong>app-process memory</strong> (a per-instance LRU) and a <strong>distributed cache</strong> (Redis / memcached, shared), then the database. They differ in locality, capacity, consistency and cost: the browser cache is per user and you can't purge it, the CDN is global and purged via API, in-process memory is fastest but per instance (so it needs very short TTLs), and Redis is shared at ~1–5ms. Their TTLs must be designed together — browser 5 min, CDN 1 min and app 30s don't agree, and users see stale data even after a purge.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the five cache layers and say why each has different TTL and invalidation rules?</li>
-    <li>Can you explain cache-aside and contrast write-through, write-behind, and write-around?</li>
-    <li>Can you list the invalidation patterns — TTL, event-driven, versioned key, tags — and when each fits?</li>
-    <li>Can you explain what belongs in a cache key and the bug that follows from omitting a variable?</li>
-    <li>Can you describe thundering herd / cache stampede and fix it with single-flight and TTL jitter?</li>
-    <li>Can you say when <em>not</em> to cache, and what hit-rate target you'd defend on a hot path?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Explain cache-aside, and contrast it with write-through, write-behind and write-around.</div>
+  <div class="qa-answer">
+    <p><strong>Cache-aside</strong> (lazy) is the default: on read, check the cache; on a miss, fetch from the DB, populate the cache and return; writes go to the DB and the cache key is invalidated afterwards. It is simple and works with any storage. <strong>Write-through</strong> writes cache and DB synchronously, so there's no stale window but writes are slower — use it only when the cache must never be stale. <strong>Write-behind</strong> writes the cache immediately and the DB asynchronously via a queue: fast writes for write-heavy workloads, at the risk of losing data. <strong>Write-around</strong> writes only to the DB and leaves the cache empty until the next read — good for write-once, read-rarely data.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. What invalidation patterns are there, and when does each fit?</div>
+  <div class="qa-answer">
+    <p><strong>TTL</strong>: entries expire after N seconds — simple, with staleness up to the TTL; the default where slightly stale is fine. <strong>Event-driven</strong>: on write, explicitly delete or update the key — precise, but every write site has to remember it; use it where correctness matters. <strong>Versioned key</strong>: the version is part of the key, so bumping it invalidates atomically with no race (old keys dangle until evicted) — good for schema changes and deploys. <strong>Tags</strong>: each entry is tagged and you invalidate all entries with a tag — group invalidation at the cost of tag bookkeeping. In practice you combine a TTL safety net with event-driven invalidation on the paths that need it.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. What belongs in a cache key, and what goes wrong if you leave a variable out?</div>
+  <div class="qa-answer">
+    <p>Every variable that affects the result — user id, tenant, locale, version and request params. Keys should be deterministic (same input, same key), namespaced (for example <code>app:v1:user:42:profile</code>) and include a version so a schema change after a deploy can't read old-format entries. Omitting a variable means two different requests share one entry: drop the tenant or user and users see each other's data — a cross-tenant leak, not just a stale page.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. What are a thundering herd and a cache stampede, and how do you fix them?</div>
+  <div class="qa-answer">
+    <p>A <strong>thundering herd</strong> is many concurrent misses on the same key: <code>feed:42</code> expires, 1,000 requests arrive, all miss and all fire the same DB query, so the DB hits 100% CPU and requests time out. A <strong>cache stampede</strong> is many keys expiring at about the same time, for example entries all set at startup. Fixes: <strong>single-flight</strong> (request coalescing — the first miss starts the fetch and later misses wait for that in-flight result), <strong>TTL jitter</strong> (±10% so expirations spread out), stale-while-revalidate (serve stale while one request refreshes in the background), soft/hard TTLs, and pre-warming before traffic arrives.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. When should you not cache, and what hit rate would you aim for on a hot path?</div>
+  <div class="qa-answer">
+    <p>Don't cache when writes are about as frequent as reads (invalidation cost exceeds the benefit), when the source query is already under ~5ms, when strict consistency is required (financial balances, locks), for per-user data with low repeat access, or when the API must return a fresh response (real-time pricing). Cache when reads far exceed writes, the computation is expensive and stale-by-N-seconds is acceptable — profile first and cache where the bottleneck is. Hit ratio is the primary metric: aim for above 95% on hot paths, track it per layer, and alert on drops of more than 10%.</p>
+  </div>
+</div>
+` },
+
   ]
 });

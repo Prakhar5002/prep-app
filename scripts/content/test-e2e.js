@@ -1,32 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'test-e2e',
-  module: 'testing',
-  title: 'E2E (Playwright/Detox/Maestro)',
-  estimatedReadTime: '50 min',
-  tags: ['e2e', 'playwright', 'cypress', 'detox', 'maestro', 'integration', 'flake', 'fixtures', 'visual-regression'],
+  id: "test-e2e",
+  module: "testing",
+  title: "E2E (Playwright/Detox/Maestro)",
+  estimatedReadTime: "50 min",
+  tags: ["e2e","playwright","cypress","detox","maestro","integration","flake","fixtures","visual-regression"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>End-to-end tests</strong> exercise a deployed (or near-deployed) build the way a real user does — driving a real browser or device, hitting (mostly) real backends, asserting on what the user actually sees. They are slow, flaky, expensive, and often the only way to catch a class of bugs that no other layer can.</p>
-<ul>
-  <li><strong>Web: Playwright</strong> is the modern default. Auto-wait, multi-browser, parallel by default, trace viewer, codegen. <strong>Cypress</strong> is the Old Reliable; great DX but architecturally limited (no multi-tab, no multi-origin without workarounds).</li>
-  <li><strong>RN / mobile native: Detox</strong> for JS-driven gray-box automation; <strong>Maestro</strong> for declarative YAML flows that read like documentation; <strong>Appium</strong> for cross-platform native (older, more complex).</li>
-  <li><strong>Pick critical paths only.</strong> E2E for: signup, login, payments, checkout, the 3–5 flows where breakage = revenue loss. Everything else: integration tests.</li>
-  <li><strong>Speed budget:</strong> the entire E2E suite should run in &lt; 10 min on CI; individual specs &lt; 30s; full pipeline shouldn't be more than 20% of total CI time.</li>
-  <li><strong>Stable selectors:</strong> <code>data-testid</code> or accessibility roles, never CSS classes that change with refactors.</li>
-  <li><strong>Mock the boundary, not the journey:</strong> stub flaky 3rd-party services (analytics, payment redirects); let your own services run real.</li>
-  <li><strong>Visual regression</strong> belongs alongside E2E for design-system protection (Chromatic, Percy, Playwright snapshots).</li>
-</ul>
-<p><strong>Mantra:</strong> "Few, fast, stable, focused. Critical path or not at all."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>E2E drives a real browser or device through the full stack the way a user does</strong> — reserve it for the few critical paths where breakage costs revenue, because it is slow, flaky, and expensive.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>E2E = full stack, real browser/device, as close to production as possible.</strong> It is the only layer that catches SSR/hydration mismatches, build/bundling regressions, CSP issues, cross-origin/cookie bugs, real keyboard/gesture behaviour, and push/deep-link flows.</li>
+    <li><strong>Few but mighty:</strong> 5-20 specs for the flows where bugs cost the most — signup, login, checkout, payments. Everything else belongs in integration.</li>
+    <li><strong>Web default is Playwright</strong> — auto-wait, multi-browser, parallel, multi-tab/multi-origin, trace viewer, codegen. Cypress has the best DX but is limited to a single tab/origin without workarounds.</li>
+    <li><strong>Mobile/RN:</strong> Detox (gray-box, JS-authored, knows when JS is idle), Maestro (declarative YAML, cross-platform, reads like docs), Appium (cross-platform native, older and flakier).</li>
+    <li><strong>Stable selectors:</strong> role/label first, <code>data-testid</code> as a fallback, never CSS classes. Default order <code>getByRole</code> &rarr; <code>getByLabel</code> &rarr; <code>getByText</code> &rarr; <code>data-testid</code> — same priority as RTL.</li>
+    <li><strong>Auto-wait</strong> waits for attached + visible + stable + enabled + receiving events, so you never write <code>sleep</code>s — <em>but it does NOT wait for hydration</em>; assert a post-hydration state (e.g. <code>toBeEnabled</code>) before interacting.</li>
+    <li><strong>Mock the boundary, not the journey:</strong> stub flaky third parties (Stripe, OAuth, analytics) via route handlers or sandbox modes; let your own services run real.</li>
+    <li><strong>Isolate state for parallel runs:</strong> per-worker DB schema, per-test user, or API-driven cleanup; use fixtures for the auth + data lifecycle.</li>
+    <li><strong>Capture artefacts on failure:</strong> screenshot, video, and trace. The Playwright trace viewer is a time-travel debugger — the single most powerful E2E debugging tool.</li>
+    <li><strong>Flake budget:</strong> &lt; 0.5% healthy, quarantine + fix weekly; &gt; 5% is bankrupt (engineers ignore CI and the signal is worthless).</li>
+    <li><strong>Speed budget:</strong> whole E2E suite &lt; 10 min on CI, each spec &lt; 30s, and E2E no more than 20% of total CI time. Mantra: &quot;Few, fast, stable, focused. Critical path or not at all.&quot;</li>
+    <li><strong>CI:</strong> shard across workers, retries on CI only, trace on first retry; run Chromium on every PR, Firefox/WebKit nightly.</li>
+    <li><strong>Visual regression</strong> alongside E2E (Percy/Chromatic/Playwright snapshots) with diff thresholds protects the design system from CSS/layout drift.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Reaching for arbitrary sleeps (<code>page.waitForTimeout(1000)</code>) — the #1 source of flake. Auto-wait already handles attached/visible/stable, so assert on the actual condition (<code>toBeVisible</code> on a success alert) instead. And remember auto-wait does <em>not</em> cover hydration: assert a post-hydration state before typing, or keystrokes get swallowed.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"E2E for the 5-10 flows where breakage equals revenue loss — signup, login, checkout; integration covers the rest."</div>
+  <div class="revision-say">"Playwright over Cypress for multi-origin, multi-tab, and the trace viewer; auto-wait plus assert-on-condition instead of sleeps kills most flake."</div>
+  <div class="revision-say">"Detox for gray-box JS-driven RN flows, Maestro when YAML reads better and we need cross-platform; mock third parties at the network and use a per-worker DB for parallel isolation."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What E2E actually means</h3>
 <p>"End-to-end" means the test exercises the full stack — frontend code, backend services, database, third-party integrations — as close to production as you can get. The test drives the UI (browser or device) just like a user would.</p>
 <p>This is different from <strong>integration tests</strong> (multiple modules of the same app, often with mocked network) and <strong>system tests</strong> (cross-service contracts).</p>
@@ -79,12 +90,10 @@ window.PREP_SITE.registerTopic({
   <li>No trace artefacts; debugging is "rerun and pray."</li>
   <li>The "100% E2E coverage" goal — diamond shape, slow + brittle.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The E2E tool landscape (web)</h3>
 <table>
   <thead><tr><th>Tool</th><th>Strengths</th><th>Weaknesses</th></tr></thead>
@@ -176,12 +185,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>&gt; 5%</td><td>Bankrupt</td><td>Engineers ignore CI; signal worthless</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Playwright basics</h3>
 <pre><code class="language-typescript">// playwright.config.ts
 import { defineConfig, devices } from '@playwright/test';
@@ -361,12 +368,10 @@ steps:
 <pre><code class="language-bash">pnpm exec playwright codegen http://localhost:3000
 </code></pre>
 <p>Records your interactions as a Playwright spec. Use to scaffold a test, then edit for assertions and stability.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Critical-path checkout flow</h3>
 <pre><code class="language-typescript">import { test, expect } from './fixtures';
 
@@ -507,12 +512,11 @@ test('homepage has no a11y violations', async ({ page }) =&gt; {
   expect(results.violations).toEqual([]);
 });
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Animation timing</h3>
 <ul>
   <li>Auto-wait waits for animations to settle, but you may not want to. Disable animations globally in test mode:</li>
@@ -608,12 +612,9 @@ test('homepage has no a11y violations', async ({ page }) =&gt; {
   <li>Use <code>maxDiffPixels</code> threshold; not zero-tolerance.</li>
   <li>Re-baseline on intentional design changes; review diffs in PR.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common E2E mistakes</h3>
 <ol>
   <li><strong>E2E for everything.</strong> Slow, flaky, hides which layer broke.</li>
@@ -696,12 +697,10 @@ await page.goto(\`/products/\${product.id}\`);
 
 <h3>Anti-pattern: wrong device profile</h3>
 <p>Testing on Chromium desktop when 80% of users are mobile Safari. Match prod traffic when prioritising browser matrix.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common E2E interview prompts</h3>
 <ol>
   <li>Walk through your E2E strategy.</li>
@@ -832,54 +831,26 @@ await page.goto(\`/products/\${product.id}\`);
   <li>"Try Maestro Cloud free tier on a real RN app."</li>
   <li>"Compare BrowserStack vs Sauce vs AWS Device Farm pricing on a hypothetical matrix."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>E2E drives a real browser or device through the full stack the way a user does</strong> — reserve it for the few critical paths where breakage costs revenue, because it is slow, flaky, and expensive.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>E2E = full stack, real browser/device, as close to production as possible.</strong> It is the only layer that catches SSR/hydration mismatches, build/bundling regressions, CSP issues, cross-origin/cookie bugs, real keyboard/gesture behaviour, and push/deep-link flows.</li>
-    <li><strong>Few but mighty:</strong> 5-20 specs for the flows where bugs cost the most — signup, login, checkout, payments. Everything else belongs in integration.</li>
-    <li><strong>Web default is Playwright</strong> — auto-wait, multi-browser, parallel, multi-tab/multi-origin, trace viewer, codegen. Cypress has the best DX but is limited to a single tab/origin without workarounds.</li>
-    <li><strong>Mobile/RN:</strong> Detox (gray-box, JS-authored, knows when JS is idle), Maestro (declarative YAML, cross-platform, reads like docs), Appium (cross-platform native, older and flakier).</li>
-    <li><strong>Stable selectors:</strong> role/label first, <code>data-testid</code> as a fallback, never CSS classes. Default order <code>getByRole</code> &rarr; <code>getByLabel</code> &rarr; <code>getByText</code> &rarr; <code>data-testid</code> — same priority as RTL.</li>
-    <li><strong>Auto-wait</strong> waits for attached + visible + stable + enabled + receiving events, so you never write <code>sleep</code>s — <em>but it does NOT wait for hydration</em>; assert a post-hydration state (e.g. <code>toBeEnabled</code>) before interacting.</li>
-    <li><strong>Mock the boundary, not the journey:</strong> stub flaky third parties (Stripe, OAuth, analytics) via route handlers or sandbox modes; let your own services run real.</li>
-    <li><strong>Isolate state for parallel runs:</strong> per-worker DB schema, per-test user, or API-driven cleanup; use fixtures for the auth + data lifecycle.</li>
-    <li><strong>Capture artefacts on failure:</strong> screenshot, video, and trace. The Playwright trace viewer is a time-travel debugger — the single most powerful E2E debugging tool.</li>
-    <li><strong>Flake budget:</strong> &lt; 0.5% healthy, quarantine + fix weekly; &gt; 5% is bankrupt (engineers ignore CI and the signal is worthless).</li>
-    <li><strong>CI:</strong> shard across workers, retries on CI only, trace on first retry; run Chromium on every PR, Firefox/WebKit nightly.</li>
-    <li><strong>Visual regression</strong> alongside E2E (Percy/Chromatic/Playwright snapshots) with diff thresholds protects the design system from CSS/layout drift.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Reaching for arbitrary sleeps (<code>page.waitForTimeout(1000)</code>) — the #1 source of flake. Auto-wait already handles attached/visible/stable, so assert on the actual condition (<code>toBeVisible</code> on a success alert) instead. And remember auto-wait does <em>not</em> cover hydration: assert a post-hydration state before typing, or keystrokes get swallowed.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"E2E for the 5-10 flows where breakage equals revenue loss — signup, login, checkout; integration covers the rest."</div>
-  <div class="revision-say">"Playwright over Cypress for multi-origin, multi-tab, and the trace viewer; auto-wait plus assert-on-condition instead of sleeps kills most flake."</div>
-  <div class="revision-say">"Detox for gray-box JS-driven RN flows, Maestro when YAML reads better and we need cross-platform; mock third parties at the network and use a per-worker DB for parallel isolation."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the 5-10 flows that justify E2E, and explain why breakage there equals revenue loss?</li>
-    <li>Can you justify choosing Playwright over Cypress for multi-origin, multi-tab, and the trace viewer?</li>
-    <li>Can you explain why auto-wait plus assert-on-condition kills more flake than any <code>waitForTimeout</code> sleep?</li>
-    <li>Can you explain why auto-wait does <em>not</em> cover hydration, and what to assert before typing?</li>
-    <li>Can you contrast Detox (gray-box, JS-driven RN) with Maestro (YAML, cross-platform) and say when each wins?</li>
-    <li>Can you isolate parallel E2E runs by mocking third parties at the network and using a per-worker DB?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. Why does auto-wait plus asserting on a condition remove more flake than a waitForTimeout sleep?</div>
+  <div class="qa-answer">
+    <p>A fixed sleep like <code>page.waitForTimeout(2000)</code> guesses how long the app needs: too short on a slow CI machine and it flakes, too long everywhere else and the suite crawls. Playwright's auto-wait waits for the element to be attached, visible, stable, enabled and receiving events before acting, and web-first assertions such as <code>toBeVisible</code> or <code>toHaveURL</code> retry until the condition holds or the timeout expires. That removes the "didn't wait long enough" class of bugs that plagued Selenium-era tools, so you never need a sleep.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q2. Why doesn't auto-wait cover hydration, and what should you assert before typing?</div>
+  <div class="qa-answer">
+    <p>Auto-wait checks visible, attached and stable, but a server-rendered input is all of those before React has hydrated and attached its handlers, so text typed then gets swallowed. This showed up as a 1% CI flake at "search shows results". Assert an explicit post-hydration state first, for example <code>await expect(search).toBeEnabled()</code>, and only then <code>search.fill('apple')</code>.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Compare Detox and Maestro for React Native E2E. When does each win?</div>
+  <div class="qa-answer">
+    <p>Detox is gray-box: tests are written in JS, it knows when the JS thread is idle so there are no manual sleeps, it is fast and targets iOS and Android, with selectors from <code>testID</code> props; the costs are that it is typically RN-only and iOS setup is non-trivial. Maestro is declarative YAML that reads like a spec, is very fast to author, and covers iOS, Android and web with Maestro Cloud for real devices, but gives less control than code for advanced flows. Pick Detox for gray-box, JS-driven flows and Maestro when YAML reads better and you need cross-platform; Appium only if you are already in the Selenium ecosystem.</p>
+  </div>
+</div>
+` },
 
   ]
 });

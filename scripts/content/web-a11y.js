@@ -1,33 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'web-a11y',
-  module: 'web',
-  title: 'Accessibility',
-  estimatedReadTime: '50 min',
-  tags: ['a11y', 'accessibility', 'aria', 'wcag', 'screen-reader', 'keyboard', 'focus', 'semantic', 'web'],
+  id: "web-a11y",
+  module: "web",
+  title: "Accessibility",
+  estimatedReadTime: "50 min",
+  tags: ["a11y","accessibility","aria","wcag","screen-reader","keyboard","focus","semantic","web"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Accessibility (a11y)</strong> is making your app usable by everyone — including users of screen readers, keyboard-only navigation, voice control, switch access, magnifiers, and reduced motion. It's a legal requirement (ADA, EU Accessibility Act, Section 508), a moral baseline, and a quality signal. Senior frontend engineers internalize a11y from the start; retrofitting is painful.</p>
-<ul>
-  <li><strong>WCAG 2.2</strong> is the standard; Level AA is the practical target. Four principles: Perceivable, Operable, Understandable, Robust.</li>
-  <li><strong>Semantic HTML first.</strong> Use <code>&lt;button&gt;</code>, <code>&lt;a&gt;</code>, <code>&lt;label&gt;</code>, <code>&lt;input&gt;</code> — they bring built-in a11y. ARIA is the second tool, not the first.</li>
-  <li><strong>Keyboard support is non-negotiable.</strong> Tab order, Enter/Space activation, Escape to dismiss, arrow keys for menus.</li>
-  <li><strong>Focus management:</strong> visible focus, programmatic focus on route change, focus trap in modals.</li>
-  <li><strong>Color contrast:</strong> 4.5:1 for normal text, 3:1 for large text. Don't rely on color alone.</li>
-  <li><strong>ARIA roles and properties</strong> when semantic HTML doesn't suffice. The first rule of ARIA: don't use ARIA when HTML has a built-in equivalent.</li>
-  <li><strong>Screen reader testing</strong> is mandatory. NVDA + VoiceOver are the dominant readers; test with both.</li>
-  <li><strong>Mobile a11y</strong> mirrors web: VoiceOver (iOS), TalkBack (Android), Switch Control, Voice Control, Reduce Motion.</li>
-</ul>
-<p><strong>Mantra:</strong> "Semantic HTML, keyboard works, focus visible, contrast passes, screen reader tested. ARIA only when HTML can't."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Semantic HTML first</strong> — a native element gives you focus, keyboard operation, and the correct screen-reader role for free; <strong>ARIA is the fallback, never the first tool</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Reach for native elements first:</strong> <code>&lt;button&gt;</code>, <code>&lt;a href&gt;</code>, <code>&lt;label&gt;</code>, <code>&lt;input&gt;</code> ship built-in a11y — focusable, keyboard-operable, correct role. ARIA is the second tool, not the first.</li>
+    <li><strong>The 3 rules of ARIA:</strong> don't use ARIA when HTML has an equivalent; don't override native semantics; every interactive element must be keyboard-operable.</li>
+    <li><strong>Keyboard is non-negotiable:</strong> Tab / Shift+Tab move, Enter / Space activate, Escape dismisses, arrow keys drive menus / tabs / radios.</li>
+    <li><strong>Focus management, three cases:</strong> modal → move focus in, trap it, restore to the trigger on close; SPA route change → focus the new page's heading / <code>&lt;main&gt;</code> and announce it; async update → use a live region, don't yank focus mid-task.</li>
+    <li><strong>Never kill focus with <code>outline: none</code></strong> — use <code>:focus-visible</code> for a keyboard-only focus ring.</li>
+    <li><strong>Contrast (AA):</strong> 4.5:1 for normal text, 3:1 for large text and UI components — and never convey information by color alone.</li>
+    <li><strong>The accessibility tree</strong> is what assistive tech reads — a derived tree of meaningful elements. Semantic markup maps cleanly; div-soup loses the information.</li>
+    <li><strong>Live regions must already be in the DOM before content changes</strong> — polite by default, assertive only for critical messages like errors.</li>
+    <li>Always include <code>alt</code>: <code>alt=""</code> for decorative images (a missing <code>alt</code> makes the reader announce the filename).</li>
+    <li>One <code>&lt;h1&gt;</code>, don't skip heading levels; landmarks (<code>header</code>, <code>nav</code>, <code>main</code>, <code>footer</code>) let screen-reader users jump around.</li>
+    <li>Honor <code>prefers-reduced-motion</code>; WCAG 2.2 target size is ≥ 24×24px; <code>aria-disabled</code> stays focusable (so users can discover why) while <code>disabled</code> does not.</li>
+    <li><strong>WCAG 2.2 Level AA</strong> is the practical target (four principles: Perceivable, Operable, Understandable, Robust); a11y is also a legal requirement (ADA, EU Accessibility Act, Section 508). Mobile mirrors web: VoiceOver, TalkBack, Switch Control, Voice Control, Reduce Motion.</li>
+    <li><strong>Test with real screen readers</strong> (VoiceOver, NVDA) plus axe / Lighthouse in CI — automation catches only about a third of issues.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Building an interactive control from <code>&lt;div onClick&gt;</code></strong> (or slapping <code>role</code> / <code>aria-label</code> onto a div) instead of a native <code>&lt;button&gt;</code>. The div isn't focusable, has no Enter / Space activation, and isn't announced as interactive. Fix: use <code>&lt;button&gt;</code>; if you truly can't, add <code>role="button"</code>, <code>tabindex="0"</code>, and an <code>onKeyDown</code> for Enter and Space. Sibling trap: <code>outline: none</code> with no <code>:focus-visible</code> replacement.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Semantic HTML first — a native <code>&lt;button&gt;</code> gives me focus, keyboard activation, and the right role for free; I only reach for ARIA when no HTML element fits."</div>
+  <div class="revision-say">"The first rule of ARIA is don't use ARIA — and anything interactive I build has to work with the keyboard, not just the mouse."</div>
+  <div class="revision-say">"For a modal I move focus in, trap it, and restore focus to the trigger on close; for an SPA route change I focus the new page's heading and announce it through a live region."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Who needs accessibility?</h3>
 <table>
   <thead><tr><th>Population</th><th>What they need</th></tr></thead>
@@ -92,12 +102,10 @@ window.PREP_SITE.registerTopic({
   <li>You honor <code>prefers-reduced-motion</code>.</li>
   <li>You include axe / pa11y in CI; you fix violations.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The accessibility tree</h3>
 <p>Browsers expose two trees: the DOM (what you wrote) and the accessibility tree (what assistive tech sees). The a11y tree is derived from the DOM but only includes meaningful elements. Semantic HTML maps cleanly; <code>&lt;div&gt;</code>-soup loses information.</p>
 
@@ -228,12 +236,10 @@ GOOD: Status indicator with color + icon + text label.
   }
 }
 </code></pre>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Form labels (the basics)</h3>
 <pre><code class="language-html">&lt;!-- Explicit (preferred) --&gt;
 &lt;label for="email"&gt;Email&lt;/label&gt;
@@ -503,12 +509,10 @@ document.getElementById('status').textContent = 'Profile saved successfully';
     <tr><td>Storybook a11y addon</td><td>Per-component a11y check</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Accessible icon button</h3>
 <pre><code class="language-html">&lt;button type="button" aria-label="Delete item"&gt;
   &lt;svg aria-hidden="true"&gt;...&lt;/svg&gt;
@@ -683,12 +687,11 @@ function FadeIn({ children }) {
   }
 &lt;/style&gt;
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Hidden vs aria-hidden vs visibility</h3>
 <table>
   <thead><tr><th>Approach</th><th>Visible</th><th>In a11y tree</th><th>Tabbable</th></tr></thead>
@@ -780,12 +783,9 @@ function FadeIn({ children }) {
 
 <h3>Captions and transcripts</h3>
 <p>Videos need captions; audio needs transcripts. Auto-captions are a starting point but not sufficient for compliance.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: div+onClick instead of button</h3>
 <p>Not focusable, not announced as interactive, no keyboard support. Use <code>&lt;button&gt;</code>.</p>
 
@@ -869,12 +869,10 @@ button:focus-visible {
 
 <h3>Anti-pattern 10: Treating a11y as someone else's job</h3>
 <p>"The QA team will catch a11y bugs." They might catch some; many require code changes that aren't trivial. Make a11y everyone's responsibility.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 14 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -972,54 +970,32 @@ button:focus-visible {
   <li>"I'd add a 'a11y review' step to every design doc."</li>
   <li>"I'd build a design-system component library where every component is a11y-tested by default."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Semantic HTML first</strong> — a native element gives you focus, keyboard operation, and the correct screen-reader role for free; <strong>ARIA is the fallback, never the first tool</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Reach for native elements first:</strong> <code>&lt;button&gt;</code>, <code>&lt;a href&gt;</code>, <code>&lt;label&gt;</code>, <code>&lt;input&gt;</code> ship built-in a11y — focusable, keyboard-operable, correct role. ARIA is the second tool, not the first.</li>
-    <li><strong>The 3 rules of ARIA:</strong> don't use ARIA when HTML has an equivalent; don't override native semantics; every interactive element must be keyboard-operable.</li>
-    <li><strong>Keyboard is non-negotiable:</strong> Tab / Shift+Tab move, Enter / Space activate, Escape dismisses, arrow keys drive menus / tabs / radios.</li>
-    <li><strong>Focus management, three cases:</strong> modal → move focus in, trap it, restore to the trigger on close; SPA route change → focus the new page's heading / <code>&lt;main&gt;</code> and announce it; async update → use a live region, don't yank focus mid-task.</li>
-    <li><strong>Never kill focus with <code>outline: none</code></strong> — use <code>:focus-visible</code> for a keyboard-only focus ring.</li>
-    <li><strong>Contrast (AA):</strong> 4.5:1 for normal text, 3:1 for large text and UI components — and never convey information by color alone.</li>
-    <li><strong>The accessibility tree</strong> is what assistive tech reads — a derived tree of meaningful elements. Semantic markup maps cleanly; div-soup loses the information.</li>
-    <li><strong>Live regions must already be in the DOM before content changes</strong> — polite by default, assertive only for critical messages like errors.</li>
-    <li>Always include <code>alt</code>: <code>alt=""</code> for decorative images (a missing <code>alt</code> makes the reader announce the filename).</li>
-    <li>One <code>&lt;h1&gt;</code>, don't skip heading levels; landmarks (<code>header</code>, <code>nav</code>, <code>main</code>, <code>footer</code>) let screen-reader users jump around.</li>
-    <li>Honor <code>prefers-reduced-motion</code>; WCAG 2.2 target size is ≥ 24×24px; <code>aria-disabled</code> stays focusable (so users can discover why) while <code>disabled</code> does not.</li>
-    <li><strong>Test with real screen readers</strong> (VoiceOver, NVDA) plus axe / Lighthouse in CI — automation catches only about a third of issues.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Building an interactive control from <code>&lt;div onClick&gt;</code></strong> (or slapping <code>role</code> / <code>aria-label</code> onto a div) instead of a native <code>&lt;button&gt;</code>. The div isn't focusable, has no Enter / Space activation, and isn't announced as interactive. Fix: use <code>&lt;button&gt;</code>; if you truly can't, add <code>role="button"</code>, <code>tabindex="0"</code>, and an <code>onKeyDown</code> for Enter and Space. Sibling trap: <code>outline: none</code> with no <code>:focus-visible</code> replacement.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Semantic HTML first — a native <code>&lt;button&gt;</code> gives me focus, keyboard activation, and the right role for free; I only reach for ARIA when no HTML element fits."</div>
-  <div class="revision-say">"The first rule of ARIA is don't use ARIA — and anything interactive I build has to work with the keyboard, not just the mouse."</div>
-  <div class="revision-say">"For a modal I move focus in, trap it, and restore focus to the trigger on close; for an SPA route change I focus the new page's heading and announce it through a live region."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain when to reach for a native element versus an ARIA role — and why "no ARIA is better than bad ARIA"?</li>
-    <li>Can you build a modal that traps focus, moves focus in on open, and restores it to the trigger on close?</li>
-    <li>Can you make an SPA route change announce the new page to a screen reader?</li>
-    <li>Can you say what WCAG AA requires for contrast — and why meaning can never rely on color alone?</li>
-    <li>Can you test a flow keyboard-only and name every action that must work without a mouse?</li>
-    <li>Can you wire up a live region and explain <code>aria-live</code> polite versus assertive?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. When do you use a native element versus an ARIA role, and why is no ARIA better than bad ARIA?</div>
+  <div class="qa-answer">
+    <p>Use the native element whenever one exists: <code>&lt;button&gt;</code>, <code>&lt;a href&gt;</code>, <code>&lt;label&gt;</code> and <code>&lt;input&gt;</code> bring focus, keyboard activation and the correct role for free. Reach for ARIA only when no HTML element fits, such as a custom combobox following the WAI-ARIA Authoring Practices. ARIA changes only what assistive tech announces, not behaviour: a div with <code>role="button"</code> is announced as a button but still isn't focusable and doesn't respond to Enter or Space unless you add <code>tabindex="0"</code> and key handlers. So bad ARIA promises an interaction that doesn't work, which is worse than none. Redundant ARIA such as <code>&lt;header role="banner"&gt;</code> adds nothing.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q2. How do you build an accessible modal with correct focus handling?</div>
+  <div class="qa-answer">
+    <p>Three requirements: move focus into the modal on open, trap Tab focus inside it, and restore focus to the trigger on close; otherwise focus is lost to <code>body</code>. The simplest route is the native <code>&lt;dialog&gt;</code> opened with <code>showModal()</code>, which handles the focus trap, Escape and backdrop natively. Label it with <code>aria-labelledby</code> pointing at its heading and use <code>autoFocus</code> on the primary button. Then make sure focus returns to the element that opened it.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. What does WCAG AA require for contrast, and why must meaning never rely on color alone?</div>
+  <div class="qa-answer">
+    <p>AA requires 4.5:1 for normal text and 3:1 for large text (24px or more, or 19px bold) and for UI components and graphics; AAA raises text to 7:1 and 4.5:1. Color alone fails because color-blind users (about 8% of men and 0.5% of women) may not perceive the difference, and screen readers don't announce color. Pair color with text or an icon: mark a required field with "Required", not just a red asterisk, and show status with color + icon + label.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How do you test a flow keyboard-only, and what must work without a mouse?</div>
+  <div class="qa-answer">
+    <p>Put the mouse away and complete the whole flow with the keyboard. Tab / Shift+Tab must reach every interactive element in a logical order (no positive <code>tabindex</code>), Enter / Space must activate buttons and links, Escape must dismiss modals and menus, and arrow keys must drive menus, tabs and radio groups. A visible focus ring (<code>:focus-visible</code>) must always show where you are, and focus must move correctly on modal open/close and on route change. This matters beyond keyboard users, because screen readers, switch access and voice control all drive the browser through keyboard interactions.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

@@ -1,32 +1,45 @@
 window.PREP_SITE.registerTopic({
-  id: 'test-philosophy',
-  module: 'testing',
-  title: 'Testing Philosophy',
-  estimatedReadTime: '40 min',
-  tags: ['testing', 'philosophy', 'pyramid', 'trophy', 'tdd', 'kent-beck', 'kent-c-dodds', 'confidence', 'flake'],
+  id: "test-philosophy",
+  module: "testing",
+  title: "Testing Philosophy",
+  estimatedReadTime: "40 min",
+  tags: ["testing","philosophy","pyramid","trophy","tdd","kent-beck","kent-c-dodds","confidence","flake"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Testing philosophy</strong> is the layer above tools — what to test, how much, in what shape, and why. The job of a test suite is to give you <strong>confidence to ship</strong> at the speed your team needs to ship. Anything that doesn't serve that goal is overhead.</p>
-<ul>
-  <li><strong>The shape:</strong> the old "pyramid" (lots of unit, few E2E) has largely been replaced by Kent C. Dodds's "<strong>Testing Trophy</strong>" — static + lots of integration + some unit + a few E2E. Integration is where most bugs live.</li>
-  <li><strong>The unit:</strong> test <em>behaviour</em>, not implementation. Refactors should not break tests.</li>
-  <li><strong>The mantra:</strong> "The more your tests resemble the way your software is used, the more confidence they can give you." (Kent C. Dodds.)</li>
-  <li><strong>The cost:</strong> slow tests, flaky tests, brittle tests, snapshot graveyards. Treat your test suite like production code — maintain it.</li>
-  <li><strong>TDD:</strong> tool, not religion. Use it where it helps you think (algorithms, edge-heavy code); skip it for UI exploration.</li>
-  <li><strong>Coverage:</strong> a smell, not a goal. 80% with no behavioural tests is worse than 40% with focused integration tests.</li>
-  <li><strong>Mobile / RN:</strong> add device fragmentation, slow CI, and OS-version drift as first-class concerns.</li>
-</ul>
-<p><strong>Mantra:</strong> "Test behaviour, not implementation. Optimise for confidence, not coverage. Delete what doesn't earn its keep."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>A test suite's only job is confidence to ship at your team's speed</strong> — test behaviour not implementation, optimise for confidence not coverage, and delete what doesn't earn its keep.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Tests have one job:</strong> tell you whether the change you just made broke something that matters. Confidence to ship is the metric — coverage, "documentation," and "design pressure" are downstream.</li>
+    <li><strong>Shape:</strong> the Testing Trophy (Kent C. Dodds — static + heavy integration + some unit + a few E2E) for frontend; the Pyramid (unit-heavy) still wins for backend, parsers, and algorithms; the <strong>diamond</strong> (lots of E2E, no integration) is the anti-shape.</li>
+    <li><strong>Behaviour over implementation:</strong> query by role and assert user-visible outcomes so a refactor (button &rarr; <code>Pressable</code>) doesn't break tests. The cost is thinking in user terms, not internal state.</li>
+    <li><strong>Dodds mantra:</strong> "the more your tests resemble the way your software is used, the more confidence they can give you."</li>
+    <li><strong>Coverage is a floor/smell, not a goal:</strong> 100% with mocks all the way down gives less confidence than 60% of focused integration (and 80% with no behavioural tests is worse than 40% of focused integration tests); watch branch coverage, which is harder to inflate than line coverage.</li>
+    <li><strong>Four test outcomes:</strong> true positive (fix the bug), true negative, false positive/flake (fix or delete the test), false negative/gap (add a regression test at the right level). Good suites minimise FPs and FNs.</li>
+    <li><strong>The "delete the test" experiment:</strong> if you removed it and a bug shipped, would something else (an integration test, TypeScript) catch it? If yes, delete it — that keeps the suite small, fast, and meaningful.</li>
+    <li><strong>Mock only at boundaries</strong> (network with MSW) and run everything else real; mocking the module under test exercises only the renderer.</li>
+    <li><strong>The suite has costs:</strong> slow, flaky and brittle tests and snapshot graveyards &mdash; treat the test suite like production code and maintain it.</li>
+    <li><strong>Mobile / RN</strong> adds device fragmentation, slow CI and OS-version drift as first-class concerns (emulators for the bulk, real devices sparingly, latest + N-1 OS matrix).</li>
+    <li><strong>TDD is a tool, not a religion:</strong> use it for algorithms, edge-heavy domains, and bug-fix repros; skip it for UI/layout/design exploration.</li>
+    <li><strong>Good test files:</strong> each test names a behaviour ("shows error when password is too short"), Arrange/Act/Assert spacing, one assertion-cluster, explicit setup helpers over deep <code>beforeEach</code>.</li>
+    <li><strong>Isolation:</strong> order-independent (shuffle/randomize passes), no shared mutable state, no real time/network/files unless you mean it and label those tests.</li>
+    <li><strong>Flake spends a trust budget:</strong> 0.5% healthy, 5% debt, 10% bankrupt. Track it, auto-quarantine, and fix at the root cause instead of retrying.</li>
+    <li><strong>Beyond example tests:</strong> property-based (fast-check) for invariants, mutation testing (Stryker) to audit whether coverage is real, contract (Pact) for service shape, visual regression for CSS/layout.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Chasing a coverage % by mocking every dependency — the number climbs while confidence falls, because the tests reimplement the code and integration silently breaks. Test behaviour through the real stack (MSW at the boundary) and treat coverage as a regression-prevention floor, not a goal.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A test suite exists to give confidence to ship — I test behaviour, not implementation, so refactors that don't change behaviour don't break tests."</div>
+  <div class="revision-say">"Trophy shape for frontend because most bugs live in component cooperation; coverage is a floor, not a goal, and mocks all the way down is false confidence."</div>
+  <div class="revision-say">"For every test I ask: if I deleted this and a bug shipped, would anything else catch it? If yes, it goes."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What tests are actually for</h3>
 <p>Tests have one job: <strong>tell you whether the change you just made broke something that matters</strong>. Everything else — coverage metrics, "documentation," "design pressure" — is downstream of that core function.</p>
 
@@ -84,12 +97,10 @@ expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
   <li>"How do you test X?" is a discriminating interview question — it reveals whether you've shipped real systems or just toy projects.</li>
   <li>Test architecture decisions compound: the wrong choice 6 months in is a 6-month migration to undo.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The Testing Trophy (Kent C. Dodds)</h3>
 <pre><code class="language-text">             E2E (~5%)
             ────────────
@@ -173,12 +184,10 @@ expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
   <li>"No, this is the only thing that catches the bug" → keep it.</li>
 </ul>
 <p>This is how you keep a suite small + fast + meaningful as code grows.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>The four kinds of failures a test can have</h3>
 <table>
   <thead><tr><th>Failure</th><th>What it means</th><th>Fix</th></tr></thead>
@@ -274,12 +283,10 @@ test('reverse(reverse(arr)) === arr', () =&gt; {
 
 <h3>The "trust budget"</h3>
 <p>Every flaky test spends trust. When trust hits zero, engineers ignore the suite. Track flake rate; auto-quarantine flaky tests; budget time for fixes. A suite at 0.5% flake rate is healthy; 5% is debt; 10% is bankrupt.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Refactor-resilient component test</h3>
 <p>Goal: test a "Sign up" form. Survive: button → Pressable; div → fieldset; class → Tailwind; controlled → uncontrolled.</p>
 <pre><code class="language-javascript">import { render, screen } from '@testing-library/react';
@@ -404,12 +411,11 @@ test('renders correctly', () =&gt; {
 });
 </code></pre>
 <p>None of these catch bugs. Each one breaks under benign refactors. Delete.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Time, randomness, and the network</h3>
 <table>
   <thead><tr><th>Source</th><th>Strategy</th></tr></thead>
@@ -479,12 +485,9 @@ test('renders correctly', () =&gt; {
   <li>Audit periodically — if a snapshot has been "blind-updated" in the last 5 PRs, delete it.</li>
   <li>Limit snapshots to: serialisation, generated CSS, complex AST output. Not entire UI trees.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common testing-philosophy mistakes</h3>
 <ol>
   <li><strong>Coverage as goal.</strong> Hits 80% by mocking everything; catches nothing.</li>
@@ -576,12 +579,10 @@ beforeEach(() =&gt; {
 
 <h3>Anti-pattern: "the test broke; revert the test"</h3>
 <p>If a test was protecting a behaviour, deleting it because it's inconvenient is a future-bug subscription. Either prove the behaviour is no longer needed (then update the spec, then the test) or fix the code.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common testing-philosophy interview prompts</h3>
 <ol>
   <li>How would you test this component / function / feature?</li>
@@ -705,55 +706,44 @@ beforeEach(() =&gt; {
   <li>"Compare Detox vs Maestro on a small RN app — feel the tradeoffs."</li>
   <li>"Audit one of your prior projects: which tests would you delete now?"</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>A test suite's only job is confidence to ship at your team's speed</strong> — test behaviour not implementation, optimise for confidence not coverage, and delete what doesn't earn its keep.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Tests have one job:</strong> tell you whether the change you just made broke something that matters. Confidence to ship is the metric — coverage, "documentation," and "design pressure" are downstream.</li>
-    <li><strong>Shape:</strong> the Testing Trophy (Kent C. Dodds — static + heavy integration + some unit + a few E2E) for frontend; the Pyramid (unit-heavy) still wins for backend, parsers, and algorithms; the <strong>diamond</strong> (lots of E2E, no integration) is the anti-shape.</li>
-    <li><strong>Behaviour over implementation:</strong> query by role and assert user-visible outcomes so a refactor (button &rarr; <code>Pressable</code>) doesn't break tests. The cost is thinking in user terms, not internal state.</li>
-    <li><strong>Dodds mantra:</strong> "the more your tests resemble the way your software is used, the more confidence they can give you."</li>
-    <li><strong>Coverage is a floor/smell, not a goal:</strong> 100% with mocks all the way down gives less confidence than 60% of focused integration; watch branch coverage, which is harder to inflate than line coverage.</li>
-    <li><strong>Four test outcomes:</strong> true positive (fix the bug), true negative, false positive/flake (fix or delete the test), false negative/gap (add a regression test at the right level). Good suites minimise FPs and FNs.</li>
-    <li><strong>The "delete the test" experiment:</strong> if you removed it and a bug shipped, would something else (an integration test, TypeScript) catch it? If yes, delete it — that keeps the suite small, fast, and meaningful.</li>
-    <li><strong>Mock only at boundaries</strong> (network with MSW) and run everything else real; mocking the module under test exercises only the renderer.</li>
-    <li><strong>TDD is a tool, not a religion:</strong> use it for algorithms, edge-heavy domains, and bug-fix repros; skip it for UI/layout/design exploration.</li>
-    <li><strong>Good test files:</strong> each test names a behaviour ("shows error when password is too short"), Arrange/Act/Assert spacing, one assertion-cluster, explicit setup helpers over deep <code>beforeEach</code>.</li>
-    <li><strong>Isolation:</strong> order-independent (shuffle/randomize passes), no shared mutable state, no real time/network/files unless you mean it and label those tests.</li>
-    <li><strong>Flake spends a trust budget:</strong> 0.5% healthy, 5% debt, 10% bankrupt. Track it, auto-quarantine, and fix at the root cause instead of retrying.</li>
-    <li><strong>Beyond example tests:</strong> property-based (fast-check) for invariants, mutation testing (Stryker) to audit whether coverage is real, contract (Pact) for service shape, visual regression for CSS/layout.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Chasing a coverage % by mocking every dependency — the number climbs while confidence falls, because the tests reimplement the code and integration silently breaks. Test behaviour through the real stack (MSW at the boundary) and treat coverage as a regression-prevention floor, not a goal.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A test suite exists to give confidence to ship — I test behaviour, not implementation, so refactors that don't change behaviour don't break tests."</div>
-  <div class="revision-say">"Trophy shape for frontend because most bugs live in component cooperation; coverage is a floor, not a goal, and mocks all the way down is false confidence."</div>
-  <div class="revision-say">"For every test I ask: if I deleted this and a bug shipped, would anything else catch it? If yes, it goes."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you state a test suite's only job in one sentence?</li>
-    <li>Can you explain the difference between testing behaviour and testing implementation, and why refactors shouldn't break tests?</li>
-    <li>Can you argue why the Trophy shape fits frontend better than the classic Pyramid?</li>
-    <li>Can you explain why chasing a coverage % by mocking every dependency lowers real confidence?</li>
-    <li>Can you apply the "if I deleted this test and a bug shipped, would anything else catch it?" heuristic?</li>
-    <li>Can you explain why coverage is a floor, not a goal?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. In one sentence, what is a test suite's job?</div>
+  <div class="qa-answer">
+    <p>To give you confidence to ship at the speed your team needs to ship, by telling you whether the change you just made broke something that matters. Anything that doesn't serve that goal is overhead; coverage, "documentation" and "design pressure" are downstream benefits, not the goal.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q2. What is the difference between testing behaviour and testing implementation, and why shouldn't refactors break tests?</div>
+  <div class="qa-answer">
+    <p>Behaviour tests interact the way a user does (query by role, assert user-visible outcomes); implementation tests reach into internal state, class names or which functions were called. If a refactor doesn't change behaviour, say swapping a button for a <code>Pressable</code>, a behaviour test keeps passing, while an implementation test fails even though nothing is broken. That false failure spends trust and slows refactoring. As Kent C. Dodds puts it: "the more your tests resemble the way your software is used, the more confidence they can give you."</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Why does the Testing Trophy fit frontend better than the classic Pyramid?</div>
+  <div class="qa-answer">
+    <p>The Trophy is static checks at the bottom, a large band of integration, some unit and a few E2E. In frontend, most bugs live in how components cooperate (state, data fetching, rendering together), which unit tests of isolated pieces miss, and tooling has matured so integration tests on JSDOM are fast and high-signal. The Pyramid still wins for backend, parsers and hot-loop algorithms, where unit tests are cheap and exhaustive.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Why does chasing a coverage percentage by mocking every dependency lower real confidence?</div>
+  <div class="qa-answer">
+    <p>When everything is mocked, the tests effectively reimplement the code: the number climbs, but the real fetcher, parser, cache and component cooperation never run, so integration can break silently while the suite stays green. Mocking the module under test ends up exercising only the renderer. Mock only at boundaries (the network with MSW) and run everything else real; 60% of focused integration gives more confidence than 100% with mocks all the way down.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. How do you decide whether a test is worth keeping?</div>
+  <div class="qa-answer">
+    <p>Apply the "delete the test" experiment: if I deleted this test and a bug shipped, would anything else catch it, such as an integration test or TypeScript? If yes, the test is redundant and can go, which keeps the suite small, fast and meaningful. Typical deletions are pure-coverage tests, snapshot-of-everything tests and tests that pin the framework rather than your behaviour.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. Why is coverage a floor and not a goal?</div>
+  <div class="qa-answer">
+    <p>Coverage only tells you which lines ran, not whether anything meaningful was asserted, so it is easy to inflate with snapshots and mocks. Use it as a regression-prevention floor that stops coverage dropping, not as a target to maximise; 80% with no behavioural tests is worse than 40% with focused integration tests. Prefer branch coverage, which is harder to inflate, and audit real quality occasionally with mutation testing (Stryker).</p>
+  </div>
+</div>
+` },
 
   ]
 });

@@ -1,32 +1,39 @@
 window.PREP_SITE.registerTopic({
-  id: 'react-ssr',
-  module: 'React Deep',
-  title: 'SSR / SSG / ISR / RSC',
-  estimatedReadTime: '30 min',
-  tags: ['react', 'ssr', 'ssg', 'isr', 'rsc', 'server-components', 'hydration', 'streaming', 'nextjs', 'remix'],
+  id: "react-ssr",
+  module: "React Deep",
+  title: "SSR / SSG / ISR / RSC",
+  estimatedReadTime: "30 min",
+  tags: ["react","ssr","ssg","isr","rsc","server-components","hydration","streaming","nextjs","remix"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>React renders can happen in three places: the <strong>client</strong> (CSR), the <strong>server at request time</strong> (SSR), or <strong>build time</strong> (SSG). Modern frameworks (Next.js, Remix) mix all three per route. React 18 added <strong>streaming SSR</strong> and <strong>React Server Components</strong> (RSC) that further blur the line.</p>
-<ul>
-  <li><strong>CSR</strong> — browser downloads JS, JS renders into an empty root. Fast to deploy, slow first paint, bad SEO unless you add prerender.</li>
-  <li><strong>SSR</strong> — server renders HTML per request, client <em>hydrates</em> (attaches event handlers) to make it interactive. Fast first paint, fresh data, but heavier server cost.</li>
-  <li><strong>SSG</strong> — pages pre-rendered to static HTML at build time. Fastest to serve (CDN), but content is frozen until the next build.</li>
-  <li><strong>ISR (Incremental Static Regeneration)</strong> — Next.js hybrid: serve a cached static HTML, regenerate on a schedule or on demand in the background. Best of SSG speed + SSR freshness for most content.</li>
-  <li><strong>RSC (React Server Components)</strong> — a new component type that runs only on the server, can read the DB directly, sends a serialized tree (not HTML) to the client. Client components (usual) are the interactive parts. Radically reduces client-bundle size.</li>
-  <li><strong>Streaming SSR + Suspense</strong> — server flushes the shell immediately, streams slow regions when their data arrives. Selective hydration lets interactive parts come alive progressively.</li>
-  <li><strong>Hydration</strong> is the "attach JS to existing DOM" step. If server HTML doesn't match client render, you get a hydration mismatch error.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Pick by data freshness need: static → SSG; personalized → SSR; mostly static with periodic updates → ISR. React 18/19 with RSC + streaming lets you mix all of these within a single page.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">React can render in three places — <strong>client (CSR)</strong>, <strong>server per request (SSR)</strong>, or <strong>build time (SSG)</strong> — and modern frameworks mix all three per route; you pick by <em>data-freshness need</em>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>CSR</strong>: ship JS, render into an empty root → slow first paint, weak SEO. <strong>SSR</strong>: HTML per request + <em>hydration</em> → fast paint, fresh data, heavier server. <strong>SSG</strong>: prerender at build → fastest (CDN) but frozen until the next build.</li>
+    <li><strong>ISR</strong>: serve cached static HTML and regenerate in the background (on a schedule or on demand) → SSG speed with near-SSR freshness for most content.</li>
+    <li><strong>RSC (Server Components)</strong> run <em>only</em> on the server, can read the DB directly, and send a <strong>serialized tree (not HTML)</strong>; client components are the interactive parts → radically smaller client bundle.</li>
+    <li><strong>RSC is not SSR:</strong> SSR still ships a client bundle to hydrate; RSC ships <em>zero</em> client JS for the server-only parts.</li>
+    <li><strong>Hydration</strong> = attach JS / event handlers to server-rendered HTML. A <strong>hydration mismatch</strong> (server HTML ≠ client render) throws.</li>
+    <li><strong>Streaming SSR + Suspense</strong>: the server flushes the shell immediately and streams slow regions when their data arrives; <strong>selective hydration</strong> brings interactive parts alive progressively and prioritizes what the user touches.</li>
+    <li><strong>Server Actions</strong> bridge client UI and server mutations without hand-writing an API route.</li>
+    <li><strong>Decision:</strong> static → SSG; personalized/always-fresh → SSR; mostly-static with periodic updates → ISR; mix them within one page via RSC + streaming.</li>
+    <li><strong>Caching + invalidation is the hard part</strong> (request / data / full-route caches) — stale content usually means a missed revalidation.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Hydration mismatch</strong> from non-deterministic or browser-only code in render — <code>Date.now()</code>, <code>Math.random()</code>, <code>window</code>/<code>localStorage</code>, or timezone/locale differences make server and client HTML disagree. Gate browser-only work to effects (or <code>suppressHydrationWarning</code> for genuinely dynamic bits). And don't confuse <strong>RSC (no client JS)</strong> with <strong>SSR (bundle still ships)</strong>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I pick by data freshness — SSG for static, SSR for personalized, ISR for mostly-static-with-updates — and mix them per route with RSC and streaming."</div>
+  <div class="revision-say">"Hydration attaches JS to server-rendered HTML; a mismatch comes from non-deterministic or browser-only code running during render."</div>
+  <div class="revision-say">"RSC runs only on the server and ships a serialized tree with zero client JS for those parts — unlike SSR, which still sends a hydration bundle."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Client-side rendering (CSR)</h3>
 <p>The default React experience before SSR became common. The server sends a nearly-empty HTML shell (<code>&lt;div id="root"/&gt;</code>) plus JS. JS executes, renders into the root. User sees spinner → content. Pros: simple, single backend, any CDN works. Cons: blank screen until JS loads (bad LCP), bad SEO for crawlers that don't execute JS, no content for users with JS disabled.</p>
 
@@ -66,10 +73,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>User-specific timelines</strong> — SSR (often with edge caching).</li>
   <li><strong>Single-app admin tools</strong> — CSR is fine; SEO doesn't matter, internal users tolerate the initial load.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "where does render happen" picture</h3>
 <div class="diagram">
 <pre>
@@ -148,10 +155,10 @@ export default function ClientCounter() {
   <div class="callout-title">Common misconception</div>
   <p>"SSR means no bundle on the client." No. SSR renders HTML AND ships the full client bundle so React can hydrate. Only RSC reduces the bundle — server components don't ship at all. SSR + RSC combined gives you smaller bundles <em>and</em> fast first paint.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>renderToString (legacy, non-streaming)</h3>
 <pre><code class="language-js">import { renderToString } from 'react-dom/server';
 const html = renderToString(&lt;App/&gt;);
@@ -255,10 +262,10 @@ export default function NewPost() {
   <li><strong>CDN</strong>: serves the cached HTML to all users.</li>
 </ul>
 <p>Understanding which cache is serving you is essential when content doesn't update as expected. <code>revalidatePath</code> / <code>revalidateTag</code> are your tools.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — minimal SSR server (Node)</h3>
 <pre><code class="language-js">import express from 'express';
 import { renderToPipeableStream } from 'react-dom/server';
@@ -423,10 +430,11 @@ export default function Post() {
 <h3>Example 15 — checking hydration cost</h3>
 <pre><code class="language-js">// In DevTools: Performance panel → look for "Hydrate" mark
 // Optimize by reducing component count, virtualizing lists, using RSC for static parts.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Hydration mismatch on random IDs</h3>
 <p>Math.random() on both sides produces different values. Use <code>useId</code> for stable cross-environment IDs.</p>
 
@@ -494,10 +502,9 @@ cookies(); // any usage forces dynamic rendering — can't be cached statically<
 
 <h3>20. HTML entity encoding</h3>
 <p>React escapes JSX text by default, so <code>&amp;</code> is rendered as <code>&amp;amp;</code>. In RSC, <code>dangerouslySetInnerHTML</code> still bypasses — same XSS rules apply.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — SSR that blocks on a slow API</h3>
 <p>Don't make the whole page wait for a rare slow query. Use Suspense + streaming to send the shell first and stream the slow region later.</p>
 
@@ -548,10 +555,10 @@ export default function Posts() {
 
 <h3>Anti-pattern 15 — Trusting caching without invalidation</h3>
 <p>ISR / Data Cache is powerful, but without <code>revalidateTag</code> / <code>revalidatePath</code> calls on writes, users see stale content indefinitely. Plan your invalidation strategy before going live.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. CSR vs SSR vs SSG — when do you pick each?</div>
   <div class="qa-answer">
@@ -687,46 +694,20 @@ export default function Posts() {
     <li>You understand Server Actions as a bridge between client UI and server mutations.</li>
   </ul>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">React can render in three places — <strong>client (CSR)</strong>, <strong>server per request (SSR)</strong>, or <strong>build time (SSG)</strong> — and modern frameworks mix all three per route; you pick by <em>data-freshness need</em>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>CSR</strong>: ship JS, render into an empty root → slow first paint, weak SEO. <strong>SSR</strong>: HTML per request + <em>hydration</em> → fast paint, fresh data, heavier server. <strong>SSG</strong>: prerender at build → fastest (CDN) but frozen until the next build.</li>
-    <li><strong>ISR</strong>: serve cached static HTML and regenerate in the background (on a schedule or on demand) → SSG speed with near-SSR freshness for most content.</li>
-    <li><strong>RSC (Server Components)</strong> run <em>only</em> on the server, can read the DB directly, and send a <strong>serialized tree (not HTML)</strong>; client components are the interactive parts → radically smaller client bundle.</li>
-    <li><strong>RSC is not SSR:</strong> SSR still ships a client bundle to hydrate; RSC ships <em>zero</em> client JS for the server-only parts.</li>
-    <li><strong>Hydration</strong> = attach JS / event handlers to server-rendered HTML. A <strong>hydration mismatch</strong> (server HTML ≠ client render) throws.</li>
-    <li><strong>Streaming SSR + Suspense</strong>: the server flushes the shell immediately and streams slow regions when their data arrives; <strong>selective hydration</strong> brings interactive parts alive progressively and prioritizes what the user touches.</li>
-    <li><strong>Server Actions</strong> bridge client UI and server mutations without hand-writing an API route.</li>
-    <li><strong>Decision:</strong> static → SSG; personalized/always-fresh → SSR; mostly-static with periodic updates → ISR; mix them within one page via RSC + streaming.</li>
-    <li><strong>Caching + invalidation is the hard part</strong> (request / data / full-route caches) — stale content usually means a missed revalidation.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Hydration mismatch</strong> from non-deterministic or browser-only code in render — <code>Date.now()</code>, <code>Math.random()</code>, <code>window</code>/<code>localStorage</code>, or timezone/locale differences make server and client HTML disagree. Gate browser-only work to effects (or <code>suppressHydrationWarning</code> for genuinely dynamic bits). And don't confuse <strong>RSC (no client JS)</strong> with <strong>SSR (bundle still ships)</strong>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I pick by data freshness — SSG for static, SSR for personalized, ISR for mostly-static-with-updates — and mix them per route with RSC and streaming."</div>
-  <div class="revision-say">"Hydration attaches JS to server-rendered HTML; a mismatch comes from non-deterministic or browser-only code running during render."</div>
-  <div class="revision-say">"RSC runs only on the server and ships a serialized tree with zero client JS for those parts — unlike SSR, which still sends a hydration bundle."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Why does browser-only code break during server render, and how do you guard it?</div>
+  <div class="qa-answer">
+    <p>On the server there is no <code>window</code>, <code>document</code> or <code>localStorage</code>, and layout effects do nothing (React warns "useLayoutEffect does nothing on the server"), so code that touches them during render or at import time crashes or diverges. Branching on <code>typeof window === 'undefined'</code> in render is not a fix: server and client produce different HTML, which is a hydration mismatch. Guard it by moving browser-only work into <code>useEffect</code> (render a placeholder on the server, update on the client), using <code>useId</code> for IDs, and formatting locale-dependent values on the client or with an explicit locale/timezone. For truly browser-only libraries that read <code>window</code> on import (e.g. chart libraries), use <code>dynamic(..., { ssr: false })</code>, but sparingly, since it opts the whole subtree out of SSR.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you pick between SSG, SSR, and ISR for a given route based on data freshness?</li>
-    <li>Can you explain what hydration is and what causes a hydration mismatch?</li>
-    <li>Can you explain how a React Server Component differs from SSR in terms of client JS shipped?</li>
-    <li>Can you explain how streaming SSR with Suspense boundaries improves perceived load and TTFB?</li>
-    <li>Can you explain why browser-only code breaks during server render and how you'd guard it?</li>
-    <li>Can you explain the tradeoffs of ISR revalidation versus rebuilding the whole site?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. What are the tradeoffs of ISR revalidation versus rebuilding the whole site?</div>
+  <div class="qa-answer">
+    <p>Pure SSG freezes content until the next build, so every content change means a full rebuild. ISR serves cached static HTML and regenerates individual pages instead: when a request hits a page older than its <code>revalidate</code> interval, Next serves the stale HTML and regenerates in the background, so the next request gets fresh content; on-demand revalidation (<code>revalidatePath</code>/<code>revalidateTag</code> from a webhook) refreshes a page as soon as the data changes. The costs: at least one visitor sees stale content, regeneration only happens on the next request (an unvisited expired page stays stale, so pre-warm with a cron if needed), and without invalidation calls on writes users can see stale content indefinitely. If freshness is critical, mark the page dynamic (SSR) instead.</p>
+  </div>
 </div>
-`}
+` },
 
-]
+  ]
 });

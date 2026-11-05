@@ -1,33 +1,39 @@
 window.PREP_SITE.registerTopic({
-  id: 'be-fundamentals',
-  module: 'backend',
-  title: 'Fundamentals',
-  estimatedReadTime: '50 min',
-  tags: ['backend', 'http', 'server', 'node', 'go', 'python', 'event-loop', 'thread-pool', 'middleware', 'request-response'],
+  id: "be-fundamentals",
+  module: "backend",
+  title: "Fundamentals",
+  estimatedReadTime: "50 min",
+  tags: ["backend","http","server","node","go","python","event-loop","thread-pool","middleware","request-response"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Backend fundamentals</strong> for a frontend / RN engineer means knowing enough to design, debug, and discuss server-side code without being a full-time backend engineer. The goal: pass the "system design" rounds, understand where latency comes from, write a small backend service when needed, and collaborate with backend teams in a language they recognize.</p>
-<ul>
-  <li><strong>Request lifecycle:</strong> connection → routing → middleware → handler → response. Every framework is a variation on this loop.</li>
-  <li><strong>Two runtime models:</strong> <em>event-loop</em> (Node.js, Deno, async Python) — one thread, non-blocking I/O — and <em>thread-per-request</em> (Java, Go, Ruby) — concurrency via threads / goroutines.</li>
-  <li><strong>HTTP is the protocol</strong>; understand verbs, status codes, headers, content negotiation. Cookies, auth headers, CORS, redirects all live here.</li>
-  <li><strong>Frameworks:</strong> Express / Fastify / Hono / Koa (Node), Echo / Gin / Fiber (Go), FastAPI / Django (Python), Spring Boot (Java).</li>
-  <li><strong>Connection management:</strong> connection pools (DB, HTTP); request timeouts; keep-alive; graceful shutdown.</li>
-  <li><strong>Middleware pipeline:</strong> auth, logging, tracing, rate limiting, body parsing — applied per route or globally.</li>
-  <li><strong>Error model:</strong> never throw raw stack traces to clients; map domain errors to HTTP codes; centralized error handler.</li>
-  <li><strong>Where latency comes from:</strong> network (10-200ms), DB query (1-100ms), external API (100-1000ms), CPU work (variable). Understand the budget per layer.</li>
-</ul>
-<p><strong>Mantra:</strong> "Request in, response out. Middleware composes. Pool connections. Map errors deliberately. Know your runtime model."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A backend service is <strong>request in, response out</strong> — receive HTTP, maybe talk to a DB/cache/queue/API, return HTTP. Middleware composes, pool connections, map errors deliberately, know your runtime model.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Request lifecycle:</strong> connection → routing → middleware → handler → response. Every framework is a variation on this loop.</li>
+    <li><strong>Two runtime models</strong> (one sync call on an event loop stalls every request; CPU work goes to workers): <em>event-loop</em> (Node, Deno, async Python) — one thread, non-blocking I/O; and <em>thread-per-request</em> (Java, Go, Ruby) — concurrency via threads/goroutines. Know which you're on.</li>
+    <li><strong>HTTP is the protocol:</strong> verbs, status codes, headers, content negotiation, cookies, auth headers, CORS, redirects.</li>
+    <li><strong>Frameworks</strong> are sugar over the same loop: Express / Fastify / Hono / Koa (Node), Echo / Gin / Fiber (Go), FastAPI / Django (Python), Spring Boot (Java).</li>
+    <li><strong>Middleware pipeline</strong> composes cross-cutting concerns: auth → logging → tracing → rate limit → body parsing → handler, per-route or global.</li>
+    <li><strong>Connection management:</strong> pool DB and HTTP connections (never per-request), set request timeouts and per-handler deadlines, keep-alive, and graceful shutdown (drain in-flight on SIGTERM).</li>
+    <li><strong>Error model:</strong> never leak raw stack traces to clients; map domain errors to HTTP codes through a centralized error handler.</li>
+    <li><strong>Latency budget per layer:</strong> network 10-200ms, DB query 1-100ms, external API 100-1000ms, CPU variable — know where a request's time goes.</li>
+    <li>Operational hygiene: structured (JSON) logs with a per-request correlation ID, a health-check endpoint for load balancers, and config from env vars (12-factor).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Backend correctness is <strong>concurrent, not single-user</strong>. The classic mistakes all stem from ignoring that: opening a <strong>DB connection per request</strong> (pool exhausted under load), doing <strong>synchronous/blocking I/O on the event loop</strong> (blocks all requests), storing <strong>request-scoped state in module-level variables</strong> (race conditions), and running calls with <strong>no timeout</strong> (one slow upstream blocks the whole process).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A backend is request in, response out — routing, middleware, handler, response — and the framework is just sugar over that loop."</div>
+  <div class="revision-say">"The runtime model decides how I reason about blocking: on an event loop one synchronous call stalls every request, so I never block it."</div>
+  <div class="revision-say">"I pool connections, timeout every external call, and map domain errors to status codes centrally — never leaking a stack trace to the client."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What a backend service actually does</h3>
 <p>At its core: receives HTTP requests, looks at them, possibly talks to other systems (DB, cache, queue, external APIs), and returns HTTP responses. That's it. Everything else — frameworks, ORMs, middleware, microservices — is variations on this loop.</p>
 
@@ -82,12 +88,10 @@ window.PREP_SITE.registerTopic({
   <li>Unbounded queues; OOM under load.</li>
   <li>"500 Internal Server Error" for every failure; no diagnostic info.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The request lifecycle</h3>
 <pre><code class="language-text">Client sends HTTP request
    ↓
@@ -269,12 +273,10 @@ logger.info({
 });
 </code></pre>
 <p>Aggregators (Datadog, Splunk, ELK) parse JSON natively. Strings need regex.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Minimal Express server</h3>
 <pre><code class="language-typescript">import express from 'express';
 import pino from 'pino';
@@ -568,12 +570,10 @@ app.use(compression({ threshold: 1024 })); // only compress &gt; 1KB
 
 <h3>Server-side rendering note</h3>
 <p>Next.js / Remix / SvelteKit run a Node server (or edge runtime) under the hood. Same patterns apply: connection pools, timeouts, error handling. The "BFF" (backend-for-frontend) is often just an SSR framework with API routes.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: REST API with auth + DB</h3>
 <pre><code class="language-typescript">import express from 'express';
 import jwt from 'jsonwebtoken';
@@ -830,12 +830,11 @@ app.post('/users', validate(CreateUserSchema), async (req, res) =&gt; {
   res.status(201).json(user);
 });
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Event-loop blocking (Node)</h3>
 <ul>
   <li>Sync operations block all requests until done.</li>
@@ -958,12 +957,9 @@ app.get('/foo', async (req, res, next) =&gt; {
   <li>Compress responses; mobile networks have bandwidth + latency.</li>
   <li>Validate <code>Content-Length</code>; mobile may misreport.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common backend basics mistakes</h3>
 <ol>
   <li><strong>One DB connection per request.</strong> Pool exhaustion under load.</li>
@@ -1164,12 +1160,10 @@ async function callDownstream(req) {
   return fetch(url, { headers: { 'x-request-id': req.id } });
 }
 </code></pre>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common backend-fundamentals interview prompts</h3>
 <ol>
   <li>Walk through what happens when a client makes a request to your server.</li>
@@ -1297,53 +1291,44 @@ async function callDownstream(req) {
   <li>"Build an RN app + BFF together to feel the cross-stack patterns."</li>
   <li>"Read Stripe + GitHub API docs for production-grade design references."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A backend service is <strong>request in, response out</strong> — receive HTTP, maybe talk to a DB/cache/queue/API, return HTTP. Everything else is a variation on that loop.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Request lifecycle:</strong> connection → routing → middleware → handler → response. Every framework is a variation on this loop.</li>
-    <li><strong>Two runtime models:</strong> <em>event-loop</em> (Node, Deno, async Python) — one thread, non-blocking I/O; and <em>thread-per-request</em> (Java, Go, Ruby) — concurrency via threads/goroutines. Know which you're on.</li>
-    <li><strong>HTTP is the protocol:</strong> verbs, status codes, headers, content negotiation, cookies, auth headers, CORS, redirects.</li>
-    <li><strong>Middleware pipeline</strong> composes cross-cutting concerns: auth → logging → tracing → rate limit → body parsing → handler, per-route or global.</li>
-    <li><strong>Connection management:</strong> pool DB and HTTP connections (never per-request), set request timeouts and per-handler deadlines, keep-alive, and graceful shutdown (drain in-flight on SIGTERM).</li>
-    <li><strong>Error model:</strong> never leak raw stack traces to clients; map domain errors to HTTP codes through a centralized error handler.</li>
-    <li><strong>Latency budget per layer:</strong> network 10-200ms, DB query 1-100ms, external API 100-1000ms, CPU variable — know where a request's time goes.</li>
-    <li>Operational hygiene: structured (JSON) logs with a per-request correlation ID, a health-check endpoint for load balancers, and config from env vars (12-factor).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Backend correctness is <strong>concurrent, not single-user</strong>. The classic mistakes all stem from ignoring that: opening a <strong>DB connection per request</strong> (pool exhausted under load), doing <strong>synchronous/blocking I/O on the event loop</strong> (blocks all requests), storing <strong>request-scoped state in module-level variables</strong> (race conditions), and running calls with <strong>no timeout</strong> (one slow upstream blocks the whole process).</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A backend is request in, response out — routing, middleware, handler, response — and the framework is just sugar over that loop."</div>
-  <div class="revision-say">"The runtime model decides how I reason about blocking: on an event loop one synchronous call stalls every request, so I never block it."</div>
-  <div class="revision-say">"I pool connections, timeout every external call, and map domain errors to status codes centrally — never leaking a stack trace to the client."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Walk through the lifecycle of a request, from connection to response.</div>
+  <div class="qa-answer">
+    <p>The client opens (or reuses a keep-alive) connection, usually through a load balancer or reverse proxy that terminates TLS, applies rate limits/WAF and knows which instances are healthy. The app server accepts the connection, parses the HTTP method, URL, headers and body, <strong>matches a route</strong>, runs the <strong>middleware chain</strong> (auth, logging, parsing), then the <strong>handler</strong> runs the business logic — DB queries through a pool, cache lookups, external API calls — and composes a response. Response middleware adds compression and headers, the response is written, and the connection is closed or kept alive. Every framework is a variation on this loop.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you walk the request lifecycle from connection through routing, middleware, handler, to response?</li>
-    <li>Can you contrast the event-loop and thread-per-request runtime models and their blocking implications?</li>
-    <li>Can you explain why connections must be pooled and what happens when they aren't?</li>
-    <li>Can you describe a middleware pipeline and the order of common stages?</li>
-    <li>Can you describe a sane error model — mapping domain errors to HTTP codes without leaking stack traces?</li>
-    <li>Can you break down where request latency comes from across network, DB, external API, and CPU?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Compare the event-loop and thread-per-request runtime models. What does each mean for blocking?</div>
+  <div class="qa-answer">
+    <p><strong>Event loop</strong> (Node, Deno, Bun, async Python): async tasks on one thread with non-blocking I/O via libuv/uvloop; about KB of memory per request; great for I/O-heavy work like API gateways, BFFs and real-time. The catch: one synchronous or CPU-heavy operation (say a 200ms image resize) blocks every other request, so CPU work goes to worker threads or processes. <strong>Thread-per-request</strong> (Java, Go, Ruby Puma, .NET): blocking I/O, but each thread has its own stack, so multi-core CPU work is natural; the costs are about MB per thread (Go goroutines are KB) and context-switch overhead at very high concurrency. Go's M:N scheduler bridges both, and Lambda is a third model: one request per execution.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. Why must connections be pooled, and what happens when they aren't?</div>
+  <div class="qa-answer">
+    <p>Opening a connection is expensive: a Postgres connection costs 5–50ms and the server only supports a limited number (around 50 per server), and a new HTTP connection costs a TCP + TLS handshake of about 100ms. A pool reuses connections across requests, as does reusing one SDK client (do not <code>new S3Client()</code> per request). Opening a DB connection per request exhausts the database's connections under load. Even with a pool, if you have 20 connections and 100 concurrent requests, 80 wait — the symptom is p99 spiking while p50 stays stable. The fix: size the pool within the DB maximum, cut per-request DB time, and add caching.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Describe a middleware pipeline. In what order do the common stages go, and why?</div>
+  <div class="qa-answer">
+    <p>Middleware is a function that wraps the handler, and the chain composes cross-cutting concerns, globally or per route. A sane order is request-id → logging → auth → rate limit → body parsing → handler, with the error handler registered last so it catches anything thrown above. Order matters: log before auth so unauthenticated attempts are recorded; rate-limit before expensive work so abusers can't burn CPU; put a size limit on every body parser so a 100MB body can't exhaust memory; and response middleware handles compression and headers.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. What does a sane error model look like?</div>
+  <div class="qa-answer">
+    <p>Throw typed domain errors (<code>NotFoundError</code>, <code>ValidationError</code>) from handlers and map them to status codes in one centralized error handler: not found → 404, validation → 422 with details, anything unknown → a generic 500 such as <code>{ error: 'internal_server_error', requestId }</code>. The full error and stack go to structured logs with the request ID, never to the client — leaking <code>err.stack</code> exposes file paths and secrets and is bad UX. Returning 500 for everything is a debugging nightmare, and the request ID in the response lets support find the log line.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. Where does request latency come from?</div>
+  <div class="qa-answer">
+    <p>Network: DNS (~10–100ms the first time), TCP handshake (~10–50ms), TLS (~30–100ms, ~10ms resumed) and transit each way (~10–100ms cross-region). Server work: auth check ~1–5ms, DB query ~1–100ms depending on indexes, cache lookup ~1–5ms, an external API ~50–500ms or more, and response building ~1–5ms; CPU work varies. External calls and unindexed queries usually dominate, so for a p50 under 200ms of server time you want cache hits on hot reads, indexed queries, no synchronous external calls and minimal serialization. To debug a slow endpoint, use APM/OpenTelemetry traces to find the slow span, then profile that layer.</p>
+  </div>
+</div>
+` },
+
   ]
 });

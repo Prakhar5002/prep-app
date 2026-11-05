@@ -1,32 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'iosn-xcode-project',
-  module: 'iOS Native (Deep)',
-  title: 'Xcode Project Model',
-  estimatedReadTime: '25 min',
-  tags: ['xcodeproj', 'xcworkspace', 'pbxproj', 'target', 'scheme', 'build-configuration', 'build-settings', 'build-phases', 'xcconfig', 'cocoapods', 'deriveddata', 'derived-data', 'modulecache', 'ios', 'react-native', 'expo', 'prebuild', 'archive', 'code-signing', 'excluded-archs', 'hermes'],
+  id: "iosn-xcode-project",
+  module: "iOS Native (Deep)",
+  title: "Xcode Project Model",
+  estimatedReadTime: "25 min",
+  tags: ["xcodeproj","xcworkspace","pbxproj","target","scheme","build-configuration","build-settings","build-phases","xcconfig","cocoapods","deriveddata","derived-data","modulecache","ios","react-native","expo","prebuild","archive","code-signing","excluded-archs","hermes"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>The iOS side of a React Native app is an <strong>Xcode project</strong>, and almost every "it builds on my machine but not yours", "the simulator won't compile", or "pod install broke everything" bug lives in one of six concepts:</p>
-<ul>
-  <li><strong>.xcodeproj</strong> — a folder-bundle whose real payload is <code>project.pbxproj</code>, an old-style plist that lists every file, target, and build setting. It is why Xcode merges conflict so badly.</li>
-  <li><strong>.xcworkspace</strong> — a thin container that references your app project <em>and</em> the <code>Pods</code> project. Once CocoaPods runs, you must open the workspace, never the bare project.</li>
-  <li><strong>Targets</strong> — each produces exactly one product (your app, a test bundle, an extension, or one static library per pod).</li>
-  <li><strong>Schemes</strong> — the recipe that says "build these targets, in this configuration, for Run / Test / Profile / Analyze / Archive".</li>
-  <li><strong>Build configurations</strong> (Debug / Release) and <strong>build settings</strong> resolved through a layered cascade, often fed by <strong>.xcconfig</strong> files that CocoaPods generates.</li>
-  <li><strong>Build phases</strong> — the ordered steps (Compile Sources, Link Binary, Copy Bundle Resources, plus RN's "Bundle React Native code and images" and the <code>[CP]</code> Pods script phases).</li>
-</ul>
-<p>And when a build goes haunted — stale headers, "module not found", ghost errors that survive a code fix — the answer is almost always <strong>DerivedData</strong>: Xcode's per-project cache of build products and precompiled modules.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>A <code>.xcodeproj</code> is a graph of <em>targets</em> and <em>build settings</em> stored in <code>project.pbxproj</code>; a <code>.xcworkspace</code> just glues your project to the Pods project; a <em>scheme</em> chooses which targets and which configuration a given action builds; and <em>DerivedData</em> is the cache you nuke when reality and the build disagree.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A <code>.xcodeproj</code> is the <strong>graph of targets and build settings</strong> in <code>project.pbxproj</code>; a <code>.xcworkspace</code> glues your app project to the Pods project; a <strong>scheme</strong> picks which targets and configuration each action builds; and <strong>DerivedData</strong> is the cache you clear when the build and reality disagree.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>.xcodeproj is a bundle</strong> around <code>project.pbxproj</code> — an OpenStep/plist object graph of <code>PBXFileReference</code>, <code>PBXBuildFile</code> (membership), <code>PBXNativeTarget</code>, build phases, and <code>XCBuildConfiguration</code>; every object has a 24-hex ID, which is why pbxproj merges conflict. Don't hand-edit it.</li>
+    <li><strong>.xcworkspace</strong> is a thin container (<code>contents.xcworkspacedata</code>) referencing your app project + <code>Pods/Pods.xcodeproj</code>. After <code>pod install</code> you MUST open the workspace, or you get "library not found for -lPods-MyApp".</li>
+    <li><strong>Target = one product</strong>: app (<code>.app</code>), test bundle (<code>.xctest</code>), extension, or one static lib per pod, plus the <code>Pods-MyApp</code> aggregate the app depends on. <strong>Target membership</strong> (File Inspector checkbox) decides if a file compiles into a target.</li>
+    <li><strong>Scheme = recipe</strong> mapping Run / Test / Profile / Analyze / Archive to targets + a configuration. Run=Debug, Archive=Release, Profile=Release. <strong>Shared</strong> schemes (<code>xcshareddata/xcschemes</code>) are committed for CI; <strong>user</strong> schemes (<code>xcuserdata</code>) are gitignored → "scheme not found" on CI = not shared.</li>
+    <li><strong>Configurations</strong> Debug (<code>-Onone</code>, Metro-served JS, dev menu) vs Release (optimized, <code>main.jsbundle</code> shipped). Pods/apps can add more (Staging/Production).</li>
+    <li><strong>.xcconfig</strong> files (text <code>SETTING = value</code>) keep settings in VCS; CocoaPods generates <code>Pods-MyApp.debug/release.xcconfig</code> with <code>HEADER_SEARCH_PATHS</code>, <code>OTHER_LDFLAGS</code>, defines, and your target is "based on" them — that's how pod headers reach the app. <code>$(inherited)</code> appends; omit it and you wipe lower layers.</li>
+    <li><strong>Settings cascade</strong> (high overrides low): SDK defaults → project → xcconfig → target → command line. Read it in <strong>Levels</strong> view; Combined shows the single Resolved value.</li>
+    <li><strong>Key settings:</strong> <code>IPHONEOS_DEPLOYMENT_TARGET</code>, <code>PRODUCT_BUNDLE_IDENTIFIER</code>, <code>MARKETING_VERSION</code> / <code>CURRENT_PROJECT_VERSION</code>, <code>ONLY_ACTIVE_ARCH</code>, <code>EXCLUDED_ARCHS</code> (arm64 simulator fix), <code>ENABLE_BITCODE</code> (off), <code>SWIFT_VERSION</code>, <code>HEADER_SEARCH_PATHS</code>, <code>OTHER_LDFLAGS</code>, and the <code>CODE_SIGN_*</code> / <code>DEVELOPMENT_TEAM</code> / <code>PROVISIONING_PROFILE_SPECIFIER</code> group (Automatic vs Manual).</li>
+    <li><strong>Build phases</strong> (ordered): [CP] Check Pods Manifest.lock → Compile Sources → Bundle React Native code and images (Metro → <code>main.jsbundle</code> in Release only) → Link Binary With Libraries → Copy Bundle Resources → [CP] Copy Pods Resources / Embed Frameworks (+ Hermes dSYM on archive).</li>
+    <li><strong>DerivedData</strong> at <code>~/Library/Developer/Xcode/DerivedData/</code> holds Build/Products, Intermediates, <code>ModuleCache.noindex</code> (.pcm), and the index. <strong>⇧⌘K</strong> cleans build products; <strong>deleting DerivedData</strong> kills the module cache — the cure for stale headers / ghost errors / post-Xcode-upgrade PCH mismatches.</li>
+    <li><strong>Variable substitution:</strong> Info.plist reads <code>$(MARKETING_VERSION)</code>, <code>$(CURRENT_PROJECT_VERSION)</code>, <code>$(PRODUCT_BUNDLE_IDENTIFIER)</code>, <code>$(PRODUCT_NAME)</code> (defaults to <code>$(TARGET_NAME)</code>) at build time; other common vars: <code>$(SRCROOT)</code>, <code>$(PODS_ROOT)</code>, <code>$(CONFIGURATION)</code>.</li>
+    <li><strong>Expo (prebuild):</strong> the whole <code>ios/</code> is generated from app config + config plugins; <code>expo prebuild --clean</code> wipes hand edits. Configure via <code>expo-build-properties</code> (deploymentTarget), <code>version</code>/<code>ios.buildNumber</code>, and <code>withXcodeProject</code>/<code>withInfoPlist</code> plugins. EAS owns archive/scheme.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Opening the bare <code>.xcodeproj</code> instead of the <code>.xcworkspace</code></strong> in a pod-based RN app → the Pods project is invisible and everything fails to link ("library not found for -lPods-MyApp", pod headers "file not found"). Always open the workspace. (Runner-up trap: editing a build setting at the wrong level, or dropping <code>$(inherited)</code> and wiping CocoaPods' injected flags — read the Levels view.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The <code>.xcodeproj</code> is the object graph in <code>project.pbxproj</code> — files, targets, settings — which is why it merges badly. The <code>.xcworkspace</code> just references my app project and the CocoaPods-generated Pods project so they build together, so in a RN app I always open the workspace."</div>
+  <div class="revision-say">"A scheme maps each action — Run, Test, Profile, Analyze, Archive — to targets and a configuration; Run is Debug, Archive is Release. Shared schemes are committed for CI; a 'scheme not found' failure usually means it's still a user scheme."</div>
+  <div class="revision-say">"Build settings resolve through a cascade — defaults, project, xcconfig, target, command line — readable in the Levels view, and <code>$(inherited)</code> appends. When a build goes haunted I clean the build folder, then delete DerivedData to clear the module cache."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What an Xcode "project" actually is</h3>
 <p>When you open <code>ios/</code> in a React Native app you see something like <code>MyApp.xcodeproj</code>, <code>MyApp.xcworkspace</code>, a <code>Podfile</code>, a <code>Pods/</code> folder, and a source folder <code>MyApp/</code> with <code>AppDelegate</code>, <code>Info.plist</code>, and asset catalogs. The <code>.xcodeproj</code> is not a file — it is a <strong>bundle</strong> (a directory macOS shows as one icon). Inside it, the file that matters is <code>project.pbxproj</code>. That single text file <em>is</em> the project: it enumerates every source file reference, every target, every build configuration, and every build setting, all as a graph of objects with 24-character hex identifiers.</p>
 
@@ -53,10 +63,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why this matters for debugging native errors</h3>
 <p>Nearly every "works for me / broken for you" iOS issue reduces to one of these layers disagreeing: a build setting overridden at the wrong level, a scheme building the wrong configuration, a pod's <code>.xcconfig</code> not being included, a script phase failing, or DerivedData caching a stale artifact. If you can name the layer, you can fix the bug. This topic is about giving each ghost a name.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "what opens what" picture</h3>
 <div class="diagram">
 <pre>
@@ -130,10 +140,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"I'll just edit <code>project.pbxproj</code> in a text editor to add my file." You can, but a single mismatched brace or a duplicated object ID corrupts the whole project and Xcode refuses to open it. Let Xcode (or a config plugin / CocoaPods) mutate the graph. Read the pbxproj to <em>understand</em>; don't hand-author it.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>1 — Inside the .xcodeproj bundle</h3>
 <p>Right-click <code>MyApp.xcodeproj</code> ▸ Show Package Contents and you see:</p>
 <pre><code class="language-text">MyApp.xcodeproj/
@@ -270,10 +280,10 @@ EXCLUDED_ARCHS[sdk=iphonesimulator*] = arm64</code></pre>
   <div class="callout-title">🧩 Expo note — you don't hand-edit any of this</div>
   <p>In an Expo project with prebuild (Continuous Native Generation), the entire <code>ios/</code> folder — <code>project.pbxproj</code>, targets, schemes, build settings, Info.plist — is <strong>generated</strong> from <code>app.json</code>/<code>app.config.js</code> and the installed config plugins. Running <code>npx expo prebuild --clean</code> deletes and regenerates <code>ios/</code>, so any build setting you tweaked in Xcode by hand is silently wiped. Instead: set the deployment target, versions, and flags through <code>expo-build-properties</code> in <code>app.json</code> (e.g. <code>ios.deploymentTarget</code>), and for anything else write a <strong>config plugin</strong> using <code>withXcodeProject</code> / <code>withInfoPlist</code> / <code>withBuildProperties</code> that mutates the pbxproj at prebuild time. Versions come from <code>version</code> and <code>ios.buildNumber</code> in app config. And EAS Build owns the archive/scheme step in the cloud — you rarely open Xcode to Archive. Prakhar's <code>sw-mobile</code> and <code>sw-ticketing</code> are Expo + prebuild, so treat the committed <code>ios/</code> as a build artifact, not a place to make lasting edits.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Open the right thing</h3>
 <pre><code class="language-bash"># WRONG after pods are installed — app can't find libraries
 open ios/MyApp.xcodeproj
@@ -362,10 +372,11 @@ module.exports = function withMySetting(config) {
     return cfg;
   });
 };</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Opened the .xcodeproj instead of the workspace</h3>
 <p>Link errors like "library not found for -lPods-MyApp" or every pod header "file not found". You bypassed the workspace that makes the Pods project visible. Close and open the <code>.xcworkspace</code>.</p>
 
@@ -425,10 +436,9 @@ module.exports = function withMySetting(config) {
 
 <h3>20. Archive greyed out / builds for simulator</h3>
 <p>Product ▸ Archive is disabled or produces a simulator build because the run destination is a simulator, not "Any iOS Device (arm64)". Archive requires a generic device destination.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — hand-editing project.pbxproj</h3>
 <p>Manually adding objects or IDs to the pbxproj to "save a step". One typo corrupts the project. Let Xcode, CocoaPods, or a config plugin mutate the graph.</p>
 
@@ -473,10 +483,10 @@ module.exports = function withMySetting(config) {
 
 <h3>Anti-pattern 15 — Archiving from a simulator destination</h3>
 <p>Trying to Archive with a simulator selected and getting a broken/greyed archive. Select "Any iOS Device (arm64)" (or let EAS build) before archiving.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What is the difference between an .xcodeproj and an .xcworkspace?</div>
   <div class="qa-answer">
@@ -603,52 +613,7 @@ module.exports = function withMySetting(config) {
     <li>You know Expo prebuild regenerates <code>ios/</code> so you configure via plugins, not Xcode.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A <code>.xcodeproj</code> is the <strong>graph of targets and build settings</strong> in <code>project.pbxproj</code>; a <code>.xcworkspace</code> glues your app project to the Pods project; a <strong>scheme</strong> picks which targets and configuration each action builds; and <strong>DerivedData</strong> is the cache you clear when the build and reality disagree.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>.xcodeproj is a bundle</strong> around <code>project.pbxproj</code> — an OpenStep/plist object graph of <code>PBXFileReference</code>, <code>PBXBuildFile</code> (membership), <code>PBXNativeTarget</code>, build phases, and <code>XCBuildConfiguration</code>; every object has a 24-hex ID, which is why pbxproj merges conflict. Don't hand-edit it.</li>
-    <li><strong>.xcworkspace</strong> is a thin container (<code>contents.xcworkspacedata</code>) referencing your app project + <code>Pods/Pods.xcodeproj</code>. After <code>pod install</code> you MUST open the workspace, or you get "library not found for -lPods-MyApp".</li>
-    <li><strong>Target = one product</strong>: app (<code>.app</code>), test bundle (<code>.xctest</code>), extension, or one static lib per pod, plus the <code>Pods-MyApp</code> aggregate the app depends on. <strong>Target membership</strong> (File Inspector checkbox) decides if a file compiles into a target.</li>
-    <li><strong>Scheme = recipe</strong> mapping Run / Test / Profile / Analyze / Archive to targets + a configuration. Run=Debug, Archive=Release, Profile=Release. <strong>Shared</strong> schemes (<code>xcshareddata/xcschemes</code>) are committed for CI; <strong>user</strong> schemes (<code>xcuserdata</code>) are gitignored → "scheme not found" on CI = not shared.</li>
-    <li><strong>Configurations</strong> Debug (<code>-Onone</code>, Metro-served JS, dev menu) vs Release (optimized, <code>main.jsbundle</code> shipped). Pods/apps can add more (Staging/Production).</li>
-    <li><strong>.xcconfig</strong> files (text <code>SETTING = value</code>) keep settings in VCS; CocoaPods generates <code>Pods-MyApp.debug/release.xcconfig</code> with <code>HEADER_SEARCH_PATHS</code>, <code>OTHER_LDFLAGS</code>, defines, and your target is "based on" them — that's how pod headers reach the app. <code>$(inherited)</code> appends; omit it and you wipe lower layers.</li>
-    <li><strong>Settings cascade</strong> (high overrides low): SDK defaults → project → xcconfig → target → command line. Read it in <strong>Levels</strong> view; Combined shows the single Resolved value.</li>
-    <li><strong>Key settings:</strong> <code>IPHONEOS_DEPLOYMENT_TARGET</code>, <code>PRODUCT_BUNDLE_IDENTIFIER</code>, <code>MARKETING_VERSION</code> / <code>CURRENT_PROJECT_VERSION</code>, <code>ONLY_ACTIVE_ARCH</code>, <code>EXCLUDED_ARCHS</code> (arm64 simulator fix), <code>ENABLE_BITCODE</code> (off), <code>SWIFT_VERSION</code>, <code>HEADER_SEARCH_PATHS</code>, <code>OTHER_LDFLAGS</code>, and the <code>CODE_SIGN_*</code> / <code>DEVELOPMENT_TEAM</code> / <code>PROVISIONING_PROFILE_SPECIFIER</code> group (Automatic vs Manual).</li>
-    <li><strong>Build phases</strong> (ordered): [CP] Check Pods Manifest.lock → Compile Sources → Bundle React Native code and images (Metro → <code>main.jsbundle</code> in Release only) → Link Binary With Libraries → Copy Bundle Resources → [CP] Copy Pods Resources / Embed Frameworks (+ Hermes dSYM on archive).</li>
-    <li><strong>DerivedData</strong> at <code>~/Library/Developer/Xcode/DerivedData/</code> holds Build/Products, Intermediates, <code>ModuleCache.noindex</code> (.pcm), and the index. <strong>⇧⌘K</strong> cleans build products; <strong>deleting DerivedData</strong> kills the module cache — the cure for stale headers / ghost errors / post-Xcode-upgrade PCH mismatches.</li>
-    <li><strong>Variable substitution:</strong> Info.plist reads <code>$(MARKETING_VERSION)</code>, <code>$(CURRENT_PROJECT_VERSION)</code>, <code>$(PRODUCT_BUNDLE_IDENTIFIER)</code>, <code>$(PRODUCT_NAME)</code> (defaults to <code>$(TARGET_NAME)</code>) at build time; other common vars: <code>$(SRCROOT)</code>, <code>$(PODS_ROOT)</code>, <code>$(CONFIGURATION)</code>.</li>
-    <li><strong>Expo (prebuild):</strong> the whole <code>ios/</code> is generated from app config + config plugins; <code>expo prebuild --clean</code> wipes hand edits. Configure via <code>expo-build-properties</code> (deploymentTarget), <code>version</code>/<code>ios.buildNumber</code>, and <code>withXcodeProject</code>/<code>withInfoPlist</code> plugins. EAS owns archive/scheme.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Opening the bare <code>.xcodeproj</code> instead of the <code>.xcworkspace</code></strong> in a pod-based RN app → the Pods project is invisible and everything fails to link ("library not found for -lPods-MyApp", pod headers "file not found"). Always open the workspace. (Runner-up trap: editing a build setting at the wrong level, or dropping <code>$(inherited)</code> and wiping CocoaPods' injected flags — read the Levels view.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"The <code>.xcodeproj</code> is the object graph in <code>project.pbxproj</code> — files, targets, settings — which is why it merges badly. The <code>.xcworkspace</code> just references my app project and the CocoaPods-generated Pods project so they build together, so in a RN app I always open the workspace."</div>
-  <div class="revision-say">"A scheme maps each action — Run, Test, Profile, Analyze, Archive — to targets and a configuration; Run is Debug, Archive is Release. Shared schemes are committed for CI; a 'scheme not found' failure usually means it's still a user scheme."</div>
-  <div class="revision-say">"Build settings resolve through a cascade — defaults, project, xcconfig, target, command line — readable in the Levels view, and <code>$(inherited)</code> appends. When a build goes haunted I clean the build folder, then delete DerivedData to clear the module cache."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the difference between <code>.xcodeproj</code> and <code>.xcworkspace</code>, and why a pod-based RN app must open the workspace?</li>
-    <li>Can you describe what <code>project.pbxproj</code> stores and why it produces bad merge conflicts?</li>
-    <li>Can you define a target, name the ones in a typical RN app, and explain how target membership decides what compiles?</li>
-    <li>Can you map each scheme action to its default configuration and explain shared vs user schemes for CI?</li>
-    <li>Can you read the build-settings cascade in the Levels view and explain what <code>$(inherited)</code> and <code>.xcconfig</code> files do?</li>
-    <li>Can you list the RN app's build phases in order, including the "Bundle React Native code and images" script?</li>
-    <li>Can you say what DerivedData holds and when to clean the build folder vs delete DerivedData?</li>
-    <li>Can you explain how Expo prebuild changes who owns the pbxproj and how you configure build settings instead?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

@@ -1,33 +1,38 @@
 window.PREP_SITE.registerTopic({
-  id: 'be-architecture',
-  module: 'backend',
-  title: 'Architecture Patterns',
-  estimatedReadTime: '50 min',
-  tags: ['architecture', 'monolith', 'microservices', 'modular-monolith', 'bff', 'event-driven', 'cqrs', 'hexagonal', 'ddd'],
+  id: "be-architecture",
+  module: "backend",
+  title: "Architecture Patterns",
+  estimatedReadTime: "50 min",
+  tags: ["architecture","monolith","microservices","modular-monolith","bff","event-driven","cqrs","hexagonal","ddd"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Architecture patterns</strong> are the org-and-system shapes that decide whether your team can ship daily without stepping on each other. Picking right is more about team size, deploy independence, and ownership boundaries than about technology fashion. The default for most products: <strong>modular monolith → extract to services only when teams genuinely need independent deploys.</strong></p>
-<ul>
-  <li><strong>Monolith:</strong> one deploy, one DB, one process. Simple, fast iteration, hard to scale teams &gt; ~30.</li>
-  <li><strong>Modular monolith:</strong> one deploy, but enforced module boundaries with explicit interfaces. The pragmatic mid-point.</li>
-  <li><strong>Microservices:</strong> independent deploys, independent DBs, network between services. Real wins for org scale; real cost in operations.</li>
-  <li><strong>BFF (Backend For Frontend):</strong> a thin server tailored to one client (web, mobile). Composes microservice data into screen-shaped responses.</li>
-  <li><strong>Event-driven:</strong> services communicate via events, not RPC. Decouples but adds eventual consistency + debugging cost.</li>
-  <li><strong>CQRS:</strong> separate write model (commands) from read model (queries). Used selectively for high-throughput reads.</li>
-  <li><strong>Hexagonal / clean / DDD:</strong> code-level patterns to keep business logic independent of infra (DB, HTTP).</li>
-  <li><strong>The wrong pattern</strong> is the one that mismatches your team size + deploy cadence + ownership model.</li>
-</ul>
-<p><strong>Mantra:</strong> "Modular monolith by default. Extract services when teams need independent deploys, not when the codebase feels big. Event-driven for decoupling. BFF for frontend ergonomics. Domain logic isolated from infra."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Architecture is about <strong>team size, deploy independence, and ownership boundaries</strong> — not technology fashion. Default to a <strong>modular monolith; extract services only when teams genuinely need independent deploys.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li>The spectrum: <strong>monolith</strong> (one deploy, one DB, one process) → <strong>modular monolith</strong> (one deploy, enforced module boundaries) → <strong>microservices</strong> (independent deploys, independent DBs, network between) → functions.</li>
+    <li><strong>Modular monolith wins by default:</strong> one deploy = simpler ops, one DB = trivial cross-module transactions, cross-module refactor = one PR, boundaries enforced by lint + review rather than the network.</li>
+    <li><strong>Microservices win at org scale:</strong> teams ship independently many times/day, different scaling profiles and stacks are justified, independent failure domains, clear per-team ownership. Real wins, real ops cost.</li>
+    <li>Decision factors that actually matter: team size, deploy independence, domain coupling, tech-stack fit, operational maturity, and scaling profile. Rough guide: under 10 engineers = monolith, 10–30 = modular monolith, 100+ = microservices justified; a single monolith gets hard past ~30.</li>
+    <li><strong>BFF (Backend For Frontend):</strong> a thin server tailored to one client that composes microservice data into screen-shaped responses — shields the frontend from composition complexity. A BFF that only proxies is pure overhead.</li>
+    <li><strong>Event-driven</strong> decouples via events instead of RPC, at the cost of eventual consistency and harder debugging; <strong>CQRS</strong> splits write model from read model, used selectively for high-throughput reads.</li>
+    <li><strong>Hexagonal / clean / DDD</strong> are code-level patterns to keep business logic independent of infra (DB, HTTP) — explicit layers: HTTP routes → application services → domain → DB.</li>
+    <li>The wrong pattern is the one that <strong>mismatches your team size + deploy cadence + ownership model</strong>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>"Microservices first."</strong> A team of 5 builds 8 services, nobody owns end-to-end, debugging takes weeks, and deploy coordination is harder than a monolith would have been. Worst of all is the <strong>"distributed monolith"</strong> — "microservices" that all share one database, so you pay every distributed-systems cost while getting none of the deploy-independence benefit.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I'd start with a modular monolith and extract a service only when a clear seam emerges and a team genuinely needs an independent deploy cadence — not because the codebase feels big."</div>
+  <div class="revision-say">"Microservices sharing one database is a distributed monolith — the worst of both worlds. The database boundary is what makes a service independent."</div>
+  <div class="revision-say">"Architecture decisions track team size, deploy independence, and ownership — I pick the shape that lets teams ship without stepping on each other."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The core spectrum</h3>
 <pre><code class="language-text">Monolith ───── Modular Monolith ───── Microservices ───── Functions
    ↑                  ↑                    ↑                  ↑
@@ -91,12 +96,10 @@ fast start.     team boundaries     deploys; ops cost. at scale.
   <li>Event-driven with no schema registry — silent breakage.</li>
   <li>"God services" that touch every other service — ownership-unclear.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Monolith</h3>
 <pre><code class="language-text">┌────────────────────────────────────┐
 │         Web app (Node)             │
@@ -266,12 +269,10 @@ Q4: Is your team currently hating each other on every deploy?
   <li>Logs: stream to stdout; aggregator handles.</li>
   <li>Admin processes: one-off tasks via the same release.</li>
 </ol>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Modular monolith file structure</h3>
 <pre><code class="language-text">src/
   modules/
@@ -506,12 +507,10 @@ async function getFeedFor(userId) {
   <li>Tools: Kong, AWS API Gateway, Apigee, custom Hono / Express.</li>
   <li>BFF + API gateway can overlap; pick one model deliberately.</li>
 </ul>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Modular monolith for a SaaS app</h3>
 <pre><code class="language-text">src/
   modules/
@@ -691,12 +690,11 @@ async function bookTrip(userId, tripDetails) {
 </code></pre>
 
 <p>Gateway: one entry point, single auth + rate-limit + tracing. Services don't reimplement these. Routing rules in the gateway config (Kong, Envoy, AWS API Gateway).</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Distributed monolith</h3>
 <ul>
   <li>You split into "microservices" but they all share a DB, deploy together, and one failure cascades.</li>
@@ -791,12 +789,9 @@ async function bookTrip(userId, tripDetails) {
   <li>BFF on Cloudflare Workers / Vercel Edge for low-latency global; Hono runs everywhere.</li>
   <li>Same architecture patterns apply on the backend serving mobile; client-side architecture is its own thing.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common architecture mistakes</h3>
 <ol>
   <li><strong>Microservices first.</strong> Distributed monolith from day one.</li>
@@ -956,12 +951,10 @@ users-svc, orders-svc, billing-svc, search-svc; each ownable independently
 
 <h3>Anti-pattern: no per-service ownership</h3>
 <p>"This service is on-call'd by whoever happens to know it." Bus factor 1; nobody owns reliability. Each service needs a designated team with on-call rotation.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common architecture interview prompts</h3>
 <ol>
   <li>Compare monolith vs microservices.</li>
@@ -1089,53 +1082,38 @@ users-svc, orders-svc, billing-svc, search-svc; each ownable independently
   <li>"Read 'Microservices Patterns' by Chris Richardson for the saga + outbox details."</li>
   <li>"Audit a real codebase — identify bounded contexts; would you draw the boundaries differently?"</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Architecture is about <strong>team size, deploy independence, and ownership boundaries</strong> — not technology fashion. Default to a <strong>modular monolith; extract services only when teams genuinely need independent deploys.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li>The spectrum: <strong>monolith</strong> (one deploy, one DB, one process) → <strong>modular monolith</strong> (one deploy, enforced module boundaries) → <strong>microservices</strong> (independent deploys, independent DBs, network between) → functions.</li>
-    <li><strong>Modular monolith wins by default:</strong> one deploy = simpler ops, one DB = trivial cross-module transactions, cross-module refactor = one PR, boundaries enforced by lint + review rather than the network.</li>
-    <li><strong>Microservices win at org scale:</strong> teams ship independently many times/day, different scaling profiles and stacks are justified, independent failure domains, clear per-team ownership. Real wins, real ops cost.</li>
-    <li>Decision factors that actually matter: team size, deploy independence, domain coupling, tech-stack fit, operational maturity, and scaling profile.</li>
-    <li><strong>BFF (Backend For Frontend):</strong> a thin server tailored to one client that composes microservice data into screen-shaped responses — shields the frontend from composition complexity.</li>
-    <li><strong>Event-driven</strong> decouples via events instead of RPC, at the cost of eventual consistency and harder debugging; <strong>CQRS</strong> splits write model from read model, used selectively for high-throughput reads.</li>
-    <li><strong>Hexagonal / clean / DDD</strong> are code-level patterns to keep business logic independent of infra (DB, HTTP) — explicit layers: HTTP routes → application services → domain → DB.</li>
-    <li>The wrong pattern is the one that <strong>mismatches your team size + deploy cadence + ownership model</strong>.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>"Microservices first."</strong> A team of 5 builds 8 services, nobody owns end-to-end, debugging takes weeks, and deploy coordination is harder than a monolith would have been. Worst of all is the <strong>"distributed monolith"</strong> — "microservices" that all share one database, so you pay every distributed-systems cost while getting none of the deploy-independence benefit.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I'd start with a modular monolith and extract a service only when a clear seam emerges and a team genuinely needs an independent deploy cadence — not because the codebase feels big."</div>
-  <div class="revision-say">"Microservices sharing one database is a distributed monolith — the worst of both worlds. The database boundary is what makes a service independent."</div>
-  <div class="revision-say">"Architecture decisions track team size, deploy independence, and ownership — I pick the shape that lets teams ship without stepping on each other."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Place monolith, modular monolith and microservices on a spectrum. What does each trade off?</div>
+  <div class="qa-answer">
+    <p>The spectrum runs monolith → modular monolith → microservices → functions. A <strong>monolith</strong> is one process, one DB, one deploy: a fast start and simple ops, traded for coupling and teams stepping on each other as headcount grows. A <strong>modular monolith</strong> is still one deploy and one Postgres (with schemas per module), but modules talk only through public APIs, enforced by lint and review: you get most of the boundary benefits without network or ops overhead. <strong>Microservices</strong> are one process, DB and deploy per service with HTTP/gRPC/Kafka between them: teams ship independently and scale and fail independently, traded for distributed-system complexity, observability and ops cost. Functions push further: a managed runtime per request, expensive at scale.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you place monolith, modular monolith, and microservices on a spectrum and say what each trades off?</li>
-    <li>Can you argue why a modular monolith is the default, and name the signals that justify extracting a service?</li>
-    <li>Can you explain what a "distributed monolith" is and why it's the worst outcome?</li>
-    <li>Can you explain what a BFF does and when it's worth adding versus pure proxy overhead?</li>
-    <li>Can you contrast event-driven and CQRS with their consistency and debugging costs?</li>
-    <li>Can you name the decision factors — team size, deploy independence, domain coupling, ops maturity — that drive the choice?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Why is a modular monolith the default, and what signals justify extracting a service?</div>
+  <div class="qa-answer">
+    <p>One deploy means simpler ops and no distributed-system bugs; one DB makes cross-module transactions trivial; a cross-module refactor is one PR; and boundaries are enforced by lint and code review instead of the network. Extract a service when a clear seam has emerged and there is a real signal: a team genuinely needs to ship independently many times a day, a part of the system has a very different scaling profile (search at 50 instances, admin at 2), a different stack is justified (ML in Python), or deploys are a constant fight. You also need a platform team for observability, CI/CD and service infrastructure. "The codebase feels big" or "we might scale" are not reasons.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. What does a BFF do, and when is it worth adding?</div>
+  <div class="qa-answer">
+    <p>A Backend For Frontend is a thin server tailored to one client (a web BFF, an app BFF) that composes data from several microservices into the exact, screen-shaped response that client needs. It cuts client round trips — which matters on mobile networks — shields the frontend from composition complexity, and lets the backend evolve without breaking clients. It's worth adding when clients really need composition across services. A BFF that just proxies requests without composing anything is pure overhead: an extra hop and an extra deploy for no benefit.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Contrast event-driven architecture and CQRS. What do they cost in consistency and debugging?</div>
+  <div class="qa-answer">
+    <p><strong>Event-driven</strong> services communicate through events instead of RPC: the users service publishes <code>user.created</code> and email, analytics and provisioning react, and new consumers can be added without touching the producer. <strong>CQRS</strong> separates the write model (commands, for example Postgres) from a denormalized read model (Elasticsearch, Redis, a view) kept in sync via CDC or events; use it selectively when reads and writes scale very differently or query views are expensive to compute on demand. Both buy decoupling at the price of <strong>eventual consistency</strong> (consumers and read stores lag behind the write) and <strong>harder debugging</strong>, because a flow crosses async hops — so you need a schema registry, an outbox and good tracing.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. What decision factors drive the choice between a monolith and microservices?</div>
+  <div class="qa-answer">
+    <p><strong>Team size</strong> (under ~20 points to a monolith, 50+ engineers across many teams to services), <strong>deploy independence</strong> (are coordinated deploys fine, or do teams need to ship independently many times a day?), <strong>domain coupling</strong> (highly coupled shared data shapes versus distinct domains with clear boundaries), <strong>tech-stack fit</strong>, <strong>operational maturity</strong> (a small ops team versus a strong platform team with observability and CI/CD) and <strong>scaling profile</strong> (one DB handles the load versus very different needs per part). A rough guide: under 10 engineers, a monolith; 10–30, a modular monolith; 30–100, a modular monolith with selective extraction; 100+, microservices are justified.</p>
+  </div>
+</div>
+` },
+
   ]
 });

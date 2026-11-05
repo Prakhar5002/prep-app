@@ -1,31 +1,39 @@
 window.PREP_SITE.registerTopic({
-  id: 'api-realtime',
-  module: 'api-design',
-  title: 'Realtime Decision Tree',
-  estimatedReadTime: '50 min',
-  tags: ['realtime', 'websocket', 'sse', 'long-polling', 'webrtc', 'push-notifications', 'pub-sub', 'backpressure'],
+  id: "api-realtime",
+  module: "api-design",
+  title: "Realtime Decision Tree",
+  estimatedReadTime: "50 min",
+  tags: ["realtime","websocket","sse","long-polling","webrtc","push-notifications","pub-sub","backpressure"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>"<strong>Realtime</strong>" is a fuzzy word that hides six different transports with very different tradeoffs. The first thing to do in any realtime prompt is decide <em>which kind</em> of realtime you actually need. Direction (server→client, bidirectional, peer-to-peer), frequency, latency budget, payload size, mobile background behaviour, and scaling shape all push you toward different answers.</p>
-<ul>
-  <li><strong>Polling</strong> — simple but expensive at scale. Default when "realtime" really means "every 30s is fine."</li>
-  <li><strong>Long polling</strong> — older, mostly replaced. Useful when intermediaries forbid WebSockets.</li>
-  <li><strong>SSE (Server-Sent Events)</strong> — server→client only, HTTP-friendly, auto-reconnect, text-only. Best for one-way streams (notifications, dashboards, AI streaming responses).</li>
-  <li><strong>WebSocket</strong> — bidirectional binary/text frames over one TCP connection. Default for chat, presence, multiplayer, live cursors.</li>
-  <li><strong>WebRTC</strong> — peer-to-peer; low-latency audio/video/data; requires signalling + STUN/TURN. Used for calls, screen-share, P2P file transfer.</li>
-  <li><strong>Push (FCM / APNs / Web Push)</strong> — OS-level delivery to a possibly-offline client; high latency, low reliability for "realtime," but the only thing that works when the app is backgrounded or terminated.</li>
-</ul>
-<p><strong>Mantra:</strong> "Direction first, frequency next, mobile background reality last. Pick transport for the slowest realistic case."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>"Realtime" is six transports, not one — walk the decision tree (direction → frequency → bidirectional? → P2P? → mobile-background?) and pick for the slowest realistic case: SSE one-way, WebSocket bidirectional, WebRTC peer-to-peer, push for closed apps.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Direction first, frequency next, mobile-background reality last.</strong> Don't confuse latency budget with frequency — email arrival tolerates minutes, a voice call needs ~150ms.</li>
+    <li><strong>Polling</strong> is the default when "realtime" really means "every 30s is fine" (simple, expensive at scale); <strong>long polling</strong> is mostly replaced, useful only when intermediaries forbid WebSockets.</li>
+    <li><strong>SSE for one-way streams</strong> — server→client, HTTP-friendly, auto-reconnect via <code>Last-Event-ID</code>, text-only. Perfect for notifications, dashboards, log streams, and AI token streaming.</li>
+    <li><strong>WebSocket for bidirectional low-latency</strong> — chat, presence, live cursors, multiplayer. Stateful, so it needs sticky sessions or a pub/sub backbone to scale.</li>
+    <li><strong>WebRTC for peer-to-peer media</strong> — needs signalling (often a WebSocket) plus STUN to find the public address and TURN to relay when NAT blocks direct (~5–20% of connections); TURN bandwidth is real money.</li>
+    <li><strong>Push (FCM/APNs/Web Push) is the ONLY thing that reaches a closed or backgrounded app</strong> — but it's best-effort: coalesced, dropped, or delayed. Treat it as a wake-up trigger, never a state channel.</li>
+    <li><strong>Reliability toolkit:</strong> monotonic sequence IDs + <code>?since=</code> catch-up, dedupe by message ID (at-least-once means duplicates are guaranteed), heartbeats (30s WS, 15s SSE), exponential backoff with jitter (500ms→30s), and backpressure (drop / buffer / throttle / coalesce).</li>
+    <li><strong>Multi-instance fanout needs a pub/sub bus</strong> (Redis Pub/Sub or Streams, NATS, Kafka) — sockets live in one instance's memory; the bus is what routes across instances.</li>
+    <li><strong>Mobile pattern:</strong> socket in foreground, push to wake when backgrounded, reconnect + replay from a "since" cursor on resume. iOS suspends within ~30s; don't fight the OS to keep a background socket alive.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Reaching for WebSocket by reflex when the feature is server→client only.</strong> A stock ticker, notification feed, or AI stream needs no client→server channel — SSE is simpler to operate, works through proxies, and gives you auto-reconnect for free. Save WebSocket for genuinely bidirectional traffic, and never rely on push to deliver state — it's a wake-up, not a sync channel.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I name direction, latency budget, and mobile-background behaviour before I pick a transport — often it's two: a socket for foreground and push for backgrounded delivery."</div>
+  <div class="revision-say">"For one-way streams I use SSE — auto-reconnect with Last-Event-ID and one less moving part than WebSocket; I only reach for WebSocket when it's truly bidirectional."</div>
+  <div class="revision-say">"At-least-once delivery, so receivers dedupe by message ID; on reconnect the client replays from the last sequence ID with a since cursor. Exactly-once is a lie at scale."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why "realtime" needs a decision tree</h3>
 <p>People say "make this realtime" when they want anything from "update within 60 seconds" to "less than 50ms latency." The right answer for "show new comments instantly" is not the right answer for "stream the user's voice." Mismatching costs money, batteries, or both.</p>
 
@@ -94,12 +102,10 @@ Q4. Does the message need to reach the user even when the app is closed/backgrou
   <li>Mobile-aware: foreground = socket, background = push, resume = catch up.</li>
   <li>Pub/sub backbone (Redis / NATS / Kafka) so multi-instance servers don't fragment fanout.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "5 axes" of any realtime feature</h3>
 <table>
   <thead><tr><th>Axis</th><th>Question</th><th>Affects</th></tr></thead>
@@ -210,12 +216,10 @@ data: {}
   <li><strong>Throttle:</strong> producer slows to consumer speed (TCP does this naturally; app-layer must mimic).</li>
   <li><strong>Coalesce:</strong> merge "user typing" events; emit once per 100ms.</li>
 </ul>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>SSE server (Express)</h3>
 <pre><code class="language-typescript">app.get('/events', (req, res) =&gt; {
   res.set({
@@ -409,12 +413,10 @@ ws.on('offer', async (sdp) =&gt; {
 
 <h3>WebTransport</h3>
 <p>WebTransport (HTTP/3 + QUIC) gives bidirectional streams + datagrams with multiplexing and unreliable delivery. Useful for games, real-time CRDTs. As of March 2026 it is <strong>Baseline</strong>: supported in Chrome, Edge, Firefox (since v114), and Safari 26.4+ — broad enough to reach for in production, not just an experiment.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Picking transport for a chat app</h3>
 <p>Requirements: 1:1 + group chat, presence indicators, typing dots, message reactions, push when app closed, mobile + web.</p>
 <table>
@@ -488,12 +490,11 @@ ws.on('offer', async (sdp) =&gt; {
   <li>App resumes → reconnect WebSocket with <code>?since=&lt;seq&gt;</code>; server replays missed messages.</li>
   <li>UI dedupe by message ID — push-displayed messages may also arrive via socket.</li>
 </ol>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Half-open connections</h3>
 <p>TCP doesn't always notice when the other side dies — especially over wifi, cellular, or NAT timeouts. Without heartbeats, your "connected" socket is silently dead. Always:</p>
 <ul>
@@ -590,12 +591,9 @@ ws.on('offer', async (sdp) =&gt; {
   <li>Push: usually free (FCM / APNs); managed services (OneSignal) charge by volume.</li>
   <li>Pub/sub: Redis cheap; Kafka heavy.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 10 most common realtime mistakes</h3>
 <ol>
   <li><strong>Picking WebSocket by reflex.</strong> SSE is enough for most one-way streams and simpler to operate.</li>
@@ -669,12 +667,10 @@ window.addEventListener('mousemove', (e) =&gt; {
 
 <h3>Anti-pattern: same channel for "data" and "control"</h3>
 <p>Mixing application messages and protocol messages (heartbeats, schema versions) on the same envelope. Use a typed envelope with <code>kind: 'data' | 'ping' | 'error'</code>.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common realtime design prompts</h3>
 <ol>
   <li>Design WhatsApp / Slack / Discord chat.</li>
@@ -800,50 +796,26 @@ window.addEventListener('mousemove', (e) =&gt; {
   <li>"Explore WebTransport — now Baseline across major browsers and a strong option for low-latency browser realtime."</li>
   <li>"Compare Phoenix Channels (Elixir), ActionCable (Rails), Apollo subscriptions, tRPC subs — different ecosystems hit the same problems."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>"Realtime" is six transports, not one — walk the decision tree (direction → frequency → bidirectional? → P2P? → mobile-background?) and pick for the slowest realistic case: SSE one-way, WebSocket bidirectional, WebRTC peer-to-peer, push for closed apps.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Direction first, frequency next, mobile-background reality last.</strong> Don't confuse latency budget with frequency — email arrival tolerates minutes, a voice call needs ~150ms.</li>
-    <li><strong>SSE for one-way streams</strong> — server→client, HTTP-friendly, auto-reconnect via <code>Last-Event-ID</code>, text-only. Perfect for notifications, dashboards, log streams, and AI token streaming.</li>
-    <li><strong>WebSocket for bidirectional low-latency</strong> — chat, presence, live cursors, multiplayer. Stateful, so it needs sticky sessions or a pub/sub backbone to scale.</li>
-    <li><strong>WebRTC for peer-to-peer media</strong> — needs signalling (often a WebSocket) plus STUN to find the public address and TURN to relay when NAT blocks direct (~5–20% of connections); TURN bandwidth is real money.</li>
-    <li><strong>Push (FCM/APNs/Web Push) is the ONLY thing that reaches a closed or backgrounded app</strong> — but it's best-effort: coalesced, dropped, or delayed. Treat it as a wake-up trigger, never a state channel.</li>
-    <li><strong>Reliability toolkit:</strong> monotonic sequence IDs + <code>?since=</code> catch-up, dedupe by message ID (at-least-once means duplicates are guaranteed), heartbeats (30s WS, 15s SSE), exponential backoff with jitter (500ms→30s), and backpressure (drop / buffer / throttle / coalesce).</li>
-    <li><strong>Multi-instance fanout needs a pub/sub bus</strong> (Redis Pub/Sub or Streams, NATS, Kafka) — sockets live in one instance's memory; the bus is what routes across instances.</li>
-    <li><strong>Mobile pattern:</strong> socket in foreground, push to wake when backgrounded, reconnect + replay from a "since" cursor on resume. iOS suspends within ~30s; don't fight the OS to keep a background socket alive.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Reaching for WebSocket by reflex when the feature is server→client only.</strong> A stock ticker, notification feed, or AI stream needs no client→server channel — SSE is simpler to operate, works through proxies, and gives you auto-reconnect for free. Save WebSocket for genuinely bidirectional traffic, and never rely on push to deliver state — it's a wake-up, not a sync channel.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I name direction, latency budget, and mobile-background behaviour before I pick a transport — often it's two: a socket for foreground and push for backgrounded delivery."</div>
-  <div class="revision-say">"For one-way streams I use SSE — auto-reconnect with Last-Event-ID and one less moving part than WebSocket; I only reach for WebSocket when it's truly bidirectional."</div>
-  <div class="revision-say">"At-least-once delivery, so receivers dedupe by message ID; on reconnect the client replays from the last sequence ID with a since cursor. Exactly-once is a lie at scale."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the direction, latency budget, and mobile-background behaviour <em>before</em> you pick a transport?</li>
-    <li>Can you justify SSE over WebSocket for a one-way stream — and say what <code>Last-Event-ID</code> buys you?</li>
-    <li>Can you explain why "delivery even when the app is closed" on mobile means push notifications, period?</li>
-    <li>Can you design a reconnect + catch-up flow using a since cursor / sequence ID?</li>
-    <li>Can you explain why exactly-once is a lie at scale, and how at-least-once plus dedupe-by-message-ID replaces it?</li>
-    <li>Can you say why multi-instance servers need a Redis / NATS / Kafka pub/sub backbone so fanout doesn't fragment?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. Why would you pick SSE over WebSocket for a one-way stream, and what does Last-Event-ID give you?</div>
+  <div class="qa-answer">
+    <p>If the feature is server-to-client only (notifications, a live dashboard, log streams, AI token streaming), SSE is the simpler choice: it's a browser-native stream over plain HTTP (<code>EventSource</code> on the client, <code>text/event-stream</code> on the server), works through proxies, delivers in order and auto-reconnects, so it is one less moving part to operate than a stateful WebSocket. <code>Last-Event-ID</code> is what makes reconnect lossless: the server tags each event with an <code>id:</code> line, <code>EventSource</code> remembers the last one, and on reconnect it sends it back so the server can resume from there. The costs: text only (binary needs base64) and about 6 connections per origin over HTTP/1.1, which is fine over HTTP/2.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q2. Why is exactly-once delivery "a lie at scale", and what do you do instead?</div>
+  <div class="qa-answer">
+    <p>Most pub/sub infrastructure is at-most-once (raw publish, may lose) or at-least-once (acks + retry, so duplicates are guaranteed whenever a retry happens). True exactly-once is rarely achievable, and pretending you have it on at-least-once infra means retries silently double-charge users or double-post messages. So I accept at-least-once and make receivers idempotent: each message carries an ID and the receiver dedupes within a window. The infra delivers at least once and the receiver collapses that to once. If ordering matters too, partition by key with a single consumer per partition and use sequence IDs.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Why does a multi-instance realtime server need a pub/sub backbone?</div>
+  <div class="qa-answer">
+    <p>Each WebSocket or SSE connection lives in the memory of one server instance, and other instances don't know about it. If a message is produced on instance A but the recipient is connected to instance B, it never arrives: fanout fragments, which works in dev with one server and breaks in prod. The fix is a shared bus: every instance subscribes to Redis Pub/Sub (simple, fire-and-forget), Redis Streams (persistent, replay), NATS or Kafka (high-throughput, durable), and routes incoming messages to its local sockets. Sticky sessions help a client reconnect to the same instance but are not a substitute for the bus.</p>
+  </div>
+</div>
+` },
+
   ]
 });

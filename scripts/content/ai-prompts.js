@@ -1,34 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'ai-prompts',
-  module: 'ai',
-  title: 'Prompt Engineering',
-  estimatedReadTime: '50 min',
-  tags: ['ai', 'llm', 'prompt-engineering', 'structured-output', 'function-calling', 'agents', 'few-shot', 'chain-of-thought', 'evals'],
+  id: "ai-prompts",
+  module: "ai",
+  title: "Prompt Engineering",
+  estimatedReadTime: "50 min",
+  tags: ["ai","llm","prompt-engineering","structured-output","function-calling","agents","few-shot","chain-of-thought","evals"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Prompt engineering</strong> is the discipline of designing inputs to LLMs so the outputs are reliable, structured, and shippable. It sits at the intersection of UX, API design, and probabilistic systems — closer to "writing a robust prompt is writing a contract" than "writing a clever sentence." For a 2026 senior frontend / RN engineer, it's a baseline skill: every product team is integrating LLMs, and the difference between a feature that works 60% of the time and one that works 95% is mostly prompt + structure.</p>
-<ul>
-  <li><strong>The three pillars:</strong> <em>system prompt</em> (role + rules + tools), <em>user message</em> (task + data), <em>assistant response</em> (what you want, ideally structured). Plus tools / function calls in modern APIs.</li>
-  <li><strong>Structured output > free-form text.</strong> JSON schema, function calling, structured-output mode — every modern LLM API supports it; reliability jumps dramatically.</li>
-  <li><strong>Few-shot > zero-shot.</strong> 2–5 examples in the prompt steer the model toward your shape.</li>
-  <li><strong>Chain-of-thought (CoT)</strong> for reasoning tasks; <code>think</code> step that you don't render to the user.</li>
-  <li><strong>Tool use / function calling</strong> turns the LLM into an orchestrator that calls your APIs.</li>
-  <li><strong>Evals are mandatory.</strong> Without a golden dataset + automated scoring, you can't tell if a prompt change improved or regressed.</li>
-  <li><strong>Cost models matter:</strong> input tokens cheap, output expensive; cached prompts even cheaper. Design for 80% cache hit on system prompt.</li>
-  <li><strong>Streaming UI:</strong> SSE delivers tokens incrementally; perceived latency drops from "full response in 8s" to "first token in 200ms."</li>
-  <li><strong>Mobile / RN angle:</strong> on-device models (Apple Foundation Models, Gemini Nano) for privacy + offline; cloud for heavy work; hybrid is the 2026 default.</li>
-</ul>
-<p><strong>Mantra:</strong> "Prompts are contracts. Structure outputs. Few-shot for shape. Chain-of-thought for reasoning. Evals for confidence. Cache for cost. Stream for perceived speed."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Prompt engineering is designing LLM inputs so outputs are reliable and shippable — <strong>a prompt is a contract</strong>: structure outputs, few-shot for shape, chain-of-thought for reasoning, evals for confidence, cache for cost, stream for perceived speed.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Three pillars: the system prompt (role + rules + tools), the user message (task + data), and the assistant response (ideally structured) — plus tools/function calls in modern APIs.</li>
+    <li>Treat the system prompt as a <strong>versioned artifact</strong> in the repo: diffable, reviewable, testable.</li>
+    <li><strong>Structured output beats free-form text:</strong> JSON schema, function calling, or structured-output mode make reliability jump dramatically — the gap between a feature that works 60% of the time and one that works 95% is mostly prompt + structure.</li>
+    <li>Few-shot (2 to 5 examples) steers the model toward your shape; chain-of-thought helps reasoning tasks — a think step you don't render to the user.</li>
+    <li>Tool use / function calling turns the LLM into an orchestrator that calls your APIs.</li>
+    <li><strong>Evals are mandatory:</strong> without a golden dataset (50–500 labelled examples) and automated scoring in CI you can't tell if a prompt change improved or regressed.</li>
+    <li><strong>Token economics:</strong> input 1×, output 3–5×, cached input ~0.1×. Design for an ~80% cache hit on the system prompt, and always set <code>max_tokens</code>.</li>
+    <li><strong>Streaming (SSE)</strong> drops perceived latency from a full response in ~8s to a first token in ~200ms; pair it with a cancel button.</li>
+    <li>Route by task: a small, cheap model for classification, a mid tier for chat, the biggest only for hard reasoning.</li>
+    <li><strong>Mobile / RN angle:</strong> on-device models (Apple Foundation Models, Gemini Nano) for privacy and offline, cloud for heavy work — hybrid is the 2026 default.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Regexing free text breaks on every model update</strong> — use structured output instead. And trusting output blindly (letting a tool fire on "delete all users") is a disaster; validate before acting. Don't route every task to the biggest model when a smaller one is cheaper and faster.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Prompts are contracts — I structure the output with a schema or function call instead of regexing free text."</div>
+  <div class="revision-say">"Few-shot for shape, chain-of-thought for reasoning, and evals so I actually know whether a prompt change helped or regressed."</div>
+  <div class="revision-say">"I never let tool output fire blindly, and I route easy tasks to a cheaper, faster model instead of the biggest one."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "prompt engineering" actually means in 2026</h3>
 <p>Three years ago: clever sentences to coax better text. Today: a structured discipline overlapping API design, observability, and product UX. The shift was driven by:</p>
 <ul>
@@ -88,12 +94,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>Application layer</td><td>How to deliver to users?</td><td>Streaming, retry, fallback, evals, cost caps</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Anatomy of a request</h3>
 <pre><code class="language-typescript">// Modern LLM API shape (Anthropic / OpenAI / Google)
 {
@@ -321,12 +325,10 @@ while (true) {
 </table>
 
 <p>Hybrid: try on-device; fallback to cloud if model can't handle. Useful for privacy-sensitive features.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Skeleton: structured-output extraction</h3>
 <pre><code class="language-typescript">import Anthropic from '@anthropic-ai/sdk';
 const client = new Anthropic();
@@ -661,12 +663,10 @@ async function validatedChat(query: string) {
   return parsed.data;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Email subject summarizer</h3>
 <pre><code class="language-typescript">const SYSTEM = \`You generate concise subject lines for emails.
 
@@ -995,12 +995,11 @@ const model = selectModel('low', 500);  // classification, simple extraction
 const model = selectModel('medium', 3000);  // most chat, summarization
 const model = selectModel('high', 10000);  // complex reasoning, code generation
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Hallucinations</h3>
 <ul>
   <li>The model invents facts confidently. The most common production failure mode.</li>
@@ -1128,12 +1127,9 @@ const model = selectModel('high', 10000);  // complex reasoning, code generation
   <li>Tool inputs are user-influenced; treat as untrusted; validate against schemas + business rules.</li>
   <li>Audit log all tool invocations; rate limit per session.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common LLM integration mistakes</h3>
 <ol>
   <li><strong>Free-text parsing.</strong> Regex on model output; breaks on every model update.</li>
@@ -1315,12 +1311,10 @@ async function classify(text) {
 // GOOD — pin
 { model: 'claude-opus-4-7' }
 </code></pre>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common LLM / prompt-engineering interview prompts</h3>
 <ol>
   <li>Tell me about an LLM feature you shipped.</li>
@@ -1456,53 +1450,38 @@ async function classify(text) {
   <li>"Skim 'Building LLM Applications for Production' (Chip Huyen)."</li>
   <li>"Ship something LLM-powered to a real user; nothing teaches like production traffic."</li>
 </ul>
-`
-    },
 
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Prompt engineering is designing LLM inputs so outputs are reliable and shippable — <strong>a prompt is a contract</strong>: structure outputs, few-shot for shape, chain-of-thought for reasoning, evals for confidence.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Three pillars: the system prompt (role + rules + tools), the user message (task + data), and the assistant response (ideally structured) — plus tools/function calls in modern APIs.</li>
-    <li><strong>Structured output beats free-form text:</strong> JSON schema, function calling, or structured-output mode make reliability jump dramatically.</li>
-    <li>Few-shot (2 to 5 examples) steers the model toward your shape; chain-of-thought helps reasoning tasks — a think step you don't render to the user.</li>
-    <li>Tool use / function calling turns the LLM into an orchestrator that calls your APIs.</li>
-    <li><strong>Evals are mandatory:</strong> without a golden dataset and automated scoring you can't tell if a prompt change improved or regressed.</li>
-    <li>Cost and latency: input tokens are cheap, output is expensive, cached prompts are cheaper; streaming drops perceived latency from a full response in seconds to a first token in about 200ms.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Regexing free text breaks on every model update</strong> — use structured output instead. And trusting output blindly (letting a tool fire on "delete all users") is a disaster; validate before acting. Don't route every task to the biggest model when a smaller one is cheaper and faster.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Prompts are contracts — I structure the output with a schema or function call instead of regexing free text."</div>
-  <div class="revision-say">"Few-shot for shape, chain-of-thought for reasoning, and evals so I actually know whether a prompt change helped or regressed."</div>
-  <div class="revision-say">"I never let tool output fire blindly, and I route easy tasks to a cheaper, faster model instead of the biggest one."</div>
+<div class="qa-block">
+  <div class="qa-question">Q1. What are the three pillars of a prompt, and where do tools fit in?</div>
+  <div class="qa-answer">
+    <p>The <strong>system prompt</strong> sets role, capabilities, constraints and output format; the <strong>user message</strong> carries the task and the data; the <strong>assistant response</strong> is what you want back, ideally in a structured shape. Tools (function calls) sit alongside: they are defined in the request and referenced by the system prompt, and they let the model act as an orchestrator that calls your APIs. I keep the system prompt as a versioned file in the repo so it is diffable, reviewable and testable.</p>
+  </div>
 </div>
-`
-    },
+<div class="qa-block">
+  <div class="qa-question">Q2. Why is structured output better than parsing free text?</div>
+  <div class="qa-answer">
+    <p>Free-text parsing is brittle: a regex that pulls the value after "Name:" breaks the moment the model adds "(e.g., John)" or the model version changes, and it is the number-one source of production failures. With JSON schema, function calling or structured-output mode, the schema is enforced at decode time, so you get a typed object you can validate (for example with zod) instead of guessing. Reliability jumps dramatically, and you still validate before acting on the result.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. When do you use few-shot prompting, and when chain-of-thought?</div>
+  <div class="qa-answer">
+    <p>Few-shot is for <strong>shape</strong>: 2–5 examples in the conversation teach the model the format and style you want, because LLMs are pattern matchers — on hard tasks it can lift accuracy by 20–30 points over zero-shot. Chain-of-thought is for <strong>reasoning</strong>: asking the model to work step by step improves multi-step tasks, and you keep that thinking out of what the user sees. With modern reasoning models the chain-of-thought is automatic and hidden, so you get the final answer. They combine well: few-shot examples for the output shape, CoT for the logic.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Why are evals mandatory before shipping a prompt change?</div>
+  <div class="qa-answer">
+    <p>LLM output is probabilistic, so a prompt tweak that fixes one case can silently break others — iterating "by vibes" is how features regress unnoticed. An eval harness has a golden dataset of 50–500 human-labelled input/output pairs, a scoring function (exact match, regex, LLM-as-judge or a task-specific check), and CI integration that fails the PR if the score drops. Production sampling feeds real traffic back into the golden set, which should include edge cases and be refreshed as data drifts. The same harness lets you validate a model-version upgrade before rollout.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. Name some ways to control the cost of an LLM feature.</div>
+  <div class="qa-answer">
+    <p><strong>Prompt caching:</strong> the provider caches the exact prefix (system prompt, tools, examples), and repeat requests pay about 10% of the normal input cost. <strong>Model routing:</strong> a small, cheap model for classification, a mid tier for chat, the largest only for hard reasoning. Also always set <code>max_tokens</code> (output costs 3–5× input, and a missing cap lets the model write thousands of tokens), keep per-user budgets with dashboards and alerts, batch where possible, and cache LLM outputs so the same question isn't paid for twice.</p>
+  </div>
+</div>
+` },
 
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the three pillars of a prompt and where tools fit?</li>
-    <li>Can you explain why structured output beats parsing free text?</li>
-    <li>Can you say when to use few-shot versus chain-of-thought?</li>
-    <li>Can you explain why evals are mandatory before shipping a prompt change?</li>
-    <li>Can you describe how streaming changes perceived latency?</li>
-    <li>Can you name two ways to control LLM cost?</li>
-  </ul>
-</div>
-`
-    }
   ]
 });

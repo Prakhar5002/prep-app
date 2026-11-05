@@ -1,38 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-backtracking',
-  module: 'dsa',
-  title: 'Backtracking',
-  estimatedReadTime: '45 min',
-  tags: ['backtracking', 'recursion', 'dfs', 'pruning', 'permutations', 'combinations', 'subsets', 'n-queens', 'sudoku'],
+  id: "dsa-backtracking",
+  module: "dsa",
+  title: "Backtracking",
+  estimatedReadTime: "45 min",
+  tags: ["backtracking","recursion","dfs","pruning","permutations","combinations","subsets","n-queens","sudoku"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Backtracking</strong> is depth-first search through a tree of partial solutions: you incrementally build a candidate, and the moment a partial choice leads to a dead end, you <em>undo</em> it ("backtrack") and try the next option. It's the standard tool for combinatorial enumeration: permutations, combinations, subsets, partitions, N-queens, Sudoku, word search, palindrome partitioning.</p>
-<ul>
-  <li><strong>Three-step pattern:</strong> <em>choose</em> (make a decision), <em>explore</em> (recurse), <em>unchoose</em> (undo).</li>
-  <li><strong>Pruning makes it fast.</strong> Without pruning, you visit every leaf of an exponential tree. With pruning, smart bounds and constraints kill huge branches early.</li>
-  <li><strong>Three classic shapes:</strong>
-    <ul>
-      <li>Subsets — at each step, "include or skip."</li>
-      <li>Permutations — pick from remaining; track <code>used</code>.</li>
-      <li>Combinations — start index advances to avoid duplicates.</li>
-    </ul>
-  </li>
-  <li><strong>The "input has duplicates"</strong> trick: sort first, skip identical siblings at the same recursion depth.</li>
-  <li><strong>Always restore state on backtrack.</strong> Mutating shared structure is fine if you undo before returning.</li>
-  <li><strong>Time:</strong> exponential or factorial in problem size. Good pruning brings real-world runtime down dramatically; mathematical worst case stays scary.</li>
-  <li><strong>Space:</strong> recursion stack = depth of decision tree.</li>
-</ul>
-<p><strong>Mantra:</strong> "Choose, explore, unchoose. Prune ruthlessly. Sort to deduplicate. Avoid copying when you can backtrack."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Backtracking is <strong>DFS over a tree of partial solutions — choose, explore, unchoose — pruning dead branches early</strong>; it's the tool for enumerating subsets, permutations, combinations, partitions, and constraint puzzles.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three-step template: choose → explore (recurse) → unchoose (undo).</strong> Mutate shared state and restore it before returning; only copy at the <em>recording</em> moment (<code>out.push([...path])</code>).</li>
+    <li><strong>Recognition signal:</strong> "generate/enumerate ALL ..." subsets, permutations, combinations, partitions (palindrome partitioning), or "place N items satisfying a constraint" (N-queens, Sudoku, word search).</li>
+    <li><strong>Know the three shapes:</strong> subsets = include-or-skip with a start index; permutations = pick any unused element (track <code>used</code>); combinations = advance the start index so you never revisit earlier elements.</li>
+    <li><strong>Pruning is what makes it fast</strong> — without it you visit every leaf of an exponential tree; cut a branch the moment the partial solution is invalid or the bound is exceeded (e.g. sorted candidates + break when <code>candidate &gt; remaining</code>). Worst case stays exponential; typical inputs collapse dramatically.</li>
+    <li><strong>Duplicate-input trick:</strong> sort first, then skip identical siblings <em>at the same depth</em>. Combinations use <code>if (i &gt; start &amp;&amp; nums[i] === nums[i-1]) continue;</code>; permutations use <code>if (i &gt; 0 &amp;&amp; nums[i] === nums[i-1] &amp;&amp; !used[i-1]) continue;</code> — the conditions are NOT interchangeable.</li>
+    <li><strong>Complexity:</strong> subsets O(N·2^N), permutations O(N·N!), combinations O(K·C(N,K)); space = recursion depth = height of the decision tree.</li>
+    <li>Grid/path problems: mark the cell visited, recurse in 4 directions, then restore — use a sentinel that can't appear in input, or a visited set.</li>
+    <li><strong>Use <code>continue</code> for a single bad candidate, <code>return</code> only when the whole branch is dead</strong> — returning on a per-candidate failure skips later valid siblings.</li>
+    <li>When to switch away: overlapping subproblems or "count/optimize" (not "enumerate all") → dynamic programming; needing only the K-th item → compute directly with factorials, don't enumerate.</li>
+    <li><strong>Mantra:</strong> "Choose, explore, unchoose. Prune ruthlessly. Sort to deduplicate. Avoid copying when you can backtrack."</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Recording a reference to the mutable path instead of a copy:</strong> <code>out.push(path)</code> makes every result point at the same array, so later <code>push</code>/<code>pop</code> corrupts the whole history — always <code>out.push([...path])</code> at the recording moment. The sibling trap is forgetting to <em>undo</em> (the <code>path.pop()</code> or restoring a marked grid cell), which leaks state into sibling branches.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Backtracking is DFS over a state-space tree with choose, explore, unchoose — and I prune invalid branches as early as possible."</div>
+  <div class="revision-say">"I copy the path only when I record a solution; during the search I mutate and undo so I'm not deep-copying state on every call."</div>
+  <div class="revision-say">"For duplicate inputs I sort first and skip identical siblings — and I'm careful that the permutation condition (<code>!used[i-1]</code>) differs from the combination one."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is backtracking?</h3>
 <p>Backtracking is a refinement of brute-force depth-first search. You're searching a <em>state space</em> — a tree where each node represents a partial solution and edges are choices. You walk the tree depth-first, but at each internal node:</p>
 <ol>
@@ -86,12 +88,10 @@ window.PREP_SITE.registerTopic({
   <li>You don't deep-copy state when backtracking can undo cheaper.</li>
   <li>You quote complexity in terms of the problem size (e.g., O(N · N!) for permutations of N).</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The state-space tree</h3>
 <p>Visualize the search as a tree:</p>
 <ul>
@@ -194,12 +194,10 @@ function bt(path) {
     <tr><td>Sudoku</td><td>Worst case exponential; well-pruned implementations finish ms-fast</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Subsets — the canonical pattern</h3>
 <pre><code class="language-js">function subsets(nums) {
   const out = [];
@@ -479,12 +477,10 @@ function bt(path) {
   return out;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Restore IP Addresses</h3>
 <pre><code class="language-js">function restoreIpAddresses(s) {
   const out = [];
@@ -693,12 +689,11 @@ function bt(path) {
   return out;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Empty input</h3>
 <p>Subsets of <code>[]</code> = <code>[[]]</code>. Permutations of <code>[]</code> = <code>[[]]</code>. Always handle. Most templates do this naturally because the base case fires immediately.</p>
 
@@ -794,12 +789,9 @@ function bt(...) {
 
 <h3>Memoization confusion</h3>
 <p>Pure backtracking enumerates ALL solutions; memoization assumes the function returns ONE answer. You can memoize "from index i, what's the answer?" but only when each subproblem has a single answer (not a list of answers per state). Otherwise switch to DP.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: pushing path reference</h3>
 <pre><code class="language-js">out.push(path);   // ❌ all entries are the same array
 
@@ -932,12 +924,10 @@ function bt(idx) { for (...) bt(idx + 1); }
 
 <h3>Anti-pattern 10: not testing the duplicate trick</h3>
 <p>"Subsets II" with input [1,2,2,3] — verify your output has 12 subsets, not more (which would indicate duplicates). Never trust pruning is correct without a test.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 14 problems worth memorizing patterns for</h3>
 <table>
   <thead><tr><th>Problem</th><th>Pattern</th></tr></thead>
@@ -1037,50 +1027,32 @@ function bt(idx) { for (...) bt(idx + 1); }
   <li>"I'd add a unique-output deduper at the boundary as a safety net even with sort + skip."</li>
   <li>"I'd consider symmetry breaking for N-queens and similar (only solve half; mirror for the rest)."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Backtracking is <strong>DFS over a tree of partial solutions — choose, explore, unchoose — pruning dead branches early</strong>; it's the tool for enumerating subsets, permutations, combinations, and constraint puzzles.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Three-step template: choose → explore (recurse) → unchoose (undo).</strong> Mutate shared state and restore it before returning; only copy at the <em>recording</em> moment (<code>out.push([...path])</code>).</li>
-    <li><strong>Recognition signal:</strong> "generate/enumerate ALL ..." subsets, permutations, combinations, partitions, or "place N items satisfying a constraint" (N-queens, Sudoku, word search).</li>
-    <li><strong>Know the three shapes:</strong> subsets = include-or-skip with a start index; permutations = pick any unused element (track <code>used</code>); combinations = advance the start index so you never revisit earlier elements.</li>
-    <li><strong>Pruning is what makes it fast</strong> — cut a branch the moment the partial solution is invalid or the bound is exceeded (e.g. sorted candidates + break when <code>candidate &gt; remaining</code>). Worst case stays exponential; typical inputs collapse dramatically.</li>
-    <li><strong>Duplicate-input trick:</strong> sort first, then skip identical siblings <em>at the same depth</em>. Combinations use <code>if (i &gt; start &amp;&amp; nums[i] === nums[i-1]) continue;</code>; permutations use <code>if (i &gt; 0 &amp;&amp; nums[i] === nums[i-1] &amp;&amp; !used[i-1]) continue;</code> — the conditions are NOT interchangeable.</li>
-    <li><strong>Complexity:</strong> subsets O(N·2^N), permutations O(N·N!), combinations O(K·C(N,K)); space = recursion depth = height of the decision tree.</li>
-    <li>Grid/path problems: mark the cell visited, recurse in 4 directions, then restore — use a sentinel that can't appear in input, or a visited set.</li>
-    <li><strong>Use <code>continue</code> for a single bad candidate, <code>return</code> only when the whole branch is dead</strong> — returning on a per-candidate failure skips later valid siblings.</li>
-    <li>When to switch away: overlapping subproblems or "count/optimize" (not "enumerate all") → dynamic programming; needing only the K-th item → compute directly with factorials, don't enumerate.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Recording a reference to the mutable path instead of a copy:</strong> <code>out.push(path)</code> makes every result point at the same array, so later <code>push</code>/<code>pop</code> corrupts the whole history — always <code>out.push([...path])</code> at the recording moment. The sibling trap is forgetting to <em>undo</em> (the <code>path.pop()</code> or restoring a marked grid cell), which leaks state into sibling branches.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Backtracking is DFS over a state-space tree with choose, explore, unchoose — and I prune invalid branches as early as possible."</div>
-  <div class="revision-say">"I copy the path only when I record a solution; during the search I mutate and undo so I'm not deep-copying state on every call."</div>
-  <div class="revision-say">"For duplicate inputs I sort first and skip identical siblings — and I'm careful that the permutation condition (<code>!used[i-1]</code>) differs from the combination one."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you state the general choose / explore / un-choose template?</li>
-    <li>Can you recognize when a problem needs backtracking?</li>
-    <li>Can you state the time complexity of subsets and of permutations?</li>
-    <li>Can you handle duplicate inputs by sorting and skipping identical siblings?</li>
-    <li>Can you explain how the permutation <code>used[]</code> check differs from combinations?</li>
-    <li>Can you name 2 problems it solves?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. What is the general backtracking template?</div>
+  <div class="qa-answer">
+    <p>Every backtracking solution is three steps inside a recursive function: <strong>choose</strong> (make a decision, e.g. <code>path.push(x)</code> or mark a cell), <strong>explore</strong> (recurse on the smaller remaining problem), and <strong>unchoose</strong> (undo the decision, e.g. <code>path.pop()</code> or restore the cell). At the top of the function you check whether the partial solution is complete and, if so, record a copy with <code>out.push([...path])</code>. Mutating shared state and undoing it before returning is what keeps the search cheap; copying only happens at the recording moment.</p>
+  </div>
 </div>
-`}
-]
+<div class="qa-block">
+  <div class="qa-question">Q2. How do you recognize that a problem needs backtracking?</div>
+  <div class="qa-answer">
+    <p>The signal is "generate or enumerate ALL ..." — all subsets, permutations, combinations of size K, ways to partition a string — or "place N items satisfying a constraint" such as N-queens, Sudoku, or finding a path in a grid (word search). If the problem only asks for a COUNT of ways, or the best configuration, and subproblems overlap, reach for DP instead: backtracking is for enumeration, DP for counting and optimization.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. What is the time complexity of generating all subsets and all permutations?</div>
+  <div class="qa-answer">
+    <p>Subsets are O(N · 2^N): there are 2^N subsets and copying each one costs up to O(N). Permutations are O(N · N!): N! orderings, each copied in O(N). Combinations of size K are O(K · C(N,K)). Space is the recursion depth, i.e. the height of the decision tree (O(N)), excluding the output. Pruning reduces real-world runtime dramatically, but the worst case stays exponential or factorial.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How does the <code>used[]</code> check in permutations differ from how combinations avoid repeats?</div>
+  <div class="qa-answer">
+    <p>Combinations (and subsets) pass a <strong>start index</strong> forward, so each level only considers elements after the last one chosen — order doesn't matter and earlier elements are never revisited. Permutations care about order, so every level loops over <em>all</em> elements and uses a <code>used[]</code> array to skip ones already in the current path, setting <code>used[i] = true</code> before recursing and <code>false</code> after. The duplicate-skip rules differ too: combinations use <code>i &gt; start &amp;&amp; nums[i] === nums[i-1]</code>, while permutations need <code>i &gt; 0 &amp;&amp; nums[i] === nums[i-1] &amp;&amp; !used[i-1]</code>; swapping them gives wrong output on inputs with duplicates.</p>
+  </div>
+</div>
+` },
+
+  ]
 });

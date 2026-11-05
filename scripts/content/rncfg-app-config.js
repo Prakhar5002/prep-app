@@ -1,29 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'rncfg-app-config',
-  module: 'RN Project & Config (Deep)',
-  title: 'App Config & Autolinking',
-  estimatedReadTime: '25 min',
-  tags: ['app-json', 'app-config-js', 'app-config-ts', 'expo-config', 'config-plugins', 'prebuild', 'cng', 'continuous-native-generation', 'autolinking', 'react-native-config-js', 'react-native.config.js', 'expo-build-properties', 'eas', 'eas-update', 'expo-constants', 'runtime-version', 'react-native', 'expo-53'],
+  id: "rncfg-app-config",
+  module: "RN Project & Config (Deep)",
+  title: "App Config & Autolinking",
+  estimatedReadTime: "25 min",
+  tags: ["app-json","app-config-js","app-config-ts","expo-config","config-plugins","prebuild","cng","continuous-native-generation","autolinking","react-native-config-js","react-native.config.js","expo-build-properties","eas","eas-update","expo-constants","runtime-version","react-native","expo-53"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Two different config files decide what your native app becomes and which native code gets wired into it:</p>
-<ul>
-  <li><strong>The Expo app config</strong> — <code>app.json</code> (static JSON), <code>app.config.js</code>, or <code>app.config.ts</code> (dynamic, can read <code>process.env</code>). It describes your app (name, bundle id, icon, permissions, plugins) and, together with <strong>Config Plugins</strong>, <em>generates</em> the <code>android/</code> and <code>ios/</code> folders during <strong>prebuild</strong> (Continuous Native Generation, CNG).</li>
-  <li><strong>The bare-RN CLI config</strong> — <code>react-native.config.js</code>. It tunes <strong>autolinking</strong> (which native modules the RN CLI discovers and links), overrides dependency paths, and links fonts/assets via <code>npx react-native-asset</code>.</li>
-</ul>
-<p>Bare RN also has a tiny <code>app.json</code> with just <code>name</code> and <code>displayName</code> — that's the string <code>AppRegistry</code> registers under, nothing to do with the Expo config object.</p>
-<p><strong>Autolinking</strong> is the mechanism that reads your <code>package.json</code> dependencies, finds the ones shipping native code, and injects them into Gradle and CocoaPods so you don't hand-edit build files.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>In a managed/prebuild app the app config plus config plugins <em>are</em> your native project — hand edits to <code>android/</code>/<code>ios/</code> get wiped on <code>expo prebuild --clean</code>, so you change native config through <code>app.json</code> plugins (and <code>expo-build-properties</code>) instead. Autolinking is what turns a <code>package.json</code> dependency into a linked native module without touching Gradle or the Podfile.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The Expo <strong>app config</strong> (<code>app.json</code> / <code>app.config.js</code> / <code>app.config.ts</code>) plus <strong>config plugins</strong> generate the native projects at <strong>prebuild</strong> (CNG), and <strong>autolinking</strong> turns <code>package.json</code> dependencies into linked native modules — so you edit config, not <code>android/</code>/<code>ios/</code>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Static vs dynamic config:</strong> <code>app.json</code> is JSON; <code>app.config.js</code>/<code>.ts</code> export a function that can read <code>process.env</code> and branch per environment. Use <code>export default ({ config }) =&gt; ({ ...config, ... })</code>; the dynamic file <strong>overrides</strong> <code>app.json</code> but must spread <code>...config</code> or it drops those values.</li>
+    <li><strong>The <code>expo</code> object:</strong> <code>name</code>, <code>slug</code>, <code>version</code>, <code>orientation</code>, <code>icon</code>, <code>scheme</code> (deep links), <code>userInterfaceStyle</code>, <code>splash</code>/<code>expo-splash-screen</code>, <code>assetBundlePatterns</code>, <code>updates</code>/<code>runtimeVersion</code> (EAS Update/OTA), <code>extra</code> (+ <code>extra.eas.projectId</code>), <code>owner</code>.</li>
+    <li><strong>Runtime read:</strong> <code>extra</code> is surfaced to JS via <code>expo-constants</code> — <code>Constants.expoConfig?.extra?.x</code>. It ships in the bundle, so it is <em>not</em> secret.</li>
+    <li><strong><code>ios</code> block:</strong> <code>bundleIdentifier</code>, <code>buildNumber</code>, <code>infoPlist</code>, <code>entitlements</code>, <code>supportsTablet</code>. <strong><code>android</code> block:</strong> <code>package</code>, <code>versionCode</code>, <code>permissions</code>, <code>intentFilters</code>, <code>adaptiveIcon</code>. Prebuild writes these into <code>Info.plist</code> / <code>AndroidManifest.xml</code> / Gradle.</li>
+    <li><strong>Config plugins</strong> mutate native files during prebuild via mods: <code>withAndroidManifest</code>, <code>withInfoPlist</code>, <code>withXcodeProject</code>, <code>withEntitlementsPlist</code>, and the escape-hatch <code>withDangerousMod</code> (you own idempotency). List them in <code>plugins</code>; pass options with <code>["plugin", { props }]</code>.</li>
+    <li><strong>Why plugins beat hand edits:</strong> they re-apply on every <code>expo prebuild</code>, so the change survives <code>--clean</code>, upgrades, and CI. Hand edits to <code>android/</code>/<code>ios/</code> get wiped. <code>expo-build-properties</code> is the plugin for <code>compileSdkVersion</code>/<code>minSdkVersion</code>/<code>deploymentTarget</code>/<code>kotlinVersion</code>.</li>
+    <li><strong>CNG / prebuild:</strong> <code>expo prebuild</code> generates <code>android/</code>+<code>ios/</code> from config + plugins, then runs autolinking. <code>--clean</code> wipes first; <code>--platform</code> limits. Native folders can be git-ignored because EAS/prebuild regenerates them.</li>
+    <li><strong>Bare RN <code>app.json</code>:</strong> just <code>name</code>+<code>displayName</code>, no <code>expo</code> object. <code>name</code> must match <code>AppRegistry.registerComponent</code> or you get "app not registered".</li>
+    <li><strong><code>react-native.config.js</code>:</strong> tunes autolinking — <code>assets</code> (font/asset linking via <code>npx react-native-asset</code>), <code>dependencies</code> overrides (platform <code>null</code> to <strong>exclude</strong>; <code>sourceDir</code>/<code>podspecPath</code> for local modules), <code>project</code> paths for monorepos.</li>
+    <li><strong>Autolinking:</strong> RN CLI (and Expo) scan <code>package.json</code> deps, find native packages, and wire them into Gradle (<code>settings.gradle</code>, <code>PackageList</code>) + CocoaPods (Podfile). Inspect with <code>npx react-native config</code>. Install → linked; no manual Gradle/Podfile edits.</li>
+    <li><strong><code>runtimeVersion</code></strong> gates OTA: bump it whenever native changes and ship a new build, or EAS Update hands JS to an incompatible binary → crash.</li>
+    <li><strong>Prakhar's apps:</strong> <code>sw-mobile</code>/<code>sw-ticketing</code> are Expo 53 prebuild apps — native config via plugins + <code>expo-build-properties</code> (e.g. <code>minSdkVersion 26</code>); <code>FR Kiosk</code> is bare native Android with committed folders.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Hand-editing <code>android/</code>/<code>ios/</code> in a prebuild app</strong> — it works locally, then <code>expo prebuild --clean</code> (or CI/EAS) wipes it and you ship a different app than you tested. Fix: move the edit into a config plugin or <code>expo-build-properties</code>. (Second trap: a dynamic config that forgets <code>...config</code> silently drops every value from <code>app.json</code>.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The app config plus config plugins <em>generate</em> the native projects at prebuild, so I treat <code>android/</code>/<code>ios/</code> as build artifacts and make native changes through plugins or <code>expo-build-properties</code> — that survives <code>prebuild --clean</code>; a hand edit doesn't."</div>
+  <div class="revision-say">"I use static <code>app.json</code> until I need env-driven values, then move to <code>app.config.ts</code> and export a function that spreads <code>config</code> and reads <code>process.env</code> for per-environment name and bundle id."</div>
+  <div class="revision-say">"Autolinking scans <code>package.json</code> for packages shipping native code and wires them into Gradle and CocoaPods automatically; <code>react-native.config.js</code> is only for excluding or overriding what it discovers."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "app config" actually is</h3>
 <p>Your JavaScript project is not an app. Something has to turn it into an Android <code>.apk</code>/<code>.aab</code> and an iOS <code>.ipa</code> — with a real bundle identifier, a signed manifest, an icon, permissions, and a list of linked native libraries. The <strong>app config</strong> is the single declarative source that describes all of that. In an Expo/prebuild workflow it is literally the input that <em>generates</em> the native projects; in bare RN it is a much thinner file and the native projects are checked into git directly.</p>
 
@@ -48,10 +61,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why autolinking exists</h3>
 <p>Before RN 0.60 you ran <code>react-native link</code>, which physically edited your Gradle files and Podfile and frequently corrupted them. <strong>Autolinking</strong> replaced that: the CLI scans <code>node_modules</code> at build time, finds packages that declare native code, and wires them into Gradle (via <code>settings.gradle</code>/<code>app/build.gradle</code>) and CocoaPods (via the generated Podfile) automatically. You install a package and it "just links." <code>react-native.config.js</code> exists for the cases where the automatic discovery needs help or needs to be turned off.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "config drives generation" picture</h3>
 <div class="diagram">
 <pre>
@@ -115,10 +128,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">🧩 Expo note — the folders are outputs, not inputs</div>
   <p>In a prebuild app, treat <code>android/</code> and <code>ios/</code> like <code>node_modules</code>: regenerable, disposable, and safe to git-ignore. Any manual change you make there is silently discarded the next time someone runs <code>expo prebuild --clean</code>. If you find yourself editing a native file by hand, that edit belongs in a config plugin or in <code>expo-build-properties</code> instead — otherwise CI will build a different app than your laptop does.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>1 — <code>app.json</code> (static) vs <code>app.config.js</code>/<code>.ts</code> (dynamic)</h3>
 <p>The simplest form is static JSON. Everything lives under the <code>expo</code> key:</p>
 <pre><code class="language-json">// app.json
@@ -337,10 +350,10 @@ module.exports = {
   <div class="callout-title">Rule of thumb</div>
   <p>You almost never hand-edit Gradle or the Podfile to add a library — you <code>npm install</code> it and rebuild. You touch <code>react-native.config.js</code> only to <em>exclude</em> a library, point at a <em>local</em> module, or fix a monorepo path. In managed Expo you go one further: even the exclude/override lives in config, not in the (regenerated) native files.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Per-environment identity with <code>app.config.ts</code></h3>
 <pre><code class="language-ts">// app.config.ts — dev vs prod get different name + bundle id
 import type { ConfigContext, ExpoConfig } from 'expo/config';
@@ -458,10 +471,11 @@ npx expo config --type prebuild    # Expo: the fully-evaluated config prebuild w
     },
   },
 };</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Both <code>app.json</code> and <code>app.config.js</code> present</h3>
 <p>The dynamic file wins, but only if it spreads <code>...config</code>. Forgetting the spread silently drops every value from <code>app.json</code>. Symptom: your icon/name/plugins vanish after adding a dynamic config.</p>
 
@@ -509,10 +523,9 @@ npx expo config --type prebuild    # Expo: the fully-evaluated config prebuild w
 
 <h3>16. Static analysis can't evaluate a dynamic config</h3>
 <p>Tools/CI that expect static <code>app.json</code> may fail against <code>app.config.ts</code> if required env vars are missing at eval time. Provide sane defaults so <code>npx expo config</code> never throws.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — hand-editing <code>android/</code>/<code>ios/</code> in a prebuild app</h3>
 <p>The single biggest CNG mistake. The edit survives until the next <code>--clean</code> and then vanishes. Always encode native config as a plugin or <code>expo-build-properties</code>.</p>
 
@@ -557,10 +570,10 @@ npx expo config --type prebuild    # Expo: the fully-evaluated config prebuild w
 
 <h3>Anti-pattern 15 — diverging iOS/Android identity by accident</h3>
 <p>Setting a different <code>bundleIdentifier</code> than <code>package</code> unintentionally (typo) fragments analytics/push. Keep them deliberately in sync unless you mean to split dev/prod.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What is the difference between <code>app.json</code>, <code>app.config.js</code>, and <code>app.config.ts</code>?</div>
   <div class="qa-answer">
@@ -679,51 +692,7 @@ npx expo config --type prebuild    # Expo: the fully-evaluated config prebuild w
     <li>You tie <code>runtimeVersion</code> to OTA safety.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">The Expo <strong>app config</strong> (<code>app.json</code> / <code>app.config.js</code> / <code>app.config.ts</code>) plus <strong>config plugins</strong> generate the native projects at <strong>prebuild</strong> (CNG), and <strong>autolinking</strong> turns <code>package.json</code> dependencies into linked native modules — so you edit config, not <code>android/</code>/<code>ios/</code>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Static vs dynamic config:</strong> <code>app.json</code> is JSON; <code>app.config.js</code>/<code>.ts</code> export a function that can read <code>process.env</code> and branch per environment. Use <code>export default ({ config }) =&gt; ({ ...config, ... })</code>; the dynamic file <strong>overrides</strong> <code>app.json</code> but must spread <code>...config</code> or it drops those values.</li>
-    <li><strong>The <code>expo</code> object:</strong> <code>name</code>, <code>slug</code>, <code>version</code>, <code>orientation</code>, <code>icon</code>, <code>scheme</code> (deep links), <code>userInterfaceStyle</code>, <code>splash</code>/<code>expo-splash-screen</code>, <code>assetBundlePatterns</code>, <code>updates</code>/<code>runtimeVersion</code> (EAS Update/OTA), <code>extra</code> (+ <code>extra.eas.projectId</code>), <code>owner</code>.</li>
-    <li><strong>Runtime read:</strong> <code>extra</code> is surfaced to JS via <code>expo-constants</code> — <code>Constants.expoConfig?.extra?.x</code>. It ships in the bundle, so it is <em>not</em> secret.</li>
-    <li><strong><code>ios</code> block:</strong> <code>bundleIdentifier</code>, <code>buildNumber</code>, <code>infoPlist</code>, <code>entitlements</code>, <code>supportsTablet</code>. <strong><code>android</code> block:</strong> <code>package</code>, <code>versionCode</code>, <code>permissions</code>, <code>intentFilters</code>, <code>adaptiveIcon</code>. Prebuild writes these into <code>Info.plist</code> / <code>AndroidManifest.xml</code> / Gradle.</li>
-    <li><strong>Config plugins</strong> mutate native files during prebuild via mods: <code>withAndroidManifest</code>, <code>withInfoPlist</code>, <code>withXcodeProject</code>, <code>withEntitlementsPlist</code>, and the escape-hatch <code>withDangerousMod</code> (you own idempotency). List them in <code>plugins</code>; pass options with <code>["plugin", { props }]</code>.</li>
-    <li><strong>Why plugins beat hand edits:</strong> they re-apply on every <code>expo prebuild</code>, so the change survives <code>--clean</code>, upgrades, and CI. Hand edits to <code>android/</code>/<code>ios/</code> get wiped. <code>expo-build-properties</code> is the plugin for <code>compileSdkVersion</code>/<code>minSdkVersion</code>/<code>deploymentTarget</code>/<code>kotlinVersion</code>.</li>
-    <li><strong>CNG / prebuild:</strong> <code>expo prebuild</code> generates <code>android/</code>+<code>ios/</code> from config + plugins, then runs autolinking. <code>--clean</code> wipes first; <code>--platform</code> limits. Native folders can be git-ignored because EAS/prebuild regenerates them.</li>
-    <li><strong>Bare RN <code>app.json</code>:</strong> just <code>name</code>+<code>displayName</code>, no <code>expo</code> object. <code>name</code> must match <code>AppRegistry.registerComponent</code> or you get "app not registered".</li>
-    <li><strong><code>react-native.config.js</code>:</strong> tunes autolinking — <code>assets</code> (font/asset linking via <code>npx react-native-asset</code>), <code>dependencies</code> overrides (platform <code>null</code> to <strong>exclude</strong>; <code>sourceDir</code>/<code>podspecPath</code> for local modules), <code>project</code> paths for monorepos.</li>
-    <li><strong>Autolinking:</strong> RN CLI (and Expo) scan <code>package.json</code> deps, find native packages, and wire them into Gradle (<code>settings.gradle</code>, <code>PackageList</code>) + CocoaPods (Podfile). Inspect with <code>npx react-native config</code>. Install → linked; no manual Gradle/Podfile edits.</li>
-    <li><strong><code>runtimeVersion</code></strong> gates OTA: bump it whenever native changes and ship a new build, or EAS Update hands JS to an incompatible binary → crash.</li>
-    <li><strong>Prakhar's apps:</strong> <code>sw-mobile</code>/<code>sw-ticketing</code> are Expo 53 prebuild apps — native config via plugins + <code>expo-build-properties</code> (e.g. <code>minSdkVersion 26</code>); <code>FR Kiosk</code> is bare native Android with committed folders.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Hand-editing <code>android/</code>/<code>ios/</code> in a prebuild app</strong> — it works locally, then <code>expo prebuild --clean</code> (or CI/EAS) wipes it and you ship a different app than you tested. Fix: move the edit into a config plugin or <code>expo-build-properties</code>. (Second trap: a dynamic config that forgets <code>...config</code> silently drops every value from <code>app.json</code>.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"The app config plus config plugins <em>generate</em> the native projects at prebuild, so I treat <code>android/</code>/<code>ios/</code> as build artifacts and make native changes through plugins or <code>expo-build-properties</code> — that survives <code>prebuild --clean</code>; a hand edit doesn't."</div>
-  <div class="revision-say">"I use static <code>app.json</code> until I need env-driven values, then move to <code>app.config.ts</code> and export a function that spreads <code>config</code> and reads <code>process.env</code> for per-environment name and bundle id."</div>
-  <div class="revision-say">"Autolinking scans <code>package.json</code> for packages shipping native code and wires them into Gradle and CocoaPods automatically; <code>react-native.config.js</code> is only for excluding or overriding what it discovers."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain when you'd switch from <code>app.json</code> to <code>app.config.ts</code>, and how precedence and <code>...config</code> work?</li>
-    <li>Can you define a config plugin, name three mods, and say why it beats editing <code>android/</code>/<code>ios/</code> by hand?</li>
-    <li>Can you describe what <code>expo prebuild</code> does step by step and why native folders can be git-ignored (CNG)?</li>
-    <li>Can you explain autolinking discovery from <code>package.json</code> and how to exclude a library?</li>
-    <li>Can you list the key <code>ios</code>/<code>android</code> config fields and what native files they produce?</li>
-    <li>Can you read a runtime value via <code>expo-constants</code> <code>extra</code>, and say why it isn't a place for secrets?</li>
-    <li>Can you explain what <code>runtimeVersion</code> guards and when you must bump it?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

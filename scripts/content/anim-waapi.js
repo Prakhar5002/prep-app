@@ -1,33 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'anim-waapi',
-  module: 'animation',
-  title: 'Web Animations API',
-  estimatedReadTime: '35 min',
-  tags: ['waapi', 'web-animations', 'animation', 'animate', 'keyframes', 'timeline', 'scroll-driven', 'view-timeline'],
+  id: "anim-waapi",
+  module: "animation",
+  title: "Web Animations API",
+  estimatedReadTime: "35 min",
+  tags: ["waapi","web-animations","animation","animate","keyframes","timeline","scroll-driven","view-timeline"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>The <strong>Web Animations API (WAAPI)</strong> is the browser's native imperative animation interface. Call <code>element.animate(keyframes, options)</code> and you get back an <strong>Animation</strong> object you can play, pause, reverse, scrub, and listen to — without CSS classes or rAF loops. It's effectively "CSS @keyframes from JavaScript with a control object." Browser support is now broad (all modern browsers); WAAPI is the right primitive for dynamic-value JS animations on web.</p>
-<ul>
-  <li><strong>One-liner:</strong> <code>el.animate([from, to], { duration, easing, fill })</code> returns an Animation object.</li>
-  <li><strong>Same compositor benefits as CSS</strong> — animating transform/opacity runs on the compositor thread.</li>
-  <li><strong>Imperative control:</strong> <code>animation.pause()</code>, <code>play()</code>, <code>reverse()</code>, <code>currentTime</code>, <code>playbackRate</code>.</li>
-  <li><strong>Promises:</strong> <code>animation.finished</code> resolves when done; <code>animation.ready</code> resolves when committed to compositor.</li>
-  <li><strong>Modern <code>animation-timeline</code></strong> + WAAPI gives scroll-driven and view-driven animations natively.</li>
-  <li><strong>vs CSS:</strong> WAAPI shines when keyframes are dynamic (computed at runtime), when you need timeline control, or when orchestration matters.</li>
-  <li><strong>vs libraries:</strong> WAAPI handles ~80% of what GSAP / Framer Motion do. Reach for libraries only when you need timeline scrubbing, complex orchestration, or motion plugins.</li>
-  <li><strong>RN does not have WAAPI.</strong> RN uses Animated API or Reanimated; this topic is web-only — but the imperative-control mental model transfers.</li>
-</ul>
-<p><strong>Mantra:</strong> "WAAPI = CSS keyframes + JS control. First-class browser primitive. Use before reaching for libraries."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">WAAPI is <strong>CSS keyframes plus a JavaScript control object</strong> — <code>el.animate(keyframes, options)</code> returns an Animation you can play, pause, reverse, scrub, and await, on the same compositor pipeline as CSS.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Shape:</strong> <code>el.animate(keyframes, options)</code> returns an <strong>Animation object</strong> with <code>play()</code>, <code>pause()</code>, <code>reverse()</code>, <code>cancel()</code>, <code>finish()</code>, plus <code>currentTime</code>, <code>playbackRate</code>, and <code>playState</code>.</li>
+    <li><strong>Same compositor benefits as CSS:</strong> animating <code>transform</code>/<code>opacity</code> runs on the compositor thread — WAAPI's win is control and dynamic values, NOT raw speed.</li>
+    <li><strong>Promises:</strong> <code>animation.finished</code> resolves on completion (rejects with AbortError on cancel); <code>animation.ready</code> resolves once committed to the compositor. Compose with <code>await</code> and <code>Promise.all</code>.</li>
+    <li><strong>fill mode</strong> controls what shows before/after: <code>none</code> (default) snaps back to the underlying value; <code>forwards</code> holds the last keyframe; <code>backwards</code> shows the first during delay; <code>both</code> does both ends.</li>
+    <li><strong>Persistence:</strong> even with <code>fill: 'forwards'</code> a finished animation may be GC'd and the style reverts — use <code>persist()</code>, or <code>commitStyles()</code> to bake the end state into inline styles (then <code>cancel()</code>).</li>
+    <li><strong>Use WAAPI</strong> when keyframes are dynamic (drag/scroll/computed), you need pause/reverse/scrub, or you need to await completion; <strong>use CSS</strong> for hover/focus and write-time-known values; <strong>reach for a library</strong> (GSAP/Framer Motion) only for heavy timeline orchestration, layout transitions, or spring physics. WAAPI covers ~80% of what those libraries do and is supported in all modern browsers — use it first.</li>
+    <li><strong>Modern timelines:</strong> pass a <code>ScrollTimeline</code> or <code>ViewTimeline</code> instead of time to get native scroll-driven / view-driven animation — feature-detect and fall back to IntersectionObserver where unsupported.</li>
+    <li><strong>composite:</strong> default <code>replace</code> (last-started wins); <code>add</code> stacks values on the same property; <code>accumulate</code> builds across iterations.</li>
+    <li>WAAPI only tweens animatable CSS values — <strong>text content, attributes, and scrollTop need rAF</strong>. In React, run animations in <code>useEffect</code> (not render) and <code>cancel()</code> in cleanup for StrictMode safety.</li>
+    <li><strong>RN has no WAAPI</strong> — use Animated or Reanimated; the imperative-control mental model transfers.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting <code>fill: 'forwards'</code> — the element snaps back to its original style the instant the animation ends.</strong> Add <code>fill: 'forwards'</code>; and if it still reverts later (finished animations can be GC'd off the active list), either <code>persist()</code> it or call <code>commitStyles()</code> then <code>cancel()</code> to bake the end state into inline styles.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"WAAPI is CSS keyframes with a JS control object — <code>el.animate()</code> gives me an Animation I can pause, reverse, scrub, and await, on the same compositor pipeline as CSS."</div>
+  <div class="revision-say">"I reach for WAAPI when CSS isn't enough but a library is overkill — dynamic keyframes, imperative control, or awaiting <code>animation.finished</code> as a Promise."</div>
+  <div class="revision-say">"The classic gotcha is fill mode: without <code>fill: 'forwards'</code> the element snaps back, and even then a finished animation can be GC'd — so I commitStyles or persist when the end state must stick."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is the Web Animations API?</h3>
 <p>WAAPI is a JavaScript API that exposes the browser's animation engine directly. It's specified by W3C (CSS Animations and Web Animations modules) and implemented natively by all modern browsers. The same engine that runs your CSS animations runs WAAPI animations.</p>
 
@@ -131,12 +138,10 @@ animation.finished.then(() =&gt; console.log('done'));
   <li>You know the gotchas: <code>fill</code> mode, persistence after completion, easing values.</li>
   <li>You can build common patterns (drag-snap, swipe-to-dismiss, FLIP) using WAAPI.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The Animation object</h3>
 <pre><code class="language-text">element.animate(keyframes, options) → Animation
 
@@ -288,12 +293,10 @@ if (!reduceMotion) {
   el.animate(..., { duration: 0.01 });   // effectively instant
 }
 </code></pre>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Basic animation</h3>
 <pre><code class="language-js">const card = document.querySelector('.card');
 
@@ -482,12 +485,10 @@ anim.updatePlaybackRate(2);   // smoothly accelerates rather than jumping
 
 <h3>Animation groups (legacy / experimental)</h3>
 <p>The Web Animations Level 2 spec includes <code>GroupEffect</code> for orchestrating multiple animations as a single object. Implementation is patchy; for now, use library equivalents (GSAP timelines) or roll your own.</p>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Toast notification</h3>
 <pre><code class="language-js">async function showToast(message) {
   const toast = document.createElement('div');
@@ -662,12 +663,11 @@ function gentleAnim(el, from, to) {
   }).finished;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>fill: 'none' (the default) snaps back</h3>
 <pre><code class="language-js">// Animation finishes; element snaps to original style
 el.animate({ transform: ['translateX(0)', 'translateX(100px)'] }, { duration: 300 });
@@ -742,12 +742,9 @@ el.animate(..., { duration: 300, fill: 'forwards' });
 
 <h3>Animation outliving element</h3>
 <p>If the element is removed while animation is running, the animation is GC'd. <code>finished</code> promise still resolves but the visual effect is gone.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: forgetting <code>fill: 'forwards'</code></h3>
 <pre><code class="language-js">// Element snaps back at end
 el.animate({ transform: ['translateX(0)', 'translateX(100px)'] }, { duration: 300 });
@@ -849,12 +846,10 @@ el.animate({ fontFamily: ['Arial', 'Times'] }, { duration: 1000 });
 
 <h3>Anti-pattern 10: skipping the timeline option</h3>
 <p>For scroll-linked / view-linked behavior, use the modern timeline API instead of rolling your own scroll-listener loop. Native is faster and simpler.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -943,51 +938,26 @@ el.animate({ fontFamily: ['Arial', 'Times'] }, { duration: 1000 });
   <li>"I'd write a debug overlay that lists currently active animations across the document."</li>
   <li>"I'd add lint rules to prevent <code>el.animate(...)</code> in render bodies (forces useEffect)."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">WAAPI is <strong>CSS keyframes plus a JavaScript control object</strong> — <code>el.animate(keyframes, options)</code> returns an Animation you can play, pause, reverse, scrub, and await, on the same compositor pipeline as CSS.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Shape:</strong> <code>el.animate(keyframes, options)</code> returns an <strong>Animation object</strong> with <code>play()</code>, <code>pause()</code>, <code>reverse()</code>, <code>cancel()</code>, <code>finish()</code>, plus <code>currentTime</code>, <code>playbackRate</code>, and <code>playState</code>.</li>
-    <li><strong>Same compositor benefits as CSS:</strong> animating <code>transform</code>/<code>opacity</code> runs on the compositor thread — WAAPI's win is control and dynamic values, NOT raw speed.</li>
-    <li><strong>Promises:</strong> <code>animation.finished</code> resolves on completion (rejects with AbortError on cancel); <code>animation.ready</code> resolves once committed to the compositor. Compose with <code>await</code> and <code>Promise.all</code>.</li>
-    <li><strong>fill mode</strong> controls what shows before/after: <code>none</code> (default) snaps back to the underlying value; <code>forwards</code> holds the last keyframe; <code>backwards</code> shows the first during delay; <code>both</code> does both ends.</li>
-    <li><strong>Persistence:</strong> even with <code>fill: 'forwards'</code> a finished animation may be GC'd and the style reverts — use <code>persist()</code>, or <code>commitStyles()</code> to bake the end state into inline styles (then <code>cancel()</code>).</li>
-    <li><strong>Use WAAPI</strong> when keyframes are dynamic (drag/scroll/computed), you need pause/reverse/scrub, or you need to await completion; <strong>use CSS</strong> for hover/focus and write-time-known values; <strong>reach for a library</strong> (GSAP/Framer Motion) only for heavy timeline orchestration, layout transitions, or spring physics.</li>
-    <li><strong>Modern timelines:</strong> pass a <code>ScrollTimeline</code> or <code>ViewTimeline</code> instead of time to get native scroll-driven / view-driven animation — feature-detect and fall back to IntersectionObserver where unsupported.</li>
-    <li><strong>composite:</strong> default <code>replace</code> (last-started wins); <code>add</code> stacks values on the same property; <code>accumulate</code> builds across iterations.</li>
-    <li>WAAPI only tweens animatable CSS values — <strong>text content, attributes, and scrollTop need rAF</strong>. In React, run animations in <code>useEffect</code> (not render) and <code>cancel()</code> in cleanup for StrictMode safety.</li>
-    <li><strong>RN has no WAAPI</strong> — use Animated or Reanimated; the imperative-control mental model transfers.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Forgetting <code>fill: 'forwards'</code> — the element snaps back to its original style the instant the animation ends.</strong> Add <code>fill: 'forwards'</code>; and if it still reverts later (finished animations can be GC'd off the active list), either <code>persist()</code> it or call <code>commitStyles()</code> then <code>cancel()</code> to bake the end state into inline styles.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"WAAPI is CSS keyframes with a JS control object — <code>el.animate()</code> gives me an Animation I can pause, reverse, scrub, and await, on the same compositor pipeline as CSS."</div>
-  <div class="revision-say">"I reach for WAAPI when CSS isn't enough but a library is overkill — dynamic keyframes, imperative control, or awaiting <code>animation.finished</code> as a Promise."</div>
-  <div class="revision-say">"The classic gotcha is fill mode: without <code>fill: 'forwards'</code> the element snaps back, and even then a finished animation can be GC'd — so I commitStyles or persist when the end state must stick."</div>
-</div>
-`
-    },
 
-    { id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you write an <code>element.animate(keyframes, options)</code> call and say what object it hands back?</li>
-    <li>Can you name the imperative controls WAAPI gives you (<code>pause</code>, <code>play</code>, <code>reverse</code>, <code>currentTime</code>, <code>playbackRate</code>)?</li>
-    <li>Can you explain the difference between the <code>animation.finished</code> and <code>animation.ready</code> promises?</li>
-    <li>Can you say when a WAAPI animation runs on the compositor thread just like CSS?</li>
-    <li>Can you decide when to pick WAAPI over CSS keyframes, and when a library like GSAP is still worth it?</li>
-    <li>Can you explain how <code>animation-timeline</code> enables scroll-driven and view-driven animation?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. What imperative controls does a WAAPI Animation object give you?</div>
+  <div class="qa-answer">
+    <p><code>el.animate(keyframes, options)</code> returns an Animation with methods <code>play()</code>, <code>pause()</code>, <code>reverse()</code>, <code>cancel()</code>, <code>finish()</code> (jump to end), <code>commitStyles()</code> and <code>persist()</code>. Its properties include <code>currentTime</code> (ms into the animation, settable, so you can scrub from a slider with <code>anim.currentTime = slider.value * 10</code>), <code>playbackRate</code> (1 normal, -1 reverse, 2 double speed), <code>playState</code> (<code>idle</code>, <code>running</code>, <code>paused</code>, <code>finished</code>), plus <code>effect</code> (the KeyframeEffect) and <code>timeline</code> (DocumentTimeline by default, or a ScrollTimeline). That gives you pause/resume, reverse-on-input and scrubbing without hand-rolled state machines or rAF loops.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q2. What is the difference between animation.finished and animation.ready?</div>
+  <div class="qa-answer">
+    <p><code>animation.ready</code> resolves once the animation has been committed to the compositor and is ready to play, which is useful when you need to know playback has actually started. <code>animation.finished</code> resolves when the animation completes, so you can <code>await</code> it or combine several with <code>Promise.all</code> to sequence UI like a toast queue. If the animation is cancelled, <code>finished</code> rejects with an <code>AbortError</code>, so wrap the <code>await</code> in try/catch, and cancel any previous animation before starting a new one on repeated clicks.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. When do you pick WAAPI over CSS keyframes, and when is a library like GSAP still worth it?</div>
+  <div class="qa-answer">
+    <p>CSS is enough for hover/focus changes, static spinners, class-toggled page enter/exit, and anything whose keyframe values are known at write time. Pick WAAPI when values come from data (drag distance, scroll position, measurements), when you need to pause, resume, reverse or scrub mid-animation, when you want to await completion, or for runtime-controlled patterns like a toast queue, drag-snap or swipe-to-dismiss. Both use the same compositor for <code>transform</code>/<code>opacity</code>, so the choice is about control, not speed. Reach for a library for complex timeline orchestration (GSAP), layout-aware transitions across components (Framer Motion), path morphing and complex SVG, or physics such as springs, which WAAPI doesn't do natively. As a rule of thumb, WAAPI is fine for 5 to 10 coordinated animations; at around 20 across several components with branching, a library's timeline pays off.</p>
+  </div>
+</div>
+` },
+
   ]
 });

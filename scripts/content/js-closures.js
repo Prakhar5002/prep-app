@@ -1,24 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'js-closures',
-  module: 'JavaScript Deep',
-  title: 'Closures',
-  estimatedReadTime: '30 min',
-  tags: ['closures', 'lexical-scope', 'memory', 'functional-patterns', 'react-hooks', 'fundamentals'],
+  id: "js-closures",
+  module: "JavaScript Deep",
+  title: "Closures",
+  estimatedReadTime: "30 min",
+  tags: ["closures","lexical-scope","memory","functional-patterns","react-hooks","fundamentals"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>A <strong>closure</strong> is a function together with the lexical environment it was born in — the variables it can "see" from its surrounding scope. When the outer function returns, those variables <em>don't disappear</em> if an inner function still references them; they're kept alive inside the closure.</p>
-<p>Every JS function technically <em>is</em> a closure (it remembers where it was defined). The term matters when the inner function <strong>escapes</strong> its birthplace — returned, passed to an event handler, scheduled on a timer — and continues to access outer-scope variables.</p>
-<div class="callout insight">
-  <div class="callout-title">🧠 One-liner</div>
-  <p>Closure = function + its lexical environment reference, captured at <em>creation time</em>, kept alive as long as the function reference exists.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A closure = a <strong>function bundled with a reference to the lexical environment it was born in</strong> — it remembers where it was <em>defined</em>, not where it's called, and captures the binding, not the value.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Closure = function + a reference to the lexical environment it was born in</strong> — captured at creation time, kept alive as long as the function reference exists.</li>
+    <li>Every function is technically a closure; the term <em>matters</em> only when the inner function <strong>escapes</strong> its birthplace (returned, passed to a handler, put on a timer) and still uses outer variables.</li>
+    <li><strong>Scope is decided by the definition site, not the call site.</strong> A function inherits scope from where it was written, not where it's invoked.</li>
+    <li>Engine mechanism: on creation the function stores the current environment in <code>[[Environment]]</code>; on call, its outer-env reference = that stored environment — not the caller's.</li>
+    <li><strong>Closures capture the binding (reference), NOT the value.</strong> Reassign the variable and the closure sees the latest value.</li>
+    <li>Each call to a factory creates a <strong>new</strong> environment → every returned closure gets its own private state (two counters don't share <code>count</code>).</li>
+    <li><code>var</code> in a loop = <strong>one shared binding</strong> → all closures see the final value; <code>let</code> = a new binding per iteration → fixes it.</li>
+    <li>Powers: data privacy/encapsulation, memoization, currying/partial application, the module pattern, <code>once</code>, debounce/throttle, React hooks.</li>
+    <li><strong>React hooks are closures:</strong> <code>useState</code>'s setter closes over the fiber; a <code>useEffect</code> callback closes over the props/state of the render it was created in.</li>
+    <li><strong>Stale-closure bug:</strong> an effect with empty deps captures the first render's state → fix with a functional updater <code>setCount(c =&gt; c + 1)</code> (or add the value to deps).</li>
+    <li>Captured scope is GC'd only when <strong>every</strong> reference to the inner function is gone — the closure keeps its environment reachable.</li>
+    <li>Keep caches/state <strong>inside</strong> the factory; a shared outer variable leaks state across "separate" closures.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Stale closure:</strong> a callback/effect with empty deps captures the first render's state, so <code>setCount(count + 1)</code> keeps adding to the old value. Fix with a functional updater <code>setCount(c =&gt; c + 1)</code> (or correct the deps) — same root cause as <code>var</code> in a loop logging the final number.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A closure is a function bundled with references to its surrounding lexical environment — it remembers where it was defined, not where it's called."</div>
+  <div class="revision-say">"Closures capture the binding, not the value — that's exactly why <code>var</code> in a loop logs the final number and <code>let</code> fixes it."</div>
+  <div class="revision-say">"React hooks are built on closures; a stale closure is a callback still referencing state from the render it was created in — the fix is a functional updater or the correct dependency array."</div>
 </div>
-<p>Closures power: data privacy, currying, memoization, React hooks (useState, useEffect dependencies), event handlers, module patterns, once-only functions, rate limiters, and more.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a closure?</h3>
 <p>MDN's definition: "A closure is the combination of a function bundled together with references to its surrounding state (the lexical environment)."</p>
 <p>Another angle: a closure is the mechanism by which an inner function <strong>retains access</strong> to variables in an outer scope, even after that outer scope has <em>finished executing</em>.</p>
@@ -39,10 +57,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why does garbage collection not reclaim the outer scope?</h3>
 <p>Because the inner function still holds a reference to it through <code>[[Environment]]</code>. GC can only reclaim <em>unreachable</em> objects. As long as the closure exists, its captured environment is reachable.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🪜 Mental Model', html: `
+{ id: "mental-model", title: "🪜 Mental Model", collapsible: true, html: `
 <h3>The backpack metaphor</h3>
 <p>Every function carries a <em>backpack</em> — the variables from the scope it was defined in. When called, it unpacks that backpack alongside the new local scope. This is the closure.</p>
 
@@ -98,10 +116,10 @@ window.PREP_SITE.registerTopic({
   return function () { return 0; };   // technically a closure, but doesn't USE x
                                       // engines may optimize away the x reference
 }</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Step-by-Step Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Step-by-Step Mechanics", collapsible: true, html: `
 <h3>Formation in the engine</h3>
 <p>When the engine executes a function <em>declaration</em> or <em>expression</em>, it:</p>
 <ol>
@@ -156,10 +174,10 @@ a();   // 3</code></pre>
   <li>Variables of the caller (only the definer).</li>
   <li>Variables declared AFTER it in the same scope (runtime order matters for initialization, though the binding exists).</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '📦 Examples (progressive)', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — The basic counter</h3>
 <pre><code class="language-js">function outer() {
   let count = 0;
@@ -370,10 +388,11 @@ const greeter = u.greet();
 greeter();   // "Hi Prakhar"</code></pre>
 
 <p>The returned arrow closes over both <code>name</code> (via lexical scope) and <code>this</code> (via the arrow's lexical <code>this</code> inheritance). Without the arrow — with a regular function — <code>this</code> would be undefined when greeter is called standalone.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🔍 All Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Closure over a <code>let</code> in a loop — per-iteration binding</h3>
 <p>Already covered: <code>for (let i = 0; i &lt; 3; i++)</code> creates a new binding per iteration. This is a special-case spec rule. Outside <code>for</code> loops, <code>let</code> follows normal block-scope rules (one binding per block).</p>
 
@@ -526,10 +545,9 @@ const c = new Counter();
 [1,2,3].forEach(c.inc);
 console.log(c.count);   // 3</code></pre>
 <p>Arrow class fields create per-instance closures over <code>this</code>, which is often what you want for event handlers passed as props.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-anti', title: '🐛 Common Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1 — Stale closure in React</h3>
 <pre><code class="language-js">function Counter() {
   const [count, setCount] = useState(0);
@@ -641,10 +659,10 @@ const b = memoize(fnB);
 // a and b share cache — collisions!</code></pre>
 
 <p>Keep the cache inside the factory.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>How closures get asked</h3>
 <ol>
   <li>"What is a closure?" — define + give an example.</li>
@@ -828,51 +846,41 @@ c.get();    // 5 (initial)</code></pre>
   <li>"How do closures enable currying?"<br>(Each partial call returns a new closure over the accumulated args.)</li>
   <li>"What's the performance cost of a closure?"<br>(Minimal — creating the function object + environment reference. Calling it is the same as any function call.)</li>
 </ul>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A closure = a <strong>function bundled with a reference to the lexical environment it was born in</strong> — it remembers where it was <em>defined</em>, not where it's called, and captures the binding, not the value.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Closure = function + a reference to the lexical environment it was born in</strong> — captured at creation time, kept alive as long as the function reference exists.</li>
-    <li>Every function is technically a closure; the term <em>matters</em> only when the inner function <strong>escapes</strong> its birthplace (returned, passed to a handler, put on a timer) and still uses outer variables.</li>
-    <li><strong>Scope is decided by the definition site, not the call site.</strong> A function inherits scope from where it was written, not where it's invoked.</li>
-    <li>Engine mechanism: on creation the function stores the current environment in <code>[[Environment]]</code>; on call, its outer-env reference = that stored environment — not the caller's.</li>
-    <li><strong>Closures capture the binding (reference), NOT the value.</strong> Reassign the variable and the closure sees the latest value.</li>
-    <li>Each call to a factory creates a <strong>new</strong> environment → every returned closure gets its own private state (two counters don't share <code>count</code>).</li>
-    <li><code>var</code> in a loop = <strong>one shared binding</strong> → all closures see the final value; <code>let</code> = a new binding per iteration → fixes it.</li>
-    <li>Powers: data privacy/encapsulation, memoization, currying/partial application, the module pattern, <code>once</code>, debounce/throttle, React hooks.</li>
-    <li><strong>React hooks are closures:</strong> <code>useState</code>'s setter closes over the fiber; a <code>useEffect</code> callback closes over the props/state of the render it was created in.</li>
-    <li><strong>Stale-closure bug:</strong> an effect with empty deps captures the first render's state → fix with a functional updater <code>setCount(c =&gt; c + 1)</code> (or add the value to deps).</li>
-    <li>Captured scope is GC'd only when <strong>every</strong> reference to the inner function is gone — the closure keeps its environment reachable.</li>
-    <li>Keep caches/state <strong>inside</strong> the factory; a shared outer variable leaks state across "separate" closures.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Stale closure:</strong> a callback/effect with empty deps captures the first render's state, so <code>setCount(count + 1)</code> keeps adding to the old value. Fix with a functional updater <code>setCount(c =&gt; c + 1)</code> (or correct the deps) — same root cause as <code>var</code> in a loop logging the final number.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A closure is a function bundled with references to its surrounding lexical environment — it remembers where it was defined, not where it's called."</div>
-  <div class="revision-say">"Closures capture the binding, not the value — that's exactly why <code>var</code> in a loop logs the final number and <code>let</code> fixes it."</div>
-  <div class="revision-say">"React hooks are built on closures; a stale closure is a callback still referencing state from the render it was created in — the fix is a functional updater or the correct dependency array."</div>
+<div class="qa-block">
+  <div class="qa-question">Q10. Write a counter factory where two counters keep separate private state.</div>
+  <div class="qa-answer">
+    <p>Each call to the factory creates a new execution context with its own <code>count</code>, and the returned closure captures that specific binding:</p>
+    <pre><code class="language-js">function makeCounter() {
+  let count = 0;
+  return () =&gt; ++count;
+}
+const a = makeCounter();
+const b = makeCounter();
+a(); a();   // 1, 2
+b();        // 1 — b has its OWN count</code></pre>
+    <p>The state must live <em>inside</em> the factory: a variable declared outside it would be shared by every counter. Two closures only share state when they come from the same factory call.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you define a closure in one sentence — and say what it captures (binding vs value)?</li>
-    <li>Can you trace what variables a function "sees" from where it's <em>defined</em>, not where it's called?</li>
-    <li>Can you explain the <code>var</code>-vs-<code>let</code>-in-a-loop trap in terms of bindings?</li>
-    <li>Can you write a counter factory where two counters keep <em>separate</em> private state?</li>
-    <li>Can you implement debounce, throttle, once, memoize, and curry from scratch?</li>
-    <li>Can you spot a stale-closure bug in a React <code>useEffect</code> and fix it two ways?</li>
-    <li>Do you know how the module pattern is itself a closure?</li>
-    <li>Can you say when a closure's captured scope becomes eligible for garbage collection?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q11. How do you implement debounce, throttle, once, memoize and curry with closures?</div>
+  <div class="qa-answer">
+    <p>Each one returns a wrapper function that closes over private state kept between calls. <strong>debounce</strong> closes over a <code>timerId</code>: every call does <code>clearTimeout(timerId)</code> and schedules <code>fn.apply(this, args)</code> again, so <code>fn</code> runs only after <code>delay</code> ms of silence. <strong>throttle</strong> is the same idea with a different rule: the closed-over state records whether <code>fn</code> ran recently, and calls inside the window are dropped. <strong>once</strong> closes over <code>done</code> and <code>result</code>, runs <code>fn</code> on the first call and returns the cached result afterwards. <strong>memoize</strong> closes over a <code>Map</code> cache keyed by <code>JSON.stringify(args)</code>. <strong>curry</strong> returns <code>curried(...args)</code>, which calls <code>fn</code> once <code>args.length &gt;= fn.length</code>, otherwise returns a new closure holding the arguments collected so far. Use <code>fn.apply(this, args)</code> in each one so <code>this</code>, the arguments and the return value are passed through.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q12. Spot the stale-closure bug in a React <code>useEffect</code> and give two ways to fix it.</div>
+  <div class="qa-answer">
+    <p>An effect with an empty dependency array runs once, so a <code>setInterval</code> callback inside it closes over <code>count</code> from the first render and never sees updates — <code>setCount(count + 1)</code> keeps setting the same value. Fix 1: use the functional updater <code>setCount(c =&gt; c + 1)</code>, which receives the current state and doesn't need the closed-over value. Fix 2: add <code>count</code> to the dependency array so the effect (and the interval) restarts with the fresh value. Either way, return a cleanup (<code>clearInterval(id)</code>) so the interval doesn't keep running after unmount.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q13. How is the module pattern itself a closure?</div>
+  <div class="qa-answer">
+    <p>A factory (or IIFE) declares private variables and returns an object of methods that close over them. In <code>createUser(name)</code>, <code>loginCount</code> is a local; the returned <code>login</code> and <code>getLogins</code> methods can read and mutate it, but <code>u.loginCount</code> is <code>undefined</code> because nothing outside the returned object can reach it. The only access path to that state is through the closures — this was JavaScript's pre-class way of doing private state.</p>
+  </div>
+</div>
+` },
 
-]});
+  ]
+});

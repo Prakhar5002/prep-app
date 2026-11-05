@@ -1,31 +1,50 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-sliding-window',
-  module: 'DSA',
-  title: 'Sliding Window',
-  estimatedReadTime: '22 min',
-  tags: ['dsa', 'sliding-window', 'array', 'string', 'pattern'],
+  id: "dsa-sliding-window",
+  module: "DSA",
+  title: "Sliding Window",
+  estimatedReadTime: "22 min",
+  tags: ["dsa","sliding-window","array","string","pattern"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Sliding window is the pattern for "find the best contiguous subarray/substring with property X." Maintain a window <code>[l, r]</code> over the input; expand r, contract l when the property breaks.</p>
-<ul>
-  <li><strong>Fixed-size window</strong>: window of length k moves through the array. Maintain rolling state (sum, count). E.g., max sum of k consecutive elements.</li>
-  <li><strong>Variable-size window</strong>: window grows / shrinks based on a constraint. E.g., longest substring with at most K distinct chars.</li>
-  <li><strong>Constraint examples</strong>: at most k of X; exactly k of X; at most n distinct; sum &lt; target.</li>
-  <li><strong>O(n) time</strong> typically — each pointer moves at most n steps total.</li>
-  <li><strong>Window state</strong>: counter map, set, sum, etc. Update on expand/contract.</li>
-  <li><strong>Track best answer</strong> at each step: max length, max sum, count of valid windows.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Expand r to grow; contract l until invariant holds; record the best at every step. Each element enters and leaves the window at most once → O(n).</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">For the <strong>best contiguous subarray/substring with a monotone property, keep a window <code>[l, r]</code>: expand <code>r</code> to grow, contract <code>l</code> when the invariant breaks</strong>, and record the best as you go — <code>O(n)</code> because each pointer only moves right.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Use it for "best contiguous subarray/substring with property X."</strong> Maintain a window <code>[l, r]</code>: expand <code>r</code> to grow, contract <code>l</code> when the invariant breaks.</li>
+    <li><strong>Two flavours:</strong> <em>fixed-size</em> (window of length k slides once through) vs <em>variable-size</em> (grows/shrinks against a constraint).</li>
+    <li><strong>It's O(n), not O(n²)</strong>, despite the nested while — <code>l</code> and <code>r</code> each only move right, so total inner iterations are bounded by n. Amortized O(n).</li>
+    <li><strong>Fixed window = roll the state:</strong> <code>newSum = oldSum - leaving + entering</code>. Never recompute the window from scratch (that's the O(n²) trap).</li>
+    <li><strong>"At most k" is the easy shape:</strong> expand <code>r</code>, contract <code>l</code> while the constraint is exceeded, record <code>r - l + 1</code>.</li>
+    <li><strong>"Exactly k" = atMost(k) − atMost(k−1)</strong> — but only for <em>counting</em> subarrays; it does NOT extend to longest/shortest-with-exactly-k.</li>
+    <li><strong>Where you record the answer matters:</strong> max-length → record <em>after</em> contracting; min-length → record <em>inside</em> the contract loop (while the constraint still holds), then advance <code>l</code>.</li>
+    <li><strong>Window length is <code>r - l + 1</code></strong> (inclusive both ends) — forgetting the <code>+1</code> is the classic off-by-one.</li>
+    <li><strong>Count of valid subarrays ending at r:</strong> <code>total += r - l + 1</code>.</li>
+    <li><strong>Track distinct correctly:</strong> when a count hits 0, delete the key (or decrement a manual <code>distinct</code>), else <code>map.size</code> overstates distinct count.</li>
+    <li><strong>Window state:</strong> fixed 26-letter charset → plain array; arbitrary keys → Map. Treat missing keys as 0 with <code>(count.get(c) || 0)</code>.</li>
+    <li><strong>Sliding window max/min → monotonic deque</strong> holding indices; front is the window's extreme, pop the front once its index slides out.</li>
+    <li><strong>It fails on negatives</strong> (contracting <code>l</code> no longer moves the sum monotonically) and on non-contiguous problems — switch to prefix-sum + binary search, Kadane, DP, or a heap.</li>
+    <li><strong>Sorted-array two-sum is two-pointers-from-ends, not sliding window</strong> — sliding window is contiguous-only.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> O(n) — each element enters and leaves the window at most once.</li>
+    <li><strong>Space:</strong> O(1) for sum/count windows; O(k) or O(charset) when the window state is a Map/set of distinct keys.</li>
+    <li><strong>Signal → reach for it:</strong> "contiguous subarray / substring" + "longest / shortest / max-sum / count" + a monotone constraint ("at most k distinct", "sum ≥ target", "no repeats", anagram/permutation of length k) → sliding window. Non-contiguous, or negatives breaking monotonicity → different pattern.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Recording the answer in the wrong place and the <code>r - l + 1</code> off-by-one.</strong> Window length is <code>r - l + 1</code> (both ends inclusive) — dropping the <code>+1</code> is the classic error. For <em>max</em>-length record <em>after</em> contracting; for <em>min</em>-length record <em>inside</em> the contract loop while the constraint still holds. The deeper trap: reaching for sliding window when it doesn't apply — it breaks on <strong>negatives</strong> (shrinking no longer changes the sum monotonically) and on non-contiguous problems, so switch to prefix-sum + binary search, Kadane, or DP. Also delete a map key when its count hits 0, or <code>map.size</code> overstates the distinct count.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I'll keep a window <code>[l, r]</code>: expand <code>r</code> to include elements, and contract <code>l</code> whenever the invariant breaks — recording the best window as I go."</div>
+  <div class="revision-say">"It's O(n) even with the inner while, because <code>l</code> only ever moves right, so the total work across the whole run is bounded by n."</div>
+  <div class="revision-say">"'Exactly k' I reduce to atMost(k) minus atMost(k−1); and if the array has negatives I drop sliding window for prefix sums, since shrinking no longer changes the sum monotonically."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The pattern</h3>
 <p>Two indices, l and r, define a window [l, r]. As you iterate r forward, you maintain the window's state. When the state violates a constraint, you advance l until it holds again. At each step, optionally record the window's metric (length, sum) as a candidate answer.</p>
 
@@ -53,10 +72,10 @@ window.PREP_SITE.registerTopic({
 <h3>Why "at most" is easier than "exactly"</h3>
 <p>"At most k distinct" → standard expand/contract.<br>
 "Exactly k distinct" → atMost(k) - atMost(k-1). Reformulate.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "expanding/contracting" picture</h3>
 <div class="diagram">
 <pre>
@@ -128,10 +147,10 @@ function fixedK(arr, k) {
   <div class="callout-title">Common misconception</div>
   <p>"Sliding window is O(n²) because of the nested while loop." It's not. The inner while can run many iterations in one outer step, but l never moves left — so total inner iterations across all outer steps is bounded by n. Amortized O(n).</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Variable window template</h3>
 <pre><code class="language-js">function variableWindow(arr, k) {
   let l = 0;
@@ -330,10 +349,10 @@ function atMostK(nums, k) {
   return result;
 }
 // Monotonic deque: front always has the max in current window. O(n) amortized.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — max sum of k consecutive</h3>
 <pre><code class="language-js">function maxSumK(arr, k) {
   let sum = 0;
@@ -536,10 +555,11 @@ function longestOnes(nums, k) {
   }
   return result;
 }</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Empty input</h3>
 <p>Length 0: while doesn't enter; return 0 / empty / sentinel. Or check up front.</p>
 
@@ -599,10 +619,9 @@ function longestOnes(nums, k) {
 
 <h3>20. Counting subarrays with sum &lt; X (negative numbers)</h3>
 <p>Sliding window doesn't directly work with negatives because shrinking l doesn't necessarily maintain monotonicity. Need prefix sum + sorting or different algorithm.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — using sliding window with negative numbers</h3>
 <p>For sum-based problems with negatives, contracting l doesn't necessarily reduce sum monotonically. Use prefix sum + binary search, or Kadane's variant.</p>
 
@@ -647,10 +666,10 @@ function longestOnes(nums, k) {
 
 <h3>Anti-pattern 15 — shifting from front of array as deque</h3>
 <p><code>arr.shift()</code> is O(n). Use a real deque or index-based head pointer for O(1) amortized.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. When to use sliding window?</div>
   <div class="qa-answer">
@@ -882,57 +901,7 @@ function longestOnes(nums, k) {
     <li>You recognize when sliding window fails (negatives, non-contiguous) and switch patterns.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">For the <strong>best contiguous subarray/substring with a monotone property, keep a window <code>[l, r]</code>: expand <code>r</code> to grow, contract <code>l</code> when the invariant breaks</strong>, and record the best as you go — <code>O(n)</code> because each pointer only moves right.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Use it for "best contiguous subarray/substring with property X."</strong> Maintain a window <code>[l, r]</code>: expand <code>r</code> to grow, contract <code>l</code> when the invariant breaks.</li>
-    <li><strong>Two flavours:</strong> <em>fixed-size</em> (window of length k slides once through) vs <em>variable-size</em> (grows/shrinks against a constraint).</li>
-    <li><strong>It's O(n), not O(n²)</strong>, despite the nested while — <code>l</code> and <code>r</code> each only move right, so total inner iterations are bounded by n. Amortized O(n).</li>
-    <li><strong>Fixed window = roll the state:</strong> <code>newSum = oldSum - leaving + entering</code>. Never recompute the window from scratch (that's the O(n²) trap).</li>
-    <li><strong>"At most k" is the easy shape:</strong> expand <code>r</code>, contract <code>l</code> while the constraint is exceeded, record <code>r - l + 1</code>.</li>
-    <li><strong>"Exactly k" = atMost(k) − atMost(k−1)</strong> — but only for <em>counting</em> subarrays; it does NOT extend to longest/shortest-with-exactly-k.</li>
-    <li><strong>Where you record the answer matters:</strong> max-length → record <em>after</em> contracting; min-length → record <em>inside</em> the contract loop (while the constraint still holds), then advance <code>l</code>.</li>
-    <li><strong>Window length is <code>r - l + 1</code></strong> (inclusive both ends) — forgetting the <code>+1</code> is the classic off-by-one.</li>
-    <li><strong>Count of valid subarrays ending at r:</strong> <code>total += r - l + 1</code>.</li>
-    <li><strong>Track distinct correctly:</strong> when a count hits 0, delete the key (or decrement a manual <code>distinct</code>), else <code>map.size</code> overstates distinct count.</li>
-    <li><strong>Window state:</strong> fixed 26-letter charset → plain array; arbitrary keys → Map. Treat missing keys as 0 with <code>(count.get(c) || 0)</code>.</li>
-    <li><strong>Sliding window max/min → monotonic deque</strong> holding indices; front is the window's extreme, pop the front once its index slides out.</li>
-    <li><strong>It fails on negatives</strong> (contracting <code>l</code> no longer moves the sum monotonically) and on non-contiguous problems — switch to prefix-sum + binary search, Kadane, DP, or a heap.</li>
-    <li><strong>Sorted-array two-sum is two-pointers-from-ends, not sliding window</strong> — sliding window is contiguous-only.</li>
-  </ul>
-  <h4>Complexity &amp; when to reach for it</h4>
-  <ul>
-    <li><strong>Time:</strong> O(n) — each element enters and leaves the window at most once.</li>
-    <li><strong>Space:</strong> O(1) for sum/count windows; O(k) or O(charset) when the window state is a Map/set of distinct keys.</li>
-    <li><strong>Signal → reach for it:</strong> "contiguous subarray / substring" + "longest / shortest / max-sum / count" + a monotone constraint ("at most k distinct", "sum ≥ target", "no repeats", anagram/permutation of length k) → sliding window. Non-contiguous, or negatives breaking monotonicity → different pattern.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Recording the answer in the wrong place and the <code>r - l + 1</code> off-by-one.</strong> Window length is <code>r - l + 1</code> (both ends inclusive) — dropping the <code>+1</code> is the classic error. For <em>max</em>-length record <em>after</em> contracting; for <em>min</em>-length record <em>inside</em> the contract loop while the constraint still holds. The deeper trap: reaching for sliding window when it doesn't apply — it breaks on <strong>negatives</strong> (shrinking no longer changes the sum monotonically) and on non-contiguous problems, so switch to prefix-sum + binary search, Kadane, or DP. Also delete a map key when its count hits 0, or <code>map.size</code> overstates the distinct count.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I'll keep a window <code>[l, r]</code>: expand <code>r</code> to include elements, and contract <code>l</code> whenever the invariant breaks — recording the best window as I go."</div>
-  <div class="revision-say">"It's O(n) even with the inner while, because <code>l</code> only ever moves right, so the total work across the whole run is bounded by n."</div>
-  <div class="revision-say">"'Exactly k' I reduce to atMost(k) minus atMost(k−1); and if the array has negatives I drop sliding window for prefix sums, since shrinking no longer changes the sum monotonically."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you recognize when a problem is a sliding-window problem?</li>
-    <li>Can you code the variable-size grow/shrink window template from memory?</li>
-    <li>Can you state the window's time and space complexity?</li>
-    <li>Can you reduce &quot;exactly k&quot; to atMost(k) minus atMost(k&minus;1)?</li>
-    <li>Can you name the trap that breaks sliding window when the array has negatives?</li>
-    <li>Can you name 2 problems it solves?</li>
-  </ul>
-</div>
-`}
-]
+  ]
 });

@@ -1,24 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'design-solid-capstone',
-  module: 'design',
-  title: 'Putting SOLID Together',
-  estimatedReadTime: '16 min',
-  tags: ['design', 'solid', 'oop', 'patterns', 'clean-code'],
+  id: "design-solid-capstone",
+  module: "design",
+  title: "Putting SOLID Together",
+  estimatedReadTime: "16 min",
+  tags: ["design","solid","oop","patterns","clean-code"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>SOLID isn't five separate rules to satisfy one at a time — it's one toolkit.</strong> Real code almost never presents a violation of exactly one principle in isolation: a tangled class is usually an SRP problem <em>and</em> the reason its interface is fat (ISP) <em>and</em> the reason a caller needs <code>instanceof</code> to work around it (LSP). The skill this capstone is actually about isn't reciting five definitions from memory — it's recognizing which principle, or combination of principles, a piece of real code is straining against, and knowing when the honest answer is "none of them, yet."</p>
-<ul>
-  <li><strong>The five, one line each:</strong> SRP — one reason to change, one actor. OCP — add behavior without editing what already works. LSP — a subtype must be safe to substitute for its base, with no surprises. ISP — don't force a client to depend on methods it doesn't use. DIP — depend on an abstraction you own, not a concretion you don't.</li>
-  <li><strong>They compose, and they lean on each other.</strong> A fix for one principle frequently produces — or requires — a fix for another. That's not a coincidence; all five are angles on the same underlying goal (code that's cheap and safe to change), so pulling one thread tends to expose the next one. See Mental Model, below, for exactly how they connect.</li>
-  <li><strong>Knowing when to stop is as much a skill as knowing when to apply.</strong> Every principle in this module has a real cost — another file, another interface, another jump for the next reader to make. YAGNI has run underneath every topic so far; here it applies to the combination too: reach for the principle(s) the code in front of you is actually straining against, not every principle you could theoretically justify applying.</li>
-</ul>
-<p><strong>Mantra:</strong> "SOLID is a toolbox, not a checklist — pick the tool the code is asking for, and put the rest back."</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>SOLID is one toolkit, not five separate rules</strong> — real code rarely violates exactly one principle, so the skill is recognizing which principle(s) a piece of code is straining against, and knowing when the honest answer is "none of them, yet."</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>The five, one line each: <strong>SRP</strong> — one reason to change, one actor; <strong>OCP</strong> — add behavior without editing what works; <strong>LSP</strong> — a subtype must be safe to substitute for its base; <strong>ISP</strong> — don't force a client to depend on methods it doesn't use; <strong>DIP</strong> — depend on an abstraction you own, not a concretion you don't.</li>
+    <li>They <strong>compose and lean on each other</strong>: <strong>LSP secures OCP</strong> (polymorphic swap is only safe if every implementation honors the contract); <strong>ISP and DIP pair up</strong> (depend on a small, role-shaped abstraction you own); <strong>SRP underlies ISP</strong> (a fat interface is often an SRP violation one layer down); <strong>SRP feeds DIP</strong> (an extracted collaborator is the seam worth abstracting); <strong>LSP feeds ISP</strong> (splitting a base into role interfaces restores substitutability).</li>
+    <li>Use the <strong>smell → principle</strong> diagnostic, not "which of the five apply": shotgun surgery → SRP (often OCP); growing <code>switch(type)</code> → OCP; caller needs <code>instanceof</code> → LSP; a stubbed method → ISP; internal <code>new SomeConcreteThing()</code> → DIP.</li>
+    <li>Real code strains <strong>several principles at once</strong> — a tangled class can be an SRP, ISP, and DIP problem in the same eighty lines; fixing one often exposes or produces the fix for the next.</li>
+    <li>SOLID has <strong>fair critics</strong> worth stating plainly: <strong>over-engineering/indirection</strong> ("enterprise FizzBuzz"), the <strong>YAGNI tension</strong>, and being <strong>OO-centric</strong> — FP reaches the same goals via function composition, higher-order functions, algebraic data types, and immutability.</li>
+    <li>Several <strong>GoF patterns are named recipes</strong> for these: Strategy (OCP), Factory / DI container (DIP), Adapter (ISP), Observer (OCP + DIP), Template Method (OCP + LSP).</li>
+    <li>For a sprawling <strong>god class under time pressure, reach for SRP first</strong> — extracting collaborators is the prerequisite that makes the other four cleanly applicable.</li>
+    <li><strong>Knowing when to stop is as much a skill as knowing when to apply</strong> — reach for the principle the code is actually straining against, and put the rest back.</li>
+    <li>All five are angles on <strong>one underlying goal: code that's cheap and safe to change</strong> — which is why pulling one thread tends to expose the next. Every principle has a real cost (another file, interface, jump), and YAGNI applies to the combination too.</li>
+    <li>Mantra: <strong>"SOLID is a toolbox, not a checklist — pick the tool the code is asking for, and put the rest back."</strong></li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Taking "learn five rules" as license to <strong>apply all five to every class</strong> — an interface for every dependency, a factory for every interface, a hierarchy for behavior that never varies. That produces exactly the code SOLID's critics mock ("enterprise FizzBuzz"): more files and indirection than the god class it replaced, for a change that was never going to happen. The five are <em>diagnostic tools for symptoms you can point at</em>, not a construction checklist.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"SOLID is a toolbox, not a checklist — I diagnose the concrete symptom in front of me and reach for the principle that names it, not all five at once."</div>
+  <div class="revision-say">"The principles lean on each other — LSP secures OCP, SRP underlies ISP — so fixing one in real code usually exposes, or directly produces, the fix for another."</div>
+  <div class="revision-say">"On a sprawling god class I'd start with SRP: extracting collaborators is what makes DIP, ISP, and OCP even possible to apply cleanly afterward."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Knowing the definitions isn't the same skill as designing well</h3>
 <p>Every principle in this module has a crisp, one-sentence definition, and being able to recite all five accurately is a real, testable skill — interviewers ask for exactly that, and the earlier topics in this module drilled it directly. But production code rarely hands you a textbook case of one violation with everything else held conveniently constant. A tangled <code>OrderProcessor</code> class might simultaneously need an SRP-style extraction, expose an accidentally fat interface that's really an ISP problem, and hard-wire a concrete payment SDK that's a DIP problem — all in the same eighty lines. Treating that class as "an SRP problem" and stopping the moment the collaborators are extracted produces a smaller class that is <em>still</em> tangled in the two other ways nobody looked for.</p>
 
@@ -32,10 +48,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why "apply all five everywhere" is the wrong lesson to take away</h3>
 <p>It's tempting, right after learning five named rules, to try to satisfy all five in every class you touch: extract collaborators, add an interface for every dependency, segregate every interface into single-method roles, wrap every construction behind a factory. That produces exactly the kind of code SOLID's critics point at — more files, more indirection, and a design that's harder to hold in your head than the "god class" it replaced, for a change that was never actually going to happen. The five principles are diagnostic tools for symptoms you can point at in real code — shotgun surgery, a switch you keep reopening, an <code>instanceof</code> a caller shouldn't need, a stubbed method, a hard-wired concretion — not a construction checklist to run through on every new class regardless of whether any of those symptoms are present.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>How the five actually interrelate</h3>
 <p>Robert C. Martin assembled the five as a set — four of them his own, plus adopting Barbara Liskov's substitutability principle for the "L" — and Michael Feathers later arranged that set into the SOLID mnemonic. None of that means the five were derived together from a single first axiom, so their relationships are things you can observe in real code, not guarantees baked into the acronym. In practice, five connections show up over and over:</p>
 <table>
@@ -51,10 +67,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>One picture: a dependency graph, and who controls what</h3>
 <p>Draw every class in a system as a node, and every "depends on" relationship as an arrow between two nodes. Each principle governs a different part of that picture: <strong>SRP</strong> decides what the nodes even are — one node per actor, not one node doing five actors' worth of work. <strong>ISP</strong> and <strong>DIP</strong> decide the shape and direction of the arrows — small, role-shaped abstractions, owned by the high-level side, with concretions pointing inward toward them rather than the reverse. <strong>OCP</strong> decides how the graph is allowed to grow — new nodes get added beside the existing ones, wired into an abstraction that already exists, rather than forcing an edit to a node that's already there. <strong>LSP</strong> is the guarantee that makes following any arrow to a concrete node <em>safe</em> — that whichever concrete implementation happens to be on the other end of an abstraction, the caller's assumptions still hold. Five rules, one picture: cohesive nodes, small owned abstractions, additive growth, and safe substitution along every edge.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Smell → principle: a diagnostic reference</h3>
 <p>The fastest way to use SOLID in a real code review isn't "which of the five apply here" — it's "what's the concrete symptom, and which principle names it":</p>
 <table>
@@ -91,10 +107,10 @@ window.PREP_SITE.registerTopic({
     <tr><td><strong>Template Method</strong></td><td>OCP (Meyer's original mechanism) + LSP</td><td>A base class's algorithm shell is closed; subclasses override specific steps to extend it — Bertrand Meyer's inheritance-based route to "open for extension, closed for modification," predating the interface-based version. It only stays safe if every subclass's override honors the shell's expectations — an LSP concern layered directly on top of the pattern.</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples (before → after)', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Before: one class doing four unrelated jobs</h3>
 <pre><code class="language-typescript">type NotificationEvent =
   | { type: 'order_shipped'; orderId: string }
@@ -231,10 +247,10 @@ await notificationService.notify(channels, { type: 'order_shipped', orderId: '12
 </code></pre>
 <p>Adding Slack now means writing one new class, <code>SlackChannel implements Channel</code>, and adding it to the <code>channels</code> array at the call site — <code>NotificationService</code>, <code>NotificationFormatter</code>, and every existing channel are untouched and unrisked. A unit test for <code>NotificationService</code> can hand it a <code>FakeChannel implements Channel</code> that just records calls, with zero real SMTP, Twilio, or FCM traffic — the DIP payoff the earlier Dependency Inversion topic demonstrated directly. And every one of the four principles shows up because of a real, current symptom this refactor fixed — not because the checklist says a "proper" class needs an interface.</p>
 <p>Notice what this refactor <em>didn't</em> do, on purpose: <code>NotificationFormatter.format</code> still contains a switch on event type, and it wasn't broken into one strategy class per event. Event types here are a small, slow-moving set decided by the product domain, not a channel-style axis with vendors and SDKs churning underneath it — abstracting it further today would be exactly the premature-abstraction mistake the Open/Closed topic's currency caveat warned about, paying real indirection cost for an axis that isn't actually varying. Nor did this add a dependency-injection container for three channel classes — a plain array built at one composition root is enough. That restraint is the YAGNI thread this whole capstone is about: every principle applied here answers a symptom that was actually present in the "before" version, and nothing was added beyond that.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">How do the five SOLID principles relate to each other — are they independent rules?</div>
 <div class="qa-a">
@@ -276,45 +292,20 @@ await notificationService.notify(channels, { type: 'order_shipped', orderId: '12
 <p>SRP, almost always — extracting collaborators is usually the prerequisite that makes the other four even possible to apply cleanly. It's hard to depend on a small, owned abstraction (DIP) for a class that's still doing five unrelated jobs at once; it's hard to segregate an interface (ISP) that doesn't yet correspond to one coherent responsibility; and a class this tangled rarely has a clean extension point to protect with OCP in the first place. Pulling each responsibility out into its own collaborator, and letting the original class shrink to orchestration, is what turns an unworkable mass into several smaller classes — each of which can then be evaluated, one at a time, for whether it also needs an abstraction, a segregated interface, or a safer substitution contract.</p>
 </div>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>SOLID is one toolkit, not five separate rules</strong> — real code rarely violates exactly one principle, so the skill is recognizing which principle(s) a piece of code is straining against, and knowing when the honest answer is "none of them, yet."</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>The five, one line each: <strong>SRP</strong> — one reason to change, one actor; <strong>OCP</strong> — add behavior without editing what works; <strong>LSP</strong> — a subtype must be safe to substitute for its base; <strong>ISP</strong> — don't force a client to depend on methods it doesn't use; <strong>DIP</strong> — depend on an abstraction you own, not a concretion you don't.</li>
-    <li>They <strong>compose and lean on each other</strong>: <strong>LSP secures OCP</strong> (polymorphic swap is only safe if every implementation honors the contract); <strong>ISP and DIP pair up</strong> (depend on a small, role-shaped abstraction you own); <strong>SRP underlies ISP</strong> (a fat interface is often an SRP violation one layer down); <strong>SRP feeds DIP</strong> (an extracted collaborator is the seam worth abstracting); <strong>LSP feeds ISP</strong> (splitting a base into role interfaces restores substitutability).</li>
-    <li>Use the <strong>smell → principle</strong> diagnostic, not "which of the five apply": shotgun surgery → SRP (often OCP); growing <code>switch(type)</code> → OCP; caller needs <code>instanceof</code> → LSP; a stubbed method → ISP; internal <code>new SomeConcreteThing()</code> → DIP.</li>
-    <li>Real code strains <strong>several principles at once</strong> — a tangled class can be an SRP, ISP, and DIP problem in the same eighty lines; fixing one often exposes or produces the fix for the next.</li>
-    <li>SOLID has <strong>fair critics</strong> worth stating plainly: <strong>over-engineering/indirection</strong> ("enterprise FizzBuzz"), the <strong>YAGNI tension</strong>, and being <strong>OO-centric</strong> — FP reaches the same goals via function composition, higher-order functions, algebraic data types, and immutability.</li>
-    <li>Several <strong>GoF patterns are named recipes</strong> for these: Strategy (OCP), Factory / DI container (DIP), Adapter (ISP), Observer (OCP + DIP), Template Method (OCP + LSP).</li>
-    <li>For a sprawling <strong>god class under time pressure, reach for SRP first</strong> — extracting collaborators is the prerequisite that makes the other four cleanly applicable.</li>
-    <li><strong>Knowing when to stop is as much a skill as knowing when to apply</strong> — reach for the principle the code is actually straining against, and put the rest back.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Taking "learn five rules" as license to <strong>apply all five to every class</strong> — an interface for every dependency, a factory for every interface, a hierarchy for behavior that never varies. That produces exactly the code SOLID's critics mock ("enterprise FizzBuzz"): more files and indirection than the god class it replaced, for a change that was never going to happen. The five are <em>diagnostic tools for symptoms you can point at</em>, not a construction checklist.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"SOLID is a toolbox, not a checklist — I diagnose the concrete symptom in front of me and reach for the principle that names it, not all five at once."</div>
-  <div class="revision-say">"The principles lean on each other — LSP secures OCP, SRP underlies ISP — so fixing one in real code usually exposes, or directly produces, the fix for another."</div>
-  <div class="revision-say">"On a sprawling god class I'd start with SRP: extracting collaborators is what makes DIP, ISP, and OCP even possible to apply cleanly afterward."</div>
+<div class="qa-block">
+  <div class="qa-question">Q7. In a code review, how do you map concrete smells to SOLID principles?</div>
+  <div class="qa-answer">
+    <p>Ask "what's the concrete symptom, and which principle names it?", not "which of the five apply?". <strong>Shotgun surgery</strong> (one small change ripples across many files) → SRP, often also OCP. A <strong>growing <code>switch(type)</code></strong> reopened for every new case → OCP. A caller needing <strong><code>instanceof</code></strong> to work around a subtype → LSP. An implementer <strong>stubbing a method</strong> (throw, no-op, dummy return) → ISP. A class doing <strong><code>new SomeConcreteThing()</code> internally</strong> for a dependency → DIP: define an abstraction the high-level side owns, inject it, and wire the concretion at a single composition root.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you give all five principles one line each, then explain three concrete ways they lean on one another?</li>
-    <li>Can you run the smell → principle diagnostic — map shotgun surgery, a growing switch, an <code>instanceof</code>, a stubbed method, and an internal <code>new</code> to their principles?</li>
-    <li>Can you explain why real code usually strains several principles at once, with an example?</li>
-    <li>Can you state SOLID's fair criticisms — over-engineering, YAGNI, OO-centricity — without dismissing them?</li>
-    <li>Can you map GoF patterns (Strategy, Factory/DI, Adapter, Observer, Template Method) to the principles they embody?</li>
-    <li>Can you justify reaching for SRP first on a god class, and say when the honest answer is "none of these, yet"?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q8. Which Gang-of-Four patterns embody which SOLID principles?</div>
+  <div class="qa-answer">
+    <p><strong>Strategy → OCP</strong>: interchangeable classes behind one small interface, so a new strategy is purely additive. <strong>Factory / DI container → DIP</strong>: they mechanize the composition-root step, handing the high-level module only the abstraction. <strong>Adapter → ISP</strong>: wraps a class you can't or won't change so it fits the small role interface a client needs. <strong>Observer → OCP + DIP</strong>: the publisher depends only on an abstract listener interface, and new subscribers register from outside without editing it. <strong>Template Method → OCP + LSP</strong>: Meyer's inheritance route, with a closed algorithm shell and overridable steps, which is only safe if every override honors the shell's expectations.</p>
+  </div>
 </div>
-`}
+` },
 
-]});
+  ]
+});

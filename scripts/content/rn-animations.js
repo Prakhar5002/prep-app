@@ -1,32 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'rn-animations',
-  module: 'React Native',
-  title: 'Animations (Reanimated 4)',
-  estimatedReadTime: '28 min',
-  tags: ['react-native', 'animations', 'reanimated', 'worklets', 'gesture-handler', 'jsi', 'shared-values'],
+  id: "rn-animations",
+  module: "React Native",
+  title: "Animations (Reanimated 4)",
+  estimatedReadTime: "28 min",
+  tags: ["react-native","animations","reanimated","worklets","gesture-handler","jsi","shared-values"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>Reanimated 4</strong> (2025) is the current stable release and the production-grade animation library for React Native. It is <strong>New-Architecture-only</strong>, adds a new CSS-animations API, and depends on the standalone <code>react-native-worklets</code> package (worklets were extracted from the core library). Reanimated 3 remains available for apps still on the old architecture. It runs animations on the UI thread via <strong>worklets</strong> — JS functions serialized and executed in a second JS VM on the UI thread, communicating with the main JS thread via JSI-shared memory.</p>
-<ul>
-  <li><strong>Shared values</strong> (<code>useSharedValue</code>) — reactive primitives readable/writable from both threads.</li>
-  <li><strong>Animated styles</strong> (<code>useAnimatedStyle</code>) — worklets that derive styles from shared values.</li>
-  <li><strong>Timing / spring / decay</strong> (<code>withTiming</code>, <code>withSpring</code>, <code>withDecay</code>) — animation drivers.</li>
-  <li><strong>Gesture Handler</strong> pairs with Reanimated for smooth gesture-driven animations on the UI thread.</li>
-  <li><strong>Layout Animations</strong> (<code>Layout</code>, <code>FadeIn</code>, etc.) — automatic mount/unmount/position animations.</li>
-  <li><strong>Moti</strong> (built on Reanimated) — declarative higher-level API for simple animations.</li>
-  <li>Old built-in <strong>Animated</strong> API still works but can't run arbitrary worklets on UI thread.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Reanimated moves animations to the UI thread. JS thread can be busy, and your animations still hit 60-120fps. Master <code>useSharedValue</code>, <code>useAnimatedStyle</code>, and the <code>withTiming</code>/<code>withSpring</code> drivers — they cover 90% of animation needs.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Reanimated <strong>moves animations off the JS thread onto the UI thread via worklets</strong> — JS run in a second VM with JSI-shared memory — so animations and gestures hold 60-120fps even when the JS thread is busy.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Worklets are JS functions that run on the UI thread</strong> in a separate JS VM — marked with the <code>'worklet'</code> directive (or auto-workletized inside <code>useAnimatedStyle</code>/<code>useDerivedValue</code>) by the Babel plugin, which must be LAST in babel.config.js.</li>
+    <li><strong>Three core primitives cover ~90%:</strong> <code>useSharedValue</code> (a JSI-backed box visible on both threads), <code>useAnimatedStyle</code> (a worklet deriving styles from shared values), and the drivers <code>withTiming</code>/<code>withSpring</code>/<code>withDecay</code>.</li>
+    <li><strong>Setting <code>sharedValue.value</code> does NOT re-render React</strong> — it only re-runs worklets that read it. That is intentional: re-rendering would defeat the point. Bridge to React state via <code>useAnimatedReaction</code> + <code>runOnJS(setState)</code> only when truly needed.</li>
+    <li><strong>Cross-thread hops cost:</strong> <code>runOnJS(fn)()</code> calls a JS-side function from a worklet (setState, navigation); <code>runOnUI(fn)()</code> schedules a worklet from JS. Neither is free — never call per-frame.</li>
+    <li><strong>Pair with react-native-gesture-handler</strong> so the whole gesture → shared value → animated style pipeline runs on the UI thread with no JS round-trip; wrap the app root in <code>&lt;GestureHandlerRootView&gt;</code>.</li>
+    <li>Drivers compose: <code>withSequence</code>, <code>withRepeat</code>, <code>withDelay</code>. <strong>withTiming</strong> = duration + easing; <strong>withSpring</strong> = physics (damping/stiffness/mass); <strong>withDecay</strong> = velocity fling.</li>
+    <li><strong>Prefer transform and opacity over layout properties</strong> (width/height/margin) — layout triggers a measure pass and is more expensive per frame.</li>
+    <li>Layout Animations (<code>entering</code>/<code>exiting</code>/<code>layout</code> with FadeIn, SlideInRight, LinearTransition) animate mount/unmount/reorder declaratively — no imperative state.</li>
+    <li><strong>Reanimated 4 (2025) is New-Architecture-only</strong>, adds a CSS-animations API, and moves worklets into the standalone <code>react-native-worklets</code> package; stay on Reanimated 3 for old-arch apps.</li>
+    <li>Worklets serialize their captured closure — you can read shared values, derived values, and values captured at creation, but NOT arbitrary React state (different VM).</li>
+    <li>The <strong>built-in Animated API</strong> still works; <code>useNativeDriver: true</code> lifts transform/opacity to the UI thread, but it can't run arbitrary logic (worklets) there — that is the gap Reanimated fills.</li>
+    <li>Moti is a declarative wrapper on Reanimated — good for simple entrances; drop to raw Reanimated for gestures, custom worklets, and scroll-driven work.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Expecting a shared-value write to re-render React, or trying to read React state inside a worklet.</strong> Shared values live in a separate UI-thread VM: <code>sv.value = 10</code> updates worklets but never triggers a React render, and a worklet can't see current React state. Fix: keep animation state in shared values and derive with <code>useAnimatedStyle</code>/<code>useDerivedValue</code>; only when React genuinely must react, use <code>useAnimatedReaction</code> + <code>runOnJS(setState)</code> — sparingly, since it fires every frame.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Reanimated runs animations on the UI thread through worklets — JS executed in a second VM with JSI-shared memory — so even a busy JS thread doesn't drop frames."</div>
+  <div class="revision-say">"The trio is useSharedValue, useAnimatedStyle, and the withTiming/withSpring drivers; I pair it with gesture-handler so the gesture-to-animation pipeline never touches the JS thread."</div>
+  <div class="revision-say">"Writing to a shared value doesn't re-render React by design; I only bridge back to state with runOnJS when I truly need it, and I prefer transform/opacity over layout props for 60fps."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why not the old Animated API?</h3>
 <p>RN's built-in <code>Animated</code> library runs interpolation on the JS thread by default. Setting <code>useNativeDriver: true</code> lifts some properties (transform, opacity) to the UI thread, but only those properties; arbitrary logic isn't supported. Any animation driven by JS-thread state updates gets janky when JS is busy.</p>
 
@@ -61,10 +71,10 @@ const animStyle = useAnimatedStyle(() =&gt; ({ transform: [{ translateX: x.value
 <p>When a component mounts, unmounts, or moves due to layout change, you often want a transition. Reanimated provides declarative primitives:</p>
 <pre><code class="language-tsx">&lt;Animated.View entering={FadeIn} exiting={FadeOut} layout={LinearTransition.springify()} /&gt;</code></pre>
 <p>No imperative state; the library handles measuring + animating.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "two JS VMs" picture</h3>
 <div class="diagram">
 <pre>
@@ -117,10 +127,10 @@ const opacity = useDerivedValue(() =&gt; interpolate(progress.value, [0, 1], [0,
   <div class="callout-title">Common misconception</div>
   <p>"Worklets are just functions." They're <em>serializable</em> closures with access to workletized values. You can't reference arbitrary React state from a worklet (it's a different VM). You can read shared values, derived values, and values captured at worklet creation time. For JS-side updates, use <code>runOnJS</code>.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Setup</h3>
 <pre><code>npm install react-native-reanimated react-native-gesture-handler
 // babel.config.js: add reanimated plugin LAST
@@ -291,10 +301,10 @@ withTiming(100, { duration: 300, easing: Easing.inOut(Easing.cubic) });
   <li>Batch shared-value writes when possible.</li>
   <li>Avoid calling <code>runOnJS</code> on every frame — coalesce.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — fade in on mount</h3>
 <pre><code class="language-tsx">const opacity = useSharedValue(0);
 useEffect(() =&gt; { opacity.value = withTiming(1, { duration: 400 }); }, []);
@@ -472,10 +482,11 @@ const barStyle = useAnimatedStyle(() =&gt; ({
   backgroundColor: interpolateColor(progress.value, [0, 0.5, 1], ['#f87171', '#fbbf24', '#10b981']),
 }));
 useEffect(() =&gt; { progress.value = withTiming(1, { duration: 2000 }); }, []);</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Forgetting the 'worklet' directive</h3>
 <p>Inline functions inside <code>useAnimatedStyle</code>, <code>useDerivedValue</code>, etc. are automatically workletized by the Babel plugin. But a standalone function needs <code>'worklet'</code> as the first statement to run on UI thread:</p>
 <pre><code class="language-ts">function clamp(v: number, min: number, max: number) {
@@ -544,10 +555,9 @@ useEffect(() =&gt; { progress.value = withTiming(1, { duration: 2000 }); }, []);
 
 <h3>20. Shared value initial value reads before mount</h3>
 <p>Calling <code>sharedValue.value</code> outside worklet and before mount reads synchronously — fine, but if the value hasn't been set on UI thread yet, you may get the initial.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — animating layout properties via JS state</h3>
 <pre><code class="language-tsx">const [w, setW] = useState(100);
 // every frame: setW(...) → re-render → layout → repaint</code></pre>
@@ -598,10 +608,10 @@ useAnimatedReaction(() =&gt; x.value, (v) =&gt; runOnJS(setMirror)(v));</code></
 
 <h3>Anti-pattern 15 — massive useAnimatedScrollHandler</h3>
 <p>The handler runs every scroll event — on UI thread. Keep it simple; computations pull into <code>useDerivedValue</code>.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Why do we need Reanimated over the built-in Animated API?</div>
   <div class="qa-answer">
@@ -777,49 +787,32 @@ const style = useAnimatedStyle(() =&gt; ({ transform: [{ scale: scale.value }] }
     <li>You validate on low-end Android.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Reanimated <strong>moves animations off the JS thread onto the UI thread via worklets</strong> — JS run in a second VM with JSI-shared memory — so animations and gestures hold 60-120fps even when the JS thread is busy.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Worklets are JS functions that run on the UI thread</strong> in a separate JS VM — marked with the <code>'worklet'</code> directive (or auto-workletized inside <code>useAnimatedStyle</code>/<code>useDerivedValue</code>) by the Babel plugin, which must be LAST in babel.config.js.</li>
-    <li><strong>Three core primitives cover ~90%:</strong> <code>useSharedValue</code> (a JSI-backed box visible on both threads), <code>useAnimatedStyle</code> (a worklet deriving styles from shared values), and the drivers <code>withTiming</code>/<code>withSpring</code>/<code>withDecay</code>.</li>
-    <li><strong>Setting <code>sharedValue.value</code> does NOT re-render React</strong> — it only re-runs worklets that read it. That is intentional: re-rendering would defeat the point. Bridge to React state via <code>useAnimatedReaction</code> + <code>runOnJS(setState)</code> only when truly needed.</li>
-    <li><strong>Cross-thread hops cost:</strong> <code>runOnJS(fn)()</code> calls a JS-side function from a worklet (setState, navigation); <code>runOnUI(fn)()</code> schedules a worklet from JS. Neither is free — never call per-frame.</li>
-    <li><strong>Pair with react-native-gesture-handler</strong> so the whole gesture → shared value → animated style pipeline runs on the UI thread with no JS round-trip; wrap the app root in <code>&lt;GestureHandlerRootView&gt;</code>.</li>
-    <li>Drivers compose: <code>withSequence</code>, <code>withRepeat</code>, <code>withDelay</code>. <strong>withTiming</strong> = duration + easing; <strong>withSpring</strong> = physics (damping/stiffness/mass); <strong>withDecay</strong> = velocity fling.</li>
-    <li><strong>Prefer transform and opacity over layout properties</strong> (width/height/margin) — layout triggers a measure pass and is more expensive per frame.</li>
-    <li>Layout Animations (<code>entering</code>/<code>exiting</code>/<code>layout</code> with FadeIn, SlideInRight, LinearTransition) animate mount/unmount/reorder declaratively — no imperative state.</li>
-    <li><strong>Reanimated 4 (2025) is New-Architecture-only</strong>, adds a CSS-animations API, and moves worklets into the standalone <code>react-native-worklets</code> package; stay on Reanimated 3 for old-arch apps.</li>
-    <li>Worklets serialize their captured closure — you can read shared values, derived values, and values captured at creation, but NOT arbitrary React state (different VM).</li>
-    <li>Moti is a declarative wrapper on Reanimated — good for simple entrances; drop to raw Reanimated for gestures, custom worklets, and scroll-driven work.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Expecting a shared-value write to re-render React, or trying to read React state inside a worklet.</strong> Shared values live in a separate UI-thread VM: <code>sv.value = 10</code> updates worklets but never triggers a React render, and a worklet can't see current React state. Fix: keep animation state in shared values and derive with <code>useAnimatedStyle</code>/<code>useDerivedValue</code>; only when React genuinely must react, use <code>useAnimatedReaction</code> + <code>runOnJS(setState)</code> — sparingly, since it fires every frame.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Reanimated runs animations on the UI thread through worklets — JS executed in a second VM with JSI-shared memory — so even a busy JS thread doesn't drop frames."</div>
-  <div class="revision-say">"The trio is useSharedValue, useAnimatedStyle, and the withTiming/withSpring drivers; I pair it with gesture-handler so the gesture-to-animation pipeline never touches the JS thread."</div>
-  <div class="revision-say">"Writing to a shared value doesn't re-render React by design; I only bridge back to state with runOnJS when I truly need it, and I prefer transform/opacity over layout props for 60fps."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Why doesn't writing to a shared value re-render React — and when is that a feature vs a trap?</div>
+  <div class="qa-answer">
+    <p>A shared value is a JSI-backed box read by worklets on the UI thread; setting <code>sv.value</code> only re-runs the worklets that read it (animated styles, derived values) and never schedules a React render. That is the <strong>feature</strong>: per-frame updates stay on the UI thread, so the animation holds 60-120fps even when the JS thread is busy. It becomes a <strong>trap</strong> when something React-rendered must reflect the value — a label showing the current percentage, or logic that branches on it — and the UI silently never updates. The fix is <code>useAnimatedReaction</code> plus <code>runOnJS(setState)</code>, used sparingly, because mirroring a value that changes every frame means a setState every frame.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why a Reanimated worklet runs on the UI thread and how <code>runOnJS</code> bridges back to React?</li>
-    <li>Can you explain why writing to a shared value does not trigger a React re-render, and when that is a feature vs a trap?</li>
-    <li>Can you contrast <code>withTiming</code>, <code>withSpring</code>, and <code>withDecay</code> and say when you would reach for each?</li>
-    <li>Can you build a drag-and-snap gesture using <code>useAnimatedStyle</code> plus a gesture handler?</li>
-    <li>Can you say why animating <code>transform</code> and <code>opacity</code> hits 60fps while animating <code>width</code> or <code>top</code> janks?</li>
-    <li>Can you explain what breaks when a worklet references a JS-thread value it never captured?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. How would you build a drag-and-snap gesture with Reanimated and Gesture Handler?</div>
+  <div class="qa-answer">
+    <p>Keep position in shared values (<code>x</code>, <code>y</code>) plus start values. Build <code>Gesture.Pan()</code>: in <code>onStart</code> record the current position, in <code>onUpdate</code> set <code>x.value = startX.value + e.translationX</code> (same for y), and in <code>onEnd</code> snap with <code>x.value = withSpring(target)</code> — or use the release velocity with <code>withDecay</code> for a fling. Derive the style with <code>useAnimatedStyle(() =&gt; ({ transform: [{ translateX: x.value }, { translateY: y.value }] }))</code> and wrap the <code>Animated.View</code> in a <code>GestureDetector</code>, with <code>GestureHandlerRootView</code> at the app root. The gesture callbacks are worklets, so the whole gesture-to-animation pipeline runs on the UI thread with no JS round-trip; call <code>runOnJS</code> only for side effects like navigation when the drag crosses a threshold.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q18. Why does animating transform and opacity hit 60fps while animating width or top janks?</div>
+  <div class="qa-answer">
+    <p>Layout properties (width, height, top, margin) change geometry, so every frame triggers a layout/measure pass before repainting — and if they are driven by React state, every frame is setState, re-render, layout, repaint on the JS thread. <code>transform</code> and <code>opacity</code> don't affect layout; they can be applied to the existing native view directly, which is why even the old Animated API's native driver could lift exactly those two to the UI thread. So animate a <code>translateX</code> / <code>scale</code> through a shared value and <code>useAnimatedStyle</code> instead of a <code>width</code> held in <code>useState</code>.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q19. What breaks when a worklet references a JS-thread value it never captured?</div>
+  <div class="qa-answer">
+    <p>Worklets run in a separate JS VM on the UI thread, and the Babel plugin serializes their closure when they are created. They can read shared values, derived values, and plain values captured at creation time — but not live React state or anything else that only exists on the JS thread. Reference something outside that set and you get a stale snapshot (the value as it was when the worklet was created) or an outright failure: classes, outside functions that aren't marked <code>'worklet'</code>, and large objects can't be captured. Fixes: move the value into a shared value, mark helper functions with the <code>'worklet'</code> directive, read props explicitly in the worklet body, and call back into JS with <code>runOnJS</code> — which returns void, so results come back through a shared value.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

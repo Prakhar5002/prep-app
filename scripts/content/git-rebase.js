@@ -1,33 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'git-rebase',
-  module: 'git',
-  title: 'Rebase vs Merge',
-  estimatedReadTime: '40 min',
-  tags: ['git', 'rebase', 'merge', 'workflow', 'history', 'conflicts', 'branching'],
+  id: "git-rebase",
+  module: "git",
+  title: "Rebase vs Merge",
+  estimatedReadTime: "40 min",
+  tags: ["git","rebase","merge","workflow","history","conflicts","branching"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Rebase and merge are the two ways to integrate one branch into another. They produce different histories and have different consequences for collaboration. Senior engineers know not just <em>how</em> to use both but <em>when</em> each is correct, and have strong defaults that match their team's workflow.</p>
-<ul>
-  <li><strong>Merge preserves history; rebase rewrites it.</strong> Merge creates a "join" commit that links two branches; rebase replays your commits on top of another branch as if they were authored there.</li>
-  <li><strong>Default rule:</strong> rebase your <em>local</em> work to keep history linear; merge into <em>shared</em> branches (main / develop) so the history of integration is preserved.</li>
-  <li><strong>Never rebase a branch others have based work on.</strong> Rewriting history that's been pulled by others is the most common destructive Git mistake.</li>
-  <li><strong>Interactive rebase (<code>git rebase -i</code>)</strong> is the most-used senior-IC Git skill: squash WIP commits, reorder, edit messages, drop garbage. Master it.</li>
-  <li><strong>Conflicts are different in rebase vs. merge.</strong> Rebase replays one commit at a time and may make you resolve the same conflict repeatedly; merge resolves once.</li>
-  <li><strong>"Rebase and merge"</strong> in PR UI = merge after rebase; "Squash and merge" collapses a feature branch into one commit; "Create merge commit" preserves true history. Pick a team default.</li>
-  <li><strong>For mobile / RN:</strong> linear history makes <code>git bisect</code> work cleanly when hunting an OS-version-specific or device-specific bug — strong reason to favor rebase / squash workflows.</li>
-  <li><strong>Recovery is always possible</strong> via reflog if you act fast — see <a href="#" data-topic="git-recovery">Recovery (reflog etc.)</a>.</li>
-</ul>
-<p><strong>Mantra:</strong> "Rebase your work; merge to integrate. Never rewrite shared history. Squash your WIP. Interactive rebase is your friend. Reflog saves you when you mess up."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Rebase rewrites history into a clean line; merge records the join — <strong>rebase your own local work, merge to integrate shared branches, and never rewrite history others already have</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Merge preserves history with a two-parent join commit; rebase replays your commits onto a new base as brand-new SHAs</strong>, producing linear history.</li>
+    <li><strong>Default rule: rebase your local work to keep history linear; merge into shared branches</strong> (main / develop) so the integration point is preserved.</li>
+    <li><strong>Never rebase a branch others have based work on</strong> — rewriting pushed history orphans their commits and turns their next pull into duplicate-commit chaos.</li>
+    <li><strong>Interactive rebase (<code>git rebase -i</code>) is the senior-IC superpower:</strong> pick / reword / edit / squash / fixup / drop / reorder / exec to turn WIP into clean, logical commits.</li>
+    <li><strong>Conflicts differ: merge resolves once at the join; rebase replays commit-by-commit and can make you resolve the same conflict repeatedly</strong> — enable <code>git rerere</code> to auto-reapply resolutions.</li>
+    <li><strong>Always <code>--force-with-lease</code>, never <code>--force</code></strong> — force-with-lease aborts if the remote moved, so you never silently clobber a teammate's push.</li>
+    <li>After a rebase you must force-push (the SHAs changed); tag or branch your starting point first as cheap insurance.</li>
+    <li>PR merge strategies: <strong>create merge commit</strong> (preserve the branch), <strong>squash and merge</strong> (one clean commit, easy revert), <strong>rebase and merge</strong> (individual commits, linear).</li>
+    <li><strong>Linear history makes <code>git bisect</code>, blame, and "what changed between v3.5 and v3.6" clean</strong> — a strong reason mobile / RN teams favor rebase / squash workflows.</li>
+    <li><code>git rebase --onto</code> surgically replays a slice of commits onto a new base; <code>--exec "npm test"</code> runs a check after each commit to keep history bisectable.</li>
+    <li>Config <code>pull.rebase true</code> + <code>pull.ff only</code> keeps everyday pulls from creating accidental merge bubbles.</li>
+    <li>Recovery is fast: <code>git reflog</code> + <code>git reset --hard ORIG_HEAD</code> restores the pre-rebase state when a rebase goes wrong.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Rebasing a shared branch and force-pushing:</strong> teammates' commits now reference orphaned SHAs, and their next pull tries to merge old and new histories into a duplicated mess. Fix: once a branch is shared, only merge into it; if you truly must rebase, coordinate with everyone affected and use <code>--force-with-lease</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Rebase your local work for a clean linear history; merge to integrate into shared branches — and never rewrite history others already have."</div>
+  <div class="revision-say">"Interactive rebase is where I turn a pile of WIP commits into a few logical, well-messaged commits before opening a PR."</div>
+  <div class="revision-say">"I always force-with-lease, never force — it aborts instead of silently overwriting a teammate's push."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The two operations</h3>
 <table>
   <thead><tr><th>Operation</th><th>What it does</th></tr></thead>
@@ -111,12 +120,10 @@ duplicate commits or weird merge resolutions.</code></pre>
   <li>Hotfix flow ad-hoc.</li>
 </ul>
 <p>Pick a default; document it; deviate only with reason. The choice matters less than the consistency.</p>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "commits as snapshots, not diffs" model</h3>
 <p>Git stores commits as snapshots of the entire tree, not diffs. Each commit references its parent(s); the diff is computed on demand. This is critical for understanding rebase:</p>
 <ul>
@@ -205,12 +212,10 @@ Am I just bringing latest Y into X (catching up)?
   <li>"Merge branch 'feature/x' / Merge branch 'feature/y' / Merge branch 'fix/z' / Merge branch 'feature/x' (again, after rebase)" → noise.</li>
   <li>"WIP / WIP / fix / WIP / address comments / final" → undisciplined.</li>
 </ul>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Basic merge</h3>
 <pre><code># On feature branch, bring in main:
 git checkout feature
@@ -407,12 +412,10 @@ amend = commit --amend --no-edit
 fp = push --force-with-lease
 
 # Now: git lg, git ri HEAD~5, git fp, etc.</code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🔍 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Cleaning up a feature branch before PR</h3>
 <p><strong>Setup:</strong> You've been working on a feature for 3 days. Your commit log looks like this:</p>
 <pre><code>git log --oneline
@@ -637,12 +640,11 @@ git rerere forget &lt;file&gt;</code></pre>
 git rebase -i origin/main --exec "npm run lint"
 
 # This is the "bisectable history" discipline. Senior-engineer move.</code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Rebasing with tags</h3>
 <p>Tags reference specific commit SHAs. After rebase, those SHAs are gone (replaced by new ones with same content but different metadata).</p>
 <ul>
@@ -773,12 +775,9 @@ git rebase --onto &lt;target-sha&gt; &lt;old-base-sha&gt; &lt;branch&gt;</code><
   <li>Re-run <code>pod install</code> / <code>bundle install</code> after rebase to regenerate.</li>
   <li>Don't try to manually merge lockfile conflicts; regenerate.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern: rebasing shared branches</h3>
 <p><strong>Looks like:</strong> Rebase a branch others have based work on; force-push.</p>
 <p><strong>Why bad:</strong> Their commits reference now-orphaned SHAs. Their pull becomes a mess. Trust damage.</p>
@@ -868,12 +867,10 @@ git rebase --onto &lt;target-sha&gt; &lt;old-base-sha&gt; &lt;branch&gt;</code><
 <p><strong>Looks like:</strong> Team has no documented Git workflow; every PR has a fresh debate about merge vs. rebase vs. squash.</p>
 <p><strong>Why bad:</strong> Wastes time. Inconsistent history.</p>
 <p><strong>Fix:</strong> Write a 1-page Git workflow doc for the team. Commit message style, branch naming, merge strategy. Reference in every onboarding.</p>
-`
-    },
-    {
-      id: 'interview',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>"Explain rebase vs. merge"</h3>
 <p>Common opener. Strong answer hits both mechanics + when to use which.</p>
 
@@ -1044,49 +1041,14 @@ works, code archeology is informative."</code></pre>
 <h3>The 30-second mantra</h3>
 <p><em>"Rebase your local work for cleanliness; merge to integrate to shared branches. Never rewrite shared history. Interactive rebase is the senior-IC superpower. --force-with-lease, never --force. Reflog saves you when you mess up."</em></p>
 <p>Git is one of the few skills that compounds across your entire career; the time you invest in mastering rebase, interactive rebase, and recovery patterns pays back every week for decades.</p>
-`
-    },
-    { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Rebase rewrites history into a clean line; merge records the join — <strong>rebase your own local work, merge to integrate shared branches, and never rewrite history others already have</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Merge preserves history with a two-parent join commit; rebase replays your commits onto a new base as brand-new SHAs</strong>, producing linear history.</li>
-    <li><strong>Default rule: rebase your local work to keep history linear; merge into shared branches</strong> (main / develop) so the integration point is preserved.</li>
-    <li><strong>Never rebase a branch others have based work on</strong> — rewriting pushed history orphans their commits and turns their next pull into duplicate-commit chaos.</li>
-    <li><strong>Interactive rebase (<code>git rebase -i</code>) is the senior-IC superpower:</strong> pick / reword / edit / squash / fixup / drop / reorder / exec to turn WIP into clean, logical commits.</li>
-    <li><strong>Conflicts differ: merge resolves once at the join; rebase replays commit-by-commit and can make you resolve the same conflict repeatedly</strong> — enable <code>git rerere</code> to auto-reapply resolutions.</li>
-    <li><strong>Always <code>--force-with-lease</code>, never <code>--force</code></strong> — force-with-lease aborts if the remote moved, so you never silently clobber a teammate's push.</li>
-    <li>After a rebase you must force-push (the SHAs changed); tag or branch your starting point first as cheap insurance.</li>
-    <li>PR merge strategies: <strong>create merge commit</strong> (preserve the branch), <strong>squash and merge</strong> (one clean commit, easy revert), <strong>rebase and merge</strong> (individual commits, linear).</li>
-    <li><strong>Linear history makes <code>git bisect</code>, blame, and "what changed between v3.5 and v3.6" clean</strong> — a strong reason mobile / RN teams favor rebase / squash workflows.</li>
-    <li><code>git rebase --onto</code> surgically replays a slice of commits onto a new base; <code>--exec "npm test"</code> runs a check after each commit to keep history bisectable.</li>
-    <li>Config <code>pull.rebase true</code> + <code>pull.ff only</code> keeps everyday pulls from creating accidental merge bubbles.</li>
-    <li>Recovery is fast: <code>git reflog</code> + <code>git reset --hard ORIG_HEAD</code> restores the pre-rebase state when a rebase goes wrong.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Rebasing a shared branch and force-pushing:</strong> teammates' commits now reference orphaned SHAs, and their next pull tries to merge old and new histories into a duplicated mess. Fix: once a branch is shared, only merge into it; if you truly must rebase, coordinate with everyone affected and use <code>--force-with-lease</code>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Rebase your local work for a clean linear history; merge to integrate into shared branches — and never rewrite history others already have."</div>
-  <div class="revision-say">"Interactive rebase is where I turn a pile of WIP commits into a few logical, well-messaged commits before opening a PR."</div>
-  <div class="revision-say">"I always force-with-lease, never force — it aborts instead of silently overwriting a teammate's push."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. When is it safe to rebase, and why is rebasing a shared branch destructive?</div>
+  <div class="qa-answer">
+    <p>Rebase is safe on work that's yours alone: local commits, or a feature branch nobody else has based work on. Rebasing replaces your commits with new ones that have new SHAs. If teammates already pulled the old commits, after your force-push they have both the old (a, b, c) and new (a', b', c') versions, their commits point at now-orphaned SHAs, and their next <code>git pull</code> tries to merge the two histories into duplicate commits or confusing merge resolutions. The rule: once a branch is pushed and others may have based work on it, only merge into it, or coordinate explicitly with everyone affected and use <code>--force-with-lease</code>.</p>
+  </div>
 </div>
-`
-    },
-    { id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the exact history difference between merge and rebase, and when you'd pick each?</li>
-    <li>Can you state the rule for when it's safe to rebase, and why rebasing a shared branch is destructive?</li>
-    <li>Can you run an interactive rebase to squash, reword, reorder, and drop commits?</li>
-    <li>Can you explain why a rebase conflict can recur across commits, and how <code>rerere</code> helps?</li>
-    <li>Can you explain the difference between <code>--force</code> and <code>--force-with-lease</code>?</li>
-    <li>Can you recover the pre-rebase state after a rebase goes wrong?</li>
-  </ul>
-</div>
-`
-    }
+` },
+
   ]
 });

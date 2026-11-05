@@ -1,33 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'mprod-push',
-  module: 'mobile-prod',
-  title: 'Push Notifications',
-  estimatedReadTime: '45 min',
-  tags: ['push-notifications', 'apns', 'fcm', 'silent-push', 'rich-notifications', 'react-native', 'permissions', 'segmentation'],
+  id: "mprod-push",
+  module: "mobile-prod",
+  title: "Push Notifications",
+  estimatedReadTime: "45 min",
+  tags: ["push-notifications","apns","fcm","silent-push","rich-notifications","react-native","permissions","segmentation"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Push notifications</strong> are the only way your mobile app talks to the user when it's not running. Done well, they're the highest-leverage retention lever you have. Done badly, they tank opt-in rate, drag down store ratings, and erode trust permanently.</p>
-<ul>
-  <li><strong>Two carriers.</strong> iOS uses <strong>APNs</strong> (Apple Push Notification service), Android uses <strong>FCM</strong> (Firebase Cloud Messaging — formerly GCM). Both speak HTTP/2 from your server.</li>
-  <li><strong>Two payload types.</strong> <em>Visible</em> (banner/sound/badge — user-facing) and <em>silent</em> (data-only — wake the app for background work).</li>
-  <li><strong>Three-step pipeline.</strong> Device registers → server stores token → server sends → carrier delivers → device displays / dispatches.</li>
-  <li><strong>Permissions are everything.</strong> iOS requires explicit user opt-in (<code>UNAuthorizationOptions</code>); Android 13+ does too. Once denied, getting it back is hostile (Settings → app → Notifications). <strong>Time the prompt.</strong></li>
-  <li><strong>Default tools:</strong> <strong>Firebase Messaging</strong> (free, cross-platform, scales), <strong>OneSignal</strong> (free with caps, web UI), <strong>Braze</strong> (enterprise, lifecycle automation), <strong>Customer.io</strong>, <strong>Iterable</strong>, or roll-your-own atop APNs/FCM.</li>
-  <li><strong>Rich notifications.</strong> Images, action buttons, expanded content, in-app badges. iOS Notification Service Extension + Notification Content Extension. Android NotificationCompat with BigPictureStyle.</li>
-  <li><strong>Segmentation &gt; broadcast.</strong> "Send to everyone who hasn't logged in in 7 days who's iOS who lives in EU and previously bought item X." Requires user-property pipeline.</li>
-  <li><strong>Measure outcomes, not opens.</strong> Open rate is vanity; conversion (the action you wanted them to do) is reality.</li>
-</ul>
-<p><strong>Mantra:</strong> "Earn the opt-in. Send rarely. Personalize precisely. Measure conversion. Respect the off switch."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Earn the opt-in, send rarely, personalize precisely, measure conversion, respect the off switch</strong> — push is the highest-leverage retention lever and the fastest way to lose a user if abused.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Two carriers:</strong> iOS uses APNs, Android uses FCM; both speak HTTP/2 from your server. <strong>Two payload types:</strong> visible (banner/sound/badge) and silent (data-only, wakes the app for background work).</li>
+    <li><strong>Pipeline:</strong> device gets a token from APNs/FCM → app sends token + user_id to backend → backend posts payload to the carrier → carrier delivers → OS displays or wakes the app.</li>
+    <li><strong>Permission timing is everything</strong> — iOS and Android 13+ both require explicit opt-in. Show a <strong>soft pre-prompt</strong> with context after the user has felt value; only fire the OS prompt on a soft-yes. Once the OS prompt is denied, the only way back is Settings — most users never go.</li>
+    <li><strong>Token lifecycle:</strong> tokens rotate — update on every launch, listen for <code>onTokenRefresh</code>, delete on logout (so the next user doesn't get the previous user's pushes), and prune tokens that return InvalidToken/NotRegistered.</li>
+    <li><strong>Android channels are mandatory on 8+</strong> — without a matching channel the OS silently drops your notification; group channels so users can mute "promotions" while keeping "messages."</li>
+    <li><strong>Silent push is OS-throttled and opportunistic</strong> (~2–3/hr on iOS, batched under Doze on Android) — never depend on it for correctness; always reconcile state on foreground.</li>
+    <li><strong>Segment, don't broadcast.</strong> Gate on per-user category prefs, throttle marketing per user, and respect quiet hours <strong>in the user's timezone</strong> (not the server's / UTC).</li>
+    <li><strong>Measure the whole funnel:</strong> sent → delivered → displayed → opened → converted. "Delivered" only means the carrier accepted it, not that the user saw it — conversion is the KPI, opens are vanity.</li>
+    <li><strong>iOS rich pushes</strong> need a Notification Service Extension and <code>mutable-content: 1</code> in the payload, or the extension never runs (Android: <code>NotificationCompat</code> + BigPictureStyle); iOS 15+ Focus is broken through only with <code>interruption-level: time-sensitive</code>, used sparingly.</li>
+    <li><strong>Privacy:</strong> redact sensitive content from lock-screen previews, get GDPR consent for marketing pushes (transactional usually exempt), keep PII out of payloads, and separate transactional from marketing.</li>
+    <li><strong>Tools:</strong> Firebase Messaging (free, cross-platform), OneSignal (free with caps, web UI), Braze / Customer.io / Iterable (lifecycle automation), or roll your own on APNs/FCM.</li>
+    <li>Keep a <strong>kill switch</strong> for outbound campaigns and reset the badge on the relevant action.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Requesting the OS permission on first launch — denial is permanent for the install lifetime, so opt-in craters. Always soft-prompt first and fire the OS prompt only on a soft-yes. Second trap: trusting "delivered" as "seen" — DND, Focus, muted channels, and unpruned dead tokens make 100% delivered read as 10% displayed.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I never fire the OS permission prompt on launch — I show a soft pre-prompt with context after the user has felt value, and only trigger the OS prompt if they say yes, because a denial locks you out for the whole install."</div>
+  <div class="revision-say">"I treat silent push as opportunistic and OS-throttled, so I never rely on it for correctness — I reconcile state like badge counts on foreground as well."</div>
+  <div class="revision-say">"I measure the full funnel — sent, delivered, displayed, opened, converted — and optimize for conversion, because 'delivered' just means the carrier accepted it, not that the user ever saw it."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a push notification, technically?</h3>
 <p>It's a JSON payload your server sends to Apple's APNs or Google's FCM. The carrier finds the device using a device token your app obtained at registration time, delivers the payload (when the device next has connectivity), and the OS either:</p>
 <ul>
@@ -78,12 +87,10 @@ window.PREP_SITE.registerTopic({
   <li>Failed-send tokens are <strong>auto-pruned</strong> (FCM/APNs return "InvalidToken" → mark dead).</li>
   <li>You have a <strong>kill switch</strong> for outbound campaigns in case of bug or abuse.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The end-to-end pipeline</h3>
 <pre><code class="language-text">1. App startup → SDK requests device token from APNs/FCM.
 2. SDK returns token to app.
@@ -183,12 +190,10 @@ Opened      6,200    (10% open rate of displayed)
 Converted   1,860    (30% of openers do the action)
 </code></pre>
 <p>Optimize each rung. Most teams obsess over open rate; the real lever is delivered → displayed (segmentation, timing) and opened → converted (deep linking, content match).</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>React Native + Firebase Messaging — the standard setup</h3>
 <pre><code class="language-bash">yarn add @react-native-firebase/app @react-native-firebase/messaging
 cd ios &amp;&amp; pod install
@@ -373,12 +378,10 @@ async function shouldSend(userId: string, category: string): Promise&lt;boolean&
   return sent24h &lt; RECENT_MAX_DAY;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: A complete onboarding push prompt flow</h3>
 <pre><code class="language-tsx">// Day 0 install — DO NOT prompt yet
 // Day 0+, after user finishes their first chat:
@@ -523,12 +526,11 @@ messaging().onMessage(async (msg) =&gt; {
   }
 });
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Token rotation</h3>
 <p>FCM/APNs may rotate the token at any time (OS updates, restore from backup, app reinstall). Always update on every launch and listen for <code>onTokenRefresh</code>. If you don't, you're sending to dead addresses.</p>
 
@@ -591,12 +593,9 @@ messaging().onMessage(async (msg) =&gt; {
 
 <h3>Lock screen content privacy</h3>
 <p>iOS users can hide content on lock screen. APNs <code>"interruption-level": "passive"</code> + <code>"thread-id"</code> respect their settings. Don't put sensitive content (OTP, message preview) in title/body; put it in deep-linked content.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Asking for permission on first launch</h3>
 <pre><code class="language-tsx">// BAD — user has no idea what they're consenting to
 useEffect(() =&gt; {
@@ -699,12 +698,10 @@ Creepy. Round to "a few days."
 
 <h3>Anti-pattern 10: no quiet hours</h3>
 <p>Sending at 3am because the cron job runs in UTC. Set quiet hours and respect timezones. Always.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -817,56 +814,14 @@ Creepy. Round to "a few days."
   <li>"I'd add a 'lock-screen privacy' toggle so power users can opt into full content previews."</li>
   <li>"I'd build an in-app inbox so users who turned off pushes don't miss key activity."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Earn the opt-in, send rarely, personalize precisely, measure conversion, respect the off switch</strong> — push is the highest-leverage retention lever and the fastest way to lose a user if abused.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Two carriers:</strong> iOS uses APNs, Android uses FCM; both speak HTTP/2 from your server. <strong>Two payload types:</strong> visible (banner/sound/badge) and silent (data-only, wakes the app for background work).</li>
-    <li><strong>Pipeline:</strong> device gets a token from APNs/FCM → app sends token + user_id to backend → backend posts payload to the carrier → carrier delivers → OS displays or wakes the app.</li>
-    <li><strong>Permission timing is everything.</strong> Show a <strong>soft pre-prompt</strong> with context after the user has felt value; only fire the OS prompt on a soft-yes. Once the OS prompt is denied, the only way back is Settings — most users never go.</li>
-    <li><strong>Token lifecycle:</strong> tokens rotate — update on every launch, listen for <code>onTokenRefresh</code>, delete on logout (so the next user doesn't get the previous user's pushes), and prune tokens that return InvalidToken/NotRegistered.</li>
-    <li><strong>Android channels are mandatory on 8+</strong> — without a matching channel the OS silently drops your notification; group channels so users can mute "promotions" while keeping "messages."</li>
-    <li><strong>Silent push is OS-throttled and opportunistic</strong> (~2–3/hr on iOS, batched under Doze on Android) — never depend on it for correctness; always reconcile state on foreground.</li>
-    <li><strong>Segment, don't broadcast.</strong> Gate on per-user category prefs, throttle marketing per user, and respect quiet hours <strong>in the user's timezone</strong> (not the server's / UTC).</li>
-    <li><strong>Measure the whole funnel:</strong> sent → delivered → displayed → opened → converted. "Delivered" only means the carrier accepted it, not that the user saw it — conversion is the KPI, opens are vanity.</li>
-    <li><strong>iOS rich pushes</strong> need a Notification Service Extension and <code>mutable-content: 1</code> in the payload, or the extension never runs; iOS 15+ Focus is broken through only with <code>interruption-level: time-sensitive</code>, used sparingly.</li>
-    <li><strong>Privacy:</strong> redact sensitive content from lock-screen previews, get GDPR consent for marketing pushes (transactional usually exempt), keep PII out of payloads, and separate transactional from marketing.</li>
-    <li>Keep a <strong>kill switch</strong> for outbound campaigns and reset the badge on the relevant action.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Requesting the OS permission on first launch — denial is permanent for the install lifetime, so opt-in craters. Always soft-prompt first and fire the OS prompt only on a soft-yes. Second trap: trusting "delivered" as "seen" — DND, Focus, muted channels, and unpruned dead tokens make 100% delivered read as 10% displayed.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I never fire the OS permission prompt on launch — I show a soft pre-prompt with context after the user has felt value, and only trigger the OS prompt if they say yes, because a denial locks you out for the whole install."</div>
-  <div class="revision-say">"I treat silent push as opportunistic and OS-throttled, so I never rely on it for correctness — I reconcile state like badge counts on foreground as well."</div>
-  <div class="revision-say">"I measure the full funnel — sent, delivered, displayed, opened, converted — and optimize for conversion, because 'delivered' just means the carrier accepted it, not that the user ever saw it."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Why can't you trust silent push to keep app state correct, and how do you reconcile instead?</div>
+  <div class="qa-answer">
+    <p>Silent push (<code>content-available: 1</code> with no alert on iOS, data-only on FCM) is delivered opportunistically. iOS caps it at roughly 2 to 3 per hour and skips it if it would hurt battery; on Android, Doze / App Standby batches normal-priority messages while the device is idle, and marking everything high-priority gets you flagged for abuse and downgraded. So you will not see every payload. Use silent push as a hint, for example a background handler that fetches the unread count and sets the badge, but always reconcile on foreground too: listen for <code>AppState</code> changing to <code>active</code> and refresh the badge or state from the server, and reset the badge on the relevant action such as opening or marking read.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you walk push end-to-end for both APNs and FCM, including token registration and the visible-vs-silent distinction?</li>
-    <li>Can you explain the soft-prompt-then-OS-prompt permission strategy and why timing determines opt-in rate?</li>
-    <li>Can you describe token lifecycle hygiene — refresh on launch, delete on logout, prune dead tokens?</li>
-    <li>Do you know why Android channels are mandatory and how you'd design granular per-category opt-in and throttling?</li>
-    <li>Can you explain why silent push can't be trusted for state and how you'd reconcile on foreground?</li>
-    <li>Can you define the sent→delivered→displayed→opened→converted funnel and debug "my pushes aren't arriving"?</li>
-  </ul>
-</div>
-`
-    }
+` },
+
   ]
 });

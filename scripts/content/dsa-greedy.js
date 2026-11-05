@@ -1,32 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-greedy',
-  module: 'dsa',
-  title: 'Greedy',
-  estimatedReadTime: '40 min',
-  tags: ['greedy', 'optimization', 'intervals', 'scheduling', 'sorting', 'huffman', 'gas-station', 'jump-game'],
+  id: "dsa-greedy",
+  module: "dsa",
+  title: "Greedy",
+  estimatedReadTime: "40 min",
+  tags: ["greedy","optimization","intervals","scheduling","sorting","huffman","gas-station","jump-game"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Greedy algorithms</strong> make the locally optimal choice at each step, hoping that the sequence of local optima yields a globally optimal answer. They work for a specific class of problems with the <strong>greedy choice property</strong> and <strong>optimal substructure</strong>. When greedy works, it's typically O(N log N) (sort + scan); when it doesn't, you need DP.</p>
-<ul>
-  <li><strong>Greedy choice property:</strong> a locally optimal choice leads to a globally optimal solution.</li>
-  <li><strong>Optimal substructure:</strong> the global optimum is composed of optimal solutions to subproblems.</li>
-  <li><strong>Recipe:</strong> sort by some criterion → scan once → make the obvious choice at each step.</li>
-  <li><strong>Classic examples:</strong> activity selection (intervals), Huffman coding, Dijkstra's, Prim's MST, Kruskal's MST, fractional knapsack, Jump Game, Gas Station.</li>
-  <li><strong>Why proving greedy works:</strong> exchange argument — show that any non-greedy choice can be replaced with the greedy one without worsening the answer.</li>
-  <li><strong>vs DP:</strong> DP considers all paths; greedy commits early. When unsure, DP is safer; greedy is faster.</li>
-  <li><strong>Common trap:</strong> 0/1 knapsack — greedy by value/weight ratio fails because you can't split items.</li>
-</ul>
-<p><strong>Mantra:</strong> "Sort by the right key. Make the locally optimal choice. Prove greedy works (or use DP if you can't)."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Greedy <strong>makes the locally optimal choice at each step and never reconsiders</strong> — correct only when the greedy-choice property and optimal substructure hold, which you justify with an exchange argument.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Two preconditions:</strong> the greedy-choice property (a locally optimal pick leads to a global optimum) AND optimal substructure. Without both, greedy silently returns wrong answers.</li>
+    <li><strong>The recipe is sort by the right key, then scan once</strong> and take the obvious choice — typically O(N log N) from the sort, O(N) for the pass.</li>
+    <li><strong>The sort key is the entire art:</strong> activity selection / max non-overlapping intervals → sort by <em>end</em> time; min meeting rooms → sort by <em>start</em> (+ end-time heap); fractional knapsack → value/weight ratio; job scheduling → profit descending.</li>
+    <li><strong>Core templates:</strong> interval scheduling (<code>if (start &gt;= lastEnd) take it</code>), two-pointer matching on two sorted arrays, running-tally one-pass (Gas Station, Jump Game's furthest-reachable), and heap-based greedy (Huffman, connect sticks, reorganize string).</li>
+    <li><strong>Classic greedy algorithms:</strong> activity selection, Huffman coding, Dijkstra's, Prim's and Kruskal's MST, fractional knapsack, Jump Game, Gas Station.</li>
+    <li><strong>Prove it with an exchange argument:</strong> show any non-greedy choice in an optimal solution can be swapped for the greedy one without making it worse. If you can't prove it, hunt for a small counterexample instead.</li>
+    <li><strong>Greedy vs DP:</strong> greedy commits early and is faster; DP considers all paths and is correct in more cases. When unsure, DP is the safe fallback.</li>
+    <li><strong>Where greedy fails → use DP:</strong> 0/1 knapsack (can't split items), general/non-canonical coin change, longest increasing subsequence, edit distance.</li>
+    <li>Practical care: don't mutate the caller's array (clone before sorting), be deliberate about tie-breaking, and clarify interval semantics (<code>start &gt;= prevEnd</code> vs <code>start &gt; prevEnd</code>).</li>
+    <li><strong>Mantra:</strong> "Sort by the right key. Make the locally optimal choice. Prove greedy works (or use DP if you can't)."</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Sorting by the wrong key, or applying greedy where it simply doesn't hold.</strong> Activity selection sorted by start time (instead of end time) gives wrong answers; greedy on 0/1 knapsack by value/weight ratio fails because you can't split items; greedy on coin change works for {1,5,10,25} but not {1,3,4} (target 6 → 4+1+1 beats the optimal 3+3). Fix: pick the sort key by an exchange argument, and before committing, try to break greedy with a 2-3 element counterexample — if it breaks, switch to DP.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Greedy only works when the greedy-choice property and optimal substructure hold — I'll justify it with an exchange argument or fall back to DP if I can't."</div>
+  <div class="revision-say">"The whole game here is the sort key: for max non-overlapping intervals I sort by end time and take each interval that starts after the last one I kept."</div>
+  <div class="revision-say">"This looks greedy, but let me try a small counterexample first — for 0/1 knapsack or non-canonical coins greedy breaks, and I'd use DP instead."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What greedy means</h3>
 <p>An algorithm strategy: at each decision point, take the option that looks best right now, without backtracking. No reconsideration. The strategy succeeds when local optimality and global optimality align.</p>
 
@@ -77,12 +85,10 @@ window.PREP_SITE.registerTopic({
   <li>You distinguish problems where greedy works from those that need DP.</li>
   <li>You quote O(N log N) for the typical sort + scan structure.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The classic greedy structure</h3>
 <pre><code class="language-text">function solve(items):
   sort items by some criterion
@@ -190,12 +196,10 @@ function connectSticks(sticks) {
 
 <h3>Counterexample as proof of failure</h3>
 <p>If you can't prove greedy works, try to construct a small input where it gives wrong answer. Two minutes of counterexamples saves an hour of debugging.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Activity Selection / Erase Overlap Intervals</h3>
 <pre><code class="language-js">function eraseOverlapIntervals(intervals) {
   intervals.sort((a, b) =&gt; a[1] - b[1]);   // by end time
@@ -434,12 +438,10 @@ function removeKdigits(num, k) {
   return (stack.join('').replace(/^0+/, '') || '0');
 }
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Non-overlapping Intervals</h3>
 <p>See Mechanics. Sort by end time; keep ones that start after last kept.</p>
 
@@ -596,12 +598,11 @@ function partitionLabels(s) {
   return result;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Sort key matters</h3>
 <p>Activity selection by start time fails; by end time works. Min meeting rooms by start time (with end-time heap). Picking wrong key dooms the algorithm.</p>
 
@@ -652,12 +653,9 @@ function partitionLabels(s) {
 
 <h3>Multi-dimensional optimization</h3>
 <p>"Maximize value, minimize weight, also at most K items" — greedy by single criterion fails. May need multi-pass or DP.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Sorting by wrong key</h3>
 <p>Activity selection by start time → wrong. By end time → correct. Always verify key choice with a small example.</p>
 
@@ -745,12 +743,10 @@ if (!prices.length) return 0;
 
 <h3>Anti-pattern 10: Greedy on small inputs that look like big-O wins</h3>
 <p>For N &lt; 1000, sometimes brute force is faster (in real time) than the greedy + sort. Check your constraints.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 16 problems worth memorizing patterns for</h3>
 <table>
   <thead><tr><th>Problem</th><th>Pattern</th></tr></thead>
@@ -858,49 +854,32 @@ if (!prices.length) return 0;
   <li>"I'd benchmark greedy vs DP for medium-sized inputs to validate the tradeoff."</li>
   <li>"I'd document why greedy works for our specific use case so future engineers don't re-derive."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Greedy <strong>makes the locally optimal choice at each step and never reconsiders</strong> — correct only when the greedy-choice property and optimal substructure hold, which you justify with an exchange argument.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Two preconditions:</strong> the greedy-choice property (a locally optimal pick leads to a global optimum) AND optimal substructure. Without both, greedy silently returns wrong answers.</li>
-    <li><strong>The recipe is sort by the right key, then scan once</strong> and take the obvious choice — typically O(N log N) from the sort, O(N) for the pass.</li>
-    <li><strong>The sort key is the entire art:</strong> activity selection / max non-overlapping intervals → sort by <em>end</em> time; min meeting rooms → sort by <em>start</em> (+ end-time heap); fractional knapsack → value/weight ratio; job scheduling → profit descending.</li>
-    <li><strong>Core templates:</strong> interval scheduling (<code>if (start &gt;= lastEnd) take it</code>), two-pointer matching on two sorted arrays, running-tally one-pass (Gas Station, Jump Game's furthest-reachable), and heap-based greedy (Huffman, connect sticks, reorganize string).</li>
-    <li><strong>Prove it with an exchange argument:</strong> show any non-greedy choice in an optimal solution can be swapped for the greedy one without making it worse. If you can't prove it, hunt for a small counterexample instead.</li>
-    <li><strong>Greedy vs DP:</strong> greedy commits early and is faster; DP considers all paths and is correct in more cases. When unsure, DP is the safe fallback.</li>
-    <li><strong>Where greedy fails → use DP:</strong> 0/1 knapsack (can't split items), general/non-canonical coin change, longest increasing subsequence, edit distance.</li>
-    <li>Practical care: don't mutate the caller's array (clone before sorting), be deliberate about tie-breaking, and clarify interval semantics (<code>start &gt;= prevEnd</code> vs <code>start &gt; prevEnd</code>).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Sorting by the wrong key, or applying greedy where it simply doesn't hold.</strong> Activity selection sorted by start time (instead of end time) gives wrong answers; greedy on 0/1 knapsack by value/weight ratio fails because you can't split items; greedy on coin change works for {1,5,10,25} but not {1,3,4} (target 6 → 4+1+1 beats the optimal 3+3). Fix: pick the sort key by an exchange argument, and before committing, try to break greedy with a 2-3 element counterexample — if it breaks, switch to DP.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Greedy only works when the greedy-choice property and optimal substructure hold — I'll justify it with an exchange argument or fall back to DP if I can't."</div>
-  <div class="revision-say">"The whole game here is the sort key: for max non-overlapping intervals I sort by end time and take each interval that starts after the last one I kept."</div>
-  <div class="revision-say">"This looks greedy, but let me try a small counterexample first — for 0/1 knapsack or non-canonical coins greedy breaks, and I'd use DP instead."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you state what makes a greedy choice provably correct (exchange argument)?</li>
-    <li>Can you build a small counterexample to test whether greedy works?</li>
-    <li>Can you recognize when to use DP instead of greedy?</li>
-    <li>Can you name a case where greedy breaks (0/1 knapsack, non-canonical coins)?</li>
-    <li>Can you state the complexity of a typical greedy (often sort plus scan)?</li>
-    <li>Can you name 2 problems greedy solves?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. What makes a greedy choice provably correct?</div>
+  <div class="qa-answer">
+    <p>Two properties must hold: the greedy-choice property (a locally optimal choice is part of some globally optimal solution) and optimal substructure (after making it, the rest is the same problem, smaller). You prove it with an <strong>exchange argument</strong>: take any optimal solution that differs from the greedy one, and show you can swap its choice for the greedy choice without making the answer worse. For activity selection, the activity with the earliest end can always replace the first activity of an optimal schedule without conflict, then you recurse on the remainder.</p>
+  </div>
 </div>
-`}
-]
+<div class="qa-block">
+  <div class="qa-question">Q2. How do you test whether greedy works before committing to it?</div>
+  <div class="qa-answer">
+    <p>Try to break it with a tiny counterexample — the smallest one that defeats a wrong greedy is usually only 2-3 elements, so trace the algorithm on small inputs by hand. For coin change with denominations {1, 3, 4} and target 6, greedy picks 4 + 1 + 1 (3 coins) while 3 + 3 (2 coins) is optimal, so greedy is out. "It worked on a few examples" is not proof: if you can't disprove it in about 5 minutes and can't prove it in about 10, fall back to DP.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. When should you use DP instead of greedy, and where does greedy break?</div>
+  <div class="qa-answer">
+    <p>Use DP when committing early can foreclose the optimum — that is, when no exchange argument exists and a counterexample does. The standard failures are 0/1 knapsack (greedy by value/weight ratio fails because items can't be split; the fractional version is greedy), coin change with non-canonical denominations ({1,5,10,25} is fine, {1,3,4} is not), longest increasing subsequence, and edit distance. Problems that process one element at a time but carry constraints between steps (e.g. painting houses) also look greedy but need DP. When unsure, DP is the safe choice; greedy is the fast one.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. What is the typical complexity of a greedy algorithm?</div>
+  <div class="qa-answer">
+    <p>Most greedy solutions are "sort by the right key, then scan once", so they're O(N log N) dominated by the sort, with an O(N) pass after it. Running-tally problems that need no sort (Gas Station, Jump Game) are O(N). Heap-based greedy (Huffman coding, connect sticks, reorganize string) is O(N log N) from the heap operations.</p>
+  </div>
+</div>
+` },
+
+  ]
 });

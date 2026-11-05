@@ -1,33 +1,39 @@
 window.PREP_SITE.registerTopic({
-  id: 'off-idb',
-  module: 'offline',
-  title: 'IndexedDB Strategies',
-  estimatedReadTime: '50 min',
-  tags: ['indexeddb', 'idb', 'offline', 'storage', 'dexie', 'idb-keyval', 'transactions', 'versioning', 'sync'],
+  id: "off-idb",
+  module: "offline",
+  title: "IndexedDB Strategies",
+  estimatedReadTime: "50 min",
+  tags: ["indexeddb","idb","offline","storage","dexie","idb-keyval","transactions","versioning","sync"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>IndexedDB (IDB)</strong> is the browser's native, structured, transactional, offline-friendly database — a key-value store with secondary indexes, schema migrations, and large quotas (typically hundreds of MB to GBs). It's what you reach for when localStorage isn't enough: structured records, queryable indexes, large data, async access from a Service Worker.</p>
-<ul>
-  <li><strong>It's a real database in the browser.</strong> Object stores (≈ tables), indexes (≈ secondary indexes), transactions (ACID within a database), versioning, cursors.</li>
-  <li><strong>Async + event-driven by default.</strong> Raw API is awkward; almost always wrap with <strong>idb</strong> (Promise wrapper) or <strong>Dexie</strong> (full ORM) or <strong>idb-keyval</strong> (simple kv).</li>
-  <li><strong>Quotas:</strong> Chrome ~60% of disk; Firefox ~50%; Safari ~1GB then user-prompted. Persistence is best-effort; <code>navigator.storage.persist()</code> elevates.</li>
-  <li><strong>Versioning:</strong> schema changes happen in an <code>onupgradeneeded</code> handler; runs once per browser; old DBs migrate forward.</li>
-  <li><strong>Transactions are scoped:</strong> read-only or readwrite; auto-commit when no further work queued; can't span async work outside the IDB request chain.</li>
-  <li><strong>Use cases:</strong> offline-first app data, queued mutations, full-text search index, large blobs (files, images), cached API responses keyed by URL.</li>
-  <li><strong>Don't use IDB for:</strong> small flags / settings (use localStorage), session data (memory), encryption-required data (use crypto + IDB).</li>
-  <li><strong>RN parallel:</strong> MMKV / SQLite / WatermelonDB. IDB knowledge transfers to thinking about offline-first stores generally.</li>
-</ul>
-<p><strong>Mantra:</strong> "It's a real database. Use a wrapper. Version your schema. Plan migrations. Persist deliberately."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">IndexedDB is a <strong>real, transactional, async database in the browser</strong> — use a wrapper, version your schema, plan migrations, and persist deliberately.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Reach for it when localStorage isn't enough: structured records, queryable indexes, large data, and async access from a Service Worker.</li>
+    <li>Object stores (like tables), indexes (secondary indexes), ACID transactions within a database, versioning, and cursors.</li>
+    <li>Async and event-driven; the raw API is awkward, so almost always wrap it with <code>idb</code> (Promise wrapper), Dexie (full ORM), or <code>idb-keyval</code> (simple kv).</li>
+    <li>Schema changes happen in an <code>onupgradeneeded</code> handler (the <code>upgrade</code> callback in <code>idb</code>), which runs once per browser per version bump and migrates old DBs forward; the version is a monotonically increasing integer.</li>
+    <li>Transactions are scoped (readonly/readwrite) and auto-commit when no further work is queued — they can't span async work outside the IDB request chain.</li>
+    <li>Quotas: Chrome ~60% of disk, Firefox ~50%, Safari ~1GB then user-prompted. Persistence is best-effort; <code>navigator.storage.persist()</code> lowers eviction risk (Mobile Safari evicts after ~7 days idle).</li>
+    <li>Use it for offline-first app data, queued mutations, full-text search indexes, large blobs, and cached API responses keyed by URL.</li>
+    <li>Don't use it for small flags/settings (localStorage), session data (memory), or encryption-required data without crypto (WebCrypto + IDB).</li>
+    <li>RN parallel: MMKV / SQLite / WatermelonDB — the offline-first store thinking transfers.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Awaiting an unrelated promise mid-transaction auto-closes it</strong>, so the next operation throws. And treating IDB as the sole source of truth means an eviction equals data loss — the browser can evict best-effort storage, so always sync to a backend.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"IndexedDB is a real database in the browser — object stores, indexes, ACID transactions — and I always use a wrapper like idb or Dexie."</div>
+  <div class="revision-say">"Transactions auto-commit when idle, so I never await unrelated work in the middle of one or it closes and the next op throws."</div>
+  <div class="revision-say">"Storage is best-effort; IDB alone isn't a source of truth — I sync to a backend and call persist() to lower eviction risk."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What IndexedDB is</h3>
 <p>A browser-built-in database that stores structured JS objects (and Blobs, Files, ArrayBuffers) in <strong>object stores</strong>. Each store has a primary key (in-line, out-of-line, or auto-incremented) and zero or more <strong>indexes</strong> over its fields for queryable lookup. Multiple databases can exist per origin; each database has multiple stores.</p>
 
@@ -97,12 +103,10 @@ window.PREP_SITE.registerTopic({
   <li>No quota check; browser silently evicts under pressure; users lose work.</li>
   <li>Reactive UI re-querying IDB on every render instead of caching in memory.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The hierarchy</h3>
 <pre><code class="language-text">Origin (https://example.com)
   └─ Database (e.g., "myapp")
@@ -250,12 +254,10 @@ const isPersistent = await navigator.storage.persisted();
     <tr><td><strong>SQLite via OPFS / WASM</strong></td><td>Real SQL in the browser via OPFS-backed SQLite. Bigger but full SQL semantics.</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Opening a database (raw idb)</h3>
 <pre><code class="language-javascript">import { openDB } from 'idb';
 
@@ -501,12 +503,10 @@ async function checkQuota() {
   if (percent &gt; 80) showWarning('Running low on storage; clear cache?');
 }
 </code></pre>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Offline-capable note app</h3>
 <pre><code class="language-typescript">import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
@@ -758,12 +758,11 @@ channel.onmessage = async (event) =&gt; {
   }, { once: true });
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Transaction auto-close</h3>
 <ul>
   <li>Awaiting a non-IDB Promise inside a transaction closes it. Always batch IDB calls in a single tick.</li>
@@ -873,12 +872,9 @@ channel.onmessage = async (event) =&gt; {
   <li>Storage section shows quota usage.</li>
   <li>Lighthouse PWA audit checks for offline capability.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common IDB mistakes</h3>
 <ol>
   <li><strong>Using the raw API.</strong> Hand-rolled event handlers; bugs everywhere. Use idb / Dexie.</li>
@@ -1033,12 +1029,10 @@ try {
   else throw err;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common IDB interview prompts</h3>
 <ol>
   <li>How would you store offline app data in the browser?</li>
@@ -1165,52 +1159,26 @@ try {
   <li>"Try OPFS + SQLite WASM for a read-heavy app."</li>
   <li>"Audit a real PWA's IDB schema; identify missing indexes / over-indexing."</li>
 </ul>
-`
-    },
 
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">IndexedDB is a <strong>real, transactional, async database in the browser</strong> — use a wrapper, version your schema, plan migrations, and persist deliberately.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Object stores (like tables), indexes, ACID transactions, versioning, and cursors — with large quotas (hundreds of MB to GBs).</li>
-    <li>Async and event-driven; the raw API is awkward, so almost always wrap it with <code>idb</code> (Promise wrapper), Dexie (ORM), or <code>idb-keyval</code> (simple kv).</li>
-    <li>Schema changes happen in an <code>onupgradeneeded</code> handler, which runs once per browser and migrates old DBs forward.</li>
-    <li>Transactions are scoped (readonly/readwrite) and auto-commit when idle — they can't span async work outside the IDB request chain.</li>
-    <li>Quotas differ per browser and persistence is best-effort; <code>navigator.storage.persist()</code> lowers eviction risk.</li>
-    <li>Don't use IDB for small flags/settings (localStorage) or session data (memory); do use it for offline-first data, queued mutations, blobs, and cached responses.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Awaiting an unrelated promise mid-transaction auto-closes it</strong>, so the next operation throws. And treating IDB as the sole source of truth means an eviction equals data loss — the browser can evict best-effort storage, so always sync to a backend.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"IndexedDB is a real database in the browser — object stores, indexes, ACID transactions — and I always use a wrapper like idb or Dexie."</div>
-  <div class="revision-say">"Transactions auto-commit when idle, so I never await unrelated work in the middle of one or it closes and the next op throws."</div>
-  <div class="revision-say">"Storage is best-effort; IDB alone isn't a source of truth — I sync to a backend and call persist() to lower eviction risk."</div>
+<div class="qa-block">
+  <div class="qa-question">Q1. Where do IndexedDB schema migrations run, and how often?</div>
+  <div class="qa-answer">
+    <p>Only inside the <code>onupgradeneeded</code> handler (the <code>upgrade(db, oldVersion, newVersion, transaction)</code> callback in <code>idb</code>), which is the only place you can create or delete stores and indexes. It fires when you open the database with a higher integer version than the one stored in that browser, so it runs once per browser per version bump. Write it as cumulative forward migrations (<code>if (oldVersion &lt; 2) …</code>) so a user jumping from v1 to v4 runs every step, and handle <code>blocked</code>, because another tab holding the old version open stalls the upgrade.</p>
+  </div>
 </div>
-`
-    },
+<div class="qa-block">
+  <div class="qa-question">Q2. Why is it risky to keep data only in IndexedDB, and what does <code>navigator.storage.persist()</code> do?</div>
+  <div class="qa-answer">
+    <p>IDB storage is best-effort: the browser may evict it under storage pressure or after extended idle (Mobile Safari after about 7 days for non-installed sites). If IDB is your only copy, eviction means data loss, so treat it as a cache-with-benefits and sync to a backend that is the source of truth. <code>navigator.storage.persist()</code> asks the browser to mark the origin's storage as persistent (check with <code>persisted()</code>); request it after an engagement signal. It reduces but doesn't eliminate eviction risk.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Which IndexedDB wrapper would you use, and why avoid the raw API?</div>
+  <div class="qa-answer">
+    <p>The raw API is event-based: every open, get and put returns a request with <code>onsuccess</code>/<code>onerror</code> callbacks, which is verbose, nests quickly and is error-prone. By default I use <code>idb</code>, a thin Promise wrapper so you can write <code>const user = await db.get('users', 1)</code>; Dexie when I want ORM-like queries and a reactive layer; and <code>idb-keyval</code> when it's literally key to value.</p>
+  </div>
+</div>
+` },
 
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain how IndexedDB differs from localStorage and when to pick each?</li>
-    <li>Can you describe where schema migrations run and how often?</li>
-    <li>Can you explain why awaiting an unrelated promise mid-transaction breaks it?</li>
-    <li>Can you explain why IDB-only storage is risky and what <code>persist()</code> does?</li>
-    <li>Can you name a wrapper library and why the raw API is avoided?</li>
-  </ul>
-</div>
-`
-    }
   ]
 });

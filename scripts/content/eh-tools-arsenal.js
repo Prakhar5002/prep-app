@@ -1,22 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'eh-tools-arsenal',
-  module: 'eh',
-  title: 'Tools Arsenal (Reference)',
-  estimatedReadTime: '18 min',
-  tags: ['ethical-hacking', 'tools', 'reference', 'cheat-sheet'],
+  id: "eh-tools-arsenal",
+  module: "eh",
+  title: "Tools Arsenal (Reference)",
+  estimatedReadTime: "18 min",
+  tags: ["ethical-hacking","tools","reference","cheat-sheet"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<div class="callout danger">
-  <div class="callout-title">⚠️ Reference only — the authorization rule still applies to every tool below</div>
-  <p>This is a scannable master index of the tools introduced across the Ethical Hacking module, grouped by phase. Every one of them may only be run against systems you own or are explicitly authorized (in writing, in scope) to test — see <strong>Foundations, Ethics &amp; Legal</strong>. Practice on deliberately vulnerable labs (DVWA, Metasploitable, Juice Shop, Hack The Box, TryHackMe), never on systems you don't own.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A scannable master index of the tools introduced across the Ethical Hacking module, grouped by phase — a quick-lookup reference once you already understand what each tool does, with nothing new introduced and every entry still governed by the authorization rule.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>This is reference only — every tool still runs solely against systems you own or are explicitly authorized to test, <strong>in writing and in scope</strong> (see Foundations, Ethics &amp; Legal); practice on labs (DVWA, Metasploitable, Juice Shop, Hack The Box, TryHackMe).</li>
+    <li>The tables are laid out by phase, roughly following the engagement lifecycle: Recon &amp; OSINT → Scanning &amp; Enumeration → Vulnerability Assessment → Web App → Network → Wireless → Passwords → Exploitation → Post-Exploit &amp; PrivEsc → Active Directory → Social &amp; Physical → Reporting &amp; Cloud.</li>
+    <li>Recon/OSINT is passive (whois, dig, amass, subfinder, theHarvester, Shodan/Censys, Maltego, exiftool); Scanning turns active (arp-scan, nmap, masscan/rustscan, service enumerators, netcat).</li>
+    <li>Vulnerability assessment tooling (Nessus, OpenVAS/GVM, Nikto, nuclei, wpscan) feeds severity via CVSS and prioritization via EPSS / CISA KEV; searchsploit answers "does a public exploit exist?"</li>
+    <li>Web-app work centers on Burp/ZAP proxies, sqlmap, directory fuzzers, and the OWASP Top 10 as the vulnerability-class reference.</li>
+    <li>Network attacks (Wireshark/tcpdump, ARP/DNS spoofing, Responder, pivoting) and wireless (aircrack-ng suite, wifite, hashcat mode 22000) each have their own tool families.</li>
+    <li>Password attacks split into online (hydra/medusa/ncrack) and offline (john, hashcat) cracking, plus wordlists (rockyou, SecLists) and generators (crunch, cewl).</li>
+    <li>Sensitive techniques — exploitation payloads, credential dumping (mimikatz), ticket forging (golden/silver, DCSync) — are kept conceptual throughout the module and are not weaponized in this index.</li>
+    <li>Columns are consistently Tool · Purpose · Typical usage (or Key idea); each teaching topic covers its tools in depth with worked examples and defenses, so an unfamiliar entry signals you should read its home topic first.</li>
+    <li>Reporting &amp; Cloud closes the loop: report structure, note-taking, the shared responsibility model, cloud/container/K8s/mobile auditors, and the blue/purple-team defensive side.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Treating this page as a place to learn tools. Nothing new is introduced here — if a tool is unfamiliar, read its home teaching topic first; the arsenal is only for fast lookup once you already understand what each one does.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I think in phases — recon, scanning, vuln assessment, exploitation, post-exploitation, reporting — and each phase has its own go-to tools that feed the next."</div>
+  <div class="revision-say">"Recon is passive, scanning is where it turns active and the authorization rule really bites — every tool here only touches systems I'm explicitly authorized to test."</div>
+  <div class="revision-say">"The sensitive stuff — payloads, credential dumping, ticket forging — I can discuss conceptually and defend against, without needing to weaponize it."</div>
 </div>
-<p>Each teaching topic covers its tools in depth with worked examples and defenses; this page collects them in one place for quick lookup once you already understand what they do. Columns are <strong>Tool</strong> · <strong>Purpose</strong> · <strong>Typical usage</strong>. Nothing new is introduced here — if a tool is unfamiliar, read its home topic first. Sensitive techniques (exploitation payloads, credential dumping, ticket forging) are kept conceptual throughout the module and are not weaponized here either.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-recon', title: '🔍 Recon & OSINT', html: `
+{ id: "ref-recon", title: "🔍 Recon & OSINT", collapsible: true, html: `
 <table>
   <thead><tr><th>Tool</th><th>Purpose</th><th>Typical usage</th></tr></thead>
   <tbody>
@@ -34,10 +52,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>exiftool</td><td>Read (or strip) document/image metadata</td><td><code>exiftool &lt;file&gt;</code></td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-scanning', title: '📡 Scanning & Enumeration', html: `
+{ id: "ref-scanning", title: "📡 Scanning & Enumeration", collapsible: true, html: `
 <table>
   <thead><tr><th>Tool</th><th>Purpose</th><th>Typical usage</th></tr></thead>
   <tbody>
@@ -52,10 +70,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>netcat</td><td>Manual banner grabbing</td><td><code>nc -nv &lt;target&gt; &lt;port&gt;</code></td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-vuln', title: '🩹 Vulnerability Assessment', html: `
+{ id: "ref-vuln", title: "🩹 Vulnerability Assessment", collapsible: true, html: `
 <table>
   <thead><tr><th>Tool</th><th>Purpose</th><th>Typical usage</th></tr></thead>
   <tbody>
@@ -69,10 +87,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>EPSS / CISA KEV</td><td>Exploit-likelihood / actively-exploited prioritization</td><td>Rank real risk beyond raw CVSS</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-web', title: '🕸️ Web Application Hacking', html: `
+{ id: "ref-web", title: "🕸️ Web Application Hacking", collapsible: true, html: `
 <table>
   <thead><tr><th>Tool</th><th>Purpose</th><th>Typical usage</th></tr></thead>
   <tbody>
@@ -85,10 +103,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>OWASP Top 10 (2021)</td><td>The vulnerability-class reference (A01–A10)</td><td>A01 Access Control … A03 Injection … A10 SSRF</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-network', title: '🌐 Network Attacks', html: `
+{ id: "ref-network", title: "🌐 Network Attacks", collapsible: true, html: `
 <table>
   <thead><tr><th>Tool</th><th>Purpose</th><th>Typical usage</th></tr></thead>
   <tbody>
@@ -101,10 +119,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>Defenses</td><td>What actually stops these</td><td>DAI · disable LLMNR/NBT-NS · SMB signing · segmentation</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-wireless', title: '📶 Wireless Security', html: `
+{ id: "ref-wireless", title: "📶 Wireless Security", collapsible: true, html: `
 <table>
   <thead><tr><th>Tool</th><th>Purpose</th><th>Typical usage</th></tr></thead>
   <tbody>
@@ -119,10 +137,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>bluetoothctl / proxmark3</td><td>Bluetooth recon / RFID-NFC assessment</td><td><code>bluetoothctl scan on</code> · <code>proxmark3</code></td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-password', title: '🔑 Password Attacks', html: `
+{ id: "ref-password", title: "🔑 Password Attacks", collapsible: true, html: `
 <table>
   <thead><tr><th>Tool</th><th>Purpose</th><th>Typical usage</th></tr></thead>
   <tbody>
@@ -135,10 +153,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>RainbowCrack / Ophcrack</td><td>Precomputed rainbow-table cracking (defeated by salt)</td><td><code>rcrack &lt;tables&gt; -h &lt;hash&gt;</code></td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-exploit', title: '💥 Exploitation', html: `
+{ id: "ref-exploit", title: "💥 Exploitation", collapsible: true, html: `
 <table>
   <thead><tr><th>Item</th><th>Purpose / role</th><th>Key idea</th></tr></thead>
   <tbody>
@@ -152,10 +170,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>DEP/NX · ASLR · canary · CFG</td><td>Exploit mitigations (the defensive half)</td><td>Non-exec memory · random layout · guard value · flow validation</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-postexploit', title: '🧗 Post-Exploit & PrivEsc', html: `
+{ id: "ref-postexploit", title: "🧗 Post-Exploit & PrivEsc", collapsible: true, html: `
 <table>
   <thead><tr><th>Tool / vector</th><th>Purpose</th><th>Key idea</th></tr></thead>
   <tbody>
@@ -169,10 +187,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>chisel / ligolo-ng / proxychains / SSH -L,-D</td><td>Pivoting &amp; tunneling</td><td>Reach segments only the foothold can</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-ad', title: '🏛️ Active Directory', html: `
+{ id: "ref-ad", title: "🏛️ Active Directory", collapsible: true, html: `
 <table>
   <thead><tr><th>Tool / technique</th><th>Purpose</th><th>Typical usage</th></tr></thead>
   <tbody>
@@ -187,10 +205,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>ADCS ESC1 (concept)</td><td>Certificate-template abuse</td><td>Audit with Certipy; restrict enrollment</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-social', title: '🎭 Social Engineering & Physical', html: `
+{ id: "ref-social", title: "🎭 Social Engineering & Physical", collapsible: true, html: `
 <table>
   <thead><tr><th>Tool / vector</th><th>Purpose</th><th>Key idea</th></tr></thead>
   <tbody>
@@ -203,10 +221,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>Awareness training + phishing-resistant MFA</td><td>Primary human-layer defenses</td><td>FIDO2/WebAuthn resist AiTM relay</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-reporting', title: '📝 Reporting & Cloud', html: `
+{ id: "ref-reporting", title: "📝 Reporting & Cloud", collapsible: true, html: `
 <table>
   <thead><tr><th>Tool / concept</th><th>Purpose</th><th>Key idea</th></tr></thead>
   <tbody>
@@ -221,48 +239,41 @@ window.PREP_SITE.registerTopic({
     <tr><td>SIEM · detection engineering · ATT&amp;CK mapping</td><td>Blue/purple-team defensive side</td><td>Turn techniques into tuned detections</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A scannable master index of the tools introduced across the Ethical Hacking module, grouped by phase — a quick-lookup reference once you already understand what each tool does, with nothing new introduced and every entry still governed by the authorization rule.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>This is reference only — every tool still runs solely against systems you own or are authorized in writing to test; practice on labs (DVWA, Metasploitable, Juice Shop, Hack The Box, TryHackMe).</li>
-    <li>The tables are laid out by phase, roughly following the engagement lifecycle: Recon &amp; OSINT → Scanning &amp; Enumeration → Vulnerability Assessment → Web App → Network → Wireless → Passwords → Exploitation → Post-Exploit &amp; PrivEsc → Active Directory → Social &amp; Physical → Reporting &amp; Cloud.</li>
-    <li>Recon/OSINT is passive (whois, dig, amass, subfinder, theHarvester, Shodan/Censys, Maltego, exiftool); Scanning turns active (arp-scan, nmap, masscan/rustscan, service enumerators, netcat).</li>
-    <li>Vulnerability assessment tooling (Nessus, OpenVAS/GVM, Nikto, nuclei, wpscan) feeds severity via CVSS and prioritization via EPSS / CISA KEV.</li>
-    <li>Web-app work centers on Burp/ZAP proxies, sqlmap, directory fuzzers, and the OWASP Top 10 as the vulnerability-class reference.</li>
-    <li>Network attacks (Wireshark/tcpdump, ARP/DNS spoofing, Responder, pivoting) and wireless (aircrack-ng suite, wifite, hashcat mode 22000) each have their own tool families.</li>
-    <li>Password attacks split into online (hydra/medusa/ncrack) and offline (john, hashcat) cracking, plus wordlists (rockyou, SecLists) and generators (crunch, cewl).</li>
-    <li>Sensitive techniques — exploitation payloads, credential dumping (mimikatz), ticket forging (golden/silver, DCSync) — are kept conceptual throughout the module and are not weaponized in this index.</li>
-    <li>Columns are consistently Tool · Purpose · Typical usage (or Key idea) so an unfamiliar entry signals you should read its home topic first.</li>
-    <li>Reporting &amp; Cloud closes the loop: report structure, note-taking, the shared responsibility model, cloud/container/K8s/mobile auditors, and the blue/purple-team defensive side.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Treating this page as a place to learn tools. Nothing new is introduced here — if a tool is unfamiliar, read its home teaching topic first; the arsenal is only for fast lookup once you already understand what each one does.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I think in phases — recon, scanning, vuln assessment, exploitation, post-exploitation, reporting — and each phase has its own go-to tools that feed the next."</div>
-  <div class="revision-say">"Recon is passive, scanning is where it turns active and the authorization rule really bites — every tool here only touches systems I'm explicitly authorized to test."</div>
-  <div class="revision-say">"The sensitive stuff — payloads, credential dumping, ticket forging — I can discuss conceptually and defend against, without needing to weaponize it."</div>
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
+<div class="qa-block">
+  <div class="qa-question">Q1. Walk me through the engagement phases in order and name the go-to tools for each.</div>
+  <div class="qa-answer">
+    <p>Recon &amp; OSINT: whois, dig, amass/subfinder, theHarvester, Shodan/Censys, Maltego, exiftool. Scanning &amp; Enumeration: arp-scan, nmap (with NSE), masscan/rustscan, enum4linux-ng/smbmap, snmpwalk, ldapsearch, netcat. Vulnerability Assessment: Nessus, OpenVAS/GVM, Nikto, nuclei, wpscan, ranked with CVSS plus EPSS / CISA KEV. Specialised attack surfaces: Burp/ZAP, sqlmap and ffuf for web; Wireshark, bettercap and Responder for network; the aircrack-ng suite and hashcat mode 22000 for wireless; hydra, john and hashcat for passwords. Exploitation: Metasploit (msfconsole, multi/handler), searchsploit. Post-exploit &amp; PrivEsc: LinPEAS/WinPEAS, GTFOBins, chisel/ligolo-ng for pivoting; for AD, BloodHound, PowerView, netexec and Impacket. Finally Reporting &amp; Cloud: report structure, Obsidian/CherryTree notes, ScoutSuite/prowler, trivy, MobSF.</p>
+  </div>
 </div>
-`},
-
-// ─────────────────────────────────────────────────────────────
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the engagement phases in order and give the go-to tools for each?</li>
-    <li>Can you explain where recon stops being passive and scanning becomes active, and why that matters legally?</li>
-    <li>Can you say which tools belong to vulnerability assessment versus exploitation, and how the two phases hand off?</li>
-    <li>Can you distinguish online from offline password-cracking tools and give an example of each?</li>
-    <li>Can you name the labs you'd practice on rather than running any of these against systems you don't own?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Where does recon stop being passive and scanning become active, and why does that matter legally?</div>
+  <div class="qa-answer">
+    <p>Recon/OSINT tools query third-party sources rather than the target: whois and DNS data, subdomain aggregators like amass -passive and subfinder, theHarvester, and Shodan/Censys, which search <em>pre-built</em> internet-wide scan indexes instead of touching the host. Scanning starts the moment you send your own packets to the target — arp-scan, nmap, masscan/rustscan, SMB/SNMP/LDAP enumerators, netcat banner grabs. That's where the authorization rule really bites: from that point on you need written, in-scope permission for the systems you touch.</p>
+  </div>
 </div>
-`},
+<div class="qa-block">
+  <div class="qa-question">Q3. Which tools belong to vulnerability assessment versus exploitation, and how do the two phases hand off?</div>
+  <div class="qa-answer">
+    <p>Vulnerability assessment finds and ranks weaknesses: Nessus, OpenVAS/GVM, Nikto, nuclei and wpscan produce findings, CVSS scores severity, and EPSS / CISA KEV prioritise by real exploit likelihood. The handoff question is "does a public exploit exist for this?", answered with searchsploit / Exploit-DB. Exploitation then uses Metasploit — msfconsole (search, use, set options, run), payloads such as Meterpreter, and multi/handler to catch reverse sessions. Copy an exploit with <code>searchsploit -m</code> and read it before running it. The defensive half is the exploit mitigations: DEP/NX, ASLR, stack canaries, CFG.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. What's the difference between online and offline password cracking? Give an example tool for each.</div>
+  <div class="qa-answer">
+    <p>Online cracking guesses credentials against a live network service, so every attempt hits the target: hydra, medusa, ncrack or patator, e.g. <code>hydra -l &lt;user&gt; -P &lt;wordlist&gt; ssh://&lt;target&gt;</code>. Offline cracking works on a hash you've already captured, on your own hardware: john (CPU, with rules) and hashcat (GPU, <code>-m</code> for hash type, <code>-a</code> for attack mode). Both rely on wordlists like rockyou.txt and SecLists or on generators like crunch and cewl. hashid identifies the hash type first, and rainbow tables (RainbowCrack, Ophcrack) are defeated by salting.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. Where would you practise these tools, given you can't run them against systems you don't own?</div>
+  <div class="qa-answer">
+    <p>On deliberately vulnerable labs: DVWA, Metasploitable, OWASP Juice Shop, Hack The Box and TryHackMe. Every tool in the arsenal may only be run against systems I own or am explicitly authorised, in writing and in scope, to test. Physical and social vectors such as tailgating or badge cloning additionally need authorisation-gated scope and a get-out-of-jail letter.</p>
+  </div>
+</div>
+` },
 
-  ],
+  ]
 });

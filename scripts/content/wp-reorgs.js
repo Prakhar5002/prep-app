@@ -1,33 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'wp-reorgs',
-  module: 'workplace',
-  title: 'Reorgs & Leadership Changes',
-  estimatedReadTime: '35 min',
-  tags: ['reorg', 'leadership-change', 'new-manager', 'restructure', 'transition', 'org-chart', 'survival'],
+  id: "wp-reorgs",
+  module: "workplace",
+  title: "Reorgs & Leadership Changes",
+  estimatedReadTime: "35 min",
+  tags: ["reorg","leadership-change","new-manager","restructure","transition","org-chart","survival"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Reorgs are the most common career-shaping event after layoffs. They happen unpredictably (some companies reorg yearly, some quarterly), they reshape who you report to, what you work on, and what you've earned politically. Engineers who handle reorgs well treat them as <em>data</em> + <em>opportunity</em>; engineers who handle them poorly absorb the disruption as personal injury and never recover the half they lost.</p>
-<ul>
-  <li><strong>Reorgs are normal in tech.</strong> Mid-2020s: most teams experience 1+ reorg/year. Stability is the exception.</li>
-  <li><strong>Don't take it personally.</strong> 90% of reorg decisions are about org-level structure, not you specifically.</li>
-  <li><strong>Reset political capital.</strong> Old manager's reputation of you doesn't fully transfer. New manager has to be re-earned.</li>
-  <li><strong>First 30 days with a new manager are critical.</strong> Establish 1:1 cadence, share working style, demonstrate value early.</li>
-  <li><strong>Roadmap commitments may not transfer.</strong> Promises old PM made may be revisited; promises old manager made may be re-evaluated. Re-confirm in writing.</li>
-  <li><strong>Promo timing usually slips.</strong> A reorg 6 months before your expected promo packet often pushes promo by 6-12 months. Plan for it.</li>
-  <li><strong>Reorgs make some people survivors and some people winners.</strong> The difference is often political positioning, not technical merit.</li>
-  <li><strong>Mobile / RN angle:</strong> mobile teams get moved around a lot in reorgs (org owners argue over who "owns mobile"). Have a clear story about your team's value.</li>
-</ul>
-<p><strong>Mantra:</strong> "Don't panic. Reset relationships. Re-confirm commitments in writing. Use reorgs to renegotiate scope. Plan for promo timing slippage."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A reorg is the most common career-shaping event after layoffs — don't take it personally, treat it as <strong>data plus a negotiation window</strong>, reset relationships, re-confirm commitments in writing, and make no irreversible decisions for 60 days.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Reorgs are normal in tech</strong> — most teams see 1+ per year; stability is the exception. About 90% of reorg decisions are about org structure, not you specifically.</li>
+    <li>They reshape <strong>who you report to, what you work on, and the political capital you've earned</strong>. Handle them as data + opportunity, not personal injury — those who absorb it as injury rarely recover the half they lost.</li>
+    <li><strong>Political capital resets to ~50-70%.</strong> Shipped artifacts transfer well; an old manager's verbal endorsement and informal influence mostly reset. The first 60-90 days are about rebuilding trust.</li>
+    <li><strong>First 30 days with a new manager are critical.</strong> Schedule the 1:1 within 2 weeks even if they don't ask; bring a 1-page context doc; learn their working style; ship something visible by day 60.</li>
+    <li><strong>Roadmap and promo commitments may not transfer.</strong> Anything the old manager or PM promised must be re-confirmed in writing with the new owners. Promo timing typically slips 6-12 months.</li>
+    <li><strong>Reorgs create winners, survivors, and losers by positioning, not just merit.</strong> Read the political map and the rising/falling stock of teams and leaders fast; position to be at least a survivor.</li>
+    <li><strong>The renegotiation window is open ~30-90 days.</strong> Scope, level, promo carry-forward, project assignment, and team moves are all more negotiable now than in steady state — use it before things lock back in.</li>
+    <li><strong>60-day rule:</strong> don't quit reflexively or make irreversible commitments in week 1; do build relationships and demonstrate value. The first 60 days are noise, not the new normal.</li>
+    <li><strong>"No surprises" still applies</strong> — your new manager should hear risks and decisions from you first, especially during the fragile transition.</li>
+    <li>A reorg is a layoff precursor roughly 30% of the time — read signals ("efficiency", hiring freezes, layers consolidated, senior departures) and quietly run the layoff-prep checklist if they're bad.</li>
+    <li><strong>Mobile / RN angle:</strong> mobile teams get moved around a lot ("where does mobile live?"). Have a business-terms story for your team's value, not just a technical one.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Freezing.</strong> Most engineers "wait and see", stay invisible, and assume old commitments carry forward — so they miss the 30-90 day renegotiation window and let a promo case quietly die with the old manager. The move is the opposite: act early, schedule the 1:1, re-confirm everything in writing, and use the open window.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"My team was dissolved in a reorg while I was on track for promo. I didn't panic — week one I set up a 1:1 with my new manager and sent a context doc; I re-confirmed my in-flight commitments and promo case in writing; and by week eight I'd shipped something visible to the new team. I got promoted one cycle later with broader scope than I'd have had."</div>
+  <div class="revision-say">"I treat a reorg as a negotiation window, not just a disruption. The first 60-90 days are when scope, level, and project assignment are most movable, so I make my case early rather than absorbing whatever I'm handed."</div>
+  <div class="revision-say">"I follow a 60-day rule on big decisions — the first weeks are noise, not the new normal. I don't quit or commit irreversibly until I've read the new structure and rebuilt the key relationships."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Types of reorg</h3>
 <table>
   <thead><tr><th>Type</th><th>Description</th><th>Engineer impact</th></tr></thead>
@@ -101,12 +109,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>Mobile platform / infra teams</strong> get hit hard in efficiency-driven reorgs ("can we just have the product teams own their own mobile?").</li>
 </ul>
 <p>Practical implication: have a clear story about why your mobile work matters in business terms, not just technical terms. "We ship faster than [competitor]" is more persuasive in reorgs than "we have a clean state management pattern."</p>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "reorg phases" model</h3>
 <p>Most reorgs follow a predictable arc:</p>
 <table>
@@ -212,12 +218,10 @@ window.PREP_SITE.registerTopic({
   <li>How does this ladder to the new VP / director's stated priorities?</li>
 </ul>
 <p>If you can't answer crisply, you have homework. Find your manager and ask. Senior engineers should walk into any meeting with new leadership able to give this story.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>The reorg-day playbook</h3>
 <p>Hour 0-24:</p>
 <ol>
@@ -378,12 +382,10 @@ window.PREP_SITE.registerTopic({
   <li>Save as a private doc; update over the first 90 days as you learn more.</li>
 </ol>
 <p>This is intelligence work. It's worth the time.</p>
-`
-    },
-    {
-      id: 'examples',
-      title: '🔍 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Full reorg announcement, day 1</h3>
 <p><strong>Setup:</strong> 9am email from CEO. New org structure. Your team merges with another; new manager is the other team's lead (you've worked with them at arm's length, never directly). New VP from outside the company.</p>
 
@@ -598,12 +600,11 @@ Director: [Hopefully says yes; if not, moves on.]</code></pre>
 </table>
 
 <p>This is when "reorg as opportunity" pays off — you've absorbed the disruption and now you're ready to capitalize on the new structure.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Reorg back-to-back</h3>
 <p>Some companies reorg every 6 months. The disruption compounds.</p>
 <ul>
@@ -706,12 +707,9 @@ Director: [Hopefully says yes; if not, moves on.]</code></pre>
   <li><strong>Don't decide immediately.</strong> 60-day rule.</li>
   <li><strong>If structural answer is "this won't work without [manager]":</strong> plan exit deliberately.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern: panic-quitting in week 1</h3>
 <p><strong>Looks like:</strong> Reorg announced; you DM-resignations to peers within 24 hours.</p>
 <p><strong>Why bad:</strong> Don't yet have the data. Maybe new role is fine. Maybe pre-emptive exit costs you a graceful transition.</p>
@@ -796,12 +794,10 @@ Director: [Hopefully says yes; if not, moves on.]</code></pre>
 <p><strong>Looks like:</strong> External resume / LinkedIn still describes your old team / role.</p>
 <p><strong>Why bad:</strong> If you decide to look elsewhere in 6-12 months, your story is stale.</p>
 <p><strong>Fix:</strong> Update narrative continuously. New scope, new accomplishments, new framing. Your future self benefits.</p>
-`
-    },
-    {
-      id: 'interview',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>"Tell me about a time you adapted to a major change at work"</h3>
 <p>Common at senior+ behavioral. Reorg = canonical example.</p>
 
@@ -971,55 +967,26 @@ clearly bad after 90 days, ignoring that hurts long-term."</code></pre>
 <h3>The 30-second mantra</h3>
 <p><em>"Don't panic. Read the structure. Reset relationships. Re-confirm commitments. Use the renegotiation window. 60-day rule on big decisions."</em></p>
 <p>Reorgs are the most common career-shaping event after layoffs. Engineers who develop reorg muscle handle them with calm competence; engineers who don't lose months of momentum each time. Build the muscle.</p>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A reorg is the most common career-shaping event after layoffs — don't take it personally, treat it as <strong>data plus a negotiation window</strong>, reset relationships, re-confirm commitments in writing, and make no irreversible decisions for 60 days.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Reorgs are normal in tech</strong> — most teams see 1+ per year; stability is the exception. About 90% of reorg decisions are about org structure, not you specifically.</li>
-    <li><strong>Political capital resets to ~50-70%.</strong> Shipped artifacts transfer well; an old manager's verbal endorsement and informal influence mostly reset. The first 60-90 days are about rebuilding trust.</li>
-    <li><strong>First 30 days with a new manager are critical.</strong> Schedule the 1:1 within 2 weeks even if they don't ask; bring a 1-page context doc; learn their working style; ship something visible by day 60.</li>
-    <li><strong>Roadmap and promo commitments may not transfer.</strong> Anything the old manager or PM promised must be re-confirmed in writing with the new owners. Promo timing typically slips 6-12 months.</li>
-    <li><strong>Reorgs create winners, survivors, and losers by positioning, not just merit.</strong> Read the political map and the rising/falling stock of teams and leaders fast; position to be at least a survivor.</li>
-    <li><strong>The renegotiation window is open ~30-90 days.</strong> Scope, level, promo carry-forward, project assignment, and team moves are all more negotiable now than in steady state — use it before things lock back in.</li>
-    <li><strong>60-day rule:</strong> don't quit reflexively or make irreversible commitments in week 1; do build relationships and demonstrate value. The first 60 days are noise, not the new normal.</li>
-    <li><strong>"No surprises" still applies</strong> — your new manager should hear risks and decisions from you first, especially during the fragile transition.</li>
-    <li>A reorg is a layoff precursor roughly 30% of the time — read signals ("efficiency", hiring freezes, layers consolidated, senior departures) and quietly run the layoff-prep checklist if they're bad.</li>
-    <li><strong>Mobile / RN angle:</strong> mobile teams get moved around a lot ("where does mobile live?"). Have a business-terms story for your team's value, not just a technical one.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Freezing.</strong> Most engineers "wait and see", stay invisible, and assume old commitments carry forward — so they miss the 30-90 day renegotiation window and let a promo case quietly die with the old manager. The move is the opposite: act early, schedule the 1:1, re-confirm everything in writing, and use the open window.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"My team was dissolved in a reorg while I was on track for promo. I didn't panic — week one I set up a 1:1 with my new manager and sent a context doc; I re-confirmed my in-flight commitments and promo case in writing; and by week eight I'd shipped something visible to the new team. I got promoted one cycle later with broader scope than I'd have had."</div>
-  <div class="revision-say">"I treat a reorg as a negotiation window, not just a disruption. The first 60-90 days are when scope, level, and project assignment are most movable, so I make my case early rather than absorbing whatever I'm handed."</div>
-  <div class="revision-say">"I follow a 60-day rule on big decisions — the first weeks are noise, not the new normal. I don't quit or commit irreversibly until I've read the new structure and rebuilt the key relationships."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. A reorg hits while commitments and your promo case are in flight. How do you re-confirm them?</div>
+  <div class="qa-answer">
+    <p>First I inventory everything I'd agreed with the old PM and manager: deliverables, dates, expected promo, refresher conversations. Then I re-raise each with the new owners ("Old PM agreed X would ship by this date; want to confirm with you") and get it in writing, because verbal commitments evaporate in transitions. I also have my case ready in case they renegotiate. For the promo case: in the final 1:1 I ask the old manager to write a handoff memo, advocate at calibration if they're still in the room, and flag it to the skip-level. I give the new manager a context doc and packet draft with "I don't expect you to take this on faith — what do you need to evaluate it?", and I give the director a quick FYI. Even done well, there's roughly a 50% chance it slips a cycle; that's the cost of the reorg, not poor execution.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you tell a concise STAR story about adapting to a major reorg or leadership change — one that shows you acted methodically instead of panicking?</li>
-    <li>Can you explain how you'd run your first 30 days under a new manager (1:1, context doc, learning their style, shipping a visible win)?</li>
-    <li>Can you describe how you re-confirm commitments and a promo case that were in flight when the reorg hit?</li>
-    <li>Can you explain the 60-day rule and the criteria you'd use to decide whether to stay or leave after a reorg?</li>
-    <li>Can you name the signals that a "reorg" is really a pre-layoff move, and what you'd do about them?</li>
-    <li>Can you give a business-terms story for why your (mobile) team's work matters when leadership is deciding who owns what?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. What signals tell you a "reorg" is really a pre-layoff move, and what would you do about them?</div>
+  <div class="qa-answer">
+    <p>The signals: hiring freezes alongside the reorg; "efficiency," "focus," "cost discipline" or "doing more with less" language; unusually large consolidations, such as several teams merging or manager layers collapsing; roles becoming vague ("we'll figure out who does what"); recently active projects suddenly deprioritized; and senior people departing "to pursue other opportunities." Taken together, these suggest cuts within 3-6 months. I'd quietly run the layoff-prep checklist — refresh the financial buffer, update my resume, warm 5-10 contacts — and make sure I'm on visible, rising-stock projects. I wouldn't panic or quit; I'd keep executing well, which is the best position whether I stay or get cut.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. Leadership is deciding who owns what. Give me a business-terms case for why your mobile team's work matters.</div>
+  <div class="qa-answer">
+    <p>Mobile gets moved around a lot in reorgs ("where does mobile live?"), and platform teams get hit hardest in efficiency drives ("can product teams just own their own mobile?"). So the case has to be in business terms, not technical ones: "we ship faster than our competitor" lands in a reorg discussion where "we have a clean state-management pattern" doesn't. Within two weeks I want a 60-second story: what my team owns in the new structure, why it matters strategically, what I'm working on, the visible outcome in 6-12 months, and how it ladders to the new VP's stated priorities. If I'm embedded into a product team, I reframe myself as "a senior mobile engineer whose platform knowledge benefits this product" and offer to be the cross-team mobile lead.</p>
+  </div>
+</div>
+` },
+
   ]
 });

@@ -1,33 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'wp-perf-promo',
-  module: 'workplace',
-  title: 'Performance Reviews & Promo Narratives',
-  estimatedReadTime: '45 min',
-  tags: ['performance-review', 'promotion', 'calibration', 'self-eval', 'career', 'faang', 'narrative'],
+  id: "wp-perf-promo",
+  module: "workplace",
+  title: "Performance Reviews & Promo Narratives",
+  estimatedReadTime: "45 min",
+  tags: ["performance-review","promotion","calibration","self-eval","career","faang","narrative"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Performance reviews and promotions look like an evaluation of your work; they're actually a <strong>narrative-construction exercise</strong> against a leveling rubric, decided in calibration meetings you don't attend. The work matters; how it's framed in your packet matters as much. Engineers who treat the perf cycle as "they'll see what I did" lose to peers who treat it as a written argument.</p>
-<ul>
-  <li><strong>Promotions are decided in calibration,</strong> not by your manager alone. Calibration = a room of managers comparing packets across orgs. Your manager <em>advocates</em>; you <em>give them the ammo</em>.</li>
-  <li><strong>"Doing the job at the next level"</strong> is the bar — not "ready for next level." If you're not already doing it (visibly), you're not promoting.</li>
-  <li><strong>Scope &gt; effort.</strong> Hours worked, lines shipped, tickets closed don't promote you. Scope (impact across teams / orgs / quarters) does.</li>
-  <li><strong>The packet is a written argument:</strong> 3-5 highlight projects, each with concrete impact (numbers / dollars / users / latency / cost), peer testimonials, forward-looking trajectory.</li>
-  <li><strong>Build the packet across the year,</strong> not in the last 2 weeks. Quarterly snippets beat last-minute reconstruction.</li>
-  <li><strong>Manager alignment in advance.</strong> Surprises in calibration are how packets fail. Quarterly "am I on track?" check beats year-end "what went wrong?"</li>
-  <li><strong>Common rejection reasons:</strong> scope too narrow, behaviors gap (collaboration / communication / mentorship), business impact unclear, peer signals weak, "ready" but not "doing it."</li>
-  <li><strong>Recovery is real:</strong> "not ready" usually = 6-12 months, not "never." Don't take it as final; take it as feedback.</li>
-</ul>
-<p><strong>Mantra:</strong> "Build scope, document impact, align early, write the packet as an argument. Promotions are decided in rooms you're not in — give your manager the ammo to win."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Promotions are a <strong>narrative-construction exercise against a rubric, decided in calibration rooms you're not in</strong> — build the scope, document the impact in numbers, align early, and give your manager the ammo to win.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Calibration is where the decision happens,</strong> not your manager alone — a room of managers comparing packets across the org. Your manager advocates; your packet is their ammo.</li>
+    <li><strong>The bar is "already doing the job at the next level," not "ready for it".</strong> If you haven't operated at that scope visibly for 6-12 months, you won't promote.</li>
+    <li><strong>Scope beats effort.</strong> Hours, lines of code, and tickets closed don't promote you; cross-team / cross-quarter impact does.</li>
+    <li>The packet is a <strong>written argument:</strong> 3-5 highlight projects (one anchor + breadth + one forward-looking), each with concrete numbers — users, revenue, latency, cost, time saved — plus peer testimonials and a forward-looking trajectory.</li>
+    <li><strong>Frame outcomes, not effort:</strong> "reduced p99 from 800ms to 150ms and saved $300K/yr" beats "worked on infra improvements".</li>
+    <li>Promotion needs <strong>technical impact AND behaviors</strong> — technical leadership, mentorship, collaboration, communication — shown through specific examples, not claimed in adjectives.</li>
+    <li><strong>Build the packet across the year</strong> with quarterly snippets, not in the last 2 weeks; year-end reconstruction misses metrics, mentorship outcomes, and artifacts.</li>
+    <li><strong>Align with your manager throughout, not at year-end</strong> — quarterly "am I on track?" and a mid-year "what's the strongest objection?" prevent calibration surprises, which are how packets fail.</li>
+    <li><strong>Common rejection reasons:</strong> scope too narrow, behaviors gap, business impact unclear, peer signals weak, or "ready" but not "doing it".</li>
+    <li><strong>Nominate peers strategically:</strong> mix in-team, cross-team, mentee, and partner-team; brief them with specific projects so their feedback is credible, not vague.</li>
+    <li><strong>Acknowledge what went wrong</strong> (the outage, the miss) — self-awareness in writing builds credibility for the rest of the packet.</li>
+    <li><strong>"Not ready" usually means 6-12 months, not "never".</strong> Take it as feedback, not a verdict: get the specific gap (scope, behaviors, impact, peer signal) and build a dated plan to close it.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>"The work speaks for itself."</strong> It doesn't — the narrative ships alongside the work. Writing the self-eval in two days at year-end, listing 12 small projects, using effort framing with no numbers, and inflating your role (which peers contradict in calibration) all sink strong work. Build snippets year-round and frame in outcomes.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I frame impact in business terms — 'p99 800ms to 150ms, $300K/yr saved, used by 5M users' — because calibration peers can hold concrete numbers, not 'improved performance'."</div>
+  <div class="revision-say">"I align with my manager quarterly on promo trajectory, not at year-end — I ask what the strongest calibration objection would be today and close that specific gap. Surprises are how packets fail."</div>
+  <div class="revision-say">"When I got 'not promo'd' once, I treated it as feedback not a verdict — got the specific gap, built a six-month plan with my manager, and closed it."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What perf reviews actually are</h3>
 <p>At FAANG and most large companies, perf review is a multi-stage process:</p>
 <ol>
@@ -96,12 +105,10 @@ window.PREP_SITE.registerTopic({
   <li>Peer feedback contradicts the packet narrative.</li>
   <li>Manager surprised by something at year-end.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The narrative is the product</h3>
 <p>Your year produces work and produces a narrative about that work. Both ship. Engineers who ignore the narrative ("the work speaks for itself") lose to engineers who write it.</p>
 
@@ -206,12 +213,10 @@ window.PREP_SITE.registerTopic({
 </ul>
 
 <p>This is not "asking for permission" — it's giving your manager the chance to course-correct before stakes are high. They'll appreciate it; the surprises will go down.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>The quarterly snippet doc</h3>
 <p>Maintain a personal doc throughout the year. Format:</p>
 <pre><code class="language-text"># 2026 Promo Snippets — Prakhar
@@ -387,12 +392,10 @@ from you than have them surface in calibration.
   <li>Doesn't mean the work was bad. Means you weren't in the top 10% <em>relative to peers</em>.</li>
   <li>Don't take it as personal. Take it as a relative ranking + specific feedback.</li>
 </ul>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: A weak self-eval (annotated)</h3>
 <pre><code class="language-text">## What I delivered
 
@@ -566,12 +569,11 @@ calibration."
 </code></pre>
 
 <p>Specific. Mutual commitment. 6-month milestone (not "we'll see at year-end"). This is how recovery actually works.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>The "great manager" trap</h3>
 <ul>
   <li>Manager loves you. 1:1s are warm. Says "you're killing it."</li>
@@ -672,12 +674,9 @@ calibration."
   <li>Internal promo signals stronger "ready" (vs external interview gaming).</li>
   <li>Mitigation: the optimal answer depends on your goals. External often wins on title + comp short-term; internal builds long-term reputation. Both are legitimate. (See <code>wp-comp</code>.)</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common perf-review mistakes</h3>
 <ol>
   <li><strong>Writing the self-eval in 2 days at year-end.</strong> Reconstruction misses everything; snippets needed throughout the year.</li>
@@ -820,12 +819,10 @@ zero incidents."
 </code></pre>
 
 <p>Self-awareness in writing is a credibility builder; calibration trusts the rest of your eval more.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Behavioral interview prompts that map here</h3>
 <ol>
   <li>"Tell me about a time you delivered impact above your level."</li>
@@ -951,56 +948,38 @@ migration the following quarter, which had zero incidents."
   <li>"Practice the 60-second impact pitch out loud; iterate until it's natural."</li>
   <li>"Ask a senior peer to review your draft self-eval before submission."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Promotions are a <strong>narrative-construction exercise against a rubric, decided in calibration rooms you're not in</strong> — build the scope, document the impact in numbers, align early, and give your manager the ammo to win.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Calibration is where the decision happens,</strong> not your manager alone — a room of managers comparing packets across the org. Your manager advocates; your packet is their ammo.</li>
-    <li><strong>The bar is "already doing the job at the next level," not "ready for it".</strong> If you haven't operated at that scope visibly for 6-12 months, you won't promote.</li>
-    <li><strong>Scope beats effort.</strong> Hours, lines of code, and tickets closed don't promote you; cross-team / cross-quarter impact does.</li>
-    <li>The packet is a <strong>written argument:</strong> 3-5 highlight projects (one anchor + breadth + one forward-looking), each with concrete numbers — users, revenue, latency, cost, time saved.</li>
-    <li><strong>Frame outcomes, not effort:</strong> "reduced p99 from 800ms to 150ms and saved $300K/yr" beats "worked on infra improvements".</li>
-    <li>Promotion needs <strong>technical impact AND behaviors</strong> — technical leadership, mentorship, collaboration, communication — shown through specific examples, not claimed in adjectives.</li>
-    <li><strong>Build the packet across the year</strong> with quarterly snippets; year-end reconstruction misses metrics, mentorship outcomes, and artifacts.</li>
-    <li><strong>Align with your manager throughout, not at year-end</strong> — quarterly "am I on track?" and a mid-year "what's the strongest objection?" prevent calibration surprises.</li>
-    <li><strong>Nominate peers strategically:</strong> mix in-team, cross-team, mentee, and partner-team; brief them with specific projects so their feedback is credible, not vague.</li>
-    <li><strong>Acknowledge what went wrong</strong> (the outage, the miss) — self-awareness in writing builds credibility for the rest of the packet.</li>
-    <li><strong>"Not ready" usually means 6-12 months, not "never".</strong> Get the specific gap (scope, behaviors, impact, peer signal) and build a dated plan to close it.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>"The work speaks for itself."</strong> It doesn't — the narrative ships alongside the work. Writing the self-eval in two days at year-end, listing 12 small projects, using effort framing with no numbers, and inflating your role (which peers contradict in calibration) all sink strong work. Build snippets year-round and frame in outcomes.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I frame impact in business terms — 'p99 800ms to 150ms, $300K/yr saved, used by 5M users' — because calibration peers can hold concrete numbers, not 'improved performance'."</div>
-  <div class="revision-say">"I align with my manager quarterly on promo trajectory, not at year-end — I ask what the strongest calibration objection would be today and close that specific gap. Surprises are how packets fail."</div>
-  <div class="revision-say">"When I got 'not promo'd' once, I treated it as feedback not a verdict — got the specific gap, built a six-month plan with my manager, and closed it."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Why are promotions decided in calibration, and what's the difference between "doing the job at the next level" and being "ready" for it?</div>
+  <div class="qa-answer">
+    <p>Perf review is multi-stage — self-eval, 4-8 peer feedbacks, the manager's eval — but the decision happens in calibration, where managers compare packets and set ratings and promos <em>relative to peers across the org</em>. You're not in that room; your manager is your advocate, and their job is hard if the packet is weak and impossible if it contradicts itself. "Ready" means "if we gave them the responsibility, they'd handle it" — that is not enough. The bar is "already operating with that scope, behavior and outcome," which in practice means acting at the next level for 6-12 months before you get the title.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why promotions are decided in calibration and what "doing the job at the next level" means versus "ready"?</li>
-    <li>Can you tell a concise STAR story about your most impactful project — scope, your role, and quantified business outcome?</li>
-    <li>Can you reframe an effort-based accomplishment ("worked on X") into an outcome-based one with numbers?</li>
-    <li>Can you describe how you build a promo packet across the year and align with your manager to avoid calibration surprises?</li>
-    <li>Can you explain how you would nominate and brief peers so their feedback is specific and credible?</li>
-    <li>Can you describe how you would respond to a "not yet ready" outcome — extracting the gap and building a plan?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Take an effort-based accomplishment like "worked on X" and reframe it as an outcome.</div>
+  <div class="qa-answer">
+    <p>Effort framing describes activity; outcome framing names scope, your role, and the business result in numbers. "Worked on infra improvements" becomes "Migrated the payment service from monolith to microservice; reduced p99 latency from 800ms to 150ms; saved $200K/yr in compute." "Mentored junior engineers" becomes "Mentored 3 juniors, all of whom shipped their P0 quarterly goals; one promo'd to L4 mid-year." Calibration peers can hold and repeat a concrete number; they forget "improved performance."</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. How do you build a promo packet across the year and stay aligned with your manager so calibration holds no surprises?</div>
+  <div class="qa-answer">
+    <p>I keep a quarterly snippet doc — per project: role, scope, impact, behaviors, numbers, artifacts, peer recognition — updated in about 30 minutes each quarter, so at year-end I have far more raw material than I need. I set goals scoped to the target level in Q1, pick my 3-5 highlights early, stop starting new things in Q3/Q4 and finish and measure instead. On alignment: quarterly "are these highlights tracking to my goal?", a mid-year "if we ran calibration today, what would the strongest objection be, and what 2-3 things would close it?", then iterate the draft self-eval with my manager 2-3 times and ask "anything to add before you defend this?" before calibration.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How do you choose and brief peers for feedback so it's specific and credible?</div>
+  <div class="qa-answer">
+    <p>I mix the slots: a senior IC on my team (execution), a cross-team senior IC (scope), a junior I mentored (multiplier behavior), a PM or EM (business impact), and for L5+ a skip-level peer or partner-team lead (org-level scope). I avoid weakly connected peers, whose vague feedback hurts, and friends-only lists, which calibration sees through. Then I send a short brief: the projects they saw with links, the specific behaviors I'd value feedback on, and an explicit "no need for it to be glowing — I'd rather hear concerns from you than in calibration." Concrete material makes their feedback specific, and specific is credible.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. You get a "not yet ready" outcome. What do you do next?</div>
+  <div class="qa-answer">
+    <p>Treat it as feedback, not a verdict — "not ready" usually means 6-12 months, not never. In the next 1:1 I ask for the specific calibration objections, mapped to the rejection categories (scope too narrow, behaviors gap, impact unclear, weak peer signal). Then I propose a dated plan tied to each gap — for example, own a specific cross-org initiative for scope, and author a cross-team-reviewed design doc each quarter for context-sharing — and ask for a mutual commitment: "If I show these, will you support a re-look in 6 months?" A named milestone beats "we'll see at year-end."</p>
+  </div>
+</div>
+` },
+
   ]
 });

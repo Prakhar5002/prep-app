@@ -1,32 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'sd-cases',
-  module: 'Frontend System Design',
-  title: 'Case Studies',
-  estimatedReadTime: '40 min',
-  tags: ['system-design', 'case-study', 'twitter', 'chat', 'docs', 'autocomplete', 'feed', 'youtube'],
+  id: "sd-cases",
+  module: "Frontend System Design",
+  title: "Case Studies",
+  estimatedReadTime: "40 min",
+  tags: ["system-design","case-study","twitter","chat","docs","autocomplete","feed","youtube"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Worked examples of the 10-Step Framework applied to popular system-design prompts. Each case study follows the same template — clarify → estimate → architecture → data → API → components → state → perf → edges → deep dive — so you can practice the pattern end-to-end.</p>
-<p>Studies in this topic:</p>
-<ol>
-  <li><strong>Twitter / News Feed</strong> — infinite scroll, real-time tweets, optimistic likes.</li>
-  <li><strong>Chat app (WhatsApp / Slack)</strong> — WebSockets, message ordering, offline replay.</li>
-  <li><strong>Google Docs-style collaborative editor</strong> — CRDT, presence, offline sync.</li>
-  <li><strong>Autocomplete / typeahead (Google Search)</strong> — debouncing, caching, ranking.</li>
-  <li><strong>Video streaming (YouTube / Netflix)</strong> — adaptive bitrate, buffering, resume.</li>
-  <li><strong>Photo/video upload (Instagram)</strong> — chunked upload, client-side compression, progress.</li>
-</ol>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Read each study twice. First for the shape — what decisions were made where. Second for the vocabulary — the precise terms (cursor pagination, optimistic mutation with rollback, CRDT, adaptive bitrate) that make your interview answers sound senior.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Each case walks the same 10-step template so you can <strong>pattern-match a new prompt to a rehearsed case</strong> and recall its decisions and vocabulary on demand.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Six worked cases:</strong> Twitter/News Feed, Chat (WhatsApp/Slack), Collaborative editor (Google Docs), Autocomplete/typeahead, Video streaming (YouTube/Netflix), Photo/video upload (Instagram).</li>
+    <li>Read each case twice — once for the <strong>shape</strong> (what decision goes where), once for the <strong>vocabulary</strong> that makes answers sound senior.</li>
+    <li><strong>Twitter feed:</strong> SSR the first ~10 tweets for LCP, virtualized list, React Query + normalized cache, WebSocket new-tweet pushes buffered in a "N new tweets" pill, optimistic likes with rollback, offline via service worker + IndexedDB queue.</li>
+    <li><strong>Chat:</strong> order by (serverTimestamp, sequence); dedupe via a client-generated <code>clientId</code> used as the idempotency key; offline queue in IndexedDB; on reconnect request messages since the last sequence.</li>
+    <li><strong>Collaborative editor:</strong> CRDT (Yjs) for offline-first convergence; presence/awareness throttled to ~10Hz on the same WS; CRDT vs OT — CRDT wins for offline, OT gives tighter server control.</li>
+    <li><strong>Autocomplete:</strong> debounce ~150ms, AbortController to cancel in-flight, a sequence guard to drop out-of-order responses, LRU cache (cache-first), ARIA combobox, suppress requests during IME composition.</li>
+    <li><strong>Video streaming:</strong> adaptive bitrate from measured throughput + buffer level; start low for fast first frame then step up; TTFF via preloaded poster/manifest; HLS or DASH segments on CDN.</li>
+    <li><strong>Upload:</strong> chunked/resumable multipart, client-side compression, 3-4 parallel chunks, IndexedDB queue + service worker for background/resume, strip EXIF GPS before upload.</li>
+    <li><strong>Recurring patterns:</strong> normalized cache, optimistic mutation + rollback, WebSocket realtime (reconnect + "since" cursor), virtualized infinite list, offline-first queue, worker offload, adaptive quality, cursor pagination, presence protocol, error hierarchy, perf budget, a11y + i18n baselines.</li>
+    <li><strong>Cursor pagination</strong> is stable under inserts — used in feeds, chat history, and search.</li>
+    <li><strong>Pattern-match new prompts</strong> to a known case ("Pinterest ≈ the feed case") instead of starting from scratch.</li>
+    <li>Senior = framework + patterns + tradeoffs; <strong>staff</strong> adds product thinking, tooling/measurement (budgets, RUM), evolution/migration, and explicit downscoping.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Reciting the 10 steps mechanically without naming a pattern or a tradeoff — that reads junior. Fix: state the recurring pattern by name (cursor pagination, optimistic-with-rollback, WebSocket + since-cursor) and justify it for the specific prompt, then add the deepest risk you'd want to prototype.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I pattern-match the prompt to a case I've rehearsed — most feed prompts are the Twitter case, most editors are the CRDT/Docs case."</div>
+  <div class="revision-say">"I lean on the recurring patterns by name: normalized cache, optimistic-with-rollback, WebSocket plus a since-cursor, virtualized infinite list, offline queue."</div>
+  <div class="revision-say">"For a feed: SSR the first tweets, virtualize, React Query + normalized cache, WebSocket into a 'N new tweets' pill, optimistic likes — biggest open risk is scaling WebSocket to 10M concurrent."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'case-1-twitter', title: '🐦 Case 1 — Twitter / News Feed', html: `
+{ id: "case-1-twitter", title: "🐦 Case 1 — Twitter / News Feed", collapsible: true, html: `
 <h3>Step 1 — Clarify</h3>
 <pre><code>FUNCTIONAL
 - View a home timeline of tweets from followed accounts
@@ -159,10 +169,10 @@ WS   /feed/subscribe
   <li><strong>SSE</strong>: one-way push, simpler than WS; valid choice. We'd switch to WS if bidirectional (typing indicators, presence) is needed.</li>
   <li><strong>Full refresh on focus</strong>: not "live"; rejected given the prompt says live updates.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'case-2-chat', title: '💬 Case 2 — Chat App (WhatsApp / Slack)', html: `
+{ id: "case-2-chat", title: "💬 Case 2 — Chat App (WhatsApp / Slack)", collapsible: true, html: `
 <h3>Step 1 — Clarify</h3>
 <pre><code>FUNCTIONAL
 - 1:1 and group chats
@@ -271,10 +281,10 @@ WS   /connect
   <li>Missed messages after reconnect: client sends <code>GET /messages?since=lastSeenSeq</code>; merges into store.</li>
   <li>Failed send: after N retries, mark <code>status: failed</code>, show retry UI.</li>
 </ol>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'case-3-docs', title: '📝 Case 3 — Collaborative Editor (Google Docs)', html: `
+{ id: "case-3-docs", title: "📝 Case 3 — Collaborative Editor (Google Docs)", collapsible: true, html: `
 <h3>Step 1 — Clarify</h3>
 <pre><code>FUNCTIONAL
 - Rich-text editing (bold, italic, headings, lists, links)
@@ -384,10 +394,10 @@ POST /doc/:id/comments   CRUD comments</code></pre>
   <li><strong>OT (Operational Transformation)</strong>: historical Google Docs approach. Tighter server control; harder offline story. CRDTs win for offline-first.</li>
   <li><strong>Polling-based awareness</strong>: unacceptable latency for cursor movement.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'case-4-autocomplete', title: '🔎 Case 4 — Autocomplete / Typeahead', html: `
+{ id: "case-4-autocomplete", title: "🔎 Case 4 — Autocomplete / Typeahead", collapsible: true, html: `
 <h3>Step 1 — Clarify</h3>
 <pre><code>FUNCTIONAL
 - User types in search box
@@ -473,10 +483,10 @@ recentHistory:  Query[]                                             // stored lo
   <li><strong>Edge caching</strong>: cacheable responses get served by CDN POP closest to user — sub-50ms RTT.</li>
   <li><strong>Connection hint</strong>: on slow connection (<code>navigator.connection.effectiveType==='2g'</code>), increase debounce to 300ms and show cached suggestions longer.</li>
 </ol>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'case-5-video', title: '📺 Case 5 — Video Streaming (YouTube / Netflix)', html: `
+{ id: "case-5-video", title: "📺 Case 5 — Video Streaming (YouTube / Netflix)", collapsible: true, html: `
 <h3>Step 1 — Clarify</h3>
 <pre><code>FUNCTIONAL
 - Play a video on a video page
@@ -576,10 +586,10 @@ POST /video/:id/watch-event  → {play, pause, seek, qualityChange}</code></pre>
   <li>Client hints: read <code>navigator.connection</code> for initial bitrate seed on first load.</li>
 </ol>
 <p>Tradeoff: aggressive ABR reduces rebuffering but may show more quality changes; conservative ABR looks more stable but rebuffers more. Tune for p95 buffer underrun metric.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'case-6-upload', title: '📤 Case 6 — Photo/Video Upload (Instagram)', html: `
+{ id: "case-6-upload", title: "📤 Case 6 — Photo/Video Upload (Instagram)", collapsible: true, html: `
 <h3>Step 1 — Clarify</h3>
 <pre><code>FUNCTIONAL
 - Select image or video from device
@@ -683,10 +693,10 @@ POST /post              → creates a post referencing mediaId</code></pre>
   <li><strong>Service worker</strong>: intercept in a SW so upload survives page navigation; the SW keeps fetch alive and reports progress via <code>postMessage</code>.</li>
   <li><strong>Tradeoff</strong>: chunking adds overhead (server round-trips per chunk). For files under ~5 MB, single PUT is simpler. Tune threshold by measured success rate.</li>
 </ol>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'patterns-summary', title: '🧩 Patterns Across Cases', html: `
+{ id: "patterns-summary", title: "🧩 Patterns Across Cases", collapsible: true, html: `
 <p>Across all six cases, the same patterns recur. Memorize these — they cover most interview prompts.</p>
 
 <h3>Pattern: Normalized client cache</h3>
@@ -727,10 +737,10 @@ POST /post              → creates a post referencing mediaId</code></pre>
 
 <h3>Pattern: i18n baseline</h3>
 <p>Logical CSS (<code>margin-inline-start</code>), <code>dir="rtl"</code>, ICU message format, <code>Intl</code> for number/date/relative time, lazy locale bundles.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Meta-Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Common prompts and their key deep-dive topics.</div>
   <div class="qa-answer">
@@ -804,51 +814,44 @@ POST /post              → creates a post referencing mediaId</code></pre>
     <li>You downscope explicitly when time pressure appears.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Each case walks the same 10-step template so you can <strong>pattern-match a new prompt to a rehearsed case</strong> and recall its decisions and vocabulary on demand.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Six worked cases:</strong> Twitter/News Feed, Chat (WhatsApp/Slack), Collaborative editor (Google Docs), Autocomplete/typeahead, Video streaming (YouTube/Netflix), Photo/video upload (Instagram).</li>
-    <li>Read each case twice — once for the <strong>shape</strong> (what decision goes where), once for the <strong>vocabulary</strong> that makes answers sound senior.</li>
-    <li><strong>Twitter feed:</strong> SSR the first ~10 tweets for LCP, virtualized list, React Query + normalized cache, WebSocket new-tweet pushes buffered in a "N new tweets" pill, optimistic likes with rollback, offline via service worker + IndexedDB queue.</li>
-    <li><strong>Chat:</strong> order by (serverTimestamp, sequence); dedupe via a client-generated <code>clientId</code> used as the idempotency key; offline queue in IndexedDB; on reconnect request messages since the last sequence.</li>
-    <li><strong>Collaborative editor:</strong> CRDT (Yjs) for offline-first convergence; presence/awareness throttled to ~10Hz on the same WS; CRDT vs OT — CRDT wins for offline, OT gives tighter server control.</li>
-    <li><strong>Autocomplete:</strong> debounce ~150ms, AbortController to cancel in-flight, a sequence guard to drop out-of-order responses, LRU cache (cache-first), ARIA combobox, suppress requests during IME composition.</li>
-    <li><strong>Video streaming:</strong> adaptive bitrate from measured throughput + buffer level; start low for fast first frame then step up; TTFF via preloaded poster/manifest; HLS or DASH segments on CDN.</li>
-    <li><strong>Upload:</strong> chunked/resumable multipart, client-side compression, 3-4 parallel chunks, IndexedDB queue + service worker for background/resume, strip EXIF GPS before upload.</li>
-    <li><strong>Recurring patterns:</strong> normalized cache, optimistic mutation + rollback, WebSocket realtime (reconnect + "since" cursor), virtualized infinite list, offline-first queue, worker offload, adaptive quality, cursor pagination, presence protocol, error hierarchy, perf budget, a11y + i18n baselines.</li>
-    <li><strong>Cursor pagination</strong> is stable under inserts — used in feeds, chat history, and search.</li>
-    <li><strong>Pattern-match new prompts</strong> to a known case ("Pinterest ≈ the feed case") instead of starting from scratch.</li>
-    <li>Senior = framework + patterns + tradeoffs; <strong>staff</strong> adds product thinking, tooling/measurement (budgets, RUM), evolution/migration, and explicit downscoping.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Reciting the 10 steps mechanically without naming a pattern or a tradeoff — that reads junior. Fix: state the recurring pattern by name (cursor pagination, optimistic-with-rollback, WebSocket + since-cursor) and justify it for the specific prompt, then add the deepest risk you'd want to prototype.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I pattern-match the prompt to a case I've rehearsed — most feed prompts are the Twitter case, most editors are the CRDT/Docs case."</div>
-  <div class="revision-say">"I lean on the recurring patterns by name: normalized cache, optimistic-with-rollback, WebSocket plus a since-cursor, virtualized infinite list, offline queue."</div>
-  <div class="revision-say">"For a feed: SSR the first tweets, virtualize, React Query + normalized cache, WebSocket into a 'N new tweets' pill, optimistic likes — biggest open risk is scaling WebSocket to 10M concurrent."</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. A user scrolls ~500 tweets per session. How do you render the feed and paginate it so it stays stable while new tweets arrive?</div>
+  <div class="qa-answer">
+    <p>500 rows per session means the list must be virtualized (e.g. <code>@tanstack/virtual</code>): only visible rows render, with a memoized <code>TweetCard</code>, fixed media aspect ratios against CLS, and tweets far off-screen (around 200 rows away) evicted to cap memory. Pages come from <code>GET /feed?cursor&amp;limit=20</code>, returning <code>{ tweets, users, media, nextCursor }</code>, loaded with a React Query infinite query and merged into a normalized cache. Use an opaque server cursor rather than offsets or "page 2": with offsets, tweets inserted at the head shift every page, causing duplicates and skips, while a cursor is stable under inserts. SSR the first ~10 tweets for LCP and prefetch the next page while showing a skeleton.</p>
+  </div>
 </div>
-`},
-
-// ─────────────────────────────────────────────────────────────
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you virtualize a 500-row feed and pair it with cursor pagination that stays stable under new inserts?</li>
-    <li>Can you push live tweets over a WebSocket, buffer them in a "N new tweets" pill, and reconcile with a "since" cursor after reconnect?</li>
-    <li>Can you guarantee chat message order and dedupe using a server (timestamp, sequence) sort plus a client-generated idempotency key?</li>
-    <li>Can you justify CRDT over OT for a collaborative editor, and describe presence/awareness throttled on the same WebSocket?</li>
-    <li>Can you keep autocomplete responsive with debouncing, AbortController, a sequence guard for out-of-order responses, and an LRU cache?</li>
-    <li>Can you make an upload resumable with chunked multipart, an IndexedDB queue, and a service worker that survives navigation?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q7. How do new tweets appear live without yanking the user's scroll position, and how do you catch up after a disconnect?</div>
+  <div class="qa-answer">
+    <p>On mount the client opens a WebSocket to <code>/feed/subscribe</code>; the server pushes <code>{ type: 'new_tweet', tweet, author, media }</code>. The handler writes the entities into the normalized cache (<code>queryClient.setQueryData</code>) and appends the id to a <code>newPending</code> buffer. If the feed is at the top and the tab is focused, merge immediately; otherwise show an "N new tweets" pill, and clicking it prepends the ids, scrolls to top and clears the buffer (capped at 100, shown as "100+"). An <code>aria-live="polite"</code> region announces the count. When the socket drops, reconnect with exponential backoff and request the delta since the last seen tweet id (a "since" cursor) so nothing is missed. SSE would also work for one-way push; WebSocket wins once you need bidirectional features like presence.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q8. In a chat app, how do you guarantee message order and avoid duplicate messages?</div>
+  <div class="qa-answer">
+    <p>Never sort by receive time. The server assigns <code>serverTimestamp</code> plus a per-conversation <code>sequence</code>, and the client sorts by <code>(serverTimestamp, sequence)</code>, the sequence breaking ties between concurrent sends. For dedupe, the client generates a <code>clientId = uuid()</code> before sending and stores the message with <code>status: pending</code>; when the server acknowledges or the WebSocket echoes the message back (you're in the group), the client looks it up by <code>clientId</code> and replaces the pending entry instead of adding a second one. Offline sends are queued in IndexedDB and replayed in order on reconnect, and the server accepts them idempotently using <code>clientId</code> as the idempotency key. Missed messages are fetched with <code>GET /messages?since=lastSeenSeq</code>; after N failed retries a message is marked failed with a retry UI.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q9. For a collaborative editor, why choose CRDT over OT, and how does presence work?</div>
+  <div class="qa-answer">
+    <p>The requirements include offline editing for up to 24h and guaranteed convergence. A CRDT such as Yjs keeps a local replica (persisted to IndexedDB) that records ops offline and merges deterministically on reconnect, so all clients converge. OT, the historical Google Docs approach, gives tighter server control but a much harder offline story, so CRDT wins for offline-first. Presence/awareness is an ephemeral side-channel on the <strong>same WebSocket</strong>: on selection change the client sends a CRDT-stable cursor anchor (so it tracks concurrent edits), throttled to about 10Hz, and the server broadcasts it to peers, who render coloured carets. It's never persisted: a peer's cursor is removed after ~3s without a heartbeat and re-published on reconnect.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q10. How do you keep an autocomplete box responsive and correct?</div>
+  <div class="qa-answer">
+    <p>Layer four techniques. <strong>Debounce</strong> ~150ms so you don't flood the API (300ms on 2G). <strong>Cancel</strong> stale work: every request gets an <code>AbortController</code> and a new keystroke calls <code>prevCtrl.abort()</code>. Add a <strong>sequence guard</strong>: tag each request with an increasing seq and discard any response older than the latest completed one, so a slow "a" response can't overwrite "abc". Use an <strong>LRU cache</strong> (~50 entries, keyed by lowercased query) checked first, so cached suggestions render instantly and the network only revalidates. Also prefetch popular suggestions on focus, suppress requests during IME composition, and implement the ARIA combobox pattern.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q11. How do you make a large photo or video upload resumable, even across navigation or a closed tab?</div>
+  <div class="qa-answer">
+    <p>For files over ~10 MB use chunked multipart upload: <code>POST /upload/initiate</code> returns an <code>uploadId</code>, chunk size (e.g. 5 MB) and signed URLs; the client slices the file with <code>Blob.slice()</code> and uploads 3-4 chunks in parallel (more just competes for bandwidth), each retried independently with exponential backoff, re-reading bytes from the File rather than holding them in memory. After each success it records <code>chunksDone</code> in an IndexedDB-backed queue, so after a tab close it can ask the server for status and resume from the next missing chunk, then call <code>/upload/complete</code>. A service worker keeps the upload alive across page navigation and reports progress via <code>postMessage</code>. Compress in a Web Worker first and strip EXIF GPS; for files under ~5 MB a single PUT is simpler.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

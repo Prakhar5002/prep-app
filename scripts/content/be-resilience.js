@@ -1,33 +1,39 @@
 window.PREP_SITE.registerTopic({
-  id: 'be-resilience',
-  module: 'backend',
-  title: 'Resilience',
-  estimatedReadTime: '45 min',
-  tags: ['resilience', 'retries', 'circuit-breaker', 'timeouts', 'bulkhead', 'idempotency', 'fallback', 'chaos'],
+  id: "be-resilience",
+  module: "backend",
+  title: "Resilience",
+  estimatedReadTime: "45 min",
+  tags: ["resilience","retries","circuit-breaker","timeouts","bulkhead","idempotency","fallback","chaos"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Resilience patterns</strong> are how distributed systems stay up when individual pieces fail. Networks blip, dependencies slow down, instances crash — the question isn't "how do I prevent this?" but "how do I keep serving users when this happens?" The cost of getting it wrong: a slow upstream takes down your whole service.</p>
-<ul>
-  <li><strong>Timeouts</strong> are the foundational resilience primitive. Every external call needs one. Without them, slow upstream = blocked workers = total outage.</li>
-  <li><strong>Retries with exponential backoff + jitter</strong> handle transient failures. Cap max attempts; idempotency required.</li>
-  <li><strong>Circuit breaker</strong> stops sending requests to a failing upstream — fail fast instead of cascading.</li>
-  <li><strong>Bulkhead</strong> isolates failure domains — one bad downstream shouldn't exhaust threads needed for healthy ones.</li>
-  <li><strong>Fallback</strong> degrades gracefully — cached data, default values, shed feature.</li>
-  <li><strong>Idempotency keys</strong> make retries safe.</li>
-  <li><strong>Backpressure</strong> protects against overload — bounded queues + load shedding (return 503).</li>
-  <li><strong>Chaos engineering</strong> deliberately fails things in production to find weak spots before users do.</li>
-</ul>
-<p><strong>Mantra:</strong> "Timeout everything. Retry idempotently with backoff + jitter. Break circuits. Bulkhead failures. Degrade gracefully. Shed load. Test failure deliberately."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Resilience isn't "how do I prevent failure" but <strong>"how do I keep serving users when a piece fails"</strong> — because a slow upstream, left unchecked, takes down your whole service.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Timeouts are the foundational primitive</strong> — every external call needs one. Without them, slow upstream = blocked workers = total outage. Propagate the budget: each hop passes a shorter deadline downstream.</li>
+    <li><strong>Retries with exponential backoff + jitter</strong> handle transient failures — cap max attempts, and only retry transient errors (5xx, network); <strong>fail fast on 4xx</strong> (except 429), where a retry won't help.</li>
+    <li><strong>Jitter is not optional</strong> — synchronized retries cause a thundering herd; spread them out.</li>
+    <li><strong>Circuit breaker</strong> stops sending to a failing upstream — fail fast instead of cascading (closed → open on e.g. 50% failures over 1 min → half-open probe after ~30s).</li>
+    <li><strong>Bulkhead</strong> isolates failure domains so one bad downstream can't exhaust the threads healthy ones need; <strong>backpressure</strong> protects against overload with bounded queues + load shedding (return 503).</li>
+    <li>Mantra: <em>timeout everything, retry idempotently with backoff + jitter, break circuits, bulkhead failures, degrade gracefully, shed load, test failure deliberately.</em></li>
+    <li><strong>Idempotency keys make retries safe</strong> — required on every mutation, or a retry becomes a duplicate.</li>
+    <li><strong>Fallback</strong> degrades gracefully (cached data, defaults, shed feature) — but <strong>instrument it</strong>; a silent fallback can be broken for a week and nobody notices.</li>
+    <li>Operational safety: <strong>liveness checks process internals only</strong> (never downstream deps, or a DB blip triggers a restart loop) while readiness can check deps; <strong>graceful shutdown</strong> drains in-flight on SIGTERM; deploy via <strong>canary/rolling</strong>, not big-bang; and <strong>chaos-test failure paths</strong> before prod does.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Two lethal mistakes: (1) <strong>no timeout on an external call</strong> — a slow upstream blocks workers indefinitely and takes the whole service down; and (2) <strong>retrying on 4xx</strong> (or retrying with no jitter) — it won't help, it amplifies bad behavior, and synchronized retries create a thundering herd. Runner-up: a <strong>liveness check that hits a downstream dependency</strong>, turning a DB blip into a container restart loop.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Timeout everything — a call with no deadline is the single fastest way to turn one slow upstream into a full outage."</div>
+  <div class="revision-say">"I retry only transient failures with exponential backoff and jitter, and only when the operation is idempotent — retrying a 4xx just amplifies a client mistake."</div>
+  <div class="revision-say">"Liveness checks process internals only; readiness checks dependencies — mixing them means a dependency blip restarts healthy containers in a loop."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The fundamental problem</h3>
 <p>Distributed systems fail constantly. Networks drop packets, instances die, GC pauses freeze, dependencies go slow, deploys cause hiccups. The question isn't "if" but "when + how often + how badly." Resilience patterns are the toolkit for staying up despite this.</p>
 
@@ -80,12 +86,10 @@ window.PREP_SITE.registerTopic({
   <li>Health checks too aggressive (liveness fails on transient hiccups).</li>
   <li>Observability gaps; you find out about outages from users.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The 4 "Rs" of resilience</h3>
 <table>
   <thead><tr><th>R</th><th>Means</th></tr></thead>
@@ -262,12 +266,10 @@ Worst:   Generic 500; user sees broken app
     <tr><td>Multi-region active-active</td><td>Both regions serve; latency-aware routing</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Timeout via AbortSignal</h3>
 <pre><code class="language-typescript">// Modern fetch with timeout
 async function fetchWithTimeout(url: string, ms: number, init?: RequestInit) {
@@ -563,12 +565,10 @@ async function chaosFetch(url: string, opts?: RequestInit) {
   return fetch(url, opts);
 }
 </code></pre>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Robust external API call</h3>
 <pre><code class="language-typescript">import CircuitBreaker from 'opossum';
 import { Agent } from 'undici';
@@ -829,12 +829,11 @@ async function chaosSearchCall(query: string) {
 
 // Then run integration tests; verify circuit breaker opens, fallback fires.
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Retries amplifying load</h3>
 <ul>
   <li>1000 clients each retry 3 times → upstream hit 3000× when it was already struggling.</li>
@@ -929,12 +928,9 @@ async function chaosSearchCall(query: string) {
   <li>If error budget burned: pause feature work; invest in reliability.</li>
   <li>Healthy: balanced velocity vs reliability; explicit tradeoff via SLO.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common resilience mistakes</h3>
 <ol>
   <li><strong>No timeout on external calls.</strong> Slow upstream blocks workers; service unavailable.</li>
@@ -1086,12 +1082,10 @@ app.post('/expensive', async (req, res) =&gt; {
   res.json({ ok: true });
 });
 </code></pre>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common resilience interview prompts</h3>
 <ol>
   <li>How do you handle a slow downstream API?</li>
@@ -1223,53 +1217,44 @@ app.post('/expensive', async (req, res) =&gt; {
   <li>"Build a multi-region active-active system end-to-end."</li>
   <li>"Set up an Argo Rollouts canary in a real cluster; trigger an auto-rollback."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Resilience isn't "how do I prevent failure" but <strong>"how do I keep serving users when a piece fails"</strong> — because a slow upstream, left unchecked, takes down your whole service.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Timeouts are the foundational primitive</strong> — every external call needs one. Without them, slow upstream = blocked workers = total outage.</li>
-    <li><strong>Retries with exponential backoff + jitter</strong> handle transient failures — cap max attempts, and only retry transient errors (5xx, network); <strong>fail fast on 4xx</strong> (except 429), where a retry won't help.</li>
-    <li><strong>Jitter is not optional</strong> — synchronized retries cause a thundering herd; spread them out.</li>
-    <li><strong>Circuit breaker</strong> stops sending to a failing upstream — fail fast instead of cascading.</li>
-    <li><strong>Bulkhead</strong> isolates failure domains so one bad downstream can't exhaust the threads healthy ones need; <strong>backpressure</strong> protects against overload with bounded queues + load shedding (return 503).</li>
-    <li><strong>Idempotency keys make retries safe</strong> — required on every mutation, or a retry becomes a duplicate.</li>
-    <li><strong>Fallback</strong> degrades gracefully (cached data, defaults, shed feature) — but <strong>instrument it</strong>; a silent fallback can be broken for a week and nobody notices.</li>
-    <li>Operational safety: <strong>liveness checks process internals only</strong> (never downstream deps, or a DB blip triggers a restart loop) while readiness can check deps; <strong>graceful shutdown</strong> drains in-flight on SIGTERM; deploy via <strong>canary/rolling</strong>, not big-bang; and <strong>chaos-test failure paths</strong> before prod does.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Two lethal mistakes: (1) <strong>no timeout on an external call</strong> — a slow upstream blocks workers indefinitely and takes the whole service down; and (2) <strong>retrying on 4xx</strong> (or retrying with no jitter) — it won't help, it amplifies bad behavior, and synchronized retries create a thundering herd. Runner-up: a <strong>liveness check that hits a downstream dependency</strong>, turning a DB blip into a container restart loop.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Timeout everything — a call with no deadline is the single fastest way to turn one slow upstream into a full outage."</div>
-  <div class="revision-say">"I retry only transient failures with exponential backoff and jitter, and only when the operation is idempotent — retrying a 4xx just amplifies a client mistake."</div>
-  <div class="revision-say">"Liveness checks process internals only; readiness checks dependencies — mixing them means a dependency blip restarts healthy containers in a loop."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Why are timeouts the foundational resilience primitive, and what happens without them?</div>
+  <div class="qa-answer">
+    <p>Every other pattern depends on first <em>recognising</em> that a call has failed, and a slow call never fails on its own. Without a deadline, one slow upstream holds workers indefinitely: the pool fills, throughput drops to zero and the whole service is unavailable — a slow dependency becomes a total outage. Set a timeout on every external call (roughly 500ms–2s internal, 3–10s for external APIs, 50–200ms for cache, 1–5s total for interactive UI) and propagate the budget: if the client allows 5s, A passes B a 4s deadline, B passes C 3s, so one slow leg can't eat the whole upstream budget. gRPC has deadlines built in; over HTTP use a header such as <code>X-Request-Deadline</code>.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why timeouts are the foundational resilience primitive and what happens without them?</li>
-    <li>Can you describe a correct retry strategy — backoff, jitter, transient-only, idempotent — and why 4xx should fail fast?</li>
-    <li>Can you explain how a circuit breaker prevents cascading failure?</li>
-    <li>Can you distinguish bulkhead, backpressure, and load shedding, and when each applies?</li>
-    <li>Can you explain why idempotency keys make retries safe, and why fallbacks must be instrumented?</li>
-    <li>Can you explain the liveness-vs-readiness distinction and the restart-loop trap of getting it wrong?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Describe a correct retry strategy. Why should 4xx errors fail fast?</div>
+  <div class="qa-answer">
+    <p>Retry only transient failures — network errors and 5xx (with caution, behind a circuit breaker), plus 429 while honouring <code>Retry-After</code> — using exponential backoff (100ms, 200ms, 400ms…) capped at a maximum, with jitter, and a cap of 3–5 attempts. Jitter is not optional: without it all clients retry at the same moment and the thundering herd keeps the upstream down. Retry only idempotent operations, or ones protected by an idempotency key; a timed-out non-idempotent write may already have been done. Bound retries across layers too — A retrying 5× into B retrying 5× is 25 upstream attempts — so retry at one layer or propagate the budget. A 4xx is a client mistake: retrying sends the same bad request again, won't help and just amplifies load.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. How does a circuit breaker prevent cascading failure?</div>
+  <div class="qa-answer">
+    <p>When an upstream is down, continuing to call it burns your latency budget, ties up workers and makes the upstream worse. A circuit breaker wraps each downstream dependency: <strong>closed</strong> passes requests normally; when the failure rate crosses a threshold (say 50% over a minute) it goes <strong>open</strong> and fails fast without calling the upstream, so you serve a fallback; after an open period (say 30s) it goes <strong>half-open</strong> and sends a probe — success closes it, failure re-opens it. Callers get an immediate answer instead of hanging, so the failure stays contained instead of propagating up the chain.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Distinguish bulkhead, backpressure and load shedding. When does each apply?</div>
+  <div class="qa-answer">
+    <p>A <strong>bulkhead</strong> isolates resources per dependency — separate thread pools, connection pools or queue lanes — so a slow downstream X can only exhaust its own 30 threads, not the shared 100 that healthy dependency Y needs. Use it when one service calls several dependencies. <strong>Backpressure</strong> pushes back on producers when you can't keep up: bounded queues that reject when full so the producer backs off. <strong>Load shedding</strong> deliberately drops work under overload: return <code>503</code> with <code>Retry-After</code>, cancel low-priority batch work in favour of interactive requests, rate-limit per client, or use adaptive concurrency limits. Bulkheads contain a bad dependency; backpressure and shedding protect you from too much incoming work — returning 503 beats crashing.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. Why do idempotency keys make retries safe, and why must fallbacks be instrumented?</div>
+  <div class="qa-answer">
+    <p>Retries produce duplicate requests; without protection you double-charge, double-create or double-delete. The client generates a UUID per logical operation, the server stores key → result for a TTL (24h+), and on a retry it returns the stored result without re-executing — so it's safe to retry even when you don't know whether the first attempt landed. Fallbacks (cached data, defaults, a hidden feature) hide failures from users, which also hides them from you: a silent <code>catch { return DEFAULT_RECS; }</code> can leave recommendations broken for a week with nobody noticing. Emit a metric and a log line with the reason every time a fallback fires, and alert on its rate.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. What's the difference between liveness and readiness checks, and what is the restart-loop trap?</div>
+  <div class="qa-answer">
+    <p><strong>Liveness</strong> asks "is the process alive?" — on failure the container is restarted. <strong>Readiness</strong> asks "can it serve traffic?" — on failure the instance is removed from load-balancer rotation but not restarted. (A Kubernetes startup probe delays liveness until initialisation finishes.) The trap is a liveness check that queries the database: a DB blip fails liveness, the container restarts, the DB is still down, so it fails again — a restart loop that turns a dependency hiccup into a self-inflicted outage. Liveness should check process internals only and fail only when genuinely stuck (deadlock, infinite loop); dependency checks belong in readiness, and even readiness shouldn't depend on every downstream or the instance will flap in and out of rotation.</p>
+  </div>
+</div>
+` },
+
   ]
 });

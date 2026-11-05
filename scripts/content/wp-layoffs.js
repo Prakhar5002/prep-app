@@ -1,33 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'wp-layoffs',
-  module: 'workplace',
-  title: 'Layoff Survival & Recovery',
-  estimatedReadTime: '40 min',
-  tags: ['layoffs', 'rif', 'severance', 'job-search', 'unemployment', 'survivor', 'career', 'tech-cuts'],
+  id: "wp-layoffs",
+  module: "workplace",
+  title: "Layoff Survival & Recovery",
+  estimatedReadTime: "40 min",
+  tags: ["layoffs","rif","severance","job-search","unemployment","survivor","career","tech-cuts"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Layoffs are no longer rare events; the 2022-2025 cycle made them routine in tech. Whether you're <strong>cut</strong>, <strong>survive</strong>, or <strong>see them coming</strong>, the same operational discipline applies: protect what you can control, take action with cool heads, don't let an event destroy your career or finances. Most layoff outcomes are decided in the weeks <em>before</em> the announcement (financial buffer, network, skills) — not in the panicked weeks after.</p>
-<ul>
-  <li><strong>Layoffs are usually not about you personally.</strong> They're org / team / cost decisions. Your performance can shift the odds; it rarely overrides the structural decision.</li>
-  <li><strong>Three roles in a layoff:</strong> cut, survivor, manager-of-cuts. Each has its own playbook.</li>
-  <li><strong>Cut: negotiate severance.</strong> You usually have leverage. The first offer is rarely the best. Get the offer in writing; consult an employment lawyer (1-2 hours, $300-500, well worth it).</li>
-  <li><strong>Survivor: recalibrate.</strong> Workload jumps; trust drops; team you knew is gone. Layoff survivors burn out fastest. Treat survival as a stress event.</li>
-  <li><strong>Pre-layoff (suspect cuts coming):</strong> 6-month financial buffer; updated resume; warm network; clear story; LinkedIn open to messages.</li>
-  <li><strong>Post-cut: take 1-2 weeks before serious job search.</strong> Reset emotionally. Then run the job search as a project, not a panic.</li>
-  <li><strong>Severance + reference + unemployment</strong> are negotiable items. Most engineers leave money + protections on the table by accepting first offer.</li>
-  <li><strong>Don't burn bridges.</strong> Tech is small; today's manager who cut you may be tomorrow's reference, hiring manager, or peer.</li>
-</ul>
-<p><strong>Mantra:</strong> "It's not personal; it's structural. Build the buffer before you need it. Negotiate the severance. Take the recovery week. Run job search as a project. Don't burn bridges."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Layoffs are <strong>structural, not personal</strong> — most of the outcome is decided by the buffer, network, and readiness you built <em>before</em> the announcement; after it, run the whole thing as an operational process.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>It's an org / team / cost decision, not a verdict on you.</strong> Your performance can shift the odds; it rarely overrides the structural decision. Since the 2022-2025 cycle, layoffs are routine in tech, not rare.</li>
+    <li><strong>Each role has its own playbook:</strong> cut (negotiate + recover + search), survivor (recalibrate workload, decide stay-vs-go deliberately), manager-of-cuts, and pre-layoff (build buffer, warm network, update materials, reduce vulnerability).</li>
+    <li><strong>Pre-layoff prep is the highest-leverage work:</strong> a 6-month financial buffer, a warm network kept warm year-round, resume + LinkedIn refreshed quarterly (open to messages), confirmed references.</li>
+    <li>On cut day: <strong>pause — do not sign or accept on the spot.</strong> Take 24-48 hours, get everything in writing, do not badmouth anywhere.</li>
+    <li><strong>Severance is negotiable</strong> — length, COBRA, vesting acceleration, bonus proration, a written reference. The first offer is rarely the best: anchor high, give rationale, get it in writing.</li>
+    <li>A <strong>$300-500 employment-lawyer consult</strong> (1-2 hours) routinely pays for itself many times over — non-compete, non-solicit, mutual non-disparagement, RSU timing, state protections.</li>
+    <li><strong>Take a 1-2 week recovery</strong> before serious searching; job-searching from panic produces bad applications, weak interviews, and suboptimal offers.</li>
+    <li><strong>Run the job search as a project:</strong> pipeline of 5-10 processes, targeted outreach, weekly retros, sustainable cadence — not a daily spray of cold applications.</li>
+    <li><strong>Warm intros beat cold applications</strong> by a wide margin — send specific, personal messages to named contacts, not a mass "let me know if you hear of anything".</li>
+    <li>Handle <strong>time-sensitive items first:</strong> H-1B 60-day clock, COBRA / marketplace enrollment, RSU exercise window.</li>
+    <li><strong>Survivors burn out fastest</strong> — workload jumps, trust drops, the team you knew is gone. Treat survival as a stress event and renegotiate workload explicitly.</li>
+    <li>Keep the <strong>interview narrative factual, brief, and forward-looking</strong> — "structural, not performance-based" — never bitter; bitterness signals risk.</li>
+    <li><strong>Don't burn bridges:</strong> tech is small; today's manager who cut you is tomorrow's reference, hiring manager, or intro.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Treating the cut as an emergency instead of a process.</strong> Signing severance on the spot, skipping the lawyer, panic-applying Day 2, letting healthcare lapse, and venting bitterly online all cost real money and options — and a bitter interview narrative reads as a risk signal that sends offers elsewhere.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"My team was impacted in a restructuring — it was structural, not performance-based. I took a couple of weeks to reset and I'm looking deliberately for the right next role rather than scrambling."</div>
+  <div class="revision-say">"I treated the cut as a process: paused 24-48 hours, had a lawyer review the terms, negotiated the severance, then ran the search like a project with a pipeline and weekly retros."</div>
+  <div class="revision-say">"As a survivor I had the explicit workload conversation with my manager — I brought the before/after hours and options rather than silently absorbing two people's work into burnout."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The 2022-2025 layoff context</h3>
 <p>Tech experienced unprecedented layoffs in 2022-2025: ~400K+ tech workers cut in 2022-2023 alone; recurring waves through 2024-2025. Most large-cap tech companies cut at least once; many cut 2-3 times. The "tech immunity" that engineers grew up assuming evaporated.</p>
 
@@ -91,12 +101,10 @@ window.PREP_SITE.registerTopic({
   <li>Bitter story in interviews; signals risk to hiring managers.</li>
   <li>If survivor: silently absorb the doubled workload until burnout.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Pre-layoff signals (suspect cuts coming)</h3>
 <table>
   <thead><tr><th>Signal</th><th>Severity</th></tr></thead>
@@ -257,12 +265,10 @@ the substance.]
   <li>Help cut engineers: references, intros, keep door open.</li>
   <li>Recovery: managers carry significant trauma after layoffs; therapy, peer support.</li>
 </ul>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>The financial buffer: how much, how to build</h3>
 <table>
   <thead><tr><th>Buffer level</th><th>Months of expenses</th><th>What it buys you</th></tr></thead>
@@ -448,12 +454,10 @@ What's your read?"
 </table>
 
 <p>"Stay" doesn't mean forever; it means stay deliberately while you make a long-term plan. "Go" doesn't mean immediately; it means start the search and choose the right next step.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Pre-layoff prep (signs visible 6 weeks ago)</h3>
 <pre><code class="language-text">Engineer notices: hiring freeze announced; recruiter team
 laid off; offsite excluded engineers; manager's been quiet;
@@ -735,12 +739,11 @@ Note: this only worked because pre-cut, the engineer had:
 
 Doing this from scratch in 60 days is high-risk.
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>"Performance-based" cut that's actually structural</h3>
 <ul>
   <li>Many layoffs are framed as performance to reduce severance + WARN-Act exposure.</li>
@@ -864,12 +867,9 @@ Doing this from scratch in 60 days is high-risk.
   <li>If terminated for cause: typically not rehirable.</li>
   <li>Layoff usually = "in good standing"; clarify in writing if it matters.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common layoff mistakes</h3>
 <ol>
   <li><strong>No financial buffer.</strong> Cut hits like crisis; forces bad decisions.</li>
@@ -1057,12 +1057,10 @@ than 100 generic.]
 
 <h3>Anti-pattern: hiding the layoff</h3>
 <p>Some engineers try to hide the cut on LinkedIn / resume. Tech is small; word gets back. Better: factual, brief, forward-looking. The layoff itself isn't a stigma; how you handle it is.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common layoff-related interview prompts</h3>
 <ol>
   <li>"Why are you looking for a new role?"</li>
@@ -1188,56 +1186,38 @@ the work or talk about what I'd want to do next."
   <li>"Maintain a 'wins file' — useful for resume + interview anchor under stress."</li>
   <li>"Build a relationship with an employment lawyer pre-need; you don't want to be searching for one in crisis."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Layoffs are <strong>structural, not personal</strong> — most of the outcome is decided by the buffer, network, and readiness you built <em>before</em> the announcement; after it, run the whole thing as an operational process.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Three roles, three playbooks:</strong> cut (negotiate + recover + search), survivor (recalibrate workload, decide stay-vs-go deliberately), and pre-layoff (build buffer, warm network, update materials, reduce vulnerability).</li>
-    <li><strong>Pre-layoff prep is the highest-leverage work:</strong> a 6-month financial buffer, a warm network kept warm year-round, resume + LinkedIn refreshed quarterly, confirmed references.</li>
-    <li>On cut day: <strong>pause — do not sign or accept on the spot.</strong> Take 24-48 hours, get everything in writing, do not badmouth anywhere.</li>
-    <li><strong>Severance is negotiable</strong> — length, COBRA, vesting acceleration, bonus proration, a written reference. Anchor high, give rationale, get it in writing.</li>
-    <li>A <strong>$300-500 employment-lawyer consult</strong> routinely pays for itself many times over — non-compete, non-solicit, mutual non-disparagement, RSU timing, state protections.</li>
-    <li><strong>Take a 1-2 week recovery</strong> before serious searching; job-searching from panic produces bad applications, weak interviews, and suboptimal offers.</li>
-    <li><strong>Run the job search as a project:</strong> pipeline of 5-10 processes, targeted outreach, weekly retros, sustainable cadence — not a daily spray of cold applications.</li>
-    <li><strong>Warm intros beat cold applications</strong> by a wide margin — send specific, personal messages to named contacts, not a mass "let me know if you hear of anything".</li>
-    <li>Handle <strong>time-sensitive items first:</strong> H-1B 60-day clock, COBRA / marketplace enrollment, RSU exercise window.</li>
-    <li>Keep the <strong>interview narrative factual, brief, and forward-looking</strong> — "structural, not performance-based" — never bitter; bitterness signals risk.</li>
-    <li><strong>Don't burn bridges:</strong> tech is small; today's manager who cut you is tomorrow's reference, hiring manager, or intro.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Treating the cut as an emergency instead of a process.</strong> Signing severance on the spot, skipping the lawyer, panic-applying Day 2, letting healthcare lapse, and venting bitterly online all cost real money and options — and a bitter interview narrative reads as a risk signal that sends offers elsewhere.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"My team was impacted in a restructuring — it was structural, not performance-based. I took a couple of weeks to reset and I'm looking deliberately for the right next role rather than scrambling."</div>
-  <div class="revision-say">"I treated the cut as a process: paused 24-48 hours, had a lawyer review the terms, negotiated the severance, then ran the search like a project with a pipeline and weekly retros."</div>
-  <div class="revision-say">"As a survivor I had the explicit workload conversation with my manager — I brought the before/after hours and options rather than silently absorbing two people's work into burnout."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Walk me through what you'd do on the day you're laid off.</div>
+  <div class="qa-answer">
+    <p>Pause: "I appreciate the news; I'd like to take 24-48 hours to review." I don't sign anything, accept verbally, or post or badmouth anywhere. I get every document in writing: the severance offer and the separation agreement. Over the next few days I read everything and note what's negotiable, have a 1-2 hour employment-lawyer consult ($300-500), send a professional negotiation email, and sign only the final terms around day 5-6. Any cooperation the company asks for, such as handovers or exit interviews, is leverage in that negotiation.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you deliver a factual, forward-looking 30-second answer to "how did your last role end?" without bitterness?</li>
-    <li>Can you walk through the cut-day playbook — pause, get it in writing, lawyer review, negotiate severance — as a calm process?</li>
-    <li>Can you explain which severance levers are negotiable and how you would anchor and justify an ask?</li>
-    <li>Can you describe how you would run a job search as a project rather than a panic, and why the recovery week matters first?</li>
-    <li>Can you tell a STAR story about being a layoff survivor and renegotiating workload instead of silently absorbing it?</li>
-    <li>Can you explain the pre-layoff preparation (buffer, network, references, visa/healthcare awareness) you would put in place before cuts are announced?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Which severance terms are negotiable, and how would you anchor and justify your ask?</div>
+  <div class="qa-answer">
+    <p>The levers: length (the standard is often 1-2 weeks per year of tenure, sometimes pushable to 4+), company-paid COBRA for 3-6 months, vesting acceleration through the next cliff, pro-rated bonus, extended outplacement, a specific written reference beyond the default neutral one, and removing onerous clauses such as one-sided non-disparagement. I negotiate professionally, never with threats, anchor above what I expect, and give a rationale: "I've been here 5 years; the standard is 1 week per year; my ask is 2 weeks per year given the impact on my immigration timeline." I get every agreed term in writing and have a lawyer check the non-compete, non-solicit, IP and release-of-claims language.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. How would you run a job search as a project rather than in a panic, and why take a recovery week first?</div>
+  <div class="qa-answer">
+    <p>Searching from a panicked state leads to hasty applications, weak interviews and accepting suboptimal offers. So first I take 1-2 weeks: sleep, exercise, talk it through, refine my story with 2-3 trusted people, calculate my runway, and tell my network I'm open in short messages. Then I run it like a project: 5-10 active processes at peak, 3-5 targeted outreach messages a day (warm intros over cold applications), at most 2-4 interviews a week with 2-3 hours of prep each, a weekly retro on the pipeline, and 1-2 days off a week. The anti-pattern is waking up, sending 30 cold applications, and feeling terrible by 2 PM.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Tell me about surviving a layoff and renegotiating your workload instead of silently absorbing it.</div>
+  <div class="qa-answer">
+    <p>Situation: after a 30% cut to the mobile team, I inherited a cut colleague's project and on-call went from 1-in-4 to 1-in-2 weeks, taking me to about 55 hours a week. Action: in my 1:1 I laid out the before and after hours and offered three options — cut my secondary project, backfill (about a 12-week ramp), or spread the new project across other already-stretched seniors — and recommended cutting the secondary project. I also flagged that my role was now bigger than my title and asked to revisit level and comp next cycle. Result: my manager chose the cut, I told that project's stakeholders the same week, and the comp conversation went on the next 1:1 agenda. Making the structural impact of the cut visible is how survivors avoid burning out.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. What do you put in place before layoffs are announced?</div>
+  <div class="qa-answer">
+    <p>A 6-month expense buffer in liquid savings, not a 401(k); 3 months is survival-mode and 9-12 gives real choice. I keep the network warm with 3-5 conversations a month, an impact-framed resume, an updated LinkedIn, and three references (manager, peer, skip-level) confirmed informally. I also do an honest skills-gap audit and know my company's typical severance package. Then the time-sensitive items: my visa grace period and transfer options (the H-1B 60-day clock), COBRA versus marketplace healthcare costs, and my vesting schedule and what's at risk.</p>
+  </div>
+</div>
+` },
+
   ]
 });

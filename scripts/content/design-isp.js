@@ -1,25 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'design-isp',
-  module: 'design',
-  title: 'I · Interface Segregation',
-  estimatedReadTime: '12 min',
-  tags: ['design', 'solid', 'oop', 'isp', 'clean-code'],
+  id: "design-isp",
+  module: "design",
+  title: "I · Interface Segregation",
+  estimatedReadTime: "12 min",
+  tags: ["design","solid","oop","isp","clean-code"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>Interface Segregation Principle (ISP)</strong>, Robert C. Martin's phrasing: <strong>"Clients should not be forced to depend upon interfaces that they do not use."</strong> In practice: don't design one broad, "fat" interface that bundles unrelated capabilities together — split it into several small, focused <strong>role interfaces</strong>, so each consumer depends only on the methods it actually calls.</p>
-<ul>
-  <li><strong>It's about the consumer's view, not the implementer's.</strong> ISP asks: what does <em>this client</em> need to call? Not: what could this class theoretically do? A class may still implement several small interfaces — that's composition, and it's fine.</li>
-  <li><strong>The smell it fixes:</strong> implementers stubbing out methods they don't support — throwing <code>NotImplementedError</code>, returning <code>null</code>, or leaving a method empty — purely to satisfy an interface contract that has nothing to do with what that class actually does.</li>
-  <li><strong>The fix is almost always the same shape:</strong> break the fat interface into several small, cohesive ones, grouped by which clients actually use which methods together, and have each implementer depend on only the ones it needs.</li>
-  <li><strong>It's closely related to SRP, but not the same axis.</strong> SRP is about a class having one reason to change; ISP is about a client not being forced to know about methods it never calls. A fat interface very often signals that the class <em>behind</em> it is itself violating SRP — see What &amp; Why, below.</li>
-</ul>
-<p><strong>Mantra:</strong> "If implementing an interface means writing a method body that just throws, the interface is too fat."</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Clients should not be forced to depend upon interfaces (methods) they do not use</strong> — split one broad, fat interface into several small, focused <strong>role interfaces</strong>, so each consumer depends only on what it actually calls.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>ISP is written from the <strong>consumer's view, not the implementer's</strong>: the question is "what does <em>this client</em> need to call?" — not "what could this class theoretically do?"</li>
+    <li>The smell it fixes: implementers <strong>stubbing out methods</strong> they don't support — throwing <code>NotImplementedError</code>, returning a dummy, or leaving a body empty — just to satisfy the type contract.</li>
+    <li>Damage: <strong>stub methods that lie</strong> (throw or silent no-op), <strong>unnecessary recompilation/redeploy</strong> of implementers that never used the changed method, <strong>false coupling</strong> between unrelated clients, and <strong>misleading contracts</strong> callers can't trust from the type alone.</li>
+    <li>Think <strong>"role," not "thing"</strong> — model "something that can be printed to," not "a machine that does everything." The interface answers "what can you ask of me?", not "what kind of object am I?"</li>
+    <li>The fix is one shape: group methods by <strong>which clients call which methods together</strong>, split the fat interface into small role interfaces, and let a class <strong>compose</strong> the several roles it genuinely plays.</li>
+    <li>Small interfaces <strong>compose</strong> — a full multifunction device implements <code>Printer</code>, <code>Scanner</code>, and <code>Fax</code> at once; segregation doesn't make rich objects awkward.</li>
+    <li>Closely related to <strong>SRP but a different axis</strong>: a fat interface is very often a symptom of an SRP violation one layer down (one class trying to be printer + scanner + fax). Segregating the interface is the client-facing fix; splitting the class is the matching SRP move.</li>
+    <li>Don't over-segregate: it's <strong>not "an interface per single method"</strong> — roles group naturally-related capabilities.</li>
+    <li>The wording is <strong>Robert C. Martin's</strong>: "Clients should not be forced to depend upon interfaces that they do not use."</li>
+    <li>Mantra: <strong>"If implementing an interface means writing a method body that just throws, the interface is too fat."</strong></li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Two opposite mistakes: (1) reading ISP from the <strong>implementer's</strong> side instead of the consumer's — the real signal is a client (or a test) forced to depend on methods it never calls, or an implementer writing a <strong>throwing/no-op stub</strong>; and (2) over-correcting into <strong>one tiny interface per method</strong>. Roles group related capabilities; the goal is "each client depends on exactly what it uses," not "as many interfaces as possible."</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"ISP is written from the consumer's side — no client should be forced to depend on methods it doesn't call, so I split fat interfaces into small role interfaces."</div>
+  <div class="revision-say">"The clearest tell is a stub method that throws or silently no-ops just to satisfy the interface — a correctly segregated interface never needs a class to fake compliance."</div>
+  <div class="revision-say">"A fat interface is usually an SRP violation one layer down; segregating the interface is the client-facing fix, and it often invites a matching split of the implementing class."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The core complaint: forced, unwanted dependencies</h3>
 <p>ISP is a statement about coupling from the <strong>client's</strong> side. When an interface bundles together methods that serve different, unrelated purposes, every implementer is forced to depend on — and provide some answer for — all of them, even the ones it has no meaningful behavior for. That's the "force" in the principle's name: the interface itself is imposing a dependency the implementing class never asked for and doesn't need.</p>
 
@@ -33,10 +48,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>ISP's relationship to SRP</h3>
 <p>The two principles look at the same code from opposite directions. <strong>SRP</strong> asks whether a class has one reason to change. <strong>ISP</strong> asks whether a client is forced to depend on methods it doesn't use. In practice, a fat interface is frequently a symptom of an SRP violation one layer down: if <code>IMachine</code> bundles <code>print()</code>, <code>scan()</code>, and <code>fax()</code>, it's often because the concrete class behind it — a single "office machine" class — is itself trying to be printer, scanner, and fax machine at once, three responsibilities, three actors, one class. Segregating the interface is the client-facing fix; it frequently exposes, and invites, a matching SRP-style split on the implementation side.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Think "role," not "thing"</h3>
 <p>A fat interface is usually modeled after a <em>thing</em> — "a machine," "a user," "a repository" — and then grows to list everything that thing could ever do. A segregated design instead models <em>roles</em> — "something that can be printed to," "something that can be read from," "something that can be scanned" — and lets a class implement as many small roles as it genuinely plays. The interface answers "what can you ask of me?", not "what kind of object am I?"</p>
 
@@ -45,10 +60,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Small interfaces compose; they don't need to multiply endlessly</h3>
 <p>Splitting <code>IMachine</code> into <code>Printer</code>, <code>Scanner</code>, and <code>Fax</code> doesn't mean a full-featured all-in-one device becomes awkward to model — it implements all three role interfaces at once, and clients that only need one of those roles still only depend on that one. The goal isn't "as many tiny interfaces as possible" for its own sake; it's "each client depends on exactly the capabilities it uses," which composition of several small interfaces achieves without forcing anyone (implementer or caller) to deal with capabilities they don't need.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>How to spot a violation</h3>
 <ul>
   <li><strong>Stubbed or throwing method bodies.</strong> The single most reliable signal — a class implementing an interface with a method body that throws <code>NotImplementedError</code>, returns a dummy value, or is simply empty, purely to satisfy the type contract.</li>
@@ -60,10 +75,10 @@ window.PREP_SITE.registerTopic({
 <h3>The fix: segregate by client, then compose</h3>
 <p>Group methods by <em>which clients call which methods together</em>, not by which class happens to implement them today. Each resulting role interface should be small enough that "does this implementer genuinely support every method here?" is always true, not aspirational. A class that legitimately plays several roles simply implements — or composes — several of these small interfaces; a client that only needs one role only ever sees, and depends on, that one.</p>
 <p>Two things this fix is <em>not</em>: it's not "extract an interface for every single method" (see Mental Model, above — roles group naturally-related capabilities, they don't atomize down to one method each), and it's not a license to skip fixing the underlying class if the real problem is that one class is trying to be too many things — that's the SRP angle, and segregating the interface alone doesn't resolve it if the implementation still needs the split too.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples (before → after)', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Before: one fat interface, forced stubs</h3>
 <pre><code class="language-typescript">interface Machine {
   print(document: Document): Promise&lt;void&gt;;
@@ -146,10 +161,10 @@ function printReport(printer: Printer, document: Document): Promise&lt;void&gt; 
 </code></pre>
 <p><code>SimplePrinter</code> now implements exactly one interface, with no stub methods and no dishonest runtime throws. <code>MultiFunctionPrinter</code> still models a real multifunction device by composing all three role interfaces — segregation didn't make richer devices awkward, it just stopped forcing that richness onto devices that don't have it. And <code>printReport</code>'s signature now documents, at the type level, that it only needs printing — a caller can never accidentally hand it something that will throw on an unsupported call.</p>
 <p>Note what this also hints at: if the original <code>Machine</code>-backed class had really been one physical printer-only device pretending to support scanning and faxing, the fat interface was a symptom of that single class trying to model three unrelated actors' worth of hardware capability — the same smell SRP names from the implementation side (see What &amp; Why, above). Segregating the interface is the client-facing fix; here it also happens to line up with three genuinely separate classes, which is exactly the shape a matching SRP split would produce.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What does ISP actually say, and whose perspective is it written from?</div>
 <div class="qa-a">
@@ -170,45 +185,26 @@ function printReport(printer: Printer, document: Document): Promise&lt;void&gt; 
 <p>SRP is about a class having one reason to change, driven by one actor. ISP is about a client not being forced to depend on capabilities it doesn't use. They're different axes — SRP judges a class's own cohesion, ISP judges what an interface forces on its consumers — but they show up together constantly: a fat interface like <code>IMachine { print(); scan(); fax(); }</code> very often exists because the concrete class behind it is itself trying to be three unrelated things at once, which is an SRP violation on the implementation side. Segregating the interface fixes the client-facing symptom; splitting the implementing class into one collaborator per role — the SRP fix — is often the matching move underneath it.</p>
 </div>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Clients should not be forced to depend upon interfaces (methods) they do not use</strong> — split one broad, fat interface into several small, focused <strong>role interfaces</strong>, so each consumer depends only on what it actually calls.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>ISP is written from the <strong>consumer's view, not the implementer's</strong>: the question is "what does <em>this client</em> need to call?" — not "what could this class theoretically do?"</li>
-    <li>The smell it fixes: implementers <strong>stubbing out methods</strong> they don't support — throwing <code>NotImplementedError</code>, returning a dummy, or leaving a body empty — just to satisfy the type contract.</li>
-    <li>Damage: <strong>stub methods that lie</strong> (throw or silent no-op), <strong>unnecessary recompilation/redeploy</strong> of implementers that never used the changed method, <strong>false coupling</strong> between unrelated clients, and <strong>misleading contracts</strong> callers can't trust from the type alone.</li>
-    <li>Think <strong>"role," not "thing"</strong> — model "something that can be printed to," not "a machine that does everything." The interface answers "what can you ask of me?", not "what kind of object am I?"</li>
-    <li>The fix is one shape: group methods by <strong>which clients call which methods together</strong>, split the fat interface into small role interfaces, and let a class <strong>compose</strong> the several roles it genuinely plays.</li>
-    <li>Small interfaces <strong>compose</strong> — a full multifunction device implements <code>Printer</code>, <code>Scanner</code>, and <code>Fax</code> at once; segregation doesn't make rich objects awkward.</li>
-    <li>Closely related to <strong>SRP but a different axis</strong>: a fat interface is very often a symptom of an SRP violation one layer down (one class trying to be printer + scanner + fax). Segregating the interface is the client-facing fix; splitting the class is the matching SRP move.</li>
-    <li>Don't over-segregate: it's <strong>not "an interface per single method"</strong> — roles group naturally-related capabilities.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Two opposite mistakes: (1) reading ISP from the <strong>implementer's</strong> side instead of the consumer's — the real signal is a client (or a test) forced to depend on methods it never calls, or an implementer writing a <strong>throwing/no-op stub</strong>; and (2) over-correcting into <strong>one tiny interface per method</strong>. Roles group related capabilities; the goal is "each client depends on exactly what it uses," not "as many interfaces as possible."</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"ISP is written from the consumer's side — no client should be forced to depend on methods it doesn't call, so I split fat interfaces into small role interfaces."</div>
-  <div class="revision-say">"The clearest tell is a stub method that throws or silently no-ops just to satisfy the interface — a correctly segregated interface never needs a class to fake compliance."</div>
-  <div class="revision-say">"A fat interface is usually an SRP violation one layer down; segregating the interface is the client-facing fix, and it often invites a matching split of the implementing class."</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Explain the "role, not thing" mental model. Doesn't splitting interfaces make a rich object awkward to model?</div>
+  <div class="qa-answer">
+    <p>A fat interface is usually modeled after a <em>thing</em> ("a machine", "a user", "a repository") and grows to list everything that thing could ever do. A segregated design models <em>roles</em> instead: "something that can be printed to", "something that can be scanned". The interface answers "what can you ask of me?", not "what kind of object am I?". Small interfaces compose: a full all-in-one device implements <code>Printer</code>, <code>Scanner</code> and <code>Fax</code> at once, while a client that only needs one role still depends only on that one.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you state ISP and say whose perspective — consumer or implementer — it's written from?</li>
-    <li>Can you name the clearest signal of a violation (a stub method that throws or no-ops) and the other tells?</li>
-    <li>Can you explain the "role, not thing" mental model and how small interfaces compose?</li>
-    <li>Can you describe the fix — group methods by client usage into role interfaces — without over-segregating to one method each?</li>
-    <li>Can you explain how ISP relates to SRP, and why a fat interface often signals an SRP problem underneath?</li>
-    <li>Can you give the damages a fat interface causes, including unnecessary recompilation and false coupling?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q5. How do you fix a fat interface, and how do you avoid over-segregating it?</div>
+  <div class="qa-answer">
+    <p>Group methods by which clients call which methods together, not by which class happens to implement them today, and split the fat interface into those role interfaces. Each one should be small enough that "does this implementer genuinely support every method here?" is always true. A class that plays several roles implements several of them. The fix is not "one interface per single method": roles group naturally related capabilities, and the goal is "each client depends on exactly what it uses", not "as many interfaces as possible". It is also not a substitute for splitting the class when one class is genuinely trying to be too many things (the SRP angle).</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q6. What concrete damage does a fat interface cause?</div>
+  <div class="qa-answer">
+    <p>Four things. <strong>Stub methods that lie</strong>: an implementer either throws (a runtime surprise) or silently no-ops (a latent bug) while the compiler says the contract is satisfied. <strong>Unnecessary recompilation and redeploys</strong>: in Martin's original C++ context, changing one client's method forces every implementer to recompile; in dynamic languages, unrelated code has to be re-tested and redeployed. <strong>False coupling</strong>: if <code>ReportGenerator</code> and <code>Printer</code> share one <code>IOfficeDevice</code>, a change for the printing team ripples into reporting. <strong>Misleading contracts</strong>: a caller can't tell from the type which methods are real for an instance, whereas small role interfaces turn illegal calls into compile errors.</p>
+  </div>
+</div>
+` },
 
-]});
+  ]
+});

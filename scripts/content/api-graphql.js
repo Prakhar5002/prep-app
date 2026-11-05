@@ -1,33 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'api-graphql',
-  module: 'api-design',
-  title: 'GraphQL Schema Design',
-  estimatedReadTime: '50 min',
-  tags: ['graphql', 'schema', 'resolvers', 'dataloader', 'pagination', 'federation', 'persisted-queries', 'apollo'],
+  id: "api-graphql",
+  module: "api-design",
+  title: "GraphQL Schema Design",
+  estimatedReadTime: "50 min",
+  tags: ["graphql","schema","resolvers","dataloader","pagination","federation","persisted-queries","apollo"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>GraphQL</strong> is a query language for APIs where the client picks the exact shape it needs from a typed schema, and the server returns exactly that shape. The wins: one endpoint, no over-/under-fetching, end-to-end types, evolvable without versioning. The costs: caching is harder (POST by default), schema design is its own discipline, and resolvers fan out into N+1 queries unless you batch.</p>
-<ul>
-  <li><strong>One endpoint, one HTTP method:</strong> almost always <code>POST /graphql</code> with a JSON body containing <code>query</code> + <code>variables</code> + optional <code>operationName</code>.</li>
-  <li><strong>Three operation types:</strong> Query (read), Mutation (write), Subscription (server push, usually over WebSocket).</li>
-  <li><strong>Resolvers:</strong> one function per field. Composition gives flexibility; lack of batching gives N+1. Solve with <strong>DataLoader</strong>.</li>
-  <li><strong>Pagination:</strong> Relay-style cursor connections (edges + pageInfo) is the standard.</li>
-  <li><strong>Errors:</strong> top-level <code>errors</code> array for system failures; for expected failures, model results as a <strong>union / result type</strong>.</li>
-  <li><strong>Versioning:</strong> evolve by adding fields and deprecating old ones (<code>@deprecated(reason: "…")</code>); rarely cut a v2.</li>
-  <li><strong>Federation:</strong> multiple subgraphs compose into one supergraph. Use when the org has multiple teams owning their slice.</li>
-  <li><strong>Performance levers:</strong> persisted queries, query complexity / depth limits, response caching keyed by query + variables, automatic batching at the client.</li>
-</ul>
-<p><strong>Mantra:</strong> "The client picks the shape. The server batches the fetch. The schema is the contract."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>The client picks the shape, the server batches the fetch with DataLoader, and the schema is the contract you evolve by deprecation — never by cutting a v2.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>One endpoint, three operations</strong> — almost always <code>POST /graphql</code> with a JSON body of <code>query</code> + <code>variables</code> + optional <code>operationName</code>; Query reads (parallel fields), Mutation writes (sequential top-level fields), Subscription pushes over WebSocket.</li>
+    <li><strong>Resolvers are one function per field</strong> — <code>(parent, args, context, info)</code> — and they form a tree, so each nested field can become its own DB hit.</li>
+    <li><strong>N+1 is the default surprise; DataLoader is the fix</strong> — it coalesces concurrent <code>load(id)</code> calls into one batch per tick, batches by ID, returns results in input order, returns <code>null</code> for misses, and lives one-per-request.</li>
+    <li><strong>Pagination = Relay cursor connections</strong> — edges + node + cursor + pageInfo — because it paginates both ways, hides the sort position in an opaque cursor, and composes with Apollo/Relay caches.</li>
+    <li><strong>Nullability is a contract</strong> — bias toward nullable for forward-compatibility, keep IDs non-null; a non-null field that throws nullifies its whole parent branch.</li>
+    <li><strong>Two error paths</strong> — top-level <code>errors</code> array for system failures (with a <code>code</code> in <code>extensions</code>), result-union types for expected domain failures so clients switch exhaustively.</li>
+    <li><strong>Evolve additively</strong> — add fields, mark old ones <code>@deprecated(reason)</code>, monitor usage, remove only at zero.</li>
+    <li><strong>Guard public surface</strong> — persisted queries (smaller payloads, GET-able, whitelist-only), depth + complexity limits, capped list sizes, disabled introspection, per-client rate limits.</li>
+    <li><strong>Federation when multiple teams own slices</strong> — subgraphs compose into a supergraph via <code>@key</code> and <code>__resolveReference</code>; otherwise a single graph is simpler to evolve.</li>
+    <li><strong>Cache in layers</strong> — CDN (persisted GET), server per-resolver, DataLoader per-request, client normalized by <code>__typename</code> + <code>id</code>.</li>
+    <li><strong>Trade-off:</strong> wins = one endpoint, no over-/under-fetching, end-to-end types, evolvable without versioning; costs = caching is harder (POST by default), schema design is its own discipline, resolvers fan out into N+1 unless batched.</li>
+    <li><strong>Mantra:</strong> "The client picks the shape. The server batches the fetch. The schema is the contract."</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Caching DataLoader results by ID alone across viewers — viewer A sees data fetched for viewer B.</strong> DataLoader must be per-request (never shared, or you cross-pollinate auth contexts), and any per-field auth cache must be keyed by ID <em>plus</em> viewer scope.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"DataLoader per request, batched by ID, returns null for misses — that's what keeps N+1 from creeping in."</div>
+  <div class="revision-say">"Cursor pagination via Relay connections, result unions for mutation outcomes, and I version by deprecation — never a /v2."</div>
+  <div class="revision-say">"For a public API I go persisted-queries-only with depth and complexity limits, so unknown clients can't DoS the graph with arbitrary nesting."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The shape of a GraphQL request/response</h3>
 <pre><code class="language-graphql"># Query
 query GetUser($id: ID!) {
@@ -98,12 +107,10 @@ query GetUser($id: ID!) {
 
 <h3>The schema mental model</h3>
 <p>The schema is a <strong>graph</strong>. Types are nodes; fields are edges. Clients walk edges to compose responses. Designing GraphQL is designing the graph: what's a thing, what relates to what, what's required, what nullable.</p>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The 6 type kinds</h3>
 <table>
   <thead><tr><th>Kind</th><th>Use for</th><th>Example</th></tr></thead>
@@ -223,12 +230,10 @@ type EmailTaken { suggestedNames: [String!]! }
 type ValidationFailed { fieldErrors: [FieldError!]! }
 </code></pre>
 <p>Result unions force clients to handle each outcome — TS narrowing makes this delightful.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Schema-first vs code-first</h3>
 <table>
   <thead><tr><th>Style</th><th>Pros</th><th>Cons</th></tr></thead>
@@ -392,12 +397,10 @@ const DateTime = new GraphQLScalarType({
   <li><strong>Return the affected entity</strong> so clients can update caches without a second roundtrip.</li>
   <li><strong>Return rich payloads</strong> for related changes: <code>type CreateOrderPayload { order: Order! cart: Cart! user: User! }</code>.</li>
 </ul>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Schema for a social timeline</h3>
 <pre><code class="language-graphql">scalar DateTime
 scalar URL
@@ -637,12 +640,11 @@ query Feed($first: Int!, $after: String) {
 }
 </code></pre>
 <p>Fragments are how clients keep selection sets DRY. Every component "owns" its fragment; the screen composes them into one query (Relay) or many (Apollo).</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>N+1 detection</h3>
 <ul>
   <li>Apollo trace plugin shows resolver count + duration. If "User.author" fires 50 times for one query, you've got N+1.</li>
@@ -709,12 +711,9 @@ query Feed($first: Int!, $after: String) {
   <li>Persisted query tests: each app version's manifest must still be served.</li>
   <li>Visual regression on key client screens after schema changes.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 10 most common GraphQL mistakes</h3>
 <ol>
   <li><strong>No DataLoader → N+1 queries.</strong> Single user with 50 posts hits the user table 50 times.</li>
@@ -816,12 +815,10 @@ schema = applyDirectiveTransforms(schema, { auth: authDirectiveTransformer });
 
 <h3>Anti-pattern: too-deep schema</h3>
 <p><code>user.posts.comments.author.posts.comments.author...</code> — depth limit catches this. Senior teams prevent it at design time: posts return <code>commentCount</code>, not the full comment list.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common GraphQL design prompts</h3>
 <ol>
   <li>Design a GraphQL schema for Twitter / Instagram / Reddit.</li>
@@ -949,52 +946,26 @@ schema = applyDirectiveTransforms(schema, { auth: authDirectiveTransformer });
   <li>"Implement a custom complexity directive and tune it on real traffic."</li>
   <li>"Read GitHub's GraphQL API docs end to end."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>The client picks the shape, the server batches the fetch with DataLoader, and the schema is the contract you evolve by deprecation — never by cutting a v2.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>One endpoint, three operations</strong> — almost always <code>POST /graphql</code>; Query reads (parallel fields), Mutation writes (sequential top-level fields), Subscription pushes over WebSocket.</li>
-    <li><strong>Resolvers are one function per field</strong> — <code>(parent, args, context, info)</code> — and they form a tree, so each nested field can become its own DB hit.</li>
-    <li><strong>N+1 is the default surprise; DataLoader is the fix</strong> — it coalesces concurrent <code>load(id)</code> calls into one batch per tick, batches by ID, returns results in input order, returns <code>null</code> for misses, and lives one-per-request.</li>
-    <li><strong>Pagination = Relay cursor connections</strong> — edges + node + cursor + pageInfo — because it paginates both ways, hides the sort position in an opaque cursor, and composes with Apollo/Relay caches.</li>
-    <li><strong>Nullability is a contract</strong> — bias toward nullable for forward-compatibility, keep IDs non-null; a non-null field that throws nullifies its whole parent branch.</li>
-    <li><strong>Two error paths</strong> — top-level <code>errors</code> array for system failures (with a <code>code</code> in <code>extensions</code>), result-union types for expected domain failures so clients switch exhaustively.</li>
-    <li><strong>Evolve additively</strong> — add fields, mark old ones <code>@deprecated(reason)</code>, monitor usage, remove only at zero.</li>
-    <li><strong>Guard public surface</strong> — persisted queries (smaller payloads, GET-able, whitelist-only), depth + complexity limits, capped list sizes, disabled introspection, per-client rate limits.</li>
-    <li><strong>Federation when multiple teams own slices</strong> — subgraphs compose into a supergraph via <code>@key</code> and <code>__resolveReference</code>; otherwise a single graph is simpler to evolve.</li>
-    <li><strong>Cache in layers</strong> — CDN (persisted GET), server per-resolver, DataLoader per-request, client normalized by <code>__typename</code> + <code>id</code>.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Caching DataLoader results by ID alone across viewers — viewer A sees data fetched for viewer B.</strong> DataLoader must be per-request (never shared, or you cross-pollinate auth contexts), and any per-field auth cache must be keyed by ID <em>plus</em> viewer scope.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"DataLoader per request, batched by ID, returns null for misses — that's what keeps N+1 from creeping in."</div>
-  <div class="revision-say">"Cursor pagination via Relay connections, result unions for mutation outcomes, and I version by deprecation — never a /v2."</div>
-  <div class="revision-say">"For a public API I go persisted-queries-only with depth and complexity limits, so unknown clients can't DoS the graph with arbitrary nesting."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why a list of 50 users with author info fires 51 DB calls — and how DataLoader kills the N+1?</li>
-    <li>Can you design a mutation that returns a result union instead of throwing, and say when the top-level <code>errors</code> array is the right place?</li>
-    <li>Can you evolve a schema without ever shipping a v2 — adding fields and marking old ones <code>@deprecated(reason)</code>?</li>
-    <li>Can you describe Relay-style cursor connections (edges + pageInfo) and why they beat offset pagination?</li>
-    <li>Can you lock down a public graph against DoS with persisted queries plus depth and complexity limits?</li>
-    <li>Can you say when federation (subgraphs composing into a supergraph) is worth the tooling overhead?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. Why does a list of 50 posts with author info fire 51 database calls, and how does DataLoader fix it?</div>
+  <div class="qa-answer">
+    <p>Resolvers are one function per field and run independently: <code>posts(first: 50)</code> is one query, then each of the 50 <code>post.author</code> resolvers fetches its own user, giving 51 queries. DataLoader coalesces all the concurrent <code>load(id)</code> calls made in the same tick into a single batch call (e.g. <code>db.users.byIds(ids)</code>), and memoizes per request. The rules: create one loader per request in the context (never share across requests, or you cross-pollinate auth contexts), batch by ID, return results in the same order as the input IDs, and return <code>null</code> for misses instead of throwing.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q2. How should a GraphQL mutation report failures: result unions or the top-level errors array?</div>
+  <div class="qa-answer">
+    <p>Both, for different failures. The top-level <code>errors</code> array is for <strong>system failures</strong>: DB down, auth missing, a bad query, ideally with a <code>code</code> in <code>extensions</code> rather than a bare string message. <strong>Expected domain failures</strong> such as validation errors, conflicts or "not found" are modelled in the schema as a result union, e.g. <code>createUser(input: CreateUserInput!): CreateUserResult!</code> with <code>union CreateUserResult = User | EmailTaken | ValidationFailed</code>, where each failure type carries useful fields like <code>fieldErrors</code> or <code>suggestedNames</code>. Unions force clients to handle every outcome exhaustively, and TypeScript narrowing makes the call site safe.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. What are Relay-style cursor connections, and why are they better than offset pagination?</div>
+  <div class="qa-answer">
+    <p>A field like <code>posts(first, after, last, before)</code> returns a <code>PostConnection</code> with <code>edges</code> (each an <code>{ node, cursor }</code>) and <code>pageInfo</code> (<code>hasNextPage</code>, <code>hasPreviousPage</code>, <code>startCursor</code>, <code>endCursor</code>), plus an optional, often expensive <code>totalCount</code>. The shape lets clients paginate forward and backward, the cursor encodes the sort position opaquely, edges can carry per-relationship metadata (such as when a follow happened), and it composes with Apollo and Relay caches. Exposing <code>posts(offset, limit)</code> instead leaks pagination details into the contract and, like offset pagination generally, breaks on feeds where new items keep arriving.</p>
+  </div>
+</div>
+` },
+
   ]
 });

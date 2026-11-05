@@ -1,32 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-trie',
-  module: 'dsa',
-  title: 'Trie',
-  estimatedReadTime: '40 min',
-  tags: ['trie', 'prefix-tree', 'autocomplete', 'string-search', 'suffix-trie', 'word-search', 'wildcard'],
+  id: "dsa-trie",
+  module: "dsa",
+  title: "Trie",
+  estimatedReadTime: "40 min",
+  tags: ["trie","prefix-tree","autocomplete","string-search","suffix-trie","word-search","wildcard"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>A <strong>Trie</strong> (prefix tree) is a tree-shaped data structure where each path from root to leaf spells a string. It's the canonical answer for problems involving <strong>prefix queries</strong>, <strong>autocomplete</strong>, <strong>spellcheck</strong>, <strong>word search in grids</strong>, and any "find all strings starting with X" workload. Time complexity is O(L) for insert/lookup where L is string length — independent of the number of stored strings.</p>
-<ul>
-  <li><strong>Each node holds children</strong> (typically a Map or 26-element array for lowercase letters) plus a flag indicating "word ends here."</li>
-  <li><strong>Insert / search / startsWith</strong> all run in O(L).</li>
-  <li><strong>Memory:</strong> O(total characters stored) in the worst case; less when prefixes overlap.</li>
-  <li><strong>Use cases:</strong> autocomplete, search-as-you-type, IP routing tables, spell-check, dictionary problems, word search II (boggle).</li>
-  <li><strong>Variants:</strong> compressed trie (Patricia / Radix), suffix trie, ternary search tree, double-array trie.</li>
-  <li><strong>vs Hash set:</strong> Trie wins on prefix queries; hash set wins on exact-match memory and constant-time lookup.</li>
-  <li><strong>Common interview pattern:</strong> implement Trie + use it inside DFS for "find all words on grid" or "longest word with all prefixes" problems.</li>
-</ul>
-<p><strong>Mantra:</strong> "Trie when prefixes matter. O(L) operations. Pair with DFS for grid word search."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A Trie is a tree where <strong>each root-to-node path spells a prefix</strong>, giving O(L) insert/search/startsWith that is <strong>independent of how many words are stored</strong> — the canonical answer whenever prefixes matter.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Node = children (Map or 26-slot array) + an <code>isEnd</code> flag.</strong> The flag is what distinguishes a stored word from a mere prefix of one.</li>
+    <li><strong>All three core ops walk character by character:</strong> insert creates missing nodes and marks the last as end-of-word; search walks then checks <code>isEnd</code>; startsWith walks and returns true regardless of <code>isEnd</code>. Each is O(L).</li>
+    <li><strong>Recognition signals:</strong> "prefix", "starts with", "autocomplete / search suggestions", "dictionary of words", or "word search on a grid with many words" → reach for a trie.</li>
+    <li><strong>Pair a trie with DFS</strong> for grid problems (Word Search II): build one trie of all words, then DFS the grid only advancing while the path stays a valid trie node — a huge win when words share prefixes.</li>
+    <li><strong>Wildcard search ('.'):</strong> replace the linear walk with a DFS that tries every child when it hits a dot.</li>
+    <li><strong>Memory is O(total characters stored)</strong> worst case, less with prefix overlap; use a compressed/radix trie for large dictionaries with long unique tails.</li>
+    <li><strong>vs hash set:</strong> a Set wins for exact-match lookup (simpler, smaller constant); a trie only earns its keep when you need prefix queries (O(L + k) vs O(N·L)).</li>
+    <li><strong>Use cases:</strong> autocomplete, search-as-you-type, spell-check, IP routing tables, dictionary problems, Word Search II, longest word whose every prefix is a word. Structural variants: compressed (Patricia/radix), suffix trie, ternary search tree, double-array trie.</li>
+    <li><strong>Variants worth knowing:</strong> bit trie for Maximum XOR (walk MSB-first preferring the opposite bit), reversed-word trie for suffix/stream matching, counting trie for "words with this prefix".</li>
+    <li>Iterate strings with <code>for...of</code> (not by index) so emoji/surrogate pairs don't break; tries are case-sensitive by default, so normalize up front.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting the <code>isEnd</code> check on search — and over-pruning on delete.</strong> Without the flag, <code>search("app")</code> returns true just because "apple" is stored, since the walk succeeds; always verify <code>node.isEnd</code> at the end. On delete, never remove a node that still has children or is another word's endpoint (deleting "car" must not break "card") — only prune nodes with no children and no <code>isEnd</code> on the way back up.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A trie gives O(L) operations independent of the number of stored words, so it beats a hash set the moment I need prefix queries like autocomplete."</div>
+  <div class="revision-say">"Each node is just children plus an end-of-word flag — that flag is what separates a stored word from a prefix of one."</div>
+  <div class="revision-say">"For word search on a grid I'd build one trie of all the words and DFS while the current path stays a valid trie node, instead of searching each word separately."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a Trie?</h3>
 <p>A trie (pronounced "try" or "tree") is a tree where each edge represents a character, and a path from root to a marked node spells a stored string. Multiple strings sharing a prefix share the same nodes for that prefix.</p>
 
@@ -88,12 +96,10 @@ window.PREP_SITE.registerTopic({
   <li>You combine with DFS for grid word problems.</li>
   <li>You consider compressed tries for memory-sensitive applications.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Anatomy of a Trie node</h3>
 <pre><code class="language-text">TrieNode {
   children: { 'a': TrieNode, 'b': TrieNode, ... }   // map of next chars
@@ -167,12 +173,10 @@ Radix tree:
 
 <h3>Suffix Trie / Suffix Tree</h3>
 <p>Trie of all suffixes of a single string. Used for substring search, longest repeated substring, etc. Suffix trees can be built in O(N) (Ukkonen). For interview: usually suffix array + LCP is the more common alternative.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Basic Trie implementation (JS)</h3>
 <pre><code class="language-js">class TrieNode {
   constructor() {
@@ -440,12 +444,10 @@ class Trie {
 
 <h3>Memory-efficient: ternary search tree</h3>
 <p>Instead of a children map per node, each node has a single character + left/middle/right child pointers. Less memory per node; slower lookup. Used in some search engines.</p>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Implement Trie (LeetCode 208)</h3>
 <p>The canonical "trie warmup." Insert / search / startsWith. See Mechanics.</p>
 
@@ -668,12 +670,11 @@ function canForm(trie, word, start, count) {
   return result;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Empty strings</h3>
 <p>Inserting "" — root.isEnd = true. Searching "" returns true if marked. Some implementations don't handle empty strings; clarify in interview.</p>
 
@@ -721,12 +722,9 @@ function canForm(trie, word, start, count) {
 
 <h3>Prefix counting overflow</h3>
 <p>For a word inserted N times in a counting trie, the count along the path increments N times. For very large N, consider using BigInt or capping.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Forgetting end-of-word marker</h3>
 <pre><code class="language-js">// search("app") returns true if "apple" is stored — wrong if "app" itself isn't
 function search(word) {
@@ -818,12 +816,10 @@ if (c === '.') {
 
 <h3>Anti-pattern 10: Ignoring memory in interview discussion</h3>
 <p>Senior interviewers ask about memory. "How would you store a million dictionaries?" Be ready with compressed trie / external storage answer.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 problems worth memorizing patterns for</h3>
 <table>
   <thead><tr><th>Problem</th><th>Pattern</th></tr></thead>
@@ -924,50 +920,55 @@ if (c === '.') {
   <li>"I'd implement a counting trie to power our 'top suggestions' feature."</li>
   <li>"I'd benchmark trie vs sorted array + bisect for our specific lookup pattern."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A Trie is a tree where <strong>each root-to-node path spells a prefix</strong>, giving O(L) insert/search/startsWith that is <strong>independent of how many words are stored</strong> — the canonical answer whenever prefixes matter.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Node = children (Map or 26-slot array) + an <code>isEnd</code> flag.</strong> The flag is what distinguishes a stored word from a mere prefix of one.</li>
-    <li><strong>All three core ops walk character by character:</strong> insert creates missing nodes and marks the last as end-of-word; search walks then checks <code>isEnd</code>; startsWith walks and returns true regardless of <code>isEnd</code>. Each is O(L).</li>
-    <li><strong>Recognition signals:</strong> "prefix", "starts with", "autocomplete / search suggestions", "dictionary of words", or "word search on a grid with many words" → reach for a trie.</li>
-    <li><strong>Pair a trie with DFS</strong> for grid problems (Word Search II): build one trie of all words, then DFS the grid only advancing while the path stays a valid trie node — a huge win when words share prefixes.</li>
-    <li><strong>Wildcard search ('.'):</strong> replace the linear walk with a DFS that tries every child when it hits a dot.</li>
-    <li><strong>Memory is O(total characters stored)</strong> worst case, less with prefix overlap; use a compressed/radix trie for large dictionaries with long unique tails.</li>
-    <li><strong>vs hash set:</strong> a Set wins for exact-match lookup (simpler, smaller constant); a trie only earns its keep when you need prefix queries (O(L + k) vs O(N·L)).</li>
-    <li><strong>Variants worth knowing:</strong> bit trie for Maximum XOR (walk MSB-first preferring the opposite bit), reversed-word trie for suffix/stream matching, counting trie for "words with this prefix".</li>
-    <li>Iterate strings with <code>for...of</code> (not by index) so emoji/surrogate pairs don't break; tries are case-sensitive by default, so normalize up front.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Forgetting the <code>isEnd</code> check on search — and over-pruning on delete.</strong> Without the flag, <code>search("app")</code> returns true just because "apple" is stored, since the walk succeeds; always verify <code>node.isEnd</code> at the end. On delete, never remove a node that still has children or is another word's endpoint (deleting "car" must not break "card") — only prune nodes with no children and no <code>isEnd</code> on the way back up.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A trie gives O(L) operations independent of the number of stored words, so it beats a hash set the moment I need prefix queries like autocomplete."</div>
-  <div class="revision-say">"Each node is just children plus an end-of-word flag — that flag is what separates a stored word from a prefix of one."</div>
-  <div class="revision-say">"For word search on a grid I'd build one trie of all the words and DFS while the current path stays a valid trie node, instead of searching each word separately."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you describe a trie node's structure (children map plus isEnd flag)?</li>
-    <li>Can you code insert and search from memory?</li>
-    <li>Can you state the time and space complexity of trie operations?</li>
-    <li>Can you recognize a prefix / autocomplete problem as a trie problem?</li>
-    <li>Can you explain why one shared trie beats searching each word separately?</li>
-    <li>Can you name 2 problems a trie solves?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. What does a trie node look like, and why does it need an end-of-word flag?</div>
+  <div class="qa-answer">
+    <p>Each node holds its <code>children</code>, either a Map from character to node or a 26-slot array for lowercase letters, plus a boolean <code>isEnd</code>. The flag distinguishes a stored word from a mere prefix of one: after inserting "apple", the path for "app" exists, but <code>search('app')</code> must return false unless "app" itself was inserted. The classic bug is a search that skips the <code>isEnd</code> check and returns true for prefixes.</p>
+  </div>
 </div>
-`}
-]
+<div class="qa-block">
+  <div class="qa-question">Q2. Implement trie insert, search and startsWith.</div>
+  <div class="qa-answer">
+    <pre><code class="language-js">class TrieNode { constructor() { this.children = new Map(); this.isEnd = false; } }
+
+class Trie {
+  constructor() { this.root = new TrieNode(); }
+  insert(word) {
+    let node = this.root;
+    for (const c of word) {
+      if (!node.children.has(c)) node.children.set(c, new TrieNode());
+      node = node.children.get(c);
+    }
+    node.isEnd = true;
+  }
+  search(word) { const n = this._walk(word); return n !== null &amp;&amp; n.isEnd; }
+  startsWith(prefix) { return this._walk(prefix) !== null; }
+  _walk(s) {
+    let node = this.root;
+    for (const c of s) {
+      if (!node.children.has(c)) return null;
+      node = node.children.get(c);
+    }
+    return node;
+  }
+}</code></pre>
+    <p>Iterate with <code>for...of</code> so emoji and surrogate pairs aren't split.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. What are the time and space complexities of trie operations?</div>
+  <div class="qa-answer">
+    <p>Insert, search and startsWith are each <code>O(L)</code>, where L is the length of the word, independent of how many words are stored. Listing all words with a prefix is <code>O(L + k)</code> for k matches, versus <code>O(N·L)</code> with a hash set. Space is <code>O(N·L)</code> nodes in the worst case (no shared prefixes) and approaches <code>O(L + N)</code> when words share a long prefix; compressed (radix) tries cut node count for large dictionaries.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. In Word Search II, why does one shared trie beat searching for each word separately?</div>
+  <div class="qa-answer">
+    <p>The naive approach runs a full grid DFS once per word, so shared prefixes are explored again and again. Building one trie of all the words lets a single DFS from each cell search for every word at once: you only extend a path while it is still a valid trie node, so dead prefixes are pruned immediately, and reaching a node with <code>isEnd</code> reports a word. The win is largest when many words share prefixes. Build the trie once, outside the search loop.</p>
+  </div>
+</div>
+` },
+
+  ]
 });

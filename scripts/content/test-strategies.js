@@ -1,33 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'test-strategies',
-  module: 'testing',
-  title: 'Test Strategies',
-  estimatedReadTime: '45 min',
-  tags: ['test-strategy', 'pyramid', 'trophy', 'ci-cd', 'flake-budget', 'shift-left', 'risk-based-testing', 'test-data', 'mobile-testing'],
+  id: "test-strategies",
+  module: "testing",
+  title: "Test Strategies",
+  estimatedReadTime: "45 min",
+  tags: ["test-strategy","pyramid","trophy","ci-cd","flake-budget","shift-left","risk-based-testing","test-data","mobile-testing"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>A <strong>test strategy</strong> is the design doc that answers: <em>what gets tested, at which layer, by whom, when, with what data, against what reliability bar?</em> It's the layer above tools and individual tests — the one most teams skip and pay for later.</p>
-<ul>
-  <li><strong>Strategy = the contract between testing investment and confidence to ship.</strong> No strategy = ad-hoc tests that pass coverage but miss critical paths.</li>
-  <li><strong>Risk-based first.</strong> Map features to "cost if broken" × "probability of breaking" × "detectability"; invest where the product is together (payments, auth, core flows).</li>
-  <li><strong>Pick a shape:</strong> Trophy for frontend, Pyramid for backend / hot-loop algorithms. Anti-shape: diamond (lots of E2E, no integration).</li>
-  <li><strong>Test data is half the strategy.</strong> Fixtures, factories, seed scripts, anonymised prod snapshots — explicit choice per project.</li>
-  <li><strong>CI strategy:</strong> what runs on PR (fast, deterministic), what runs on merge (broader), what runs nightly (matrix, smoke, slow E2E).</li>
-  <li><strong>Flake budget:</strong> &lt; 0.5% target; quarantine + fix policy; the suite either earns trust or loses it.</li>
-  <li><strong>Mobile / RN:</strong> add device matrix, OS-version drift, real-device cloud farm cadence as separate tracks.</li>
-  <li><strong>Coverage is a floor, not a goal.</strong> Per-folder thresholds beat one global number.</li>
-</ul>
-<p><strong>Mantra:</strong> "Strategy before suite. Risk-based investment. Trophy by default, Pyramid where it fits, never diamond. Fast feedback close to the engineer."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>A test strategy is the one-page contract between testing investment and confidence to ship</strong> — risk-based, layered by job, with a CI pipeline and a flake budget — decided before the suite, not after.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Strategy is a living 1-3 page doc:</strong> goals, risks, coverage shape, test data, CI policy, ownership, tooling, metrics — the framework individual test decisions are made against, not a list of every test.</li>
+    <li><strong>Risk-based investment:</strong> cost-if-broken &times; probability &times; detectability. Payments/auth/core flows get unit + integration + E2E + ~90% coverage; marketing gets visual regression and lint, no E2E.</li>
+    <li><strong>Pick a shape:</strong> Trophy for frontend/RN (integration is the workhorse), Pyramid for backend/parsers/algorithms; the <strong>diamond</strong> (heavy E2E, no integration) is the anti-shape.</li>
+    <li><strong>Each layer has a distinct job:</strong> static (typos/types), unit (pure logic/edges), integration (cooperating units), contract (cross-service drift), E2E (full-stack/hydration/CSP) — plus visual, a11y, and performance.</li>
+    <li><strong>Test data is half the strategy:</strong> hand-written fixtures, factories (<code>aUser({...})</code>), seed scripts, anonymised prod snapshots, property-based — an explicit choice per project, and no PII in fixtures.</li>
+    <li><strong>CI buckets:</strong> PR fast + deterministic (&lt; 10 min: static + unit + integration + critical E2E), merge broader (cross-browser + perf + contract), nightly slow (mobile matrix + full visual + smoke against staging).</li>
+    <li><strong>Shift left:</strong> push detection earlier — IDE (TS/ESLint) &rarr; pre-commit &rarr; pre-push &rarr; PR CI &rarr; merge CI &rarr; nightly &rarr; production monitoring. Earlier = cheaper to fix.</li>
+    <li><strong>Flake budget:</strong> &lt; 0.5% healthy; auto-quarantine after N fails; &gt; 5% bankrupt. Retries keep CI green while you root-cause — never to ignore the flake.</li>
+    <li><strong>Coverage as a per-folder floor,</strong> never one global number: billing 90%, auth 85%, core 70%, marketing 0% (visual covers it).</li>
+    <li><strong>Escaped-bug analysis on every Sev 1-2:</strong> which layer should have caught it, why didn't it, add the regression test, and update the strategy if the gap is structural.</li>
+    <li><strong>Write down what you deliberately DON'T test</strong> — "we don't test X because Y" is a position; "we forgot X" is a gap.</li>
+    <li><strong>Mobile gets its own track:</strong> Jest + RTL-RN per PR, Detox/Maestro on emulator for key flows, real-device cloud matrix nightly, OS-version drift weekly.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">One global coverage number (or "100% coverage") as the goal — it punishes well-tested code, rewards tautological tests that exercise without asserting, and hides gaps in critical flows behind an 80% average. Use per-folder, risk-based thresholds and behavioural tests instead.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Strategy before suite — risk-based investment, Trophy by default and Pyramid where it fits, never diamond; fast feedback close to the engineer."</div>
+  <div class="revision-say">"Per-folder coverage thresholds, not one global number; E2E only on the critical paths where breakage equals revenue, integration for the rest."</div>
+  <div class="revision-say">"Flake budget under 0.5% with quarantine, CI split into PR/merge/nightly buckets, and an escaped-bug post-mortem on every Sev 1-2 that maps the bug to the layer that should have caught it."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What a test strategy is</h3>
 <p>A short, living document (1–3 pages) that codifies:</p>
 <ul>
@@ -92,12 +101,10 @@ window.PREP_SITE.registerTopic({
   <li>One global "test command" that takes 45 minutes.</li>
   <li>No mobile test plan despite shipping iOS + Android.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The strategy as a portfolio</h3>
 <p>Think of a test strategy like an investment portfolio: each layer (static, unit, integration, contract, E2E, visual, a11y, perf, mobile) earns confidence at a different speed-cost ratio. You allocate budget to maximise total confidence per minute of CI time.</p>
 
@@ -213,12 +220,10 @@ test: {
     <tr><td>Property-based (fast-check)</td><td>Pure functions, encoders</td><td>Random seeds — capture failing case</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Writing a test strategy doc (1-pager template)</h3>
 <pre><code class="language-text">## Goals
 - Confidence to deploy daily without manual QA.
@@ -379,12 +384,10 @@ export const test = base.extend({
     <tr><td>Visual snapshots</td><td>Per-PR</td><td>react-native-owl or Storybook + Chromatic</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Strategy for a B2B SaaS dashboard</h3>
 <p>Profile: read-heavy admin tool, 500 internal users, 5 engineers.</p>
 <ul>
@@ -486,12 +489,11 @@ export const test = base.extend({
     <tr><td>"Our domain is too unique for a strategy."</td><td>"Then the strategy will reflect that — but the act of writing it surfaces the assumptions."</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Test data drift</h3>
 <ul>
   <li>Anonymised prod snapshot ages out; tests start failing on schema changes.</li>
@@ -577,12 +579,9 @@ export const test = base.extend({
   <li>Quarterly review: 30-min meeting; update + announce.</li>
   <li>Tie strategy to onboarding doc; new joiners ask "is this still right?"</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common test-strategy mistakes</h3>
 <ol>
   <li><strong>No strategy at all.</strong> Each engineer tests ad-hoc; suite mirrors their habits.</li>
@@ -680,12 +679,10 @@ expect(page).toHaveScreenshot('home.png', { maxDiffPixels: 100 });
 
 <h3>Anti-pattern: strategy without ownership</h3>
 <p>"We have a strategy doc." Who owns updates? Who reviews escaped bugs? Who tunes thresholds? Without an owner, strategy rots; reality drifts.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common test-strategy interview prompts</h3>
 <ol>
   <li>Walk me through your testing strategy at $LAST_COMPANY.</li>
@@ -829,54 +826,44 @@ expect(page).toHaveScreenshot('home.png', { maxDiffPixels: 100 });
   <li><strong>Test Strategies</strong> (this topic) — risk-based investment, layered coverage, CI buckets, flake budget, escaped-bug analysis.</li>
 </ul>
 <p>5 topics. Together they cover the philosophy, tools, tactics, and meta-strategy that make a test suite earn its keep instead of becoming dead weight.</p>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>A test strategy is the one-page contract between testing investment and confidence to ship</strong> — risk-based, layered by job, with a CI pipeline and a flake budget — decided before the suite, not after.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Strategy is a living 1-3 page doc:</strong> goals, risks, coverage shape, test data, CI policy, ownership, tooling, metrics — the framework individual test decisions are made against, not a list of every test.</li>
-    <li><strong>Risk-based investment:</strong> cost-if-broken &times; probability &times; detectability. Payments/auth/core flows get unit + integration + E2E + ~90% coverage; marketing gets visual regression and lint, no E2E.</li>
-    <li><strong>Pick a shape:</strong> Trophy for frontend/RN (integration is the workhorse), Pyramid for backend/parsers/algorithms; the <strong>diamond</strong> (heavy E2E, no integration) is the anti-shape.</li>
-    <li><strong>Each layer has a distinct job:</strong> static (typos/types), unit (pure logic/edges), integration (cooperating units), contract (cross-service drift), E2E (full-stack/hydration/CSP) — plus visual, a11y, and performance.</li>
-    <li><strong>Test data is half the strategy:</strong> hand-written fixtures, factories (<code>aUser({...})</code>), seed scripts, anonymised prod snapshots, property-based — an explicit choice per project, and no PII in fixtures.</li>
-    <li><strong>CI buckets:</strong> PR fast + deterministic (&lt; 10 min: static + unit + integration + critical E2E), merge broader (cross-browser + perf + contract), nightly slow (mobile matrix + full visual + smoke against staging).</li>
-    <li><strong>Shift left:</strong> push detection earlier — IDE (TS/ESLint) &rarr; pre-commit &rarr; pre-push &rarr; PR CI &rarr; merge CI &rarr; nightly &rarr; production monitoring. Earlier = cheaper to fix.</li>
-    <li><strong>Flake budget:</strong> &lt; 0.5% healthy; auto-quarantine after N fails; &gt; 5% bankrupt. Retries keep CI green while you root-cause — never to ignore the flake.</li>
-    <li><strong>Coverage as a per-folder floor,</strong> never one global number: billing 90%, auth 85%, core 70%, marketing 0% (visual covers it).</li>
-    <li><strong>Escaped-bug analysis on every Sev 1-2:</strong> which layer should have caught it, why didn't it, add the regression test, and update the strategy if the gap is structural.</li>
-    <li><strong>Write down what you deliberately DON'T test</strong> — "we don't test X because Y" is a position; "we forgot X" is a gap.</li>
-    <li><strong>Mobile gets its own track:</strong> Jest + RTL-RN per PR, Detox/Maestro on emulator for key flows, real-device cloud matrix nightly, OS-version drift weekly.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">One global coverage number (or "100% coverage") as the goal — it punishes well-tested code, rewards tautological tests that exercise without asserting, and hides gaps in critical flows behind an 80% average. Use per-folder, risk-based thresholds and behavioural tests instead.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Strategy before suite — risk-based investment, Trophy by default and Pyramid where it fits, never diamond; fast feedback close to the engineer."</div>
-  <div class="revision-say">"Per-folder coverage thresholds, not one global number; E2E only on the critical paths where breakage equals revenue, integration for the rest."</div>
-  <div class="revision-say">"Flake budget under 0.5% with quarantine, CI split into PR/merge/nightly buckets, and an escaped-bug post-mortem on every Sev 1-2 that maps the bug to the layer that should have caught it."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you describe what a one-page test strategy contains and why it's decided before the suite?</li>
-    <li>Can you explain risk-based, layered-by-job investment instead of one global coverage number?</li>
-    <li>Can you justify per-folder coverage thresholds over a single 80% average?</li>
-    <li>Can you set a flake budget with quarantine, and split CI into PR / merge / nightly buckets?</li>
-    <li>Can you decide which flows deserve E2E versus integration on a risk basis?</li>
-    <li>Can you run an escaped-bug post-mortem that maps a Sev 1-2 bug to the layer that should have caught it?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. What goes into a one-page test strategy, and why decide it before writing the suite?</div>
+  <div class="qa-answer">
+    <p>A living 1&ndash;3 page doc covering goals, risks, coverage shape, test data, CI policy (what runs when, retry rules, flake quarantine), ownership, tooling and metrics (coverage thresholds, flake rate, suite time, escaped-bug rate). It is the framework individual test decisions are made against, not a list of every test. Decide it first because without it you get ad-hoc tests that pass coverage but miss critical paths. It is the contract between testing investment and confidence to ship.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q2. What does risk-based, layered-by-job test investment mean, compared with one global coverage number?</div>
+  <div class="qa-answer">
+    <p>Score each area by cost-if-broken &times; probability of breaking &times; detectability, and invest where the risk is: payments, auth and core flows get unit + integration + E2E and around 90% coverage, while marketing gets visual regression and lint with no E2E. Each layer then has a distinct job: static for typos and types, unit for pure logic and edges, integration for cooperating units, contract for cross-service drift, E2E for full-stack, hydration and CSP issues. A single global number ignores both risk and layer, so it can look healthy while critical flows have gaps.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Why use per-folder coverage thresholds instead of a single 80% average?</div>
+  <div class="qa-answer">
+    <p>A global average punishes well-tested code, rewards tautological tests that execute lines without asserting, and lets a poorly tested billing module hide behind heavily covered utilities. Per-folder floors match investment to risk, for example billing 90%, auth 85%, core 70% and marketing 0% because visual regression covers it. When an escaped bug exposes a gap, you raise that folder's threshold, as with <code>billing/**</code> after a discount-rounding incident.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How would you set a flake budget and split CI into PR, merge and nightly buckets?</div>
+  <div class="qa-answer">
+    <p>Flake budget: under 0.5% is healthy, 0.5&ndash;2% means auto-quarantine and a weekly fix rotation, 2&ndash;5% is debt (pause new tests and pay it down), over 5% is bankrupt because engineers ignore CI. A concrete policy is auto-quarantine after 3 flakes in 7 days, fix or delete within one sprint, and no merge to main with quarantined critical-path tests; retries only keep CI green while you find the root cause. CI buckets: PR runs fast and deterministic in under 10 minutes (static + unit + integration + critical E2E); merge runs broader (cross-browser, performance, contract); nightly runs the slow work (mobile matrix, full visual, smoke against staging).</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. How do you decide which flows deserve E2E rather than integration tests?</div>
+  <div class="qa-answer">
+    <p>Use the same risk score: E2E is slow and expensive, so it goes only to the critical paths where breakage costs revenue or trust, such as checkout, payments and auth, plus bug classes only a real browser catches (hydration, build, CSP). Everything else goes to integration, which in RTL/JSDOM catches most React and state bugs cheaply. Write down what deliberately gets no E2E, for example an internal admin tool or an experiment behind a 1% flag; "we don't test X because Y" is a position, "we forgot X" is a gap.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. Walk me through an escaped-bug post-mortem.</div>
+  <div class="qa-answer">
+    <p>Run it for every Sev 1&ndash;2 incident: which layer should have caught it, why didn't it (missing test, mock too lenient, skipped layer), add the regression test, and update the strategy if the gap is structural. Example: a discount-rounding bug produced $0 charges, a Sev 1 with about $50k lost in 2 hours. The unit test of <code>applyDiscount</code> should have caught it but lacked the "100% off + sub-cent" edge. The fix was a regression test, a fast-check property test that the total is never negative or sub-cent, and a higher <code>billing/**</code> threshold, and the strategy now requires property-based tests for billing.</p>
+  </div>
+</div>
+` },
 
   ]
 });

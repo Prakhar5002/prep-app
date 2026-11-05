@@ -1,25 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'redux-rtk-query',
-  module: 'redux',
-  title: 'RTK Query',
-  estimatedReadTime: '24 min',
-  tags: ['redux', 'rtk-query', 'data-fetching', 'caching', 'server-state'],
+  id: "redux-rtk-query",
+  module: "redux",
+  title: "RTK Query",
+  estimatedReadTime: "24 min",
+  tags: ["redux","rtk-query","data-fetching","caching","server-state"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>RTK Query</strong> is the data-fetching and caching layer built into Redux Toolkit. Instead of hand-writing thunks, loading/error flags, and refetch-after-mutation logic for every resource, you describe <strong>endpoints</strong> — "here's how to fetch/mutate this data" — and RTK Query generates the reducer, the middleware, the cache, and a React hook for each endpoint.</p>
-<ul>
-  <li><strong>One call, everything included:</strong> <code>createApi({ baseQuery, endpoints })</code> returns a slice-like object plus auto-generated hooks like <code>useGetPostsQuery()</code> and <code>useAddPostMutation()</code> — no action creators or reducer cases to write by hand.</li>
-  <li><strong>It's a cache, not just a fetcher.</strong> Two components calling the same query with the same arguments share one cached entry and one in-flight request — no duplicate network calls, and <code>isLoading</code>/<code>isFetching</code>/<code>error</code> come for free from the hook.</li>
-  <li><strong>Cache invalidation is declarative.</strong> Queries say what data they <em>provide</em> (<code>providesTags</code>); mutations say what they <em>invalidate</em> (<code>invalidatesTags</code>). Any query holding an invalidated tag refetches automatically — you never manually call "refetch the list" after an add/edit/delete.</li>
-  <li><strong>It's for <em>server</em> state, not client state.</strong> RTK Query exists because data fetched from a server (a list of posts, a user profile) behaves nothing like local UI state — it can go stale, be needed by multiple components, and require dedup/caching/invalidation. <a href="#/topic/redux-core">Plain Redux slices</a> (from <a href="#/topic/redux-core">Why Redux &amp; Core Concepts</a>) are still the right tool for actual client state — theme, form drafts, whether a modal is open.</li>
-  <li><strong>Where it sits in this module:</strong> builds directly on <a href="#/topic/redux-core">the store/action/reducer loop</a> and RTK's <code>createSlice</code> — an <code>api</code> object is really just a specialized slice + middleware that RTK Query generates for you. Next up: <a href="#/topic/redux-middleware-async">Middleware &amp; Async</a>, which covers what's actually happening under the hood when RTK Query dispatches all of this.</li>
-</ul>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">RTK Query is RTK's <strong>server-state caching layer</strong> — you <strong>describe endpoints</strong> and it generates the reducer, middleware, cache, and a hook per endpoint, so you stop hand-writing thunks, loading flags, and refetch-after-mutation logic.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>One call does it all:</strong> <code>createApi({ baseQuery, endpoints })</code> returns a slice-like <code>api</code> object plus auto-generated hooks (<code>useGetPostsQuery</code>, <code>useAddPostMutation</code>) — no action creators or <code>extraReducers</code> cases by hand.</li>
+    <li><strong>It's a cache, not just a fetcher:</strong> the cache is keyed by endpoint name + serialized args, so two components calling the same query with the same args share one entry and one in-flight request (dedup), and <code>data</code>/<code>isLoading</code>/<code>isFetching</code>/<code>error</code> come from the hook.</li>
+    <li><strong>Invalidation is declarative via tags:</strong> queries declare <code>providesTags</code> (what data they represent); mutations declare <code>invalidatesTags</code> (what they changed); on success, any cached query holding an invalidated tag auto-refetches. You never manually refetch a list after add/edit/delete.</li>
+    <li><strong>The <code>{ type, id: 'LIST' }</code> bulk pattern:</strong> list queries provide a per-item tag <em>and</em> a shared LIST tag; <em>add</em> invalidates LIST (new item has no id yet); <em>update/delete</em> invalidates the specific item id so only that entry refetches.</li>
+    <li><strong>It's for SERVER state, not client state.</strong> Server data is a cache of a remote source of truth (goes stale, shared, needs dedup/invalidation); keep real client state (theme, form drafts, modal open) in plain slices.</li>
+    <li><strong>An <code>api</code> object is just a specialized slice + middleware</strong> — still one store, still the same dispatch → reducer → subscriber loop; RTK Query writes those pieces for you.</li>
+    <li><strong>query vs mutation:</strong> <code>builder.query</code> for reads (cached); <code>builder.mutation</code> for writes (returns a <code>[trigger, result]</code> tuple; <code>trigger(arg).unwrap()</code> gives the raw payload or throws for <code>try/catch</code>).</li>
+    <li><strong>Store wiring is three parts:</strong> mount <code>[api.reducerPath]: api.reducer</code>, <code>.concat(api.middleware)</code>, and call <code>setupListeners(store.dispatch)</code> to enable <code>refetchOnFocus</code>/<code>refetchOnReconnect</code>.</li>
+    <li><strong>Cache args must be serializable</strong> — object key order doesn't matter (RTK Query sorts keys), but functions/class instances/Maps break the cache key. Same discipline as plain Redux state.</li>
+    <li><strong><code>keepUnusedDataFor</code> (default 60s)</strong> is how long an entry survives after its last subscriber unmounts, in case someone asks again soon.</li>
+    <li><strong>Optimistic updates:</strong> in the mutation's <code>onQueryStarted</code>, dispatch <code>api.util.updateQueryData(endpoint, args, recipe)</code> (Immer draft, patches an existing entry) → returns a patch with <code>.undo()</code> → <code>await queryFulfilled</code> in try/catch → on failure call <code>patchResult.undo()</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting to add <code>api.middleware</code> (and mount <code>api.reducer</code>) to the store.</strong> The hooks look correctly wired, but without the middleware nothing actually dispatches requests or manages cache lifetimes — so nothing ever fetches. (Runner-ups: forgetting <code>invalidatesTags</code> so the UI stays stale after a mutation; and mirroring an <code>api</code> resource into a second hand-written slice, creating two sources of truth that drift.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"RTK Query is Redux's server-state layer — I describe endpoints and it generates the cache, dedup, and a hook per endpoint, so I never hand-write loading flags or refetch logic."</div>
+  <div class="revision-say">"Invalidation is declarative: queries provide tags, mutations invalidate them, and any cached query holding an invalidated tag refetches automatically — the LIST-tag convention handles 'the whole collection changed'."</div>
+  <div class="revision-say">"I'd pick RTK Query if the app already uses Redux so it shares the store and DevTools, and TanStack Query otherwise so I don't adopt Redux just for caching."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The problem: fetching data by hand in Redux</h3>
 <p>Before RTK Query, the standard way to fetch server data into a Redux store was <code>createAsyncThunk</code> plus a slice that tracked loading state by hand:</p>
 <pre><code class="language-js">// The "before" picture — hand-rolled async fetching, one resource at a time
@@ -65,10 +81,10 @@ const postsSlice = createSlice({
 
 <h3>Honest talk: RTK Query isn't the only option</h3>
 <p>If you're not already in a Redux codebase, a standalone server-state library like <a href="https://tanstack.com/query">TanStack Query</a> gets you the same caching/dedup/invalidation model without requiring a Redux store at all. RTK Query's specific advantage is that it plugs into a store you already have and shares DevTools, middleware, and the rest of the Redux ecosystem. The comparison is covered in depth in <a href="#interview-patterns">Interview Patterns</a> below — the short version is: both are valid, reach for whichever matches whether you already have Redux.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>An <code>api</code> object is a self-contained slice + middleware</h3>
 <p>Calling <code>createApi({ baseQuery, endpoints })</code> once produces a single object with everything wired together:</p>
 <ul>
@@ -112,10 +128,10 @@ Every component subscribed via useGetPostsQuery() re-renders with fresh data
   <div class="callout-title">🔥 Key insight</div>
   <p>You never dispatch "refetch the posts list" yourself. You declare, once, <em>what each endpoint provides</em> and <em>what each mutation invalidates</em> — RTK Query's middleware connects those declarations and triggers refetches for you, for the lifetime of the app.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3><code>createApi</code>: defining the whole API in one place</h3>
 <pre><code class="language-js">import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
@@ -210,10 +226,10 @@ setupListeners(store.dispatch);</code></pre>
   invalidatesTags: (result, error, { id }) => [{ type: 'Post', id }],
 }),</code></pre>
 <p><code>onQueryStarted</code> fires as soon as the mutation is triggered — before the network request resolves. <code>dispatch(api.util.updateQueryData(endpointName, args, recipe))</code> patches an already-cached entry for that specific endpoint+args pair (it can't create a new cache entry) and returns a patch object with an <code>.undo()</code> escape hatch. <code>queryFulfilled</code> is a promise that settles once the real request finishes — awaiting it (and catching its rejection) is what lets you decide whether to keep the optimistic edit or revert it.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Posts list + add, with tag invalidation</h3>
 <pre><code class="language-js">// postsApi.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
@@ -296,10 +312,11 @@ toggleLike: builder.mutation({
   );
 }</code></pre>
 <p>The heart icon and count flip the instant the button is clicked — <code>updateQueryData</code> writes straight into the cached <code>getPost(postId)</code> entry before the network request even resolves. If the request fails, <code>patchResult.undo()</code> reverts the cache to exactly what it was before the optimistic edit, and the UI snaps back — the user sees an instant response in the common case, with a correct rollback in the rare failure case.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Over-granular tags at scale</h3>
 <p>Tagging every single item individually works fine at hundreds of rows, but tagging (and invalidating) 10,000 individual item tags on every list fetch is wasteful — RTK Query has to track and compare all of them. Prefer the <code>LIST</code> bulk-tag pattern from <a href="#mechanics">Mechanics</a> for "the whole collection changed" cases (adds, filters, bulk deletes), and reserve per-item tags for mutations that genuinely target one row (a single edit/delete). Mixing both, as in the worked examples, is the normal and recommended approach — the mistake is invalidating every item tag when only the bulk tag was needed.</p>
 
@@ -316,10 +333,10 @@ const postsSlice = createSlice({
   },
 });</code></pre>
 <p>Once an <code>api</code> slice owns a resource, avoid also mirroring that same data into a separate hand-written slice "for convenience" (e.g. to add a derived field). That creates two sources of truth that can drift out of sync — the RTK Query cache updates on its own schedule (refetch, invalidation, optimistic patches), and nothing keeps a manually-synced copy in step with it. If you need derived data from a query result, compute it in a selector or in the component, not by copying the query's data into a second slice.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">RTK Query vs. <code>createAsyncThunk</code> — when would you use each?</div>
 <div class="qa-a">
@@ -354,47 +371,26 @@ const postsSlice = createSlice({
 <p>One. RTK Query keys its cache by endpoint name plus serialized arguments, so both components subscribe to the exact same cache entry — the first one to mount triggers the fetch, the second one gets served the same in-flight request (or the already-resolved cached value) with no duplicate call. This is a large part of what makes RTK Query more than "a fetch wrapped in a thunk": the cache is shared across every consumer of that query, not per-component.</p>
 </div>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">RTK Query is RTK's <strong>server-state caching layer</strong> — you <strong>describe endpoints</strong> and it generates the reducer, middleware, cache, and a hook per endpoint, so you stop hand-writing thunks, loading flags, and refetch-after-mutation logic.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>One call does it all:</strong> <code>createApi({ baseQuery, endpoints })</code> returns a slice-like <code>api</code> object plus auto-generated hooks (<code>useGetPostsQuery</code>, <code>useAddPostMutation</code>) — no action creators or <code>extraReducers</code> cases by hand.</li>
-    <li><strong>It's a cache, not just a fetcher:</strong> the cache is keyed by endpoint name + serialized args, so two components calling the same query with the same args share one entry and one in-flight request (dedup), and <code>data</code>/<code>isLoading</code>/<code>isFetching</code>/<code>error</code> come from the hook.</li>
-    <li><strong>Invalidation is declarative via tags:</strong> queries declare <code>providesTags</code> (what data they represent); mutations declare <code>invalidatesTags</code> (what they changed); on success, any cached query holding an invalidated tag auto-refetches. You never manually refetch a list after add/edit/delete.</li>
-    <li><strong>The <code>{ type, id: 'LIST' }</code> bulk pattern:</strong> list queries provide a per-item tag <em>and</em> a shared LIST tag; <em>add</em> invalidates LIST (new item has no id yet); <em>update/delete</em> invalidates the specific item id so only that entry refetches.</li>
-    <li><strong>It's for SERVER state, not client state.</strong> Server data is a cache of a remote source of truth (goes stale, shared, needs dedup/invalidation); keep real client state (theme, form drafts, modal open) in plain slices.</li>
-    <li><strong>An <code>api</code> object is just a specialized slice + middleware</strong> — still one store, still the same dispatch → reducer → subscriber loop; RTK Query writes those pieces for you.</li>
-    <li><strong>query vs mutation:</strong> <code>builder.query</code> for reads (cached); <code>builder.mutation</code> for writes (returns a <code>[trigger, result]</code> tuple; <code>trigger(arg).unwrap()</code> gives the raw payload or throws for <code>try/catch</code>).</li>
-    <li><strong>Store wiring is three parts:</strong> mount <code>[api.reducerPath]: api.reducer</code>, <code>.concat(api.middleware)</code>, and call <code>setupListeners(store.dispatch)</code> to enable <code>refetchOnFocus</code>/<code>refetchOnReconnect</code>.</li>
-    <li><strong>Cache args must be serializable</strong> — object key order doesn't matter (RTK Query sorts keys), but functions/class instances/Maps break the cache key. Same discipline as plain Redux state.</li>
-    <li><strong><code>keepUnusedDataFor</code> (default 60s)</strong> is how long an entry survives after its last subscriber unmounts, in case someone asks again soon.</li>
-    <li><strong>Optimistic updates:</strong> in the mutation's <code>onQueryStarted</code>, dispatch <code>api.util.updateQueryData(endpoint, args, recipe)</code> (Immer draft, patches an existing entry) → returns a patch with <code>.undo()</code> → <code>await queryFulfilled</code> in try/catch → on failure call <code>patchResult.undo()</code>.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Forgetting to add <code>api.middleware</code> (and mount <code>api.reducer</code>) to the store.</strong> The hooks look correctly wired, but without the middleware nothing actually dispatches requests or manages cache lifetimes — so nothing ever fetches. (Runner-ups: forgetting <code>invalidatesTags</code> so the UI stays stale after a mutation; and mirroring an <code>api</code> resource into a second hand-written slice, creating two sources of truth that drift.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"RTK Query is Redux's server-state layer — I describe endpoints and it generates the cache, dedup, and a hook per endpoint, so I never hand-write loading flags or refetch logic."</div>
-  <div class="revision-say">"Invalidation is declarative: queries provide tags, mutations invalidate them, and any cached query holding an invalidated tag refetches automatically — the LIST-tag convention handles 'the whole collection changed'."</div>
-  <div class="revision-say">"I'd pick RTK Query if the app already uses Redux so it shares the store and DevTools, and TanStack Query otherwise so I don't adopt Redux just for caching."</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. Your RTK Query hooks look correctly wired but nothing ever fetches. What did you forget?</div>
+  <div class="qa-answer">
+    <p>Almost always the store wiring: <code>api.middleware</code> was not added (and/or <code>api.reducer</code> was not mounted). The middleware is what actually dispatches and executes requests and manages cache lifetimes, so without it the hooks render but no request is ever made. Wiring is three parts: mount <code>[api.reducerPath]: api.reducer</code>, add <code>getDefaultMiddleware().concat(api.middleware)</code>, and call <code>setupListeners(store.dispatch)</code> to enable <code>refetchOnFocus</code>/<code>refetchOnReconnect</code>.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain what RTK Query generates for you (reducer, middleware, cache, a hook per endpoint)?</li>
-    <li>Can you explain why forgetting to mount <code>api.middleware</code> means nothing ever fetches?</li>
-    <li>Can you describe tag-based invalidation (queries provide, mutations invalidate) and the LIST-tag convention?</li>
-    <li>Can you explain why mirroring an <code>api</code> resource into a second hand-written slice creates drift?</li>
-    <li>Can you decide between RTK Query and TanStack Query for a given app?</li>
-    <li>Can you say why forgetting <code>invalidatesTags</code> leaves the UI stale after a mutation?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q7. Why is it a mistake to mirror an RTK Query resource into a second hand-written slice?</div>
+  <div class="qa-answer">
+    <p>It creates two sources of truth that drift apart. The RTK Query cache updates on its own schedule (refetches, tag invalidation, optimistic patches), and nothing keeps a manually synced copy in step with it, so the slice ends up showing stale data. If you need derived data from a query result, compute it in a selector or in the component instead of copying the data into another slice.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q8. A mutation succeeds but the list on screen stays stale. Why?</div>
+  <div class="qa-answer">
+    <p>The mutation is missing <code>invalidatesTags</code> (or it invalidates a tag the list query never provided). RTK Query only refetches cached queries that hold a tag the successful mutation invalidated; with no matching tag, the cached list is considered fresh and is never refetched. Have the list query provide a per-item tag plus a shared <code>{ type, id: 'LIST' }</code> tag, invalidate LIST on add, and invalidate the specific item id on update or delete.</p>
+  </div>
+</div>
+` },
 
-]});
+  ]
+});

@@ -1,35 +1,45 @@
 window.PREP_SITE.registerTopic({
-  id: 'dbg-chrome',
-  module: 'Debugging',
-  title: 'Chrome DevTools Mastery',
-  estimatedReadTime: '32 min',
-  tags: ['debugging', 'chrome', 'devtools', 'sources', 'performance', 'network', 'console', 'memory'],
+  id: "dbg-chrome",
+  module: "Debugging",
+  title: "Chrome DevTools Mastery",
+  estimatedReadTime: "32 min",
+  tags: ["debugging","chrome","devtools","sources","performance","network","console","memory"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Chrome DevTools is the most powerful in-browser debugger. Mastery means knowing not just where the panels are, but the workflows that map symptoms to tools.</p>
-<ul>
-  <li><strong>Elements</strong> — inspect / edit DOM + CSS live. Force pseudo-states (:hover, :focus). Visual debugging.</li>
-  <li><strong>Console</strong> — JS REPL + log viewer. Use <code>$0</code>, <code>$_</code>, <code>copy()</code>, <code>monitor()</code>, conditional breakpoints.</li>
-  <li><strong>Sources</strong> — set breakpoints, step through code, conditional + log breakpoints, blackboxing, workspaces (edit-and-save to disk).</li>
-  <li><strong>Network</strong> — every HTTP request, with timings, response, headers. Throttle, block, override responses.</li>
-  <li><strong>Performance</strong> — record timeline. CPU profile, frame rate, long tasks, layout / paint / composite phases.</li>
-  <li><strong>Memory</strong> — heap snapshots, allocation timeline, detect leaks.</li>
-  <li><strong>Application</strong> — storage (localStorage, IndexedDB, cookies, cache), service workers, manifest, background services.</li>
-  <li><strong>Lighthouse</strong> — automated audits (perf, a11y, SEO, best practices).</li>
-  <li><strong>Coverage</strong> — measure unused JS/CSS bytes.</li>
-  <li><strong>Animations / Rendering</strong> — paint flashing, layer borders, FPS meter.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Don't <code>console.log</code> everything — use breakpoints. Don't reload to clear state — use <code>$0</code> in console. Don't guess — record a Performance trace. The fastest debug is the one that doesn't restart the app.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Map the symptom to the right panel, reach for breakpoints and logpoints over console.log, and record a Performance trace instead of guessing</strong> — the fastest debug is the one that never restarts the app.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Symptom → panel:</strong> wrong element = Elements, JS error = Console + Sources, failed/slow request = Network, jank/INP = Performance, memory growth = Memory, storage/cookies/service worker = Application, unused JS = Coverage, holistic perf + a11y = Lighthouse.</li>
+    <li><strong>Breakpoints beat console.log:</strong> they pause execution so you can inspect every variable, the scope, and the call stack, then step forward — no edit-reload cycle.</li>
+    <li><strong>Conditional breakpoints</strong> fire only when an expression is true; <strong>logpoints</strong> log an expression each time a line runs <em>without pausing and without editing code</em> — console.log added from DevTools.</li>
+    <li>Console superpowers: <code>$0</code> (selected element), <code>$_</code> (last expression), <code>$$()</code> / <code>$x()</code>, <code>copy()</code>, <code>monitor(fn)</code>, <code>getEventListeners($0)</code>, <code>queryObjects(Constructor)</code>.</li>
+    <li><strong>DOM breakpoints</strong> — Break on attribute modifications answers "what is setting this element's class?"; also subtree and node-removal breakpoints. Check the call stack when it pauses.</li>
+    <li><strong>Network Timing</strong> splits a request into DNS, connect, TLS, request sent, <strong>Waiting (TTFB)</strong>, download — high TTFB = server, high stalled = connection contention. Throttle, block a URL, override responses, Copy as cURL, export HAR.</li>
+    <li><strong>Performance</strong>: record a trace, find <strong>long tasks</strong> (red-bordered, &gt;50ms) blocking input, drill the flame graph, use Bottom-Up for the hottest cumulative functions.</li>
+    <li><strong>Memory</strong>: heap snapshot → interact → snapshot → <strong>Comparison</strong> view; filter <code>Detached</code> for DOM leaks; trace retainers. Force GC first.</li>
+    <li><strong>Coverage</strong> reports used vs unused bytes per file — candidates for code-splitting; caveat: only counts what ran this session.</li>
+    <li>Emulate mobile with the <strong>device toolbar</strong>: pick a phone, Slow 4G, and 4× CPU throttle for a realistic mid-range experience.</li>
+    <li><strong>Workspaces</strong> map disk to domain (edit-and-save); <strong>Local Overrides</strong> serve your edited resource without touching the server.</li>
+    <li>Blackbox library files via the <strong>Ignore List</strong> so stepping and stack traces skip framework internals.</li>
+    <li><code>Cmd+Shift+P</code> command palette reaches every feature — Show Coverage, Show Rendering, Disable JavaScript, Show Issues.</li>
+    <li>DevTools adds overhead — trace numbers run slower than reality; trust RUM for absolute numbers, DevTools for relative diffing.</li>
+    <li><strong>Elements</strong> edits DOM + CSS live and forces pseudo-states (<code>:hover</code>, <code>:focus</code>); the <strong>Rendering</strong> tab adds paint flashing, layer borders and an FPS meter; <strong>Application</strong> covers storage, service workers and the manifest.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Debugging with console.log + reload, and shipping no source maps.</strong> console.log means edit → reload → repeat and risks shipping the log; and without hidden source maps production stack traces are unreadable minified gibberish (<code>main.a1b2.js:1:5283</code>). Fix: use conditional breakpoints and logpoints for a no-reload loop, and always ship hidden source maps (upload to Sentry) so prod stacks map back to real files.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I map the symptom to a panel — Performance for jank, Network for slow requests, Memory for leaks — then I reach for conditional breakpoints and logpoints instead of console.log so I never edit-and-reload."</div>
+  <div class="revision-say">"To debug perf I record a Performance trace, find the long tasks over 50ms, and drill the flame graph — I don't guess, and I re-record to verify the fix."</div>
+  <div class="revision-say">"For a memory leak I take a heap snapshot, reproduce, snapshot again, use the Comparison view, filter Detached, and trace the retainer chain to the holder."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why DevTools matter</h3>
 <p>Every browser ships dev tools, but Chrome's are the most feature-complete and the de-facto standard for web debugging. Mastery cuts debug time 5-10× — the difference between "spent 4 hours hunting a bug" and "found it in 20 minutes by reading the right panel."</p>
 
@@ -57,10 +67,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why breakpoints &gt; console.log</h3>
 <p><code>console.log</code> requires reload + edit + reload. Breakpoints pause execution at a chosen point — inspect all variables, the call stack, step forward. Conditional breakpoints fire only when a condition is true. Log breakpoints log without pausing — like <code>console.log</code> but added without code edit.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "shortcut cheat sheet"</h3>
 <table>
   <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
@@ -133,10 +143,10 @@ clear()</code></pre>
   <div class="callout-title">Common misconception</div>
   <p>"DevTools shows the production code I shipped." DevTools shows the running browser's code. With source maps, you debug original sources. Without, you debug minified output. Always ship hidden source maps to make production debugging possible.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Elements panel</h3>
 <ul>
   <li><strong>Inspect</strong> — Cmd+Shift+C, then hover any element.</li>
@@ -327,10 +337,10 @@ Toggles:
 - Touch simulation
 - Geolocation override
 - User-agent override</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — debug a click handler</h3>
 <pre><code>1. Elements → click target element → see Event Listeners pane
 2. See "click" handler → click the source link → jumps to handler in Sources
@@ -471,10 +481,11 @@ performance.mark('end');
 performance.measure('myBlock', 'start', 'end');
 
 // Marks visible in Performance recording timeline as user-defined entries</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. DevTools changes performance</h3>
 <p>The act of recording / debugging adds overhead. Numbers in Performance trace are slower than reality. For accurate measurements, RUM is better than DevTools.</p>
 
@@ -534,10 +545,9 @@ performance.measure('myBlock', 'start', 'end');
 
 <h3>20. Animations panel missing</h3>
 <p>Hidden by default. Cmd+Shift+P → "Show Animations". Lets you slow down + step through CSS / Web Animations.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — only console.log</h3>
 <p>Slower than breakpoints; pollutes code; shipped to prod accidentally. Learn breakpoints.</p>
 
@@ -582,10 +592,10 @@ performance.measure('myBlock', 'start', 'end');
 
 <h3>Anti-pattern 15 — assuming desktop perf = mobile perf</h3>
 <p>4x CPU throttle + Slow 4G in Device toolbar reflects more realistic mobile experience.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How do you debug a slow page?</div>
   <div class="qa-answer">
@@ -764,51 +774,32 @@ queryObjects($0.constructor);</code></pre>
     <li>You ship hidden source maps for prod debugging via Sentry.</li>
   </ul>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Map the symptom to the right panel, reach for breakpoints and logpoints over console.log, and record a Performance trace instead of guessing</strong> — the fastest debug is the one that never restarts the app.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Symptom → panel:</strong> wrong element = Elements, JS error = Console + Sources, failed/slow request = Network, jank/INP = Performance, memory growth = Memory, storage/cookies/service worker = Application, unused JS = Coverage, holistic perf + a11y = Lighthouse.</li>
-    <li><strong>Breakpoints beat console.log:</strong> they pause execution so you can inspect every variable, the scope, and the call stack, then step forward — no edit-reload cycle.</li>
-    <li><strong>Conditional breakpoints</strong> fire only when an expression is true; <strong>logpoints</strong> log an expression each time a line runs <em>without pausing and without editing code</em> — console.log added from DevTools.</li>
-    <li>Console superpowers: <code>$0</code> (selected element), <code>$_</code> (last expression), <code>$$()</code> / <code>$x()</code>, <code>copy()</code>, <code>monitor(fn)</code>, <code>getEventListeners($0)</code>, <code>queryObjects(Constructor)</code>.</li>
-    <li><strong>DOM breakpoints</strong> — Break on attribute modifications answers "what is setting this element's class?"; also subtree and node-removal breakpoints. Check the call stack when it pauses.</li>
-    <li><strong>Network Timing</strong> splits a request into DNS, connect, TLS, request sent, <strong>Waiting (TTFB)</strong>, download — high TTFB = server, high stalled = connection contention. Throttle, block a URL, override responses, Copy as cURL, export HAR.</li>
-    <li><strong>Performance</strong>: record a trace, find <strong>long tasks</strong> (red-bordered, &gt;50ms) blocking input, drill the flame graph, use Bottom-Up for the hottest cumulative functions.</li>
-    <li><strong>Memory</strong>: heap snapshot → interact → snapshot → <strong>Comparison</strong> view; filter <code>Detached</code> for DOM leaks; trace retainers. Force GC first.</li>
-    <li><strong>Coverage</strong> reports used vs unused bytes per file — candidates for code-splitting; caveat: only counts what ran this session.</li>
-    <li>Emulate mobile with the <strong>device toolbar</strong>: pick a phone, Slow 4G, and 4× CPU throttle for a realistic mid-range experience.</li>
-    <li><strong>Workspaces</strong> map disk to domain (edit-and-save); <strong>Local Overrides</strong> serve your edited resource without touching the server.</li>
-    <li>Blackbox library files via the <strong>Ignore List</strong> so stepping and stack traces skip framework internals.</li>
-    <li><code>Cmd+Shift+P</code> command palette reaches every feature — Show Coverage, Show Rendering, Disable JavaScript, Show Issues.</li>
-    <li>DevTools adds overhead — trace numbers run slower than reality; trust RUM for absolute numbers, DevTools for relative diffing.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Debugging with console.log + reload, and shipping no source maps.</strong> console.log means edit → reload → repeat and risks shipping the log; and without hidden source maps production stack traces are unreadable minified gibberish (<code>main.a1b2.js:1:5283</code>). Fix: use conditional breakpoints and logpoints for a no-reload loop, and always ship hidden source maps (upload to Sentry) so prod stacks map back to real files.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I map the symptom to a panel — Performance for jank, Network for slow requests, Memory for leaks — then I reach for conditional breakpoints and logpoints instead of console.log so I never edit-and-reload."</div>
-  <div class="revision-say">"To debug perf I record a Performance trace, find the long tasks over 50ms, and drill the flame graph — I don't guess, and I re-record to verify the fix."</div>
-  <div class="revision-say">"For a memory leak I take a heap snapshot, reproduce, snapshot again, use the Comparison view, filter Detached, and trace the retainer chain to the holder."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Given a symptom, which DevTools panel do you open first?</div>
+  <div class="qa-answer">
+    <p>Element looks wrong → <strong>Elements</strong>. JS error or unexpected behaviour → <strong>Console + Sources</strong>. Failed or slow request → <strong>Network</strong>. Page slow, jank, INP regression → <strong>Performance</strong>. Memory growth or OOM → <strong>Memory</strong>. Something stored wrong (cookies, cache, service worker) → <strong>Application</strong>. How much JS is unused → <strong>Coverage</strong>. Holistic perf + a11y check → <strong>Lighthouse</strong>. Repaint or animation issues → <strong>Animations / Rendering</strong>. Picking the panel from the symptom is what turns DevTools from a list of tabs into a workflow.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you map a symptom to the right panel — jank to Performance, a leak to Memory, a slow request to Network?</li>
-    <li>Can you use <code>$0</code>, <code>$_</code>, and <code>copy()</code> in the Console without reloading the page?</li>
-    <li>Can you set a conditional breakpoint or a logpoint in Sources instead of littering the code with <code>console.log</code>?</li>
-    <li>Can you record a Performance trace and read long tasks and the layout / paint / composite phases?</li>
-    <li>Can you explain what Coverage and the Rendering tab (paint flashing, layer borders, FPS meter) reveal?</li>
-    <li>Can you override a network response or throttle the connection without touching server code?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. Besides $0, which Console helpers do you use, and why do they save time?</div>
+  <div class="qa-answer">
+    <p><code>$0</code> is the selected element (<code>$1</code>–<code>$4</code> are older selections); <code>$_</code> is the value of the last evaluated expression, so you can keep working on a result without re-typing it; <code>copy(obj)</code> puts a value on the clipboard, for example a big JSON response to paste into a test or bug report. Also: <code>$$()</code> / <code>$x()</code> for CSS and XPath queries, <code>monitor(fn)</code> to log every call with its args, <code>debug(fn)</code> to pause on every call, <code>getEventListeners($0)</code>, and <code>queryObjects(Constructor)</code>. All of it works against the live page state, with no reload.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q18. What do the Coverage tool and the Rendering tab reveal?</div>
+  <div class="qa-answer">
+    <p><strong>Coverage</strong> (command palette → "Show Coverage", record, interact, stop) lists each JS/CSS file with used vs unused bytes (green used, red unused); a mostly unused large file is a code-splitting candidate, with the caveat that it only counts what ran this session. <strong>Rendering</strong> ("Show Rendering") offers paint flashing (highlights repainted areas, to find unnecessary repaints), layout shift regions, layer borders (compositor layers), an FPS meter and frame rendering stats, plus forcing <code>prefers-color-scheme</code> or <code>prefers-reduced-motion</code>. When a trace shows a mostly idle main thread but users still report lag, paint flashing + layer borders point at a layout, paint or GPU bottleneck.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q19. How do you change a network response or simulate a slow connection without touching server code?</div>
+  <div class="qa-answer">
+    <p>For responses, use <strong>Local Overrides</strong>: Sources → Overrides → set up overrides and pick a folder, then right-click a resource → "Save for overrides" and edit it; every load of that URL now serves your version. It's useful for testing CSS or config changes. For the connection, use Network throttling presets (Slow 3G, Fast 3G, Offline), or the device toolbar with Slow 4G plus a 4× CPU throttle. Right-click → <strong>Block request URL</strong> tests degraded behaviour when a resource fails.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

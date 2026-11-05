@@ -1,29 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'andr-entry-code',
-  module: 'Android Native (Deep)',
-  title: 'Entry Code & RN Wiring',
-  estimatedReadTime: '24 min',
-  tags: ['mainactivity', 'mainapplication', 'reactnativehost', 'reacthost', 'soloader', 'hermes', 'jsc', 'jni', 'autolinking', 'new-architecture', 'packagelist', 'reactpackage', 'reactactivitydelegate', 'fabric', 'turbomodules', 'jsi', 'bridge', 'catalystinstance', 'bridgeless', 'jnilibs', 'abi', 'expo', 'android'],
+  id: "andr-entry-code",
+  module: "Android Native (Deep)",
+  title: "Entry Code & RN Wiring",
+  estimatedReadTime: "24 min",
+  tags: ["mainactivity","mainapplication","reactnativehost","reacthost","soloader","hermes","jsc","jni","autolinking","new-architecture","packagelist","reactpackage","reactactivitydelegate","fabric","turbomodules","jsi","bridge","catalystinstance","bridgeless","jnilibs","abi","expo","android"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Every Android RN app boots through two tiny Kotlin/Java files that you rarely open but that decide everything about how JavaScript reaches native code:</p>
-<ul>
-  <li><strong>MainApplication</strong> — the process-level singleton. It extends <code>Application</code>, implements <code>ReactApplication</code>, owns the <code>ReactNativeHost</code> (old arch) or <code>ReactHost</code> (new arch), lists your native packages via <code>PackageList(this).packages</code>, and in <code>onCreate()</code> calls <code>SoLoader.init(...)</code> to load the C++ <code>.so</code> libraries.</li>
-  <li><strong>MainActivity</strong> — the screen-level entry. It extends <code>ReactActivity</code>, returns the registered root component name from <code>getMainComponentName()</code> (must match <code>AppRegistry.registerComponent</code> in JS), and builds a <code>ReactActivityDelegate</code> that actually mounts the React root view.</li>
-</ul>
-<p>Underneath, <strong>SoLoader</strong> pulls the native libraries, <strong>JNI</strong> bridges Java/Kotlin to C++, and the C++ core (<code>libreactnativejni</code>, the JS engine <code>libhermes</code> or JSC) runs your bundle. On the <strong>old architecture (Paper)</strong> that plumbing is the async <strong>Bridge</strong>; on the <strong>new architecture</strong> it becomes <strong>JSI + TurboModules + Fabric</strong>, optionally <strong>bridgeless</strong>.</p>
-<p>In Expo prebuild projects these two files are <em>generated</em> and wrapped — edit them through config plugins, not by hand, or <code>expo prebuild --clean</code> wipes your changes.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p><strong>MainApplication</strong> boots the React runtime and lists native packages for the whole process; <strong>MainActivity</strong> mounts one React root view whose name must match <code>AppRegistry.registerComponent</code>. SoLoader loads the <code>.so</code> files, JNI bridges to C++, and Hermes runs your JS.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>MainApplication</strong> boots the React runtime and lists native packages for the whole process; <strong>MainActivity</strong> mounts one React root view whose name must match <code>AppRegistry.registerComponent</code> — with SoLoader loading the <code>.so</code> files, JNI bridging to C++, and Hermes running the JS.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>MainApplication</strong> = process entry: extends <code>Application</code>, implements <code>ReactApplication</code>, owns the <code>ReactNativeHost</code> (old arch) or <code>ReactHost</code> (new arch); runs once per process before any Activity.</li>
+    <li><strong>MainActivity</strong> = screen entry: extends <code>ReactActivity</code>, returns <code>getMainComponentName()</code>, builds a <code>ReactActivityDelegate</code> (<code>DefaultReactActivityDelegate</code> with <code>fabricEnabled</code>) that mounts the <code>ReactRootView</code>.</li>
+    <li><strong>Three names must match:</strong> <code>app.json</code> "name" = <code>AppRegistry.registerComponent(name, ...)</code> = <code>getMainComponentName()</code>, or you get an "not been registered" red screen.</li>
+    <li><strong>Host members:</strong> <code>getPackages()</code> → <code>PackageList(this).packages</code> + custom; <code>getJSMainModuleName()</code> → "index" (dev only); <code>getUseDeveloperSupport()</code> → <code>BuildConfig.DEBUG</code>; <code>isNewArchEnabled</code>/<code>isHermesEnabled</code> from BuildConfig.</li>
+    <li><strong>onCreate order:</strong> <code>super.onCreate()</code> → <code>SoLoader.init(this, false)</code> FIRST → on new arch <code>DefaultNewArchitectureEntryPoint.load()</code> → then app singletons.</li>
+    <li><strong>Autolinking</strong> generates <code>PackageList.java</code> at build time (one <code>ReactPackage</code> per native lib) into the generated folder — never hand-edit it; register a local module by appending a <code>ReactPackage</code> in <code>getPackages()</code>.</li>
+    <li><strong>Native stack:</strong> <code>SoLoader</code> loads <code>.so</code> libs → <strong>JNI</strong> (wrapped by <strong>fbjni</strong>) bridges Java↔C++ → C++ core <code>libreactnativejni</code>/<code>libjsi</code> + engine <code>libhermes</code> (or JSC).</li>
+    <li><strong>Hermes</strong> precompiles the bundle to <strong>bytecode</strong> via <code>hermesc</code> → faster startup, less memory; JSC runs plain source. Chosen by the <code>hermesEnabled</code> flag.</li>
+    <li><strong>Old arch (Paper):</strong> <code>ReactNativeHost</code> + async <strong>Bridge</strong> (<code>CatalystInstance</code>, JSON, eager modules). <strong>New arch:</strong> <code>ReactHost</code> + <strong>JSI</strong>, <strong>TurboModules</strong> (lazy), <strong>Fabric</strong> (<code>fabricEnabled</code>), optionally <strong>bridgeless</strong> (no bridge). Deep model → <code>rn-architecture</code>.</li>
+    <li><strong>ABIs:</strong> <code>arm64-v8a</code> (phones), <code>armeabi-v7a</code>, <code>x86</code>/<code>x86_64</code> (emulators); controlled by <code>abiFilters</code>/ABI splits, packaged under <code>jniLibs/&lt;abi&gt;/</code>. Miss arm64-v8a → <code>UnsatisfiedLinkError</code> on real devices.</li>
+    <li><strong>super.onCreate(null)</strong> (not <code>savedInstanceState</code>) when overriding, for <code>react-native-screens</code>.</li>
+    <li><strong>sw-mobile</strong> = OLD arch (Paper) + Hermes: <code>ReactNativeHost</code>, bridge present, no <code>load()</code> call.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Hand-editing MainApplication/MainActivity/PackageList in an Expo prebuild project</strong> — <code>expo prebuild --clean</code> regenerates and wipes them. Fix: use a config plugin (<code>withMainApplication</code>/<code>withMainActivity</code>) or <code>expo-build-properties</code>. (Second trap: dropping <code>arm64-v8a</code> to shrink builds — works on the emulator, crashes on every real phone.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"MainApplication is process scope — it builds the React host, lists native packages via autolinked PackageList, and calls SoLoader.init in onCreate. MainActivity is screen scope — it returns the component name and mounts the root view into that host."</div>
+  <div class="revision-say">"SoLoader loads the .so libraries, JNI (via fbjni) bridges Kotlin to the C++ core in libreactnativejni, and Hermes runs the bundle — precompiled to bytecode at build time for faster startup."</div>
+  <div class="revision-say">"On old arch the host is a ReactNativeHost talking over the async bridge; on new arch it's a ReactHost with JSI, TurboModules, and Fabric, and onCreate calls DefaultNewArchitectureEntryPoint.load(). sw-mobile is still on Paper with Hermes."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What these files are</h3>
 <p>When you run a bare/prebuilt RN app you get an <code>android/</code> folder with a Gradle project. Inside <code>android/app/src/main/java/&lt;your/package&gt;/</code> live exactly two hand-editable entry files: <code>MainApplication.kt</code> and <code>MainActivity.kt</code> (older templates use <code>.java</code>). They are the seam where the Android OS process meets the React Native runtime.</p>
 <ul>
@@ -52,10 +65,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>sw-mobile reality</h3>
 <p>Your <code>sw-mobile</code> (Expo 53 / RN 0.79) runs on the <strong>OLD architecture (Paper)</strong> with <strong>Hermes</strong>. So in that codebase the host is a <code>ReactNativeHost</code>, the bridge is present, and <code>newArchEnabled</code> is false. Everything below applies; you just don't take the <code>DefaultNewArchitectureEntryPoint.load()</code> branch.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The boot chain, top to bottom</h3>
 <div class="diagram">
 <pre>
@@ -123,10 +136,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"MainActivity starts React." No — <strong>MainApplication</strong> builds the React runtime (the host) for the whole process; MainActivity only mounts <em>a root view</em> into that already-existing runtime. That is why a Brownfield app can have several activities all sharing one host, and why heavy init belongs in <code>Application.onCreate()</code>, not the Activity.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>File 1 — MainActivity.kt (screen entry)</h3>
 <pre><code class="language-kotlin">package com.swmobile
 
@@ -287,10 +300,10 @@ android {
   <div class="callout-title">🧩 Expo note — these files are generated, don't hand-edit</div>
   <p>In an Expo prebuild / Continuous Native Generation project, <code>MainActivity</code> and <code>MainApplication</code> are produced by <code>expo prebuild</code> from templates and are <strong>overwritten by</strong> <code>expo prebuild --clean</code>. Expo wraps the host: <code>MainApplication</code> uses <code>ReactNativeHostWrapper</code> and calls <code>ApplicationLifecycleDispatcher.onApplicationCreate(this)</code> in <code>onCreate</code>; <code>MainActivity</code> uses <code>ReactActivityDelegateWrapper</code> and dispatches config changes to Expo modules. The Expo module system does its own autolinking, so <code>PackageList</code> includes <code>expo</code>. To change these files reliably, use a <strong>config plugin</strong> — <code>withMainApplication</code> / <code>withMainActivity</code> mods, or <code>expo-build-properties</code> for flags like <code>newArchEnabled</code>/<code>hermes</code> — not manual edits.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — the three names that must match</h3>
 <pre><code class="language-text">app.json           "name": "sw_mobile"
 index.js           AppRegistry.registerComponent("sw_mobile", () =&gt; App)
@@ -410,10 +423,11 @@ module.exports = function withKioskInit(config) {
   });
 };
 // Survives expo prebuild --clean because it re-applies each generation.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Name mismatch → red screen</h3>
 <p>If <code>getMainComponentName()</code> is <code>"main"</code> but JS registered <code>"sw_mobile"</code>, launch fails with "Application main has not been registered." All three sources (<code>app.json</code>, <code>registerComponent</code>, the override) must match exactly, case-sensitive.</p>
 
@@ -458,10 +472,9 @@ module.exports = function withKioskInit(config) {
 
 <h3>15. x86 removed for size but tester uses an emulator</h3>
 <p>Dropping <code>x86</code>/<code>x86_64</code> to shrink the APK breaks emulator testing on Intel machines. Keep them for internal builds; strip only for Play (App Bundle handles per-device delivery anyway).</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — heavy work in MainActivity instead of MainApplication</h3>
 <p>Initializing analytics/DB/crash-reporting in every Activity's <code>onCreate</code> re-runs it on each screen. Process-wide singletons belong in <code>Application.onCreate()</code>, guarded to run once.</p>
 
@@ -500,10 +513,10 @@ module.exports = function withKioskInit(config) {
 
 <h3>Anti-pattern 13 — leaving Flipper/dev tooling in release</h3>
 <p>Debug-only init not guarded by <code>BuildConfig.DEBUG</code> bloats and slows release. Gate all dev support behind the flag.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What do MainActivity and MainApplication each do?</div>
   <div class="qa-answer">
@@ -628,51 +641,7 @@ module.exports = function withKioskInit(config) {
     <li>You know Expo generates these files and edit them via config plugins.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>MainApplication</strong> boots the React runtime and lists native packages for the whole process; <strong>MainActivity</strong> mounts one React root view whose name must match <code>AppRegistry.registerComponent</code> — with SoLoader loading the <code>.so</code> files, JNI bridging to C++, and Hermes running the JS.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>MainApplication</strong> = process entry: extends <code>Application</code>, implements <code>ReactApplication</code>, owns the <code>ReactNativeHost</code> (old arch) or <code>ReactHost</code> (new arch); runs once per process before any Activity.</li>
-    <li><strong>MainActivity</strong> = screen entry: extends <code>ReactActivity</code>, returns <code>getMainComponentName()</code>, builds a <code>ReactActivityDelegate</code> (<code>DefaultReactActivityDelegate</code> with <code>fabricEnabled</code>) that mounts the <code>ReactRootView</code>.</li>
-    <li><strong>Three names must match:</strong> <code>app.json</code> "name" = <code>AppRegistry.registerComponent(name, ...)</code> = <code>getMainComponentName()</code>, or you get an "not been registered" red screen.</li>
-    <li><strong>Host members:</strong> <code>getPackages()</code> → <code>PackageList(this).packages</code> + custom; <code>getJSMainModuleName()</code> → "index" (dev only); <code>getUseDeveloperSupport()</code> → <code>BuildConfig.DEBUG</code>; <code>isNewArchEnabled</code>/<code>isHermesEnabled</code> from BuildConfig.</li>
-    <li><strong>onCreate order:</strong> <code>super.onCreate()</code> → <code>SoLoader.init(this, false)</code> FIRST → on new arch <code>DefaultNewArchitectureEntryPoint.load()</code> → then app singletons.</li>
-    <li><strong>Autolinking</strong> generates <code>PackageList.java</code> at build time (one <code>ReactPackage</code> per native lib) into the generated folder — never hand-edit it; register a local module by appending a <code>ReactPackage</code> in <code>getPackages()</code>.</li>
-    <li><strong>Native stack:</strong> <code>SoLoader</code> loads <code>.so</code> libs → <strong>JNI</strong> (wrapped by <strong>fbjni</strong>) bridges Java↔C++ → C++ core <code>libreactnativejni</code>/<code>libjsi</code> + engine <code>libhermes</code> (or JSC).</li>
-    <li><strong>Hermes</strong> precompiles the bundle to <strong>bytecode</strong> via <code>hermesc</code> → faster startup, less memory; JSC runs plain source. Chosen by the <code>hermesEnabled</code> flag.</li>
-    <li><strong>Old arch (Paper):</strong> <code>ReactNativeHost</code> + async <strong>Bridge</strong> (<code>CatalystInstance</code>, JSON, eager modules). <strong>New arch:</strong> <code>ReactHost</code> + <strong>JSI</strong>, <strong>TurboModules</strong> (lazy), <strong>Fabric</strong> (<code>fabricEnabled</code>), optionally <strong>bridgeless</strong> (no bridge). Deep model → <code>rn-architecture</code>.</li>
-    <li><strong>ABIs:</strong> <code>arm64-v8a</code> (phones), <code>armeabi-v7a</code>, <code>x86</code>/<code>x86_64</code> (emulators); controlled by <code>abiFilters</code>/ABI splits, packaged under <code>jniLibs/&lt;abi&gt;/</code>. Miss arm64-v8a → <code>UnsatisfiedLinkError</code> on real devices.</li>
-    <li><strong>super.onCreate(null)</strong> (not <code>savedInstanceState</code>) when overriding, for <code>react-native-screens</code>.</li>
-    <li><strong>sw-mobile</strong> = OLD arch (Paper) + Hermes: <code>ReactNativeHost</code>, bridge present, no <code>load()</code> call.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Hand-editing MainApplication/MainActivity/PackageList in an Expo prebuild project</strong> — <code>expo prebuild --clean</code> regenerates and wipes them. Fix: use a config plugin (<code>withMainApplication</code>/<code>withMainActivity</code>) or <code>expo-build-properties</code>. (Second trap: dropping <code>arm64-v8a</code> to shrink builds — works on the emulator, crashes on every real phone.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"MainApplication is process scope — it builds the React host, lists native packages via autolinked PackageList, and calls SoLoader.init in onCreate. MainActivity is screen scope — it returns the component name and mounts the root view into that host."</div>
-  <div class="revision-say">"SoLoader loads the .so libraries, JNI (via fbjni) bridges Kotlin to the C++ core in libreactnativejni, and Hermes runs the bundle — precompiled to bytecode at build time for faster startup."</div>
-  <div class="revision-say">"On old arch the host is a ReactNativeHost talking over the async bridge; on new arch it's a ReactHost with JSI, TurboModules, and Fabric, and onCreate calls DefaultNewArchitectureEntryPoint.load(). sw-mobile is still on Paper with Hermes."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the division of labor between MainApplication and MainActivity?</li>
-    <li>Can you trace the full boot chain from OS process start to your React component mounting?</li>
-    <li>Can you name the three places the root component name appears and why they must match?</li>
-    <li>Can you describe how autolinking generates PackageList and how to register a custom module?</li>
-    <li>Can you explain what SoLoader, JNI/fbjni, and the .so libraries do at startup?</li>
-    <li>Can you contrast the old-arch ReactNativeHost/Bridge with the new-arch ReactHost/JSI/Fabric path in these files?</li>
-    <li>Can you reason about ABIs and why an app crashes on a phone but not an emulator?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

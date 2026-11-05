@@ -1,22 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'js-scope-chain',
-  module: 'JavaScript Deep',
-  title: 'Scope & Scope Chain',
-  estimatedReadTime: '25 min',
-  tags: ['scope', 'scope-chain', 'lexical-scope', 'hoisting', 'tdz', 'shadowing', 'fundamentals'],
+  id: "js-scope-chain",
+  module: "JavaScript Deep",
+  title: "Scope & Scope Chain",
+  estimatedReadTime: "25 min",
+  tags: ["scope","scope-chain","lexical-scope","hoisting","tdz","shadowing","fundamentals"],
   sections: [
 
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>Scope</strong> is the region of code where an identifier (variable, function, class) is accessible. <strong>The scope chain</strong> is the ordered list of nested scopes the engine searches when looking up an identifier.</p>
-<p>JavaScript uses <strong>lexical (static) scoping</strong> — scope is determined by where code is <em>written</em>, not where it's called. A function's scope chain is fixed at definition; calling it from anywhere doesn't change what variables it can see.</p>
-<p>Scope types in modern JS: <strong>global</strong>, <strong>module</strong>, <strong>function</strong>, <strong>block</strong> (for <code>let</code>/<code>const</code>/<code>class</code>), and <strong>catch</strong>. <code>var</code> ignores block scope and lives in the nearest function (or global).</p>
-<div class="callout insight">
-  <div class="callout-title">🧠 One-liner</div>
-  <p>The engine walks up the scope chain from innermost outward until it finds the identifier, or reaches the global/module scope and throws <code>ReferenceError</code>.</p>
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">JavaScript uses <strong>lexical (static) scope</strong> — a function's variable access is fixed by where it is <em>written</em>, and lookups walk innermost → outward until the name is found or it throws <code>ReferenceError</code>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Scope</strong> = the region where an identifier is accessible; <strong>scope chain</strong> = the ordered list of nested scopes the engine searches on lookup.</li>
+    <li><strong>JavaScript uses lexical (static) scope</strong> — a function's chain is fixed by where it is <em>written</em>, not where it is called.</li>
+    <li>Lookup walks <strong>innermost → outward</strong> until the name is found; if it reaches global/module and still misses, it throws <code>ReferenceError</code>.</li>
+    <li>Scope types: <strong>global, module, function, block</strong> (<code>let</code>/<code>const</code>/<code>class</code>), and <strong>catch</strong>.</li>
+    <li><strong><code>var</code> is function-scoped and ignores blocks</strong>; <code>let</code>/<code>const</code>/<code>class</code> are block-scoped.</li>
+    <li>The scope chain is fixed at definition — a function called elsewhere still sees its birth scope, not the call site's variables.</li>
+    <li><strong>Shadowing:</strong> an inner binding of the same name is found first; the outer one becomes unreachable directly.</li>
+    <li>Reading an undeclared name → <code>ReferenceError</code>; writing one in sloppy mode creates an accidental global, while strict mode / modules throw.</li>
+    <li><code>for (let i ...)</code> creates a <strong>new binding per iteration</strong> → closures capture <code>0, 1, 2</code>; <code>var</code> shares one binding → <code>3, 3, 3</code>.</li>
+    <li>Closures capture the <strong>binding (the scope record), not a value copy</strong> — they read the current value at call time.</li>
+    <li>Each ES module has its own isolated top-level scope (nothing leaks; <code>this</code> is <code>undefined</code>).</li>
+    <li><strong>Scope vs Execution Context:</strong> an EC bundles the scope chain PLUS <code>this</code> PLUS <code>arguments</code>. A named function expression's name is visible only inside its own body.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Expecting a function to see variables from where it is <em>called</em>. It only sees its <strong>birth scope</strong>. Classic tell: a <code>var</code> loop shares one binding so deferred callbacks log <code>3, 3, 3</code>, while <code>let</code> gives a fresh binding per iteration → <code>0, 1, 2</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"JavaScript uses lexical scope — a function's variable access is fixed by where it's written, not where it's called."</div>
+  <div class="revision-say">"Identifier lookup walks the scope chain from innermost outward until it finds the name or throws a <code>ReferenceError</code>."</div>
+  <div class="revision-say">"<code>var</code> is function-scoped and ignores blocks; <code>let</code>/<code>const</code> are block-scoped, which is why <code>for (let)</code> gives a fresh binding each iteration."</div>
 </div>
-`},
+` },
 
-{ id: 'what-why', title: '🧠 What & Why', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is scope?</h3>
 <p>Scope answers the question: "From this point in the code, what identifiers can I see?" It's a compile-time concept — the engine knows the scope structure before running code.</p>
 
@@ -56,9 +76,10 @@ function inner() {
 outer();   // prints 10, NOT 20</code></pre>
 
 <p>Inner's scope chain is [inner → global], not [inner → outer → global]. Where it's <em>written</em> dictates its chain.</p>
-`},
+` },
 
-{ id: 'scope-types', title: '🪜 All Scope Types', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "scope-types", title: "🪜 All Scope Types", collapsible: true, html: `
 <h3>1. Global scope</h3>
 <pre><code class="language-js">var a = 1;
 let b = 2;
@@ -134,9 +155,10 @@ console.log(e);   // ReferenceError</code></pre>
         │
         └─ var globals, function declarations
 </div>
-`},
+` },
 
-{ id: 'mechanics', title: '⚙️ How Lookup Actually Works', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ How Lookup Actually Works", collapsible: true, html: `
 <h3>Lookup algorithm (simplified)</h3>
 <p>When the engine needs to resolve identifier <code>x</code>:</p>
 <ol>
@@ -209,9 +231,10 @@ function bad() {
 }</code></pre>
 
 <p>This is why strict mode / modules are preferred — no accidental globals.</p>
-`},
+` },
 
-{ id: 'examples', title: '📦 Examples (progressive)', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Basic chain lookup</h3>
 <pre><code class="language-js">let a = 10;
 function outer() {
@@ -335,9 +358,11 @@ console.log(factorial(5));
 console.log(fact);   // ❌ ReferenceError — 'fact' only in its own body</code></pre>
 
 <p>Named function expressions bind their name in a scope accessible only inside the function body. Useful for recursion without relying on the outer variable.</p>
-`},
+` },
 
-{ id: 'edge-cases', title: '🔍 All Edge Cases', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. TDZ for <code>let</code>/<code>const</code></h3>
 <pre><code class="language-js">{
   console.log(x);   // ❌ ReferenceError (TDZ)
@@ -465,9 +490,9 @@ var a = 10;</code></pre>
 </ol>
 
 <p>Actually the output is <code>undefined</code> — my initial claim was wrong. Careful with hoisting!</p>
-`},
 
-{ id: 'bugs-anti', title: '🐛 Common Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1 — Accidental global write</h3>
 <pre><code class="language-js">function setConfig() {
   config = { api: 'x' };   // no var — becomes global (sloppy)
@@ -528,9 +553,10 @@ console.log(a);   // 10</code></pre>
 class Foo {}</code></pre>
 
 <p>Classes are block-scoped and in TDZ. Always declare before use.</p>
-`},
+` },
 
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common ask formats</h3>
 <ol>
   <li>"What will this print?" — scope traversal puzzle.</li>
@@ -656,50 +682,44 @@ f();   // ?</code></pre>
   <li>"What's the performance cost of deep scope chains?" (Each lookup walks upward — but V8 caches lookups. Usually negligible.)</li>
   <li>"How do ES modules affect scope?" (Each module is its own scope; no leakage; <code>import</code>/<code>export</code> control what crosses.)</li>
 </ul>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">JavaScript uses <strong>lexical (static) scope</strong> — a function's variable access is fixed by where it is <em>written</em>, and lookups walk innermost → outward until the name is found or it throws <code>ReferenceError</code>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Scope</strong> = the region where an identifier is accessible; <strong>scope chain</strong> = the ordered list of nested scopes the engine searches on lookup.</li>
-    <li><strong>JavaScript uses lexical (static) scope</strong> — a function's chain is fixed by where it is <em>written</em>, not where it is called.</li>
-    <li>Lookup walks <strong>innermost → outward</strong> until the name is found; if it reaches global/module and still misses, it throws <code>ReferenceError</code>.</li>
-    <li>Scope types: <strong>global, module, function, block</strong> (<code>let</code>/<code>const</code>/<code>class</code>), and <strong>catch</strong>.</li>
-    <li><strong><code>var</code> is function-scoped and ignores blocks</strong>; <code>let</code>/<code>const</code>/<code>class</code> are block-scoped.</li>
-    <li>The scope chain is fixed at definition — a function called elsewhere still sees its birth scope, not the call site's variables.</li>
-    <li><strong>Shadowing:</strong> an inner binding of the same name is found first; the outer one becomes unreachable directly.</li>
-    <li>Reading an undeclared name → <code>ReferenceError</code>; writing one in sloppy mode creates an accidental global, while strict mode / modules throw.</li>
-    <li><code>for (let i ...)</code> creates a <strong>new binding per iteration</strong> → closures capture <code>0, 1, 2</code>; <code>var</code> shares one binding → <code>3, 3, 3</code>.</li>
-    <li>Closures capture the <strong>binding (the scope record), not a value copy</strong> — they read the current value at call time.</li>
-    <li>Each ES module has its own isolated top-level scope (nothing leaks; <code>this</code> is <code>undefined</code>).</li>
-    <li><strong>Scope vs Execution Context:</strong> an EC bundles the scope chain PLUS <code>this</code> PLUS <code>arguments</code>. A named function expression's name is visible only inside its own body.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Expecting a function to see variables from where it is <em>called</em>. It only sees its <strong>birth scope</strong>. Classic tell: a <code>var</code> loop shares one binding so deferred callbacks log <code>3, 3, 3</code>, while <code>let</code> gives a fresh binding per iteration → <code>0, 1, 2</code>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"JavaScript uses lexical scope — a function's variable access is fixed by where it's written, not where it's called."</div>
-  <div class="revision-say">"Identifier lookup walks the scope chain from innermost outward until it finds the name or throws a <code>ReferenceError</code>."</div>
-  <div class="revision-say">"<code>var</code> is function-scoped and ignores blocks; <code>let</code>/<code>const</code> are block-scoped, which is why <code>for (let)</code> gives a fresh binding each iteration."</div>
+<div class="qa-block">
+  <div class="qa-question">Q9. What is the difference between lexical (static) scope and dynamic scope, and which one does JavaScript use?</div>
+  <div class="qa-answer">
+    <p>With lexical scope, the variables a function can see are decided by where the function is <em>written</em> in the source; with dynamic scope (early Lisp, Bash, emacs-lisp) names are looked up through the <em>caller's</em> scope at run time. JavaScript is lexical, like C, Python, Java, Rust and Go. So if global <code>x = 10</code>, <code>outer</code> declares its own <code>x = 20</code> and calls a globally defined <code>inner</code>, <code>inner</code> logs 10, because its chain is [inner → global]. Lexical scope is easier to reason about, lets the engine pre-compute scope chains at parse time, and is the foundation of closures.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the difference between lexical (static) scope and dynamic scope, and say which one JavaScript uses?</li>
-    <li>Can you trace how the engine resolves an identifier by walking the scope chain, and what happens when it reaches global and still misses?</li>
-    <li>Can you explain why a function called somewhere else still sees its birth scope, not the caller's variables?</li>
-    <li>Can you explain why <code>for (let i ...)</code> lets closures capture 0, 1, 2 while <code>var</code> gives 3, 3, 3?</li>
-    <li>Can you explain what shadowing is and when an outer binding becomes unreachable?</li>
-    <li>Can you explain how a scope differs from an execution context (scope chain plus <code>this</code> plus <code>arguments</code>)?</li>
-    <li>Can you list all five scope types (global, module, function, block, catch)?</li>
-    <li>Can you draw the scope-chain diagram for any nested function?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q10. How does the engine resolve an identifier, and what happens if it reaches the global scope without finding it?</div>
+  <div class="qa-answer">
+    <p>It walks the scope chain from the innermost scope outward, asking at each level "is this name defined here?" — the first match wins, even if its value is <code>undefined</code> or it's still in the TDZ. If the lookup reaches the global/module scope and still misses, a <em>read</em> throws <code>ReferenceError</code>. A <em>write</em> to an undeclared name in sloppy mode silently creates an accidental global (e.g. <code>window.y</code>); strict mode and ES modules throw instead.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q11. What is shadowing, and when does an outer binding become unreachable?</div>
+  <div class="qa-answer">
+    <p>Shadowing is declaring an inner binding with the same name as an outer one; because lookup stops at the first match, the inner binding wins inside that scope. The outer binding isn't destroyed — it's just not found first — but from inside the shadowing scope there's no direct way to reach it: if global <code>user = 'admin'</code> and <code>greet</code> declares <code>let user = 'guest'</code>, code inside <code>greet</code> can't read the outer <code>user</code> by name. One shadowing form is illegal: a <code>var</code> inside a block that collides with a <code>let</code> of the same name in the enclosing function is a SyntaxError, because <code>var</code> tries to register in the function scope.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q12. How does a scope differ from an execution context?</div>
+  <div class="qa-answer">
+    <p>Scope answers "which variables are visible here?" and is decided lexically, by code structure. An execution context is the runtime structure that actually runs a function: it contains the scope chain PLUS the <code>this</code> binding PLUS <code>arguments</code>. So scope is a subset of what an execution context holds — two calls of the same function share the same lexical scope structure but get separate execution contexts, and <code>this</code> depends on the call, not on the scope.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q13. What are the scope types in modern JavaScript?</div>
+  <div class="qa-answer">
+    <p>There are five: <strong>global</strong>; <strong>module</strong> (each ES module has its own isolated top-level scope, nothing leaks and <code>this</code> is <code>undefined</code>); <strong>function</strong>; <strong>block</strong> (any <code>{ }</code>, for <code>let</code>/<code>const</code>/<code>class</code>); and <strong>catch</strong> (the <code>catch (e)</code> parameter is scoped to that catch block only). <code>var</code> ignores block scope and lives in the nearest function, or the global scope.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q14. Draw the scope chain for a set of nested functions.</div>
+  <div class="qa-answer">
+    <p>Write each function's chain as a list from its own scope out to global, based only on where it is nested in the source. If <code>a</code> is declared globally, <code>b</code> inside <code>a</code>, and <code>c</code> inside <code>b</code>, then <code>c</code>'s chain is [c → b → a → global], <code>b</code>'s is [b → a → global] and <code>a</code>'s is [a → global]; any variable used in <code>c</code> is resolved by walking that list left to right. A function defined at the top level but called from inside another function still has the chain [fn → global] — the caller never appears in it.</p>
+  </div>
+</div>
+` },
 
-]});
+  ]
+});

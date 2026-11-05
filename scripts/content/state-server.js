@@ -1,33 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'state-server',
-  module: 'state-deep',
-  title: 'Server State (React Query)',
-  estimatedReadTime: '45 min',
-  tags: ['react-query', 'tanstack-query', 'server-state', 'cache', 'mutations', 'optimistic-update', 'pagination', 'infinite-scroll', 'react-native'],
+  id: "state-server",
+  module: "state-deep",
+  title: "Server State (React Query)",
+  estimatedReadTime: "45 min",
+  tags: ["react-query","tanstack-query","server-state","cache","mutations","optimistic-update","pagination","infinite-scroll","react-native"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Server state</strong> is a fundamentally different beast from client state — it's owned by a remote source, can become stale, supports out-of-band updates, and needs caching, deduplication, retries, and invalidation. <strong>TanStack Query</strong> (formerly React Query) is the de facto library for managing it. Once you adopt it, you stop hand-rolling loading flags and start thinking in queries and mutations.</p>
-<ul>
-  <li><strong>Two primitives:</strong> <em>queries</em> (read; cached by key) and <em>mutations</em> (write; can invalidate queries).</li>
-  <li><strong>Cache key = source of identity.</strong> Same key → same cache entry; different key → independent fetch.</li>
-  <li><strong>Stale-while-revalidate</strong> by default: cached data served immediately; background refetch updates.</li>
-  <li><strong>Deduplication:</strong> 5 components asking for <code>users/123</code> at the same time → one fetch.</li>
-  <li><strong>Auto-refetch</strong> on window focus, network reconnect, mount, configurable interval (polling).</li>
-  <li><strong>Mutations</strong> can invalidate keys, optimistically update cache, rollback on failure.</li>
-  <li><strong>The shift in mindset:</strong> server state isn't "your" state — it's a <em>cache</em> of a remote source. Stop owning it; start syncing it.</li>
-  <li><strong>Common alternatives:</strong> SWR (Vercel — leaner, similar API), Apollo Client (GraphQL), urql, RTK Query (if you're in Redux).</li>
-</ul>
-<p><strong>Mantra:</strong> "Server state is a cache. Use queries for reads, mutations for writes, invalidate on success. Don't store fetched data in your client store."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Server state isn't "your" state — it's a <strong>cache of a remote source that can go stale</strong>; stop owning it in Redux and start syncing it with <strong>queries (reads) and mutations (writes)</strong> via TanStack/React Query.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Server state is fundamentally different from client state:</strong> owned remotely, becomes stale, updated out-of-band, needs caching, deduplication, retries, and invalidation. That's why it deserves its own library.</li>
+    <li><strong>Two primitives:</strong> <em>queries</em> (read, cached by key) and <em>mutations</em> (write, can invalidate queries). Queries READ, mutations WRITE and re-sync.</li>
+    <li><strong>The query key is the cache identity</strong> — same key = same cache entry, different key = independent fetch. Keys are descriptive arrays: <code>['user', id]</code>, and invalidation can be partial (<code>['users']</code> matches all <code>['users', ...]</code>).</li>
+    <li><strong>Stale-while-revalidate by default:</strong> cached data is shown instantly while a background refetch updates it.</li>
+    <li><strong>Deduplication:</strong> N components asking for the same key at once collapse into a single in-flight fetch.</li>
+    <li><strong>Auto-refetch</strong> on window focus, network reconnect, and mount, plus optional <code>refetchInterval</code> polling.</li>
+    <li><strong><code>staleTime</code> vs <code>gcTime</code>:</strong> staleTime = how long data is "fresh" (when to refetch, default 0 = always stale); gcTime/cacheTime = how long an unused entry stays in cache (default 5 min). Tune per query.</li>
+    <li><strong>Optimistic-update pattern:</strong> <code>onMutate</code> cancels in-flight queries, snapshots previous, applies the optimistic value; <code>onError</code> rolls back from the snapshot; <code>onSettled</code> invalidates to refetch the truth.</li>
+    <li><strong>Any variable used in <code>queryFn</code> must be in the <code>queryKey</code></strong>, or the query won't refetch when it changes (stale-closure/identity bug).</li>
+    <li><strong><code>fetch</code> does NOT throw on 4xx/5xx</strong> — check <code>r.ok</code> and throw yourself, or the query never enters its error state.</li>
+    <li><strong>Mobile essentials:</strong> wire <code>NetInfo → onlineManager</code> (pause/resume on connectivity), <code>focusManager</code> via AppState (refetch on foreground), and prefer an MMKV persister over AsyncStorage; filter sensitive data out of any persisted cache.</li>
+    <li>Alternatives: <strong>SWR</strong> (Vercel, leaner, similar API), <strong>Apollo Client</strong> / urql (GraphQL), <strong>RTK Query</strong> (if you're already in Redux).</li>
+    <li><strong>Mantra:</strong> "Server state is a cache. Use queries for reads, mutations for writes, invalidate on success. Don't store fetched data in your client store."</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>A value used in <code>queryFn</code> but left out of the <code>queryKey</code></strong> — e.g. <code>queryKey: ['foo'], queryFn: () =&gt; fetch('/foo?filter=' + filter)</code>. The key never changes, so the query serves stale cached data and never refetches when <code>filter</code> changes. Fix: put it in the key — <code>['foo', filter]</code>. (Sibling trap: two components using the same key for different data → cache collision; and <code>fetch</code> not throwing on HTTP errors.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Server state is a cache of a remote source, not local state — so I use queries for reads and mutations for writes, and I never store fetched data in Redux with manual loading flags."</div>
+  <div class="revision-say">"The query key is the cache's identity, and every variable the queryFn reads has to be in that key — otherwise it serves stale data and won't refetch."</div>
+  <div class="revision-say">"Optimistic updates are onMutate to cancel-snapshot-apply, onError to roll back from the snapshot, and onSettled to invalidate and refetch the source of truth."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The fundamental insight</h3>
 <p>Around 2018-2020, the React community realized: most "Redux state" was actually <em>copies of server data</em>. Client state (UI flags, form values) was small; server state (lists, profiles, cached responses) was large. Treating both with the same tool (Redux) was the wrong abstraction.</p>
 
@@ -98,12 +108,10 @@ window.PREP_SITE.registerTopic({
   <li>Pagination uses <code>useInfiniteQuery</code> or cursor-based handling.</li>
   <li>For offline-first apps, persistence + retry strategies are configured.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The query lifecycle</h3>
 <pre><code class="language-text">Component mounts → useQuery(key, fn)
                        │
@@ -247,12 +255,10 @@ invalidateQueries({ queryKey: ['users', id] })       // matches user-specific on
 Components subscribe to specific keys via useQuery hooks.
 On invalidation: matching queries are marked stale + refetched.
 </code></pre>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Setup</h3>
 <pre><code class="language-bash">yarn add @tanstack/react-query
 yarn add @tanstack/react-query-devtools  # optional but recommended
@@ -528,12 +534,10 @@ export function useUpdateUser() {
   });
 }
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Pull-to-refresh on a list</h3>
 <pre><code class="language-tsx">function ItemList() {
   const { data, isLoading, refetch, isRefetching } = useQuery({
@@ -731,12 +735,11 @@ useMutation({
   retryDelay: (attempt) =&gt; Math.min(1000 * 2 ** attempt, 30_000),   // exponential backoff
 });
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Stale closures in queryFn</h3>
 <pre><code class="language-tsx">// Avoid capturing component-level state inside queryFn unless it's in the queryKey
 function Foo({ filter }) {
@@ -843,12 +846,9 @@ qc.setQueryData&lt;User&gt;(['user', id], (old) =&gt; old &amp;&amp; { ...old, n
 <p>Schema changes break persisted cache. Always set <code>buster</code> (or <code>maxAge</code>) so the persister invalidates on bump:</p>
 <pre><code class="language-ts">persistQueryClient({ queryClient, persister, buster: 'v3' });
 </code></pre>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Storing fetched data in Redux/Zustand</h3>
 <p>"Manual" loading flags + dispatched fetch + storing data in client store = 90% of pre-React-Query code. Migrate; React Query handles this end-to-end.</p>
 
@@ -985,12 +985,10 @@ const { data, isLoading } = useQuery(...);
 
 <h3>Anti-pattern 10: Polling at high frequency without backoff</h3>
 <p><code>refetchInterval: 1000</code> for a chat — works for a small user base, kills your API at scale. Use WebSocket for true real-time; polling is fine but tune the interval to actual freshness needs.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -1093,53 +1091,31 @@ AppState.addEventListener('change', (state) =&gt; {
   <li>"I'd add custom retry logic per error type — never retry 4xx, retry 5xx with backoff."</li>
   <li>"I'd profile bundle size; tree-shake unused query features."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Server state isn't "your" state — it's a <strong>cache of a remote source that can go stale</strong>; stop owning it in Redux and start syncing it with <strong>queries (reads) and mutations (writes)</strong> via TanStack/React Query.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Server state is fundamentally different from client state:</strong> owned remotely, becomes stale, updated out-of-band, needs caching, deduplication, retries, and invalidation. That's why it deserves its own library.</li>
-    <li><strong>Two primitives:</strong> <em>queries</em> (read, cached by key) and <em>mutations</em> (write, can invalidate queries). Queries READ, mutations WRITE and re-sync.</li>
-    <li><strong>The query key is the cache identity</strong> — same key = same cache entry, different key = independent fetch. Keys are descriptive arrays: <code>['user', id]</code>, and invalidation can be partial (<code>['users']</code> matches all <code>['users', ...]</code>).</li>
-    <li><strong>Stale-while-revalidate by default:</strong> cached data is shown instantly while a background refetch updates it.</li>
-    <li><strong>Deduplication:</strong> N components asking for the same key at once collapse into a single in-flight fetch.</li>
-    <li><strong>Auto-refetch</strong> on window focus, network reconnect, and mount, plus optional <code>refetchInterval</code> polling.</li>
-    <li><strong><code>staleTime</code> vs <code>gcTime</code>:</strong> staleTime = how long data is "fresh" (when to refetch, default 0 = always stale); gcTime/cacheTime = how long an unused entry stays in cache (default 5 min). Tune per query.</li>
-    <li><strong>Optimistic-update pattern:</strong> <code>onMutate</code> cancels in-flight queries, snapshots previous, applies the optimistic value; <code>onError</code> rolls back from the snapshot; <code>onSettled</code> invalidates to refetch the truth.</li>
-    <li><strong>Any variable used in <code>queryFn</code> must be in the <code>queryKey</code></strong>, or the query won't refetch when it changes (stale-closure/identity bug).</li>
-    <li><strong><code>fetch</code> does NOT throw on 4xx/5xx</strong> — check <code>r.ok</code> and throw yourself, or the query never enters its error state.</li>
-    <li><strong>Mobile essentials:</strong> wire <code>NetInfo → onlineManager</code> (pause/resume on connectivity), <code>focusManager</code> via AppState (refetch on foreground), and prefer an MMKV persister over AsyncStorage; filter sensitive data out of any persisted cache.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>A value used in <code>queryFn</code> but left out of the <code>queryKey</code></strong> — e.g. <code>queryKey: ['foo'], queryFn: () =&gt; fetch('/foo?filter=' + filter)</code>. The key never changes, so the query serves stale cached data and never refetches when <code>filter</code> changes. Fix: put it in the key — <code>['foo', filter]</code>. (Sibling trap: two components using the same key for different data → cache collision; and <code>fetch</code> not throwing on HTTP errors.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Server state is a cache of a remote source, not local state — so I use queries for reads and mutations for writes, and I never store fetched data in Redux with manual loading flags."</div>
-  <div class="revision-say">"The query key is the cache's identity, and every variable the queryFn reads has to be in that key — otherwise it serves stale data and won't refetch."</div>
-  <div class="revision-say">"Optimistic updates are onMutate to cancel-snapshot-apply, onError to roll back from the snapshot, and onSettled to invalidate and refetch the source of truth."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why server state is a cache of a remote source, not "your" state?</li>
-    <li>Can you contrast queries (reads) with mutations (writes)?</li>
-    <li>Can you explain why every variable the <code>queryFn</code> reads must be in the <code>queryKey</code>?</li>
-    <li>Can you describe the optimistic-update flow (onMutate cancel-snapshot-apply, onError rollback, onSettled invalidate)?</li>
-    <li>Can you spot a cache collision from two components sharing one key for different data?</li>
-    <li>Can you explain why <code>fetch</code> not throwing on HTTP errors is a trap?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. Why must every variable the queryFn reads be part of the queryKey?</div>
+  <div class="qa-answer">
+    <p>The query key is the cache identity, and React Query refetches when the key changes, not when the function's captured variables change. With <code>queryKey: ['foo']</code> and a queryFn that fetches <code>/api/foo?filter=</code> plus <code>filter</code>, the key never changes when <code>filter</code> does, so the query keeps serving stale cached data from a stale closure and never refetches. The fix is to put the variable in the key, <code>['foo', filter]</code>, so each filter value gets its own cache entry.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q2. Two components show each other's data. How do you recognise and fix a query-key cache collision?</div>
+  <div class="qa-answer">
+    <p>Two queries with the same key produce one cache entry. If two components (or two key factories) inadvertently use the same key for different data shapes, one wins and corrupts the other: you get a cache hit, but the data is wrong. Use specific, descriptive, feature-prefixed keys such as <code>['user', ...]</code>, <code>['post', ...]</code>, <code>['order', ...]</code>, and audit keys for drift between queries and their invalidations.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Why is fetch not throwing on HTTP errors a trap with React Query?</div>
+  <div class="qa-answer">
+    <p>Standard <code>fetch</code> only rejects on network failure; a 4xx or 5xx response still resolves. React Query decides a query has failed only when the queryFn throws, so a broken endpoint never puts the query into its error state, and retries and error UI never kick in. Check <code>r.ok</code> and throw yourself:</p>
+<pre><code class="language-ts">queryFn: async () =&gt; {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}</code></pre>
+  </div>
+</div>
+` },
 
   ]
 });

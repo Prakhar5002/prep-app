@@ -1,27 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'git-remotes',
-  module: 'git',
-  title: 'Remotes & Collaboration',
-  estimatedReadTime: '20 min',
-  tags: ['git', 'remotes', 'collaboration', 'fetch', 'pull', 'push', 'pr'],
+  id: "git-remotes",
+  module: "git",
+  title: "Remotes & Collaboration",
+  estimatedReadTime: "20 min",
+  tags: ["git","remotes","collaboration","fetch","pull","push","pr"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>A <strong>remote</strong> is just another copy of your repository living somewhere else — most commonly a host like GitHub or GitLab. <strong><code>origin</code></strong> is nothing magical: it's simply the conventional name Git gives the remote you cloned from. Because every clone already has the full history (see the Fundamentals topic), collaborating is really just three operations for explicitly syncing two independent copies: <strong>fetch</strong>, <strong>pull</strong>, and <strong>push</strong>.</p>
-<ul>
-  <li><strong><code>git clone &lt;url&gt;</code></strong> downloads a repo's full history and automatically wires up a remote named <code>origin</code> pointing back at it.</li>
-  <li><strong><code>git fetch</code> is look-only and always safe.</strong> It downloads any new commits from a remote and updates your <em>remote-tracking branches</em> (like <code>origin/main</code>) — it never touches your working tree or your local branches. You can fetch constantly with zero risk.</li>
-  <li><strong><code>git pull</code> is <code>fetch</code> + integrate.</strong> It downloads, then immediately folds those changes into your <em>current</em> branch — fast-forwarding with no new commit if your branch hasn't moved, or creating a merge commit if both sides diverged (or replaying your commits on top with <code>git pull --rebase</code> instead). Unlike fetch, this does change your branch and your working tree.</li>
-  <li><strong><code>git push</code></strong> uploads your local commits to update a branch on the remote. The very first push of a new branch needs <code>-u</code> (<code>git push -u origin &lt;branch&gt;</code>) to record the "upstream" tracking relationship, so plain <code>git push</code>/<code>git pull</code> know where to sync afterward.</li>
-  <li><strong>The PR/MR workflow is how teams actually collaborate:</strong> create a branch → push it → open a pull/merge request → get it reviewed (and CI-checked) → merge into <code>main</code>. Nobody pushes straight to a shared <code>main</code> in a healthy team workflow.</li>
-  <li><strong>A rejected push means the remote has commits you don't.</strong> The fix is always to fetch and integrate first (merge or rebase), then push again — <strong>never</strong> reach for a blind <code>--force</code>, which can silently erase a teammate's work.</li>
-</ul>
-<p><strong>Mantra:</strong> "Fetch is free and safe — it only looks. Pull mutates your branch. Push shares your work, and only if it's a fast-forward. When a push is rejected, integrate first; never force blindly."</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A remote is just a <strong>named URL for another copy of the repo</strong> — <strong>fetch only looks, pull mutates your branch, and push shares your work only when it's a fast-forward</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A remote is just a name + URL</strong> pointing at another copy of the repo; <code>origin</code> is only the conventional name for the one you cloned from, nothing magical.</li>
+    <li><strong><code>git clone &lt;url&gt;</code></strong> downloads the full history and automatically wires up a remote named <code>origin</code> pointing back at it — so collaborating is just syncing two independent full copies.</li>
+    <li><strong><code>git fetch</code> is download-only and always safe</strong> — it updates remote-tracking branches like <code>origin/main</code> and never touches your working tree or local branches, so fetch freely.</li>
+    <li><strong><code>git pull</code> = fetch + integrate</strong> into your current branch — a fast-forward if your branch hasn't moved, a merge commit if both sides diverged, or a replay with <code>--rebase</code>; unlike fetch, it changes your branch and working tree and can conflict.</li>
+    <li><strong><code>git push</code> uploads your commits only if it's a fast-forward</strong> — if the remote has commits you don't, it's rejected rather than overwriting anyone.</li>
+    <li><strong>Think in three copies of main:</strong> your local branch, the <code>origin/main</code> remote-tracking bookmark (moves only on network ops), and the actual branch on the server.</li>
+    <li>First push of a new branch needs <code>-u</code> (<code>git push -u origin &lt;branch&gt;</code>) to set the upstream/tracking link; after that plain <code>push</code>/<code>pull</code> just work. <code>git branch -vv</code> shows the links and ahead/behind counts.</li>
+    <li><strong>The PR/MR workflow is how teams collaborate:</strong> branch → push → open PR → review + CI → merge; nobody pushes straight to a shared <code>main</code>.</li>
+    <li><strong>A rejected push means the remote is ahead of you</strong> — fetch and integrate (merge or rebase), then push again; the rejection is the safety mechanism working, not a bug.</li>
+    <li><strong>Never fix a rejected push with a blind <code>--force</code></strong> — it discards whatever's on the remote; to overwrite your own feature branch, use <code>--force-with-lease</code>, which aborts if the remote moved.</li>
+    <li>A fork uses two remotes: <code>origin</code> (your fork) and <code>upstream</code> (the original project).</li>
+    <li><code>git log main..origin/main</code> shows what the remote has that you don't — computed offline from your last fetch, no network call.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Answering a rejected non-fast-forward push with <code>git push --force</code>:</strong> that unconditionally overwrites the remote and can silently erase a teammate's commits. Fix: fetch, integrate (merge/rebase or <code>git pull</code>), then push; reserve <code>--force-with-lease</code> for your own unshared branch after a rebase.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Fetch is free and safe — it only updates remote-tracking branches; pull mutates your current branch; push shares your work, but only as a fast-forward."</div>
+  <div class="revision-say">"There are three copies of main in play: my local branch, my origin/main bookmark, and the real branch on the server — fetch, pull, and push sync between them."</div>
+  <div class="revision-say">"A rejected push means the remote moved — I fetch and integrate first, and never reach for a blind force."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What a remote actually is</h3>
 <p>Strip away the tooling and a "remote" is just two things Git stores for you: a <strong>name</strong> and a <strong>URL</strong>. That's it — a remote is a named pointer to another copy of the same repository, wherever that copy happens to live: a hosted service like GitHub or GitLab, a server your company runs, or even another folder on your own disk. Git has no special-cased understanding of "GitHub" — pushing and fetching work identically against any Git server.</p>
 <p>When you run <code>git clone &lt;url&gt;</code>, Git does two things: it downloads the entire history into a new local repository, <em>and</em> it automatically creates a remote entry named <code>origin</code> pointing back at the URL you cloned from. <code>origin</code> is purely a naming convention — almost everyone uses it for "the main remote I cloned from and sync with" — but you could rename it, and a repo can have more than one remote (a common pattern when working with a forked repo: <code>origin</code> points at your fork, <code>upstream</code> points at the original project).</p>
@@ -37,10 +52,10 @@ window.PREP_SITE.registerTopic({
 <h3>Why teams don't just push straight to <code>main</code></h3>
 <p>Technically, nothing stops anyone with write access from committing directly to a shared branch and pushing. In practice, virtually every team instead uses a <strong>pull request / merge request (PR/MR) workflow</strong>: do your work on its own branch, push that branch, then open a PR asking for it to be merged into <code>main</code>. This buys a team three things a direct push doesn't: a place for teammates to <em>review</em> the change before it lands, a hook for automated checks (CI: tests, linting, builds) to run and block bad merges, and a paper trail of <em>why</em> a change happened, attached to the code itself instead of scattered across chat. Nearly every host (GitHub, GitLab, Bitbucket) and every default branch-protection setting is built around this shape — it's covered end-to-end in Mechanics below.</p>
 <p><strong>Note on branch names:</strong> as in the Fundamentals topic, this topic uses <code>main</code> throughout as the default/shared branch name, matching the modern convention on GitHub, GitLab, and any repo with <code>init.defaultBranch</code> configured. Older repos and plain local Git installs may still default to <code>master</code> — same commands, different name.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Three copies of "main," not two</h3>
 <p>The single biggest source of confusion with Git remotes is treating "your branch" and "the remote's branch" as the only two things involved. There are actually <strong>three</strong>, and keeping them distinct is what makes fetch/pull/push click:</p>
 <pre><code class="language-text">Your machine                                    The remote (e.g. GitHub)
@@ -72,10 +87,10 @@ origin/main
 <h3>Upstream / tracking: how a local branch knows which remote branch is "its" remote branch</h3>
 <p>A local branch can be linked to a specific remote-tracking branch — this link is called its <strong>upstream</strong> (or "tracking branch"). Once <code>main</code> is set to track <code>origin/main</code>, commands default sensibly: plain <code>git pull</code> and plain <code>git push</code> (no arguments) know exactly which remote and branch to talk to, and <code>git status</code> can tell you "Your branch is 2 commits ahead of 'origin/main'." This link is set automatically when you clone (your default branch tracks <code>origin/&lt;default-branch&gt;</code>), or explicitly the first time you push a new branch with <code>git push -u origin &lt;branch&gt;</code>.</p>
 <p><code>git branch -vv</code> is the command that surfaces this relationship directly — it lists every local branch alongside the remote-tracking branch it's tied to, and how many commits ahead/behind it currently is (see Mechanics below for sample output).</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Getting a remote in the first place: <code>git clone</code></h3>
 <pre><code class="language-bash">git clone &lt;url&gt;
 git clone https://github.com/example/example-repo.git</code></pre>
@@ -176,10 +191,10 @@ git push
 # Shortcut for fetch+merge (or fetch+rebase) in one step:
 git pull                     # or: git pull --rebase</code></pre>
 <p>A rejected, non-fast-forward push is Git protecting a teammate's commits from being silently discarded — it is never a sign that something is broken, only that the remote moved since you last synced. The safe response is always to fetch and integrate first. Reaching for <code>git push --force</code> instead overwrites the remote branch unconditionally, discarding whatever commits are there — a real way to destroy a teammate's work on a shared branch. If you ever do need to intentionally overwrite a remote branch (e.g. after rewriting history on your <em>own</em> feature branch that no one else has pulled), prefer <code>git push --force-with-lease</code>: it refuses to push if the remote branch has moved since your last fetch — i.e. if someone else pushed in the meantime — aborting instead of clobbering their work. The full detail on rewriting history safely is covered in the advanced <strong>Rebase vs Merge</strong> topic.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Clone, branch, push, open a PR</h3>
 <pre><code class="language-bash">git clone https://github.com/example/example-repo.git
 cd example-repo
@@ -235,10 +250,11 @@ git pull --rebase
 # Now the push is a fast-forward from the remote's point of view:
 git push</code></pre>
 <p>The rejection itself was the safety mechanism working correctly — it stopped a push that would have discarded a colleague's commit. Fetching first turns "mysterious rejection" into "oh, Priya pushed 20 minutes ago" — and integrating before pushing again is the only step that changes.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Rejected push (the remote is ahead of you)</h3>
 <p>Covered in depth in Mechanics/Examples above, but worth restating as the single most common remote-related surprise: a non-fast-forward rejection means the remote branch has commits your local branch doesn't have a record of yet. The fix is always <strong>fetch, then integrate (merge or rebase), then push again</strong> — never <code>git push --force</code> on a branch anyone else might have pushed to or pulled from. If you deliberately need to overwrite history you're sure is safe to overwrite (typically your own feature branch, after a local rebase), use <code>git push --force-with-lease</code> instead — it aborts if the remote moved since your last fetch, rather than clobbering unconditionally.</p>
 
@@ -260,10 +276,10 @@ git reset --hard origin/main
 # Continue working on the branch you just created:
 git checkout feature/oops-was-on-main</code></pre>
 <p>This only rewinds your <em>local</em> <code>main</code> — nothing has been pushed, so there's nothing to reconcile with anyone else. (If you'd already pushed those commits straight to a shared <code>main</code>, that's a different, higher-stakes situation — covered in the Undoing &amp; Everyday Fixes topic.)</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What's the difference between <code>git fetch</code> and <code>git pull</code>?</div>
 <div class="qa-a">
@@ -312,49 +328,7 @@ git checkout feature/oops-was-on-main</code></pre>
 <p><code>git push --force</code> unconditionally overwrites the remote branch to match your local one, discarding any commits on the remote that aren't in your history — including a teammate's work you may not even know exists, if they pushed between your last fetch and now. <code>git push --force-with-lease</code> is the safer version: it only proceeds if the remote branch still points where your local remote-tracking branch (<code>origin/&lt;branch&gt;</code>) last saw it, and aborts instead of overwriting if someone else has pushed in the meantime. It's still only appropriate on branches you're sure aren't being actively shared (typically your own feature branch after a local rebase) — never on a shared branch like <code>main</code>. The mechanics of rewriting history safely are covered in depth in the advanced Rebase vs Merge topic.</p>
 </div>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A remote is just a <strong>named URL for another copy of the repo</strong> — <strong>fetch only looks, pull mutates your branch, and push shares your work only when it's a fast-forward</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>A remote is just a name + URL</strong> pointing at another copy of the repo; <code>origin</code> is only the conventional name for the one you cloned from, nothing magical.</li>
-    <li><strong><code>git fetch</code> is download-only and always safe</strong> — it updates remote-tracking branches like <code>origin/main</code> and never touches your working tree or local branches, so fetch freely.</li>
-    <li><strong><code>git pull</code> = fetch + integrate</strong> into your current branch (a merge, or a rebase with <code>--rebase</code>) — unlike fetch, it changes your branch and can conflict.</li>
-    <li><strong><code>git push</code> uploads your commits only if it's a fast-forward</strong> — if the remote has commits you don't, it's rejected rather than overwriting anyone.</li>
-    <li><strong>Think in three copies of main:</strong> your local branch, the <code>origin/main</code> remote-tracking bookmark (moves only on network ops), and the actual branch on the server.</li>
-    <li>First push of a new branch needs <code>-u</code> (<code>git push -u origin &lt;branch&gt;</code>) to set the upstream/tracking link; after that plain <code>push</code>/<code>pull</code> just work. <code>git branch -vv</code> shows the links and ahead/behind counts.</li>
-    <li><strong>The PR/MR workflow is how teams collaborate:</strong> branch → push → open PR → review + CI → merge; nobody pushes straight to a shared <code>main</code>.</li>
-    <li><strong>A rejected push means the remote is ahead of you</strong> — fetch and integrate (merge or rebase), then push again; the rejection is the safety mechanism working, not a bug.</li>
-    <li><strong>Never fix a rejected push with a blind <code>--force</code></strong> — it discards whatever's on the remote; to overwrite your own feature branch, use <code>--force-with-lease</code>, which aborts if the remote moved.</li>
-    <li>A fork uses two remotes: <code>origin</code> (your fork) and <code>upstream</code> (the original project).</li>
-    <li><code>git log main..origin/main</code> shows what the remote has that you don't — computed offline from your last fetch, no network call.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Answering a rejected non-fast-forward push with <code>git push --force</code>:</strong> that unconditionally overwrites the remote and can silently erase a teammate's commits. Fix: fetch, integrate (merge/rebase or <code>git pull</code>), then push; reserve <code>--force-with-lease</code> for your own unshared branch after a rebase.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Fetch is free and safe — it only updates remote-tracking branches; pull mutates your current branch; push shares your work, but only as a fast-forward."</div>
-  <div class="revision-say">"There are three copies of main in play: my local branch, my origin/main bookmark, and the real branch on the server — fetch, pull, and push sync between them."</div>
-  <div class="revision-say">"A rejected push means the remote moved — I fetch and integrate first, and never reach for a blind force."</div>
-</div>
-`},
-
-// ─────────────────────────────────────────────────────────────
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the exact difference between <code>git fetch</code> and <code>git pull</code>?</li>
-    <li>Can you describe what <code>origin</code> is and what a remote-tracking branch like <code>origin/main</code> represents?</li>
-    <li>Can you explain what an upstream/tracking branch is and how <code>git push -u</code> sets it?</li>
-    <li>Can you walk through the PR/MR workflow end to end?</li>
-    <li>Can you explain why a push gets rejected and the safe way to resolve it?</li>
-    <li>Can you say why <code>--force</code> is dangerous and when <code>--force-with-lease</code> is appropriate?</li>
-  </ul>
-</div>
-`}
-
-]});
+  ]
+});

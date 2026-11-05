@@ -1,33 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-graphs',
-  module: 'dsa',
-  title: 'Graphs',
-  estimatedReadTime: '50 min',
-  tags: ['graphs', 'bfs', 'dfs', 'topological-sort', 'union-find', 'dijkstra', 'bellman-ford', 'mst', 'shortest-path', 'cycles'],
+  id: "dsa-graphs",
+  module: "dsa",
+  title: "Graphs",
+  estimatedReadTime: "50 min",
+  tags: ["graphs","bfs","dfs","topological-sort","union-find","dijkstra","bellman-ford","mst","shortest-path","cycles"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>A <strong>graph</strong> is a set of nodes (vertices) connected by edges. Trees are graphs that happen to be acyclic and connected with one root. Real graphs are messier — cycles, disconnected components, weighted edges, directed edges, multiple edges between the same pair.</p>
-<ul>
-  <li><strong>Two main representations:</strong> <em>adjacency list</em> (O(V+E) space; default choice) and <em>adjacency matrix</em> (O(V²); only for small dense graphs).</li>
-  <li><strong>Two main traversals:</strong> <em>BFS</em> (queue; shortest path in unweighted graphs) and <em>DFS</em> (stack/recursion; cycle detection, topological order, connected components).</li>
-  <li><strong>Always track <code>visited</code>.</strong> Without it, cycles cause infinite loops.</li>
-  <li><strong>Topological sort:</strong> linear ordering of a DAG so every edge u→v has u before v. Two algorithms: Kahn's (BFS, in-degree) and DFS-postorder reverse.</li>
-  <li><strong>Union-Find (DSU):</strong> nearly-O(1) "are these in the same component?" — used in MST, cycle detection on undirected graphs, account merging.</li>
-  <li><strong>Shortest path:</strong> BFS for unweighted; <em>Dijkstra</em> for non-negative weights; <em>Bellman-Ford</em> for graphs with negative edges; <em>Floyd-Warshall</em> for all-pairs.</li>
-  <li><strong>MST:</strong> Kruskal (sort edges + union-find) or Prim (priority queue); both build the cheapest tree connecting all nodes.</li>
-  <li><strong>Bipartite check:</strong> 2-color via BFS/DFS; conflict means odd cycle exists.</li>
-</ul>
-<p><strong>Mantra:</strong> "Always track visited. BFS for shortest unweighted. DFS for structure. Dijkstra for weighted. Union-Find for components."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Always track visited; then pick the traversal by the axis: BFS for shortest unweighted, DFS for structure/cycles/topo, Dijkstra for weighted, Union-Find for components.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Default to an adjacency list</strong> — O(V+E) space; use a matrix only for small dense graphs that need O(1) edge-presence (e.g. Floyd-Warshall).</li>
+    <li><strong>Always track a <code>visited</code> set/array</strong> — without it, any cycle makes BFS/DFS loop forever. In BFS, mark visited <em>at enqueue time</em>, not dequeue, to avoid enqueuing duplicates.</li>
+    <li><strong>BFS = shortest path in unweighted graphs</strong> (first time you reach a node is the shortest); use a queue with a head pointer, never <code>shift()</code> on big inputs (O(n²)).</li>
+    <li><strong>DFS = structure</strong> — connected components, cycle detection, topological order. Convert to an explicit stack when depth risks blowing V8's call stack.</li>
+    <li><strong>Topological sort</strong> = a linear order of a DAG where every edge u→v puts u before v. It works only on a DAG: Kahn's (BFS on in-degree) or DFS-postorder reversed; both must detect cycles — Kahn's leaves nodes with in-degree &gt; 0, DFS sees a gray node.</li>
+    <li><strong>Cycle detection differs by direction:</strong> directed → white/gray/black DFS (gray = on current stack = back edge); undirected → parent-check DFS or Union-Find.</li>
+    <li><strong>Union-Find (DSU) answers "same component?" in near-O(1)</strong> — but only with <em>both</em> path compression and union by rank; used for Kruskal's MST and connected components under merges.</li>
+    <li><strong>Shortest-path ladder:</strong> unweighted → BFS; non-negative weights → Dijkstra O((V+E) log V); negative edges → Bellman-Ford O(V·E) (and it detects negative cycles); all-pairs → Floyd-Warshall O(V³).</li>
+    <li><strong>MST</strong> = cheapest tree connecting all nodes: Kruskal (sort edges + DSU) or Prim (priority queue).</li>
+    <li>Bipartite = 2-color via BFS/DFS; a same-color conflict means an odd cycle. Handle disconnected graphs by sweeping every unvisited vertex.</li>
+    <li>Grids are graphs: each cell is a vertex with up to 4 neighbors — "number of islands," "rotting oranges," "walls and gates" are all BFS/DFS sweeps.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Reaching for Dijkstra on a graph with negative edges — it silently returns wrong paths</strong> because it commits to the closest-unvisited vertex before a later negative edge can improve it. Use Bellman-Ford for negative weights. Two sibling traps: Dijkstra needs a stale-entry guard (<code>if (d &gt; dist[u]) continue;</code>), and BFS gives edge <em>count</em>, not weighted distance — don't use it when weights aren't all 1.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"First I write down V, E, directed vs undirected, weighted vs unweighted — then the algorithm falls out: BFS for shortest unweighted, DFS for structure, Dijkstra for weighted, Union-Find for components."</div>
+  <div class="revision-say">"I always track visited, and in BFS I mark it at enqueue time so a node is never queued twice."</div>
+  <div class="revision-say">"Dijkstra fails on negative edges because it finalizes the closest vertex too early — that's exactly the case where I switch to Bellman-Ford, which also detects negative cycles."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a graph?</h3>
 <p>A pair <strong>G = (V, E)</strong>: V is the set of vertices (nodes), E is the set of edges (each connecting a pair of vertices). Edges may be:</p>
 <ul>
@@ -82,12 +90,10 @@ window.PREP_SITE.registerTopic({
   <li>You handle disconnected components if the problem allows them.</li>
   <li>You quote complexity: O(V + E) for traversals; O((V + E) log V) for Dijkstra; near-O(V + E) for Union-Find.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Two representations</h3>
 <table>
   <thead><tr><th>Representation</th><th>Space</th><th>Get neighbors</th><th>Edge exists?</th><th>When to use</th></tr></thead>
@@ -198,12 +204,10 @@ function dfsIter(adj, start) {
   <li>Kruskal's MST.</li>
   <li>"Are two accounts merged?" / "Is this network partitioned?"</li>
 </ul>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Build adjacency list from edges</h3>
 <pre><code class="language-js">function buildGraph(n, edges, directed = false) {
   const adj = Array.from({ length: n }, () =&gt; []);
@@ -487,12 +491,10 @@ function dijkstra(adj, start) {
   return count;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Course Schedule (cycle in directed graph)</h3>
 <pre><code class="language-js">function canFinish(n, prereqs) {
   const adj = Array.from({ length: n }, () =&gt; []);
@@ -693,12 +695,11 @@ function dijkstra(adj, start) {
   return out;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Self-loops</h3>
 <p>A vertex connected to itself. Most algorithms handle them gracefully if visited tracking is correct, but cycle-detection on undirected graphs needs care: a self-loop is a 1-edge cycle.</p>
 
@@ -764,12 +765,9 @@ for (const v of adj.get(u) ?? []) { /* ... */ }   // ✅
 
 <h3>Tarjan / Kosaraju for SCC</h3>
 <p>Strongly Connected Components in directed graphs. Rare in interviews; if asked, Kosaraju (two DFS passes) is easier to implement; Tarjan is one pass with low-link values.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Forgetting visited tracking</h3>
 <pre><code class="language-js">// BAD — infinite loop on any cycle
 function dfs(u) {
@@ -894,12 +892,10 @@ for (const [u, v] of edges) {
 
 <h3>Anti-pattern 10: Mixing 0-indexed and 1-indexed vertices</h3>
 <p>Many problems use 1..n. Be careful with array sizing (use n+1) or convert at the boundary.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 16 problems worth memorizing patterns for</h3>
 <table>
   <thead><tr><th>Problem</th><th>Pattern</th></tr></thead>
@@ -1002,52 +998,50 @@ for (const [u, v] of edges) {
   <li>"I'd write a small graph-printing utility to visualize cycles during debugging."</li>
   <li>"I'd benchmark Tarjan vs Kosaraju on a real SCC workload before picking."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Always track visited; then pick the traversal by the axis: BFS for shortest unweighted, DFS for structure/cycles/topo, Dijkstra for weighted, Union-Find for components.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Default to an adjacency list</strong> — O(V+E) space; use a matrix only for small dense graphs that need O(1) edge-presence (e.g. Floyd-Warshall).</li>
-    <li><strong>Always track a <code>visited</code> set/array</strong> — without it, any cycle makes BFS/DFS loop forever. In BFS, mark visited <em>at enqueue time</em>, not dequeue, to avoid enqueuing duplicates.</li>
-    <li><strong>BFS = shortest path in unweighted graphs</strong> (first time you reach a node is the shortest); use a queue with a head pointer, never <code>shift()</code> on big inputs (O(n²)).</li>
-    <li><strong>DFS = structure</strong> — connected components, cycle detection, topological order. Convert to an explicit stack when depth risks blowing V8's call stack.</li>
-    <li><strong>Topological sort works only on a DAG:</strong> Kahn's (BFS on in-degree) or DFS-postorder reversed; both must detect cycles — Kahn's leaves nodes with in-degree &gt; 0, DFS sees a gray node.</li>
-    <li><strong>Cycle detection differs by direction:</strong> directed → white/gray/black DFS (gray = on current stack = back edge); undirected → parent-check DFS or Union-Find.</li>
-    <li><strong>Union-Find (DSU) answers "same component?" in near-O(1)</strong> — but only with <em>both</em> path compression and union by rank; used for Kruskal's MST and connected components under merges.</li>
-    <li><strong>Shortest-path ladder:</strong> unweighted → BFS; non-negative weights → Dijkstra O((V+E) log V); negative edges → Bellman-Ford O(V·E) (and it detects negative cycles); all-pairs → Floyd-Warshall O(V³).</li>
-    <li><strong>MST</strong> = cheapest tree connecting all nodes: Kruskal (sort edges + DSU) or Prim (priority queue).</li>
-    <li>Bipartite = 2-color via BFS/DFS; a same-color conflict means an odd cycle. Handle disconnected graphs by sweeping every unvisited vertex.</li>
-    <li>Grids are graphs: each cell is a vertex with up to 4 neighbors — "number of islands," "rotting oranges," "walls and gates" are all BFS/DFS sweeps.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Reaching for Dijkstra on a graph with negative edges — it silently returns wrong paths</strong> because it commits to the closest-unvisited vertex before a later negative edge can improve it. Use Bellman-Ford for negative weights. Two sibling traps: Dijkstra needs a stale-entry guard (<code>if (d &gt; dist[u]) continue;</code>), and BFS gives edge <em>count</em>, not weighted distance — don't use it when weights aren't all 1.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"First I write down V, E, directed vs undirected, weighted vs unweighted — then the algorithm falls out: BFS for shortest unweighted, DFS for structure, Dijkstra for weighted, Union-Find for components."</div>
-  <div class="revision-say">"I always track visited, and in BFS I mark it at enqueue time so a node is never queued twice."</div>
-  <div class="revision-say">"Dijkstra fails on negative edges because it finalizes the closest vertex too early — that's exactly the case where I switch to Bellman-Ford, which also detects negative cycles."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you state when to use BFS versus DFS versus Dijkstra?</li>
-    <li>Can you code the BFS and DFS templates from memory?</li>
-    <li>Can you explain why Dijkstra fails on negative edges?</li>
-    <li>Can you state the complexity of BFS/DFS and of Dijkstra?</li>
-    <li>Can you recognize a topological-sort problem?</li>
-    <li>Can you name the visited-set trap that causes infinite loops?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. When do you use BFS, DFS or Dijkstra?</div>
+  <div class="qa-answer">
+    <p><strong>BFS</strong> for shortest paths in an unweighted graph (including grids and implicit graphs like Word Ladder): the first time you reach a node is the shortest path, in <code>O(V + E)</code>. <strong>DFS</strong> for structure: connected components, cycle detection, topological order, and enumerating paths. <strong>Dijkstra</strong> for shortest paths with non-negative edge weights, in <code>O((V + E) log V)</code> with a min-heap. With negative edges use Bellman-Ford (<code>O(V·E)</code>), and for all-pairs use Floyd-Warshall (<code>O(V³)</code>).</p>
+  </div>
 </div>
-`}
-]
+<div class="qa-block">
+  <div class="qa-question">Q2. Write the BFS and DFS templates for an adjacency list.</div>
+  <div class="qa-answer">
+    <pre><code class="language-js">function bfs(graph, start) {
+  const dist = new Map([[start, 0]]);   // doubles as visited
+  const q = [start];
+  let head = 0;                         // no shift(): O(1) dequeue
+  while (head &lt; q.length) {
+    const u = q[head++];
+    for (const v of graph.get(u) ?? []) {
+      if (!dist.has(v)) { dist.set(v, dist.get(u) + 1); q.push(v); }   // mark on enqueue
+    }
+  }
+  return dist;
+}
+
+function dfs(graph, u, visited = new Set()) {
+  visited.add(u);
+  for (const v of graph.get(u) ?? []) if (!visited.has(v)) dfs(graph, v, visited);
+  return visited;
+}</code></pre>
+    <p>Both are <code>O(V + E)</code>. Use <code>?? []</code> because <code>Map.get</code> returns undefined for vertices with no edges, sweep every unvisited vertex for disconnected graphs, and switch DFS to an explicit stack when depth could overflow the call stack.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. How do you recognise a topological-sort problem?</div>
+  <div class="qa-answer">
+    <p>Look for dependencies or prerequisites: tasks that must happen before others, course schedules, build or module import order, or an ordering inferred from pairwise comparisons such as Alien Dictionary. Model each "a before b" as a directed edge a→b; a valid order exists only if the graph is a DAG. Use Kahn's algorithm (BFS from in-degree-0 nodes) or reversed DFS postorder, and check <code>order.length === n</code>, because a shorter order means a cycle, which is exactly what Course Schedule asks you to detect.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. What visited-set mistakes cause infinite loops or wrong answers in graph traversal?</div>
+  <div class="qa-answer">
+    <p>No visited set at all: on any graph with a cycle, BFS or DFS loops forever. Marking on dequeue instead of enqueue in BFS: the same node is queued from several paths and processed repeatedly. For undirected cycle detection, not tracking the parent: every edge looks like a back edge, giving false positives. For directed cycle detection, a plain visited set is not enough; use three states (white, gray, black), where reaching a gray node means a cycle.</p>
+  </div>
+</div>
+` },
+
+  ]
 });

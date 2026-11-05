@@ -1,33 +1,44 @@
 window.PREP_SITE.registerTopic({
-  id: 'gql-basics',
-  module: 'graphql',
-  title: 'Basics',
-  estimatedReadTime: '45 min',
-  tags: ['graphql', 'queries', 'mutations', 'subscriptions', 'fragments', 'directives', 'variables', 'introspection'],
+  id: "gql-basics",
+  module: "graphql",
+  title: "Basics",
+  estimatedReadTime: "45 min",
+  tags: ["graphql","queries","mutations","subscriptions","fragments","directives","variables","introspection"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>GraphQL the query language</strong> is what clients <em>write</em> — selection sets that ask the server for an exact shape of data. It's the language layer above the schema; you can know schema design (covered in <code>api-graphql</code>) and still write inefficient or buggy queries. Mastery of the query language is what separates "I sent it through the SDK" from "I picked the right shape, fragment, alias, and variable strategy."</p>
-<ul>
-  <li><strong>Three operation types:</strong> <code>query</code> (reads), <code>mutation</code> (writes), <code>subscription</code> (server push). Operation type + name + variables + selection set.</li>
-  <li><strong>Selection sets:</strong> the shape of the response. Ask for what you need; nothing more, nothing less.</li>
-  <li><strong>Fragments:</strong> reusable selection sets. Co-locate with the component that needs them; compose at the screen level.</li>
-  <li><strong>Variables:</strong> dynamic values passed alongside the query. Always use them; never string-interpolate user input.</li>
-  <li><strong>Aliases:</strong> rename a field in the response. Used to query the same field twice with different args.</li>
-  <li><strong>Directives:</strong> <code>@include</code>, <code>@skip</code>, <code>@deprecated</code>; libraries add custom directives.</li>
-  <li><strong>Introspection:</strong> the schema is queryable. Tools like Apollo DevTools, GraphiQL, codegen all rely on it.</li>
-  <li><strong>Errors:</strong> top-level <code>errors</code> array (system) vs result-type unions (domain).</li>
-</ul>
-<p><strong>Mantra:</strong> "Select what you need. Use variables. Co-locate fragments. Read introspection. Mutations return what changed."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>The query language is what the client writes: name every operation, pass dynamic inputs as typed variables, co-locate fragments, always select <code>id</code> + <code>__typename</code>, and make mutations return the entity that changed.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three operation types:</strong> <code>query</code> reads, <code>mutation</code> writes (has side effects), <code>subscription</code> is server push over WebSocket. Each is type + name + variables + selection set.</li>
+    <li><strong>Selection sets ask for the exact shape</strong> — no <code>SELECT *</code>; the response mirrors the query. Narrow to what the screen needs; over-fetching costs bandwidth, parse, and cache.</li>
+    <li><strong>Always use variables, never inline values</strong> — one query string per input keeps persisted-query hashes stable, lets the cache dedup, gives type safety, and blocks injection.</li>
+    <li><strong>Name every operation</strong> (<code>VerbNoun</code>) — anonymous queries lose analytics, break persisted queries, and are harder to debug.</li>
+    <li><strong>Always select <code>id</code> + <code>__typename</code></strong> on normalizable types — Apollo/Relay/Urql key the cache on them; without them updates don't propagate. Apollo auto-injects <code>__typename</code>; you must remember <code>id</code>.</li>
+    <li><strong>Fragments are reusable selection sets</strong> — co-locate per component, name them <code>ComponentName_TypeName</code>, and compose at the screen level. Inline fragments (<code>... on Type</code>) narrow unions/interfaces.</li>
+    <li><strong>Aliases</strong> rename a field to query it multiple times with different args without a key collision.</li>
+    <li><strong>Directives:</strong> <code>@include(if:)</code> / <code>@skip(if:)</code> conditionally include fields; <code>@deprecated</code> is schema-level; <code>@defer</code> / <code>@stream</code> are newer; libraries add <code>@client</code>, <code>@connection</code>, etc.</li>
+    <li><strong>Errors are two-tier:</strong> top-level <code>errors</code> array for system/network/parse failures; result-type unions in the payload for domain errors you branch on via <code>__typename</code>.</li>
+    <li><strong>Mutations return the affected entity, not <code>Boolean</code></strong> — the cache auto-updates by id and you skip a refetch round trip; prefer a cache <code>update</code> over <code>refetchQueries</code>.</li>
+    <li><strong>Paginate with Relay-style cursor connections</strong> (edges / node / cursor / pageInfo); never ship a huge <code>first: 1000</code> page.</li>
+    <li><strong>Introspection makes the schema queryable</strong> — GraphiQL, codegen, and schema-diff tools all rely on it.</li>
+    <li>The query language is the layer <em>above</em> the schema: you can know schema design and still write inefficient or buggy queries.</li>
+    <li><strong>Mantra:</strong> "Select what you need. Use variables. Co-locate fragments. Read introspection. Mutations return what changed."</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting <code>id</code> (and <code>__typename</code>) in the selection set — updating an object in one place silently doesn't update it elsewhere, because the cache can't normalize and stores separate entries per query.</strong> Always select <code>id</code> + <code>__typename</code> on normalizable types so the cache keys and dedups correctly.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I always name operations and use variables for every dynamic input — persisted queries hash by query string, and inline values defeat both caching and the hash."</div>
+  <div class="revision-say">"I select <code>id</code> and <code>__typename</code> everywhere so the cache normalizes, and mutations return the affected entity so it auto-updates without a refetch."</div>
+  <div class="revision-say">"Fragments are co-located per component and named <code>ComponentName_TypeName</code>; the screen composes them, so refactoring a component only touches its own fragment."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The shape of a request</h3>
 <pre><code class="language-graphql">query GetUserPosts($id: ID!, $first: Int = 10) {
   user(id: $id) {
@@ -93,12 +104,10 @@ window.PREP_SITE.registerTopic({
   <li>Fragments named generically (<code>UserFields</code>) instead of context-aware (<code>UserCard_User</code>).</li>
   <li>Mutations returning <code>Boolean</code> — client must refetch to update UI.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The three operation types</h3>
 <table>
   <thead><tr><th>Type</th><th>Use for</th><th>Cache effect</th><th>Side effects</th></tr></thead>
@@ -301,12 +310,10 @@ type RateLimited { retryAfterSeconds: Int! }
 }
 </code></pre>
 <p>Used when the field returns a union or interface; you select per type.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Sending a query (raw)</h3>
 <pre><code class="language-typescript">const QUERY = \`
   query GetUser($id: ID!) {
@@ -542,12 +549,10 @@ curl -X POST https://api.example.com/graphql \\
 }
 </code></pre>
 <p>If the client doesn't pass <code>$first</code>, it defaults to 10. Useful for backwards-compat when you add a new variable.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Profile screen with composed fragments</h3>
 
 <pre><code class="language-graphql"># UserCard component fragment
@@ -809,12 +814,11 @@ const { data } = useSubscription(ON_NEW_COMMENT, {
 });
 </code></pre>
 <p>Use sparingly — refetching defeats normalization. Prefer cache <code>update</code> when possible.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Forgetting <code>__typename</code> + <code>id</code></h3>
 <ul>
   <li>Apollo cache normalizes by <code>__typename + id</code>. Without them, two queries return separate cache entries even for the same object.</li>
@@ -924,12 +928,9 @@ mutation {
   <li>Subscriptions over WebSocket survive backgrounding poorly; design for reconnect.</li>
   <li>Codegen output should be checked into the repo for offline builds.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common query-language mistakes</h3>
 <ol>
   <li><strong>Anonymous queries.</strong> No analytics, no persisted queries, harder debugging.</li>
@@ -1082,12 +1083,10 @@ query Feed($first: Int = 20, $after: String) {
 
 <h3>Anti-pattern: no operation name in production builds</h3>
 <p>Some bundlers strip operation names if not used elsewhere. Make them visible in dev + production by codegen-generating them or naming them explicitly.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common GraphQL-basics interview prompts</h3>
 <ol>
   <li>Walk through writing a query / mutation / subscription.</li>
@@ -1214,54 +1213,36 @@ query Feed($first: Int = 20, $after: String) {
   <li>"Compare query shapes between Shopify / GitHub / Stripe (which still ships REST) — see real-world patterns."</li>
   <li>"Wire persisted queries end-to-end on a tiny app."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>The query language is what the client writes: name every operation, pass dynamic inputs as typed variables, co-locate fragments, always select <code>id</code> + <code>__typename</code>, and make mutations return the entity that changed.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Three operation types:</strong> <code>query</code> reads, <code>mutation</code> writes (has side effects), <code>subscription</code> is server push over WebSocket. Each is type + name + variables + selection set.</li>
-    <li><strong>Selection sets ask for the exact shape</strong> — no <code>SELECT *</code>; the response mirrors the query. Narrow to what the screen needs; over-fetching costs bandwidth, parse, and cache.</li>
-    <li><strong>Always use variables, never inline values</strong> — one query string per input keeps persisted-query hashes stable, lets the cache dedup, gives type safety, and blocks injection.</li>
-    <li><strong>Name every operation</strong> (<code>VerbNoun</code>) — anonymous queries lose analytics, break persisted queries, and are harder to debug.</li>
-    <li><strong>Always select <code>id</code> + <code>__typename</code></strong> on normalizable types — Apollo/Relay/Urql key the cache on them; without them updates don't propagate. Apollo auto-injects <code>__typename</code>; you must remember <code>id</code>.</li>
-    <li><strong>Fragments are reusable selection sets</strong> — co-locate per component, name them <code>ComponentName_TypeName</code>, and compose at the screen level. Inline fragments (<code>... on Type</code>) narrow unions/interfaces.</li>
-    <li><strong>Aliases</strong> rename a field to query it multiple times with different args without a key collision.</li>
-    <li><strong>Directives:</strong> <code>@include(if:)</code> / <code>@skip(if:)</code> conditionally include fields; <code>@deprecated</code> is schema-level; <code>@defer</code> / <code>@stream</code> are newer; libraries add <code>@client</code>, <code>@connection</code>, etc.</li>
-    <li><strong>Errors are two-tier:</strong> top-level <code>errors</code> array for system/network/parse failures; result-type unions in the payload for domain errors you branch on via <code>__typename</code>.</li>
-    <li><strong>Mutations return the affected entity, not <code>Boolean</code></strong> — the cache auto-updates by id and you skip a refetch round trip; prefer a cache <code>update</code> over <code>refetchQueries</code>.</li>
-    <li><strong>Paginate with Relay-style cursor connections</strong> (edges / node / cursor / pageInfo); never ship a huge <code>first: 1000</code> page.</li>
-    <li><strong>Introspection makes the schema queryable</strong> — GraphiQL, codegen, and schema-diff tools all rely on it.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Forgetting <code>id</code> (and <code>__typename</code>) in the selection set — updating an object in one place silently doesn't update it elsewhere, because the cache can't normalize and stores separate entries per query.</strong> Always select <code>id</code> + <code>__typename</code> on normalizable types so the cache keys and dedups correctly.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I always name operations and use variables for every dynamic input — persisted queries hash by query string, and inline values defeat both caching and the hash."</div>
-  <div class="revision-say">"I select <code>id</code> and <code>__typename</code> everywhere so the cache normalizes, and mutations return the affected entity so it auto-updates without a refetch."</div>
-  <div class="revision-say">"Fragments are co-located per component and named <code>ComponentName_TypeName</code>; the screen composes them, so refactoring a component only touches its own fragment."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the three operation types and say what a selection set actually shapes?</li>
-    <li>Can you explain why you always name operations and pass variables instead of string-interpolating input?</li>
-    <li>Can you say why selecting <code>id</code> and <code>__typename</code> everywhere matters for cache normalization?</li>
-    <li>Can you co-locate a fragment with its component and compose fragments at the screen level?</li>
-    <li>Can you explain what an alias is for and when you'd query the same field twice with different args?</li>
-    <li>Can you distinguish the top-level <code>errors</code> array from expected/business failures?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. What are GraphQL's three operation types, and what does a selection set actually shape?</div>
+  <div class="qa-answer">
+    <p><code>query</code> reads, <code>mutation</code> writes (it has side effects), and <code>subscription</code> is server push, usually over WebSocket. Every operation is an operation type plus a name, variables and a selection set. The selection set is the exact shape of the response: the response mirrors the query field for field, there is no <code>SELECT *</code>, so you ask for what the screen needs, nothing more and nothing less.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q2. Why should you always name operations and pass variables instead of string-interpolating input?</div>
+  <div class="qa-answer">
+    <p>Names (VerbNoun) are what analytics, persisted queries and devtools key on; anonymous queries lose analytics, break persisted queries and are harder to debug. Variables keep one query string for many inputs, so persisted-query hashes stay stable and the cache can reuse and dedup results. They are also typed, which gives type safety and codegen, and they block injection, since user input never becomes part of the query text.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. What is an alias for, and when would you query the same field twice with different arguments?</div>
+  <div class="qa-answer">
+    <p>An alias renames a field in the response. You need it when you call the same field more than once with different args in one query, because without aliases the response would have a key collision.</p>
+<pre><code class="language-graphql">query Compare {
+  asia: regionStats(region: "asia") { population gdp }
+  europe: regionStats(region: "europe") { population gdp }
+}</code></pre>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How do you separate the top-level errors array from expected business failures?</div>
+  <div class="qa-answer">
+    <p>The top-level <code>errors</code> array is for system, network and parse failures: auth missing, server crash, malformed query. It is path-scoped, and GraphQL can return partial <code>data</code> alongside it. Domain or business failures such as validation failed, conflict or not authorized belong in the payload as a result-type union, which the client branches on via <code>__typename</code>. Skipping result unions mixes system and domain failures in one array.</p>
+  </div>
+</div>
+` },
+
   ]
 });

@@ -1,33 +1,45 @@
 window.PREP_SITE.registerTopic({
-  id: 'react-hooks',
-  module: 'React Deep',
-  title: 'Hooks Internals',
-  estimatedReadTime: '32 min',
-  tags: ['react', 'hooks', 'useState', 'useEffect', 'useRef', 'useMemo', 'useCallback', 'useContext', 'custom-hooks'],
+  id: "react-hooks",
+  module: "React Deep",
+  title: "Hooks Internals",
+  estimatedReadTime: "32 min",
+  tags: ["react","hooks","useState","useEffect","useRef","useMemo","useCallback","useContext","custom-hooks"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Hooks are functions (<code>useState</code>, <code>useEffect</code>, ...) that let function components "remember" state across renders. The memory is <em>not</em> in the hook itself — it's stored in the current Fiber's <code>memoizedState</code> as a <strong>singly-linked list of hook records</strong>. React matches each call to its record by <em>call order</em>. That's the entire reason for the "only call hooks at the top level" rule.</p>
-<ul>
-  <li><strong>Rules of Hooks</strong>: only call them (1) at the top level of a function component or another hook; (2) in the <em>same order</em> every render. Violating either corrupts the linked list.</li>
-  <li><strong><code>useState</code></strong> holds a queue of pending updates and returns the committed value. Its setter has a stable identity across renders.</li>
-  <li><strong><code>useEffect</code></strong> defers its callback to <em>after</em> commit + paint. Dependencies are shallow-compared (<code>Object.is</code>) between renders; if unchanged, effect is skipped.</li>
-  <li><strong><code>useLayoutEffect</code></strong> runs synchronously after DOM mutations, before paint. Use for layout-reading + writing.</li>
-  <li><strong><code>useRef</code></strong> returns the same object on every render; mutating <code>.current</code> does NOT trigger re-render.</li>
-  <li><strong><code>useMemo</code> / <code>useCallback</code></strong> cache a computation/function across renders when deps didn't change.</li>
-  <li><strong><code>useContext</code></strong> subscribes to a context; any change of the provider's value re-renders every consumer.</li>
-  <li>Custom hooks are just functions that use other hooks — no special runtime, state is per-caller-fiber.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Hooks are slots in a per-fiber linked list, matched by call order. Everything else — dispatchers, queues, deps, memoization — is the machinery that makes those slots behave like state, effects, or caches.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A hook is a <strong>slot in a per-fiber linked list matched by call order</strong> — that single fact is why hooks must be called unconditionally, at the top level, every render.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A hook is a slot in a per-fiber singly-linked list</strong> stored in <code>fiber.memoizedState</code>, matched by <strong>call order</strong> — not by name. That single fact is the reason for every other rule; dispatchers, queues, deps and memoization are just the machinery that makes those slots behave like state, effects, or caches.</li>
+    <li><strong>Rules of Hooks:</strong> call them only (1) at the top level (no conditions/loops/early returns) and (2) only from components or other hooks. Breaking either shifts the slot indices and corrupts state.</li>
+    <li><code>useState</code>'s record holds <code>memoizedState</code> (committed value), <code>baseState</code>, and a <code>queue</code> of pending updates; the <strong>setter has a stable identity</strong> per fiber, so it's safe in deps.</li>
+    <li><code>useState</code> is internally a reducer that just replaces state; <code>useReducer</code> exposes the reducer and returns a stable <code>dispatch</code>.</li>
+    <li><strong><code>useEffect</code> runs async after paint; <code>useLayoutEffect</code> runs sync after DOM mutation, before paint.</strong> Default to <code>useEffect</code>; escalate only when you measure layout.</li>
+    <li>Deps are <strong>shallow-compared with <code>Object.is</code></strong> per element — unchanged → effect is skipped. Cleanup order for a changed dep is old <code>destroy</code> → new <code>create</code>; on unmount, only cleanup runs.</li>
+    <li><code>useRef</code> returns the <strong>same object every render</strong>; mutating <code>.current</code> does NOT trigger a re-render. Use it for DOM nodes, ids, and "latest value" reads.</li>
+    <li><strong><code>useMemo</code>/<code>useCallback</code> are perf hints, not guarantees</strong> — React may discard the cache. <code>useCallback(fn, deps)</code> is literally <code>useMemo(() =&gt; fn, deps)</code>.</li>
+    <li><code>useContext</code> re-renders <strong>every</strong> consumer when the provider's value changes (by <code>Object.is</code>) — it <strong>bypasses <code>React.memo</code></strong>.</li>
+    <li><strong>Stale closure:</strong> a callback captures render-time values; fix with correct deps, a functional updater <code>setN(p =&gt; p + 1)</code>, or a ref for the latest value.</li>
+    <li>Functional updater matters: three <code>setN(n + 1)</code> calls give +1 (captured <code>n</code>); three <code>setN(p =&gt; p + 1)</code> give +3.</li>
+    <li><strong>Custom-hook state is per-caller fiber</strong>, never shared between components; a custom hook is just composition of other hooks — no runtime magic.</li>
+    <li>Lazy init: <code>useState(() =&gt; expensive())</code> runs once; <code>useState(expensive())</code> runs every render (result discarded after mount).</li>
+    <li><code>useSyncExternalStore</code> is the concurrent-safe way to subscribe to an external store — it prevents tearing that <code>useState</code>+<code>useEffect</code> could exhibit.</li>
+    <li>Dev <code>StrictMode</code> double-invokes render/initializers and mounts→unmounts→mounts effects to surface impurity and missing cleanup; production is untouched.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Stale closure:</strong> a callback captures render-time state, so three <code>setN(n + 1)</code> calls only add +1. Fix with a functional updater <code>setN(p =&gt; p + 1)</code>, correct deps, or a ref for the latest value. (Same root cause as omitting a dep in <code>useEffect</code>.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Hooks are slots in a per-fiber linked list matched by call order — that's the entire reason for the top-level rule."</div>
+  <div class="revision-say">"<code>useEffect</code> is async after paint, <code>useLayoutEffect</code> is sync before paint — I default to <code>useEffect</code> and only escalate when I need to measure layout without a flicker."</div>
+  <div class="revision-say">"A stale closure is a callback still holding state from the render it was created in; I fix it with the right deps, a functional updater, or a ref."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What hooks are, under the hood</h3>
 <p>Every time React renders a function component, it sets a global pointer to the current fiber's hook list and a counter starting at 0. Each call to <code>useState</code>, <code>useEffect</code>, etc. reads the hook at the current index, increments, and returns. After render, the counter is validated against the previous render — if the hook count or order changed, React errors.</p>
 
@@ -60,10 +72,10 @@ function Comp() {
   <li><strong>Async after paint</strong> — subscribe to a store, fetch data, log analytics. That's <code>useEffect</code>. Doesn't block painting.</li>
 </ul>
 <p>Default to <code>useEffect</code>. Escalate to <code>useLayoutEffect</code> only when you measure something synchronously. SSR can't run <code>useLayoutEffect</code> (no DOM) and warns.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "linked list of slots per fiber" picture</h3>
 <div class="diagram">
 <pre>
@@ -126,10 +138,10 @@ ref.current    // === 1 on next render</code></pre>
   <div class="callout-title">Common misconception</div>
   <p>"Hooks don't use closures." They absolutely do — <code>useEffect(() =&gt; { console.log(count) })</code> captures <code>count</code>'s value at render time. That's why stale-closure bugs exist. React does NOT magically re-inject fresh values into your callback — deps must include every variable the callback reads.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Rendering pass: how the linked list is built and walked</h3>
 <ol>
   <li>Before calling your component, React sets <code>currentFiber = fiber</code>, <code>workInProgressHook = null</code>, picks the mount-or-update dispatcher, and selects the right hook record pool.</li>
@@ -228,10 +240,10 @@ ref.current    // === 1 on next render</code></pre>
   }, []);
   return online;
 }</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — basic useState</h3>
 <pre><code class="language-js">function Counter() {
   const [count, setCount] = useState(0);
@@ -398,10 +410,11 @@ const r = useRef(); r.current.focus();</code></pre>
   &lt;/&gt;);
 }
 // Stable between client/server, avoids collisions across many Field instances.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Hook called conditionally — React error</h3>
 <pre><code class="language-js">function Bad({ on }) {
   if (on) useEffect(() =&gt; {});
@@ -499,10 +512,9 @@ function delayed() {
 
 <h3>20. useEffect's cleanup runs BEFORE the next effect of the same hook</h3>
 <p>Order for a deps-changed effect: old cleanup → new create. For unmount: only cleanup (no new create).</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — conditional hooks</h3>
 <pre><code class="language-js">// BAD
 if (user) { const [x] = useState(0); }</code></pre>
@@ -599,10 +611,10 @@ useState.prototype.set = ...; // makes no sense</code></pre>
 
 <h3>Anti-pattern 15 — state that should be a ref, ref that should be state</h3>
 <p>If the UI doesn't depend on it and it needs to persist across renders: <code>useRef</code>. If the UI depends on it: <code>useState</code>. Mixing these up is the source of half of useState/useRef bugs.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How do React hooks work internally?</div>
   <div class="qa-answer">
@@ -787,53 +799,20 @@ useState.prototype.set = ...; // makes no sense</code></pre>
     <li>You reach for useSyncExternalStore for external-store subscriptions.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A hook is a <strong>slot in a per-fiber linked list matched by call order</strong> — that single fact is why hooks must be called unconditionally, at the top level, every render.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>A hook is a slot in a per-fiber singly-linked list</strong> stored in <code>fiber.memoizedState</code>, matched by <strong>call order</strong> — not by name. That single fact is the reason for every other rule.</li>
-    <li><strong>Rules of Hooks:</strong> call them only (1) at the top level (no conditions/loops/early returns) and (2) only from components or other hooks. Breaking either shifts the slot indices and corrupts state.</li>
-    <li><code>useState</code>'s record holds <code>memoizedState</code> (committed value), <code>baseState</code>, and a <code>queue</code> of pending updates; the <strong>setter has a stable identity</strong> per fiber, so it's safe in deps.</li>
-    <li><code>useState</code> is internally a reducer that just replaces state; <code>useReducer</code> exposes the reducer and returns a stable <code>dispatch</code>.</li>
-    <li><strong><code>useEffect</code> runs async after paint; <code>useLayoutEffect</code> runs sync after DOM mutation, before paint.</strong> Default to <code>useEffect</code>; escalate only when you measure layout.</li>
-    <li>Deps are <strong>shallow-compared with <code>Object.is</code></strong> per element — unchanged → effect is skipped. Cleanup order for a changed dep is old <code>destroy</code> → new <code>create</code>; on unmount, only cleanup runs.</li>
-    <li><code>useRef</code> returns the <strong>same object every render</strong>; mutating <code>.current</code> does NOT trigger a re-render. Use it for DOM nodes, ids, and "latest value" reads.</li>
-    <li><strong><code>useMemo</code>/<code>useCallback</code> are perf hints, not guarantees</strong> — React may discard the cache. <code>useCallback(fn, deps)</code> is literally <code>useMemo(() =&gt; fn, deps)</code>.</li>
-    <li><code>useContext</code> re-renders <strong>every</strong> consumer when the provider's value changes (by <code>Object.is</code>) — it <strong>bypasses <code>React.memo</code></strong>.</li>
-    <li><strong>Stale closure:</strong> a callback captures render-time values; fix with correct deps, a functional updater <code>setN(p =&gt; p + 1)</code>, or a ref for the latest value.</li>
-    <li>Functional updater matters: three <code>setN(n + 1)</code> calls give +1 (captured <code>n</code>); three <code>setN(p =&gt; p + 1)</code> give +3.</li>
-    <li><strong>Custom-hook state is per-caller fiber</strong>, never shared between components; a custom hook is just composition of other hooks — no runtime magic.</li>
-    <li>Lazy init: <code>useState(() =&gt; expensive())</code> runs once; <code>useState(expensive())</code> runs every render (result discarded after mount).</li>
-    <li><code>useSyncExternalStore</code> is the concurrent-safe way to subscribe to an external store — it prevents tearing that <code>useState</code>+<code>useEffect</code> could exhibit.</li>
-    <li>Dev <code>StrictMode</code> double-invokes render/initializers and mounts→unmounts→mounts effects to surface impurity and missing cleanup; production is untouched.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Stale closure:</strong> a callback captures render-time state, so three <code>setN(n + 1)</code> calls only add +1. Fix with a functional updater <code>setN(p =&gt; p + 1)</code>, correct deps, or a ref for the latest value. (Same root cause as omitting a dep in <code>useEffect</code>.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Hooks are slots in a per-fiber linked list matched by call order — that's the entire reason for the top-level rule."</div>
-  <div class="revision-say">"<code>useEffect</code> is async after paint, <code>useLayoutEffect</code> is sync before paint — I default to <code>useEffect</code> and only escalate when I need to measure layout without a flicker."</div>
-  <div class="revision-say">"A stale closure is a callback still holding state from the render it was created in; I fix it with the right deps, a functional updater, or a ref."</div>
+<div class="qa-block">
+  <div class="qa-question">Q17. What exactly does the dependency array control, and how does React compare its values?</div>
+  <div class="qa-answer">
+    <p>The deps array decides whether an effect (or a <code>useMemo</code>/<code>useCallback</code> cache) is reused or re-run. During render React compares each new dep against the previous one with <code>Object.is</code>, element by element: unchanged means the effect is marked skipped; changed means in commit React runs the previous cleanup (<code>destroy</code>) and then the new <code>create</code>. So <code>[]</code> runs once on mount, no array runs after every render, and <code>[x]</code> runs when <code>x</code> changes. Because the comparison is by reference, an object or array created in the render body (<code>[opts]</code>) changes every render; memoize it upstream or depend on primitives like <code>[id]</code>.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why hooks must be called at the top level, using the per-fiber linked-list-by-call-order model?</li>
-    <li>Can you explain the difference between <code>useEffect</code> and <code>useLayoutEffect</code> and when each one is the right default?</li>
-    <li>Can you describe what a stale closure is and fix one three different ways (deps, functional updater, ref)?</li>
-    <li>Can you explain exactly what the dependency array controls and how React compares its values?</li>
-    <li>Can you say when <code>useMemo</code> / <code>useCallback</code> actually earn their cost versus being premature?</li>
-    <li>Can you explain why <code>useRef</code> doesn't trigger a re-render and when to reach for it over state?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q18. When do useMemo and useCallback actually earn their cost, and when are they premature?</div>
+  <div class="qa-answer">
+    <p>Memoization isn't free: every call costs a hook slot plus a shallow deps compare, so for cheap values (<code>useMemo(() =&gt; 'Hello', [])</code>, a trivial handler) it's slower than just recomputing. It earns its cost in two cases: an expensive computation such as sorting a big list (<code>useMemo(() =&gt; bigList.slice().sort(byDate), [bigList])</code>), or when something downstream depends on reference stability: a <code>React.memo</code> child, an effect dep, or a context <code>value</code> object that would otherwise re-render every consumer. Remember they're hints, not guarantees, since React may discard the cache.</p>
+  </div>
 </div>
-`}
+` },
 
-]
+  ]
 });

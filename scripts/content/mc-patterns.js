@@ -1,30 +1,46 @@
 window.PREP_SITE.registerTopic({
-  id: 'mc-patterns',
-  module: 'machine-coding',
-  title: 'Core Patterns',
-  estimatedReadTime: '50 min',
-  tags: ['machine-coding', 'patterns', 'debounce', 'throttle', 'modal', 'toast', 'infinite-scroll', 'autocomplete', 'otp', 'form'],
+  id: "mc-patterns",
+  module: "machine-coding",
+  title: "Core Patterns",
+  estimatedReadTime: "50 min",
+  tags: ["machine-coding","patterns","debounce","throttle","modal","toast","infinite-scroll","autocomplete","otp","form"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>A <strong>machine-coding round</strong> is 60–90 minutes of live, runnable code building a small feature. The grader is watching three things simultaneously: <strong>can you ship a working thing</strong>, <strong>can you reach for the right primitives</strong>, and <strong>can you narrate tradeoffs while typing</strong>. Most asks collapse into ~15 reusable patterns — recognise the pattern, drop in your skeleton, polish.</p>
-<ul>
-  <li><strong>The 15 patterns that cover ~90% of asks:</strong> debounce / throttle, autocomplete, infinite scroll, virtualized list, modal + portal, toast queue, tooltip, tabs, accordion, OTP input, form with validation, image carousel, stopwatch / timer, drag-to-reorder, theme switcher.</li>
-  <li><strong>The 5-minute skeleton:</strong> file scaffold → layout → state model → wire data → polish. Don't style first.</li>
-  <li><strong>Default toolbox:</strong> functional components + hooks, <code>useReducer</code> for complex state, custom hooks (<code>useDebounce</code>, <code>useFetch</code>, <code>useOnClickOutside</code>), portals for floating UI, IntersectionObserver for infinite scroll.</li>
-  <li><strong>Always demo five states:</strong> empty, loading, error, golden path, edge case. If you don't demo them, the grader assumes they don't work.</li>
-  <li><strong>Always close with:</strong> "If I had more time I would…" — testing, accessibility, retries, virtualization, theming. Naming gaps shows seniority.</li>
-</ul>
-<p><strong>Mantra:</strong> "Working &gt; pretty &gt; clever. Skeleton in five minutes. Narrate every tradeoff."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Machine coding is a 60–90 minute live build where you <strong>recognise the pattern, drop in your skeleton, and demo every state</strong> — the grader is scoring whether you ship a working thing, reach for the right primitives, and narrate tradeoffs while typing.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>60–90 min live build</strong> — the grader watches three things at once: ship a working thing, reach for the right primitives, narrate tradeoffs while typing.</li>
+    <li><strong>~15 patterns cover ~90% of asks:</strong> debounce/throttle, autocomplete, infinite scroll, virtualized list, modal + portal, toast queue, tooltip, tabs, accordion, OTP input, form with validation, carousel, stopwatch, drag-to-reorder, theme switcher.</li>
+    <li><strong>Name the pattern in the first 60 seconds</strong> — it skips 10 minutes of "where do I start?".</li>
+    <li><strong>5-minute skeleton loop:</strong> file scaffold → static layout → state model → wire data → edge cases + polish; something rendered on screen by ~minute 7.</li>
+    <li><strong>Memorize 6 hooks:</strong> <code>useDebounce</code>, <code>useThrottle</code>, <code>useFetch</code> (with AbortController), <code>useOnClickOutside</code>, <code>useLocalStorage</code>, <code>usePrevious</code>.</li>
+    <li><strong>State colocation:</strong> local by default → lift when two siblings share → context at 3+ levels → Redux/Zustand only for global + cross-route + persist (rarely needed in a round).</li>
+    <li><strong>Controlled</strong> (validate/format live) vs <strong>uncontrolled</strong> (value only at submit, no re-render per keystroke).</li>
+    <li><strong>Always demo five states:</strong> empty, loading, error, golden path, edge — if you don't demo them the grader assumes they don't work.</li>
+    <li><strong>Debounce</strong> = wait until the user stops (search, autosave); <strong>throttle</strong> = at most once per interval (scroll, mousemove, drag).</li>
+    <li><strong>IntersectionObserver</strong> beats scroll listeners for infinite scroll — off the main thread, free <code>rootMargin</code> lookahead.</li>
+    <li><strong>Modal</strong> = portal + focus trap + ESC + backdrop click + body scroll lock + return focus.</li>
+    <li><strong>The #1 bug is the async race</strong> — abort the previous fetch on cleanup (or use a sequence guard) so stale responses don't overwrite fresh.</li>
+    <li><strong>Hygiene:</strong> clean up every effect (timers/listeners/observers), never mutate state directly, no array-index keys in dynamic lists, don't mirror props in state, derive instead of store; virtualize beyond ~200 items.</li>
+    <li><strong>Default toolbox:</strong> functional components + hooks, <code>useReducer</code> for complex state, custom hooks, <strong>portals</strong> for floating UI, IntersectionObserver for infinite scroll. Don't style first.</li>
+    <li><strong>Always close with "If I had more time I would…"</strong> — tests, accessibility, retries, virtualization, theming. Naming gaps on purpose shows seniority.</li>
+    <li>Mantra: <strong>"Working &gt; pretty &gt; clever. Skeleton in five minutes. Narrate every tradeoff."</strong></li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is spending 15 minutes on CSS while typing in silence before any state is wired — the grader can't score reasoning they can't hear, and assumes untested states don't work. Fix: name the pattern out loud in the first minute, render a runnable skeleton (empty state on screen) by ~minute 7, then narrate each tradeoff and demo all five states — empty, loading, error, golden, edge.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Working beats pretty beats clever — skeleton in five minutes, and I narrate every tradeoff so the grader can follow my reasoning."</div>
+  <div class="revision-say">"I name the pattern first, build the skeleton, then demo all five states: empty, loading, error, golden, and edge."</div>
+  <div class="revision-say">"The classic bug here is the async race — I abort the previous request on cleanup so a stale response can't overwrite the fresh one."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a machine-coding round?</h3>
 <p>Unlike DSA (one function, one return) or system design (whiteboard only), machine coding is a <em>build</em>. You open an editor — CodeSandbox, StackBlitz, or a starter repo — and produce a runnable feature in 60–90 minutes. The interviewer watches you type and asks questions throughout.</p>
 
@@ -81,12 +97,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>"Build a virtualized list"</td><td>windowing math + absolute-positioned items</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The 5-minute skeleton template</h3>
 <p>Always run this loop, regardless of prompt:</p>
 <pre><code class="language-text">1. File scaffold       (App.jsx, components/, hooks/)         ~30s
@@ -156,12 +170,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>Q&amp;A + closers</td><td>55–60 min</td><td>Walk through, "if I had more time".</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Custom hook toolbox</h3>
 <p>These ~6 hooks come up in almost every round. Memorise them — typing them in 60 seconds buys you minutes for the actual feature.</p>
 
@@ -513,12 +525,10 @@ function LoginForm() {
   );
 }
 </code></pre>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Autocomplete with debounce + abort + cache</h3>
 <p>The single most-asked machine-coding feature. Cover all three layers.</p>
 <pre><code class="language-javascript">function Autocomplete({ fetcher }) {
@@ -717,12 +727,11 @@ function MultiStepForm() {
   );
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Race conditions in async UIs</h3>
 <p>The single most common machine-coding bug.</p>
 <table>
@@ -801,12 +810,9 @@ function MultiStepForm() {
   <li>Quota exceeded (5–10MB) — handle <code>QuotaExceededError</code>.</li>
   <li>Multi-tab sync: <code>storage</code> event fires only on other tabs, not the one writing.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 10 most common machine-coding bugs</h3>
 <ol>
   <li><strong>Missing cleanup in useEffect.</strong> Timer/listener/observer keeps running after unmount → memory leak + stale state warnings.</li>
@@ -916,12 +922,10 @@ obs.observe(sentinelEl);
 
 <h3>Anti-pattern: reaching for state library too early</h3>
 <p>Using Redux for a 2-component widget is a red flag. The senior signal is restraint: <em>"Local state is enough; if this grew to 5+ consumers I'd lift to context."</em></p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 60-minute round playbook</h3>
 <table>
   <thead><tr><th>Phase</th><th>Time</th><th>Goal</th></tr></thead>
@@ -1063,57 +1067,84 @@ obs.observe(sentinelEl);
   <li>"I'd pair with someone and trade prompts."</li>
   <li>"I'd memorise 3 minimal CSS snippets (modal backdrop, list, form) so styling never costs &gt; 30s."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Machine coding is a 60–90 minute live build where you <strong>recognise the pattern, drop in your skeleton, and demo every state</strong> — the grader is scoring whether you ship a working thing, reach for the right primitives, and narrate tradeoffs while typing.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>60–90 min live build</strong> — the grader watches three things at once: ship a working thing, reach for the right primitives, narrate tradeoffs while typing.</li>
-    <li><strong>~15 patterns cover ~90% of asks:</strong> debounce/throttle, autocomplete, infinite scroll, virtualized list, modal + portal, toast queue, tooltip, tabs, accordion, OTP input, form with validation, carousel, stopwatch, drag-to-reorder, theme switcher.</li>
-    <li><strong>Name the pattern in the first 60 seconds</strong> — it skips 10 minutes of "where do I start?".</li>
-    <li><strong>5-minute skeleton loop:</strong> file scaffold → static layout → state model → wire data → edge cases + polish; something rendered on screen by ~minute 7.</li>
-    <li><strong>Memorize 6 hooks:</strong> <code>useDebounce</code>, <code>useThrottle</code>, <code>useFetch</code> (with AbortController), <code>useOnClickOutside</code>, <code>useLocalStorage</code>, <code>usePrevious</code>.</li>
-    <li><strong>State colocation:</strong> local by default → lift when two siblings share → context at 3+ levels → Redux/Zustand only for global + cross-route + persist (rarely needed in a round).</li>
-    <li><strong>Controlled</strong> (validate/format live) vs <strong>uncontrolled</strong> (value only at submit, no re-render per keystroke).</li>
-    <li><strong>Always demo five states:</strong> empty, loading, error, golden path, edge — if you don't demo them the grader assumes they don't work.</li>
-    <li><strong>Debounce</strong> = wait until the user stops (search, autosave); <strong>throttle</strong> = at most once per interval (scroll, mousemove, drag).</li>
-    <li><strong>IntersectionObserver</strong> beats scroll listeners for infinite scroll — off the main thread, free <code>rootMargin</code> lookahead.</li>
-    <li><strong>Modal</strong> = portal + focus trap + ESC + backdrop click + body scroll lock + return focus.</li>
-    <li><strong>The #1 bug is the async race</strong> — abort the previous fetch on cleanup (or use a sequence guard) so stale responses don't overwrite fresh.</li>
-    <li><strong>Hygiene:</strong> clean up every effect (timers/listeners/observers), never mutate state directly, no array-index keys in dynamic lists, don't mirror props in state, derive instead of store; virtualize beyond ~200 items.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">The #1 mistake is spending 15 minutes on CSS while typing in silence before any state is wired — the grader can't score reasoning they can't hear, and assumes untested states don't work. Fix: name the pattern out loud in the first minute, render a runnable skeleton (empty state on screen) by ~minute 7, then narrate each tradeoff and demo all five states — empty, loading, error, golden, edge.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Working beats pretty beats clever — skeleton in five minutes, and I narrate every tradeoff so the grader can follow my reasoning."</div>
-  <div class="revision-say">"I name the pattern first, build the skeleton, then demo all five states: empty, loading, error, golden, and edge."</div>
-  <div class="revision-say">"The classic bug here is the async race — I abort the previous request on cleanup so a stale response can't overwrite the fresh one."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. How do you start a machine-coding round so you're not lost for the first ten minutes?</div>
+  <div class="qa-answer">
+    <p>Spend 0–3 minutes clarifying scope (single component or small app, mock or real API, mobile in scope, how much a11y, tests or not, UI library or raw) and <strong>name the pattern out loud</strong> from the prompt's keywords: "search" means debounce + abortable fetch, "feed" means IntersectionObserver + paginated state, "dialog" means portal + focus trap + ESC, "wizard" means <code>useReducer</code> + step state. Then run the 5-minute skeleton loop: file scaffold, static layout, state model, wire data, polish, with an empty UI rendered by about minute 7 and a runnable state by minute 10. Don't style first.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the pattern behind a prompt in the first 60 seconds and get a runnable skeleton on screen by ~minute 7?</li>
-    <li>Can you write <code>useDebounce</code>, <code>useFetch</code> (with AbortController), and <code>useOnClickOutside</code> from memory in under a minute each?</li>
-    <li>Can you prevent the async race so "ab" results never overwrite "abc" results — and explain why cleanup/abort fixes it?</li>
-    <li>Can you decide debounce vs throttle, and controlled vs uncontrolled inputs, and say the tradeoff out loud?</li>
-    <li>Can you build a modal with portal, focus trap, ESC, backdrop click, body scroll lock, and return focus?</li>
-    <li>Can you demo all five states — empty, loading, error, golden path, edge — and name three "if I had more time" closers?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Write useDebounce, useFetch with AbortController, and useOnClickOutside.</div>
+  <div class="qa-answer">
+    <p><code>useDebounce</code> sets a timeout to copy the value after the delay and clears it in cleanup. <code>useFetch</code> creates an <code>AbortController</code> per URL, ignores <code>AbortError</code>, and aborts in cleanup. <code>useOnClickOutside</code> adds <code>mousedown</code> and <code>touchstart</code> listeners on <code>document</code>, calls the handler only if the target is outside <code>ref.current</code>, and removes both in cleanup.</p>
+<pre><code class="language-ts">function useDebounce(value, delay = 300) {
+  const [d, setD] = useState(value);
+  useEffect(() =&gt; {
+    const id = setTimeout(() =&gt; setD(value), delay);
+    return () =&gt; clearTimeout(id);
+  }, [value, delay]);
+  return d;
+}
+
+function useFetch(url) {
+  const [state, setState] = useState({ data: null, error: null, loading: true });
+  useEffect(() =&gt; {
+    const ac = new AbortController();
+    setState({ data: null, error: null, loading: true });
+    fetch(url, { signal: ac.signal })
+      .then(r =&gt; { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+      .then(data =&gt; setState({ data, error: null, loading: false }))
+      .catch(error =&gt; {
+        if (error.name === 'AbortError') return;
+        setState({ data: null, error, loading: false });
+      });
+    return () =&gt; ac.abort();
+  }, [url]);
+  return state;
+}
+
+function useOnClickOutside(ref, handler) {
+  useEffect(() =&gt; {
+    const l = e =&gt; {
+      if (!ref.current || ref.current.contains(e.target)) return;
+      handler(e);
+    };
+    document.addEventListener('mousedown', l);
+    document.addEventListener('touchstart', l);
+    return () =&gt; {
+      document.removeEventListener('mousedown', l);
+      document.removeEventListener('touchstart', l);
+    };
+  }, [ref, handler]);
+}</code></pre>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q3. The user types "ab" then "abc" quickly and the "ab" results overwrite the "abc" results. Why, and how do you fix it?</div>
+  <div class="qa-answer">
+    <p>Both requests are in flight and responses can arrive out of order, so whichever resolves last wins, even if it is stale. The fix is to abort the previous request in the effect's cleanup: when the query changes, React runs the old effect's cleanup, which calls <code>ac.abort()</code> on the "ab" request, so its response never reaches <code>setState</code> (the <code>AbortError</code> is ignored). A sequence guard, only applying the response for the latest request, is the alternative. The same cleanup also prevents setState on an unmounted component when a modal closes mid-fetch.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Debounce vs throttle, and controlled vs uncontrolled inputs: how do you choose?</div>
+  <div class="qa-answer">
+    <p><strong>Debounce</strong> means "wait until the user stops": search input, resize, autosave on idle (300ms is a typical UX target, 150ms if the API is fast). <strong>Throttle</strong> means "at most once every X ms": scroll, mousemove, drag, analytics. A <strong>controlled</strong> input is right when you validate or format live; <strong>uncontrolled</strong> is cheaper when you only need the value at submit, because there's no re-render per keystroke. Say the tradeoff out loud, for example: "I'm choosing a controlled input because we validate live; uncontrolled would be cheaper if we only needed the value at submit."</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. Build an accessible modal. What does it need?</div>
+  <div class="qa-answer">
+    <p>Render it through <code>ReactDOM.createPortal</code> into <code>document.body</code> to escape z-index and overflow issues. The dialog has <code>role="dialog"</code>, <code>aria-modal="true"</code> and a label. While open: a <code>keydown</code> listener closes on ESC, clicking the backdrop closes it (the dialog stops propagation so inner clicks don't), <code>document.body.style.overflow = 'hidden'</code> locks scroll, focus moves into the dialog and is trapped there. On close, the effect cleanup removes the listener, restores body overflow, and focus returns to the trigger that opened it.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. What do you demo at the end, and how do you close?</div>
+  <div class="qa-answer">
+    <p>Demo all five states, because the grader assumes undemoed states don't work: <strong>empty</strong> (clear the input, show hint text), <strong>loading</strong> (throttle the network, skeleton or spinner), <strong>error</strong> (pass a failing fetcher, show message + retry), the <strong>golden path</strong> live, and an <strong>edge</strong> case (very long input, special chars, paste), plus keyboard (arrows, Enter, ESC, Tab). Then close with 3–5 "if I had more time" items, such as RTL tests for keyboard nav, virtualizing past 200 items, retry with exponential backoff, a screen-reader live region for status updates, or Playwright E2E for the golden flow.</p>
+  </div>
+</div>
+` },
+
   ]
 });

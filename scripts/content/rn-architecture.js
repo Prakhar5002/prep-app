@@ -1,31 +1,45 @@
 window.PREP_SITE.registerTopic({
-  id: 'rn-architecture',
-  module: 'React Native',
-  title: 'Architecture (Bridge / Fabric / JSI)',
-  estimatedReadTime: '32 min',
-  tags: ['react-native', 'architecture', 'bridge', 'fabric', 'jsi', 'hermes', 'turbomodules', 'new-architecture'],
+  id: "rn-architecture",
+  module: "React Native",
+  title: "Architecture (Bridge / Fabric / JSI)",
+  estimatedReadTime: "32 min",
+  tags: ["react-native","architecture","bridge","fabric","jsi","hermes","turbomodules","new-architecture"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>React Native is a framework for writing mobile apps in JavaScript/TypeScript where your code drives <em>real native UI</em> (UIView on iOS, android.view.View on Android). Understanding its architecture — how JS talks to native — is the foundation of every performance, debugging, and interop discussion.</p>
-<ul>
-  <li><strong>Two runtimes</strong> communicate per app: a JavaScript engine (Hermes by default in 0.70+, also JSC) and the native platform runtime.</li>
-  <li><strong>Old Architecture (Bridge, pre-0.68)</strong>: JS and native communicate over an <em>asynchronous</em>, serialized (JSON) message queue. Every call crosses a JSON boundary — batched per frame.</li>
-  <li><strong>New Architecture (JSI + Fabric + TurboModules)</strong>: <em>synchronous</em> direct C++ binding between JS and native. No JSON serialization. Enables direct memory sharing (e.g., Reanimated worklets), synchronous native calls, and a concurrent renderer (Fabric).</li>
-  <li><strong>Hermes</strong>: Facebook's JS engine optimized for mobile — smaller binaries, faster startup, bytecode pre-compilation, better memory profile than JSC.</li>
-  <li><strong>Three threads</strong> typically: JS thread (React + your code), Native UI thread (view hierarchy), Shadow thread (layout via Yoga).</li>
-  <li><strong>Metro</strong> is the RN bundler — like Webpack for mobile.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Old architecture: JS sends JSON across an async bridge to native, which rebuilds the view tree. New architecture: JS and native share C++ objects directly via JSI, so calls are synchronous and the renderer (Fabric) can coordinate with React's concurrent mode. Performance-sensitive code (animations, gestures) moves off the JS thread entirely via Reanimated worklets.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">React Native runs your React tree in a JS engine that drives <strong>real native views</strong> — the old <em>Bridge</em> talks to native over an async JSON queue, while the <em>New Architecture</em> (JSI + Fabric + TurboModules) replaces it with a synchronous C++ binding, no serialization.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>RN is not a WebView</strong> — your React tree renders <em>real native views</em> (<code>&lt;View&gt;</code> → <code>UIView</code> / <code>android.view.View</code>, <code>&lt;Text&gt;</code> → <code>UILabel</code> / <code>TextView</code>). No DOM, no HTML/CSS.</li>
+    <li><strong>Two runtimes per app:</strong> a JS engine (Hermes by default since 0.70, or JSC) plus the native platform runtime — the architecture question is how they talk.</li>
+    <li><strong>Old Architecture (Bridge, pre-0.68):</strong> JS and native communicate over an <em>asynchronous</em>, JSON-serialized message queue, batched per frame. Problems: JSON is slow, async-only (no sync reads), single queue.</li>
+    <li><strong>New Architecture (JSI + Fabric + TurboModules, default since 0.76):</strong> a synchronous C++ binding replaces the bridge — no JSON serialization.</li>
+    <li><strong>JSI</strong> (JavaScript Interface) is the base layer: a C++ API where JS holds refs to native <code>HostObject</code>s (and vice versa) and calls them <em>synchronously</em>. Foundation under Fabric, TurboModules, and Reanimated.</li>
+    <li><strong>TurboModules</strong> replace NativeModules — lazily loaded (not instantiated until first used), JSI-based (sync, no JSON), typed via codegen.</li>
+    <li><strong>Fabric</strong> is the new renderer (replaces UIManager + ShadowNode): C++ shared core, synchronous layout reads, immutable shadow trees swapped atomically, concurrent-React aware (lanes / <code>startTransition</code> / Suspense).</li>
+    <li><strong>Codegen</strong> turns TypeScript specs into type-safe ObjC/Kotlin bindings → native signature mismatches fail at build time.</li>
+    <li><strong>Hermes</strong>: bytecode pre-compiled at build time → often 30–50% faster startup, smaller binary, generational GC tuned for mobile. Default since 0.70.</li>
+    <li><strong>Three threads:</strong> JS (React + your code), Native UI / main (view hierarchy, input), Shadow (Yoga layout). Block JS → state updates delay but UI-thread animations keep running; block UI → everything freezes.</li>
+    <li><strong>Reanimated worklets</strong> run on the UI thread via JSI-shared state (<code>SharedValue</code>) → 60/120fps animations even when the JS thread is busy.</li>
+    <li><strong>MMKV</strong> is JSI-powered synchronous storage, ~30× faster than AsyncStorage (bridge-based).</li>
+    <li><strong>Bridgeless mode</strong> is the full new arch — the bridge is entirely removed; default since 0.76.</li>
+    <li>Remote JS debugging (ran your JS in Chrome V8, not on-device Hermes) was removed in 0.79 — use React Native DevTools, which debugs the real Hermes engine.</li>
+    <li><strong>Metro</strong> is the RN bundler (like Webpack for mobile); <code>inlineRequires</code> defers module evaluation to first use for faster startup.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Assuming a JS-only hot reload picks up native changes.</strong> After installing a library, editing a native module / TurboModule spec, or running <code>pod install</code>, Fast Refresh reloads only the JS bundle — the native code is still the stale build, so the change silently "doesn't work." Fix: do a full native rebuild (and <code>--reset-cache</code> if Metro cached a stale transform) whenever native code, specs, or Podfile/gradle change.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Old architecture sends JSON across an async bridge; the new architecture — JSI plus Fabric and TurboModules — shares C++ objects directly so calls are synchronous and there's no serialization."</div>
+  <div class="revision-say">"There are three threads — JS, native UI, and shadow. Blocking JS delays state updates but UI-thread animations keep running; blocking the UI thread freezes everything."</div>
+  <div class="revision-say">"Reanimated runs worklets on the UI thread over JSI, so animations and gestures stay smooth even when the JS thread is doing heavy work."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What React Native actually is</h3>
 <p>React Native runs your React component tree in a JavaScript engine on the device. When React says "render a View," RN translates that to a native view — <code>UIView</code> on iOS, <code>android.view.View</code> on Android. You're not writing a web view; you're writing a native app whose UI is described in React.</p>
 <p>Three processes are happening simultaneously:</p>
@@ -93,10 +107,10 @@ JS Thread                         Native Thread
   <li>Shadow thread computes Flexbox layout without interrupting either.</li>
 </ul>
 <p>If you block the JS thread (bad loop, sync work), the UI doesn't freeze — animations continue if they're on UI thread (via Reanimated) — but your React state doesn't update. Understanding this split is essential for debugging jank.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "Old Architecture" picture</h3>
 <div class="diagram">
 <pre>
@@ -174,10 +188,10 @@ JS Thread                         Native Thread
   <div class="callout-title">Common misconception</div>
   <p>"React Native runs inside a WebView." Absolutely not. There's no web engine. Your components render as <em>real native views</em>. A <code>&lt;View&gt;</code> becomes a UIView; a <code>&lt;Text&gt;</code> becomes a UILabel/TextView. The JS runs in a separate engine (Hermes or JSC) that talks to the native UI via JSI or the old Bridge. No HTML, no CSS parser, no DOM.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Lifecycle of an app startup</h3>
 <ol>
   <li>User taps icon → OS launches native app process.</li>
@@ -266,10 +280,10 @@ use_react_native!(
 newArchEnabled=true
 hermesEnabled=true</code></pre>
 <p>Since RN 0.76 the New Architecture is default-on and these flags are no longer needed; on 0.76+ RN runs on the new arch by default. On older versions (0.71–0.75) set them explicitly to opt in. Third-party libraries must support the new arch (check their docs/flags).</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — simple component</h3>
 <pre><code class="language-tsx">import { View, Text, Pressable } from 'react-native';
 function App() {
@@ -416,10 +430,11 @@ const pan = Gesture.Pan()
   .onEnd(() =&gt; { x.value = withSpring(0); });
 
 // Gesture updates run entirely on the UI thread — fluid even when JS is busy.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Library not yet new-arch-compatible</h3>
 <p>Not every library ships TurboModule specs yet. Check the lib's README for "new architecture support." You can mix: some modules on the bridge, others as TurboModules. But enabling new arch fails the build if a depended module doesn't support it.</p>
 
@@ -479,10 +494,9 @@ const pan = Gesture.Pan()
 
 <h3>20. Third-party library compatibility matrix</h3>
 <p>When upgrading RN, check each major lib (Reanimated, Navigation, Gesture Handler, Screens, Keyboard Controller) for compatibility. Mismatches are the #1 source of upgrade pain.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — treating RN as a web renderer</h3>
 <p>Using web mental models (DOM, CSS cascading, hover states, media queries) leads to surprise. There's no DOM, no cascade, no hover. Use Flexbox via Yoga, Dimensions API, Platform.select.</p>
 
@@ -532,10 +546,10 @@ emitter.addListener('change', (val) =&gt; setVal(val));</code></pre>
 
 <h3>Anti-pattern 15 — ignoring platform differences</h3>
 <p>"Works on iOS" ≠ "works on Android" and vice versa. Status bar, keyboard avoidance, safe area, text rendering, permissions model — all differ. Test both platforms per feature.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Explain the React Native architecture.</div>
   <div class="qa-answer">
@@ -726,53 +740,14 @@ emitter.addListener('change', (val) =&gt; setVal(val));</code></pre>
     <li>You acknowledge ecosystem compatibility as the main new-arch adoption cost.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">React Native runs your React tree in a JS engine that drives <strong>real native views</strong> — the old <em>Bridge</em> talks to native over an async JSON queue, while the <em>New Architecture</em> (JSI + Fabric + TurboModules) replaces it with a synchronous C++ binding, no serialization.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>RN is not a WebView</strong> — your React tree renders <em>real native views</em> (<code>&lt;View&gt;</code> → <code>UIView</code> / <code>android.view.View</code>, <code>&lt;Text&gt;</code> → <code>UILabel</code> / <code>TextView</code>). No DOM, no HTML/CSS.</li>
-    <li><strong>Two runtimes per app:</strong> a JS engine (Hermes by default since 0.70, or JSC) plus the native platform runtime — the architecture question is how they talk.</li>
-    <li><strong>Old Architecture (Bridge, pre-0.68):</strong> JS and native communicate over an <em>asynchronous</em>, JSON-serialized message queue, batched per frame. Problems: JSON is slow, async-only (no sync reads), single queue.</li>
-    <li><strong>New Architecture (JSI + Fabric + TurboModules, default since 0.76):</strong> a synchronous C++ binding replaces the bridge — no JSON serialization.</li>
-    <li><strong>JSI</strong> (JavaScript Interface) is the base layer: a C++ API where JS holds refs to native <code>HostObject</code>s (and vice versa) and calls them <em>synchronously</em>. Foundation under Fabric, TurboModules, and Reanimated.</li>
-    <li><strong>TurboModules</strong> replace NativeModules — lazily loaded (not instantiated until first used), JSI-based (sync, no JSON), typed via codegen.</li>
-    <li><strong>Fabric</strong> is the new renderer (replaces UIManager + ShadowNode): C++ shared core, synchronous layout reads, immutable shadow trees swapped atomically, concurrent-React aware (lanes / <code>startTransition</code> / Suspense).</li>
-    <li><strong>Codegen</strong> turns TypeScript specs into type-safe ObjC/Kotlin bindings → native signature mismatches fail at build time.</li>
-    <li><strong>Hermes</strong>: bytecode pre-compiled at build time → often 30–50% faster startup, smaller binary, generational GC tuned for mobile. Default since 0.70.</li>
-    <li><strong>Three threads:</strong> JS (React + your code), Native UI / main (view hierarchy, input), Shadow (Yoga layout). Block JS → state updates delay but UI-thread animations keep running; block UI → everything freezes.</li>
-    <li><strong>Reanimated worklets</strong> run on the UI thread via JSI-shared state (<code>SharedValue</code>) → 60/120fps animations even when the JS thread is busy.</li>
-    <li><strong>MMKV</strong> is JSI-powered synchronous storage, ~30× faster than AsyncStorage (bridge-based).</li>
-    <li><strong>Bridgeless mode</strong> is the full new arch — the bridge is entirely removed; default since 0.76.</li>
-    <li>Remote JS debugging (ran your JS in Chrome V8, not on-device Hermes) was removed in 0.79 — use React Native DevTools, which debugs the real Hermes engine.</li>
-    <li><strong>Metro</strong> is the RN bundler (like Webpack for mobile); <code>inlineRequires</code> defers module evaluation to first use for faster startup.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Assuming a JS-only hot reload picks up native changes.</strong> After installing a library, editing a native module / TurboModule spec, or running <code>pod install</code>, Fast Refresh reloads only the JS bundle — the native code is still the stale build, so the change silently "doesn't work." Fix: do a full native rebuild (and <code>--reset-cache</code> if Metro cached a stale transform) whenever native code, specs, or Podfile/gradle change.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Old architecture sends JSON across an async bridge; the new architecture — JSI plus Fabric and TurboModules — shares C++ objects directly so calls are synchronous and there's no serialization."</div>
-  <div class="revision-say">"There are three threads — JS, native UI, and shadow. Blocking JS delays state updates but UI-thread animations keep running; blocking the UI thread freezes everything."</div>
-  <div class="revision-say">"Reanimated runs worklets on the UI thread over JSI, so animations and gestures stay smooth even when the JS thread is doing heavy work."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. What is the New Architecture, and why do libraries have to be migrated to support it?</div>
+  <div class="qa-answer">
+    <p>The New Architecture replaces the async JSON bridge with JSI, a synchronous C++ binding, plus Fabric as the renderer and TurboModules for native modules, with codegen generating typed bindings from TypeScript specs. It is default since RN 0.76, and bridgeless mode removes the legacy bridge entirely, so every native module must be a TurboModule and every component Fabric-compatible. Not every library ships TurboModule specs yet, and enabling the new arch fails the build if a dependency doesn't support it. That's why you check each major library's new-arch support when upgrading, and pick new-arch-ready libraries from day one.</p>
+  </div>
 </div>
-`},
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the old bridge's async, batched, serialized message queue and why it dropped frames?</li>
-    <li>Can you describe how JSI lets JavaScript hold a direct reference to a C++ HostObject with no serialization?</li>
-    <li>Can you contrast a TurboModule with the legacy NativeModule and say what lazy loading buys you?</li>
-    <li>Can you explain what Fabric changes about the rendering and shadow-tree pipeline?</li>
-    <li>Can you say what the New Architecture is and why libraries must be migrated to support it?</li>
-    <li>Can you explain how Reanimated stays smooth over JSI even when the JS thread is blocked?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

@@ -1,25 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'linux-fundamentals',
-  module: 'linux',
-  title: 'Fundamentals & Navigation',
-  estimatedReadTime: '24 min',
-  tags: ['linux', 'cli', 'shell', 'fundamentals', 'filesystem'],
+  id: "linux-fundamentals",
+  module: "linux",
+  title: "Fundamentals & Navigation",
+  estimatedReadTime: "24 min",
+  tags: ["linux","cli","shell","fundamentals","filesystem"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>Linux</strong> is an operating system built around a small, fast <strong>kernel</strong> (the core program that talks to hardware, manages memory, and schedules processes) that gets bundled with a huge set of tools into a <strong>distribution</strong> ("distro" — Ubuntu, Debian, Fedora, Arch, and many more). You interact with all of it through a <strong>shell</strong> — a program that reads the commands you type and runs them.</p>
-<ul>
-  <li><strong>Kernel vs. distro vs. shell:</strong> the kernel is the engine; the distro is the whole car (kernel + package manager + default apps + configuration); the shell is the steering wheel — the text interface you use to drive the system. This module teaches you to drive from the shell.</li>
-  <li><strong>"Everything is a file."</strong> Regular documents, directories, USB drives, your keyboard, even running processes — Linux represents almost everything as a file you can look at, read from, or write to, living somewhere in one single filesystem tree. That one idea explains a surprising number of Linux's design decisions.</li>
-  <li><strong>You drive it from the shell.</strong> The shell (commonly <strong>bash</strong> or <strong>zsh</strong>) is a program that shows you a prompt, reads the line you type, and runs it as a command. Nearly everything in this module — and in real Linux work, from your laptop to a remote production server — happens by typing commands into a shell.</li>
-  <li><strong>This is topic 1 of the Linux module — beginner start, zero assumptions.</strong> This topic covers navigating the filesystem and the small set of commands you'll use in literally every single session: <code>pwd</code>, <code>ls</code>, <code>cd</code>, creating/copying/moving/removing files, viewing file contents, and getting help. Later topics build on this: permissions & users, text processing & pipelines, processes & services, shell scripting, and networking/sysadmin.</li>
-</ul>
-<p><strong>Mantra:</strong> "Everything is a file, the filesystem is one tree rooted at <code>/</code>, and the shell is how you walk that tree and act on what you find."</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Linux is a small, fast <strong>kernel</strong> bundled into a <strong>distro</strong> and driven from a <strong>shell</strong> — where <strong>everything is a file</strong> living in one tree rooted at <code>/</code>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Kernel vs distro vs shell:</strong> the kernel is the engine, the distro is the whole car (kernel + package manager + apps + config), and the shell is the steering wheel — the text interface you drive from.</li>
+    <li><strong>"Everything is a file"</strong> — documents, directories, devices, even running processes are represented as files in one filesystem tree rooted at <code>/</code>. That one idea explains much of Linux's design.</li>
+    <li>The shell (<code>bash</code>/<code>zsh</code>) shows a prompt, reads the line you type, and runs it as a command; nearly all Linux work happens this way.</li>
+    <li>Core commands used every session: <code>pwd</code>, <code>ls</code>, <code>cd</code>, plus create/copy/move/remove and viewing file contents.</li>
+    <li><code>cd</code> with no argument goes home (<code>cd ~</code>); a plain <code>ls</code> hides dotfiles — use <code>ls -a</code>.</li>
+    <li>Filenames with spaces must be quoted (or the space escaped) or the shell splits one name into two arguments.</li>
+    <li><strong>Absolute path</strong> starts at <code>/</code> and works from anywhere (<code>/home/alice/notes.txt</code>); a <strong>relative path</strong> resolves from your current directory (<code>../notes.txt</code>) — <code>pwd</code> tells you where that is.</li>
+    <li><code>cd ..</code> goes up one level; <code>cd -</code> toggles back to the previous directory.</li>
+    <li><code>mkdir -p a/b/c</code> creates every missing parent; <code>rmdir</code> only removes an <em>empty</em> directory; <code>cp -r</code> is needed for directories; <code>mv</code> both moves and renames (same operation).</li>
+    <li><code>cat</code> just prints (fine for short files); <code>less</code> pages one screen at a time with scroll and <code>/</code>-search without loading the whole file; <code>more</code> is the older forward-only pager.</li>
+    <li>Getting help: <code>&lt;cmd&gt; --help</code> for a quick flag reminder, <code>man &lt;cmd&gt;</code> for the full manual, <code>apropos &lt;keyword&gt;</code> when you don't know the command's name.</li>
+    <li><code>/etc</code> = system-wide configuration ("how things are configured"); <code>/var</code> = constantly-changing data, especially logs in <code>/var/log</code> ("what's accumulating while it runs").</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>There is no Recycle Bin on the command line.</strong> <code>rm</code> (with or without <code>-r</code>/<code>-f</code>) deletes immediately and it's gone — extra dangerous when the path is built from a variable that may be empty or wrong. Run <code>ls</code> on the exact same path first to confirm what you're about to delete.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Linux is a kernel plus a distro, and you drive it from a shell that reads and runs the lines you type."</div>
+  <div class="revision-say">"Everything is a file in one tree rooted at slash — that single idea explains a lot of Linux's design."</div>
+  <div class="revision-say">"There's no trash on the command line; rm deletes immediately, so I ls the path before I rm it."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why learn the command line at all?</h3>
 <p>If you've only ever used a computer through icons, windows, and menus (a "GUI" — graphical user interface), typing commands into a black box can feel like a step backwards. It isn't, and here's why it matters in practice:</p>
 <ul>
@@ -40,10 +57,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>What a "terminal" actually is</h3>
 <p>One more piece of vocabulary worth untangling: the <strong>terminal</strong> (or "terminal emulator") is just the window — the app that displays text and lets you type. The <strong>shell</strong> is the program running <em>inside</em> that window that actually understands your commands. You open a terminal app (on macOS: Terminal.app or iTerm2; on Ubuntu: GNOME Terminal; in this module we generically call it "the terminal") and it starts a shell (bash or zsh) for you automatically. In everyday speech people use "terminal" and "shell" interchangeably — that's fine; just know the terminal is the window and the shell is the interpreter running inside it.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>One tree, rooted at <code>/</code></h3>
 <p>Where Windows has separate drive letters (<code>C:\\</code>, <code>D:\\</code>...), Linux has exactly <strong>one</strong> filesystem tree, and everything — every disk, every USB drive, every file, every directory — lives somewhere underneath a single top-level directory called <strong>root</strong>, written as a single forward slash: <code>/</code>. There is no "top of C: drive" separate from "top of D: drive" — there's just <code>/</code>, and everything branches out from it.</p>
 <pre><code class="language-text">/                     ← the root of the entire filesystem
@@ -84,10 +101,10 @@ window.PREP_SITE.registerTopic({
   </tbody>
 </table>
 <p>These four symbols show up constantly and combine freely: <code>~/projects</code> means "the <code>projects</code> folder inside my home directory"; <code>../sibling-folder</code> means "go up one level, then into <code>sibling-folder</code>"; <code>../../</code> means "up two levels."</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Where am I? <code>pwd</code></h3>
 <pre><code class="language-bash">pwd</code></pre>
 <p><code>pwd</code> ("print working directory") prints the absolute path of the directory you're currently sitting in. This is the single most useful orientation command — run it any time you're unsure where you are.</p>
@@ -280,10 +297,10 @@ history
 # Clear the terminal screen (your scrollback isn't deleted, just scrolled out of view):
 clear</code></pre>
 <p><code>man</code> is the authoritative, in-depth reference for a command — every flag, every edge case — while <code>--help</code> is a much shorter, faster cheat-sheet built into the program itself. <code>apropos</code> and <code>whatis</code> both search the manual page database: <code>apropos</code> when you only know a rough keyword, <code>whatis</code> when you already know the exact command name and just want its one-line summary. <code>which</code> and <code>type</code> both answer "what actually runs when I type this?" — <code>type</code> is the more complete answer since some commands (like <code>cd</code>) are built directly into the shell and have no separate file on disk for <code>which</code> to find.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Navigate and build out a small project tree</h3>
 <pre><code class="language-bash">pwd
 # /home/alice
@@ -350,10 +367,11 @@ less /var/log/app.log
 # Inside less: press "/" then type a search term, Enter to jump to it,
 # "n" to jump to the next match, "q" to quit</code></pre>
 <p>This combination — a quick <code>tail -n</code> to orient, then <code>tail -f</code> to watch live, with <code>less</code> as the tool for after-the-fact searching — is exactly how developers and sysadmins keep an eye on running applications from the command line.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>"I ran <code>rm -rf</code> and now it's gone forever"</h3>
 <p>This is worth repeating from Mechanics because it's the single most common beginner disaster: Linux has no built-in Recycle Bin/Trash for command-line deletes. <code>rm</code> (with or without <code>-r</code>/<code>-f</code>) removes the file immediately, and unless you have a separate backup or snapshot system in place, it's gone. Before running <code>rm -r</code> or <code>rm -rf</code> on anything, it's worth running <code>ls</code> on the exact same path first to confirm precisely what you're about to delete — and being extra careful with any path built from a variable in a script, since an empty or wrong variable can silently turn <code>rm -rf "$dir/"</code> into something far more destructive than intended.</p>
 
@@ -374,10 +392,10 @@ cat Meeting\\ Notes.txt</code></pre>
 
 <h3><code>cd</code> with no argument always goes home</h3>
 <p>Typing <code>cd</code> alone, with nothing after it, is not an error and does not do nothing — it's shorthand for <code>cd ~</code>, taking you straight back to your home directory from wherever you were. This is intentional and extremely commonly used as a quick "reset to a known location" — especially useful if you've navigated somewhere deep and unfamiliar and just want to get back to solid ground.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'cheat-sheet', title: '📋 Cheat Sheet', html: `
+{ id: "cheat-sheet", title: "📋 Cheat Sheet", collapsible: true, html: `
 <table>
   <thead><tr><th>Command</th><th>Purpose</th><th>Key flags</th></tr></thead>
   <tbody>
@@ -409,10 +427,10 @@ cat Meeting\\ Notes.txt</code></pre>
     <tr><td><code>clear</code></td><td>Clear the terminal screen</td><td>scrollback is preserved, just scrolled away</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What's the difference between the Linux kernel, a Linux distribution, and a shell?</div>
 <div class="qa-a">
@@ -461,42 +479,32 @@ cat Meeting\\ Notes.txt</code></pre>
 <p>Both are pagers, but <code>more</code> is the older and more limited of the two: it only pages <em>forward</em> (Space for the next screen, <code>q</code> to quit) and has no way to scroll backward or search. <code>less</code> was written as a superset of <code>more</code>'s functionality — the name is a play on "less is more" — adding backward scrolling and <code>/</code>-search on top of everything <code>more</code> does, while still never loading the whole file into memory. In practice <code>less</code> is the one you'll actually use day to day; <code>more</code> mostly survives as the historically-earlier tool you should recognize but rarely need to reach for.</p>
 </div>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Linux is a small, fast <strong>kernel</strong> bundled into a <strong>distro</strong> and driven from a <strong>shell</strong> — where <strong>everything is a file</strong> living in one tree rooted at <code>/</code>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Kernel vs distro vs shell:</strong> the kernel is the engine, the distro is the whole car (kernel + package manager + apps + config), and the shell is the steering wheel — the text interface you drive from.</li>
-    <li><strong>"Everything is a file"</strong> — documents, directories, devices, even running processes are represented as files in one filesystem tree rooted at <code>/</code>. That one idea explains much of Linux's design.</li>
-    <li>The shell (<code>bash</code>/<code>zsh</code>) shows a prompt, reads the line you type, and runs it as a command; nearly all Linux work happens this way.</li>
-    <li>Core commands used every session: <code>pwd</code>, <code>ls</code>, <code>cd</code>, plus create/copy/move/remove and viewing file contents.</li>
-    <li><code>cd</code> with no argument goes home (<code>cd ~</code>); a plain <code>ls</code> hides dotfiles — use <code>ls -a</code>.</li>
-    <li>Filenames with spaces must be quoted (or the space escaped) or the shell splits one name into two arguments.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>There is no Recycle Bin on the command line.</strong> <code>rm</code> (with or without <code>-r</code>/<code>-f</code>) deletes immediately and it's gone — extra dangerous when the path is built from a variable that may be empty or wrong. Run <code>ls</code> on the exact same path first to confirm what you're about to delete.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Linux is a kernel plus a distro, and you drive it from a shell that reads and runs the lines you type."</div>
-  <div class="revision-say">"Everything is a file in one tree rooted at slash — that single idea explains a lot of Linux's design."</div>
-  <div class="revision-say">"There's no trash on the command line; rm deletes immediately, so I ls the path before I rm it."</div>
+<div class="qa-block">
+  <div class="qa-question">Q8. What does "everything is a file" mean in Linux, and why does it matter?</div>
+  <div class="qa-answer">
+    <p>Linux represents almost everything as a file you can look at, read from, or write to: regular documents, directories, USB drives, your keyboard, even running processes. All of it lives in one filesystem tree rooted at <code>/</code>. It matters because that one idea explains a surprising number of Linux's design decisions. The same small set of shell commands lets you walk the tree and act on what you find, whatever the "file" actually is.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the difference between the kernel, a distro, and the shell?</li>
-    <li>Can you state what "everything is a file" means and why it matters?</li>
-    <li>Can you navigate with <code>pwd</code>, <code>ls</code>, <code>cd</code> and create/copy/move/remove files from memory?</li>
-    <li>Can you show two ways to handle a filename that contains a space?</li>
-    <li>Can you list the hidden dotfiles in a directory and say why a plain <code>ls</code> skips them?</li>
-    <li>Can you explain why <code>rm -rf</code> is dangerous and how you guard against it?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q9. Walk me through the everyday navigation and file commands: moving around, creating, copying, moving, and removing.</div>
+  <div class="qa-answer">
+    <p><code>pwd</code> prints where you are, <code>ls</code> lists a directory, and <code>cd &lt;dir&gt;</code> moves you. <code>cd</code> alone goes home, <code>cd ..</code> goes up a level, and <code>cd -</code> toggles back. <code>mkdir -p a/b/c</code> creates a directory along with any missing parents, and <code>touch &lt;file&gt;</code> creates an empty file or updates its timestamp. <code>cp</code> copies files and needs <code>-r</code> for directories. <code>mv</code> both moves and renames, because they're the same operation. <code>rmdir</code> removes only an empty directory, and <code>rm</code> (with <code>-r</code> for directories) deletes for good.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q10. How do you handle a filename that contains a space?</div>
+  <div class="qa-answer">
+    <p>The shell splits arguments on spaces, so <code>cat Meeting Notes.txt</code> sees two arguments, "Meeting" and "Notes.txt". There are two fixes. You can wrap the whole name in double quotes, as in <code>cat "Meeting Notes.txt"</code>, or you can escape just the space with a backslash (<code>Meeting&#92; Notes.txt</code>). The safe habit is to quote any path that might contain a space or special characters like <code>$</code>, <code>*</code> or <code>&amp;</code>. Quoting a plain name is always harmless.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q11. Why is rm -rf dangerous, and how do you guard against mistakes with it?</div>
+  <div class="qa-answer">
+    <p>The command line has no Recycle Bin, so <code>rm</code> deletes data immediately and, for practical purposes, irreversibly. <code>-r</code> deletes an entire directory tree and <code>-f</code> suppresses the confirmation prompts you'd otherwise get, so one wrong path removes everything with no second warning. Guard against it by running <code>pwd</code>, then <code>ls</code> on the exact same path first, to confirm where you are and what you're about to delete. Be extra careful in scripts, where an empty or wrong variable can silently turn <code>rm -rf "$dir/"</code> into something far more destructive.</p>
+  </div>
+</div>
+` },
 
-]});
+  ]
+});

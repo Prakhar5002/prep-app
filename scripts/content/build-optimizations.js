@@ -1,35 +1,44 @@
 window.PREP_SITE.registerTopic({
-  id: 'build-optimizations',
-  module: 'Build Tooling',
-  title: 'Build Optimizations',
-  estimatedReadTime: '32 min',
-  tags: ['build', 'optimization', 'cache', 'incremental', 'parallelization', 'esbuild', 'swc', 'turbopack', 'turborepo', 'ci'],
+  id: "build-optimizations",
+  module: "Build Tooling",
+  title: "Build Optimizations",
+  estimatedReadTime: "32 min",
+  tags: ["build","optimization","cache","incremental","parallelization","esbuild","swc","turbopack","turborepo","ci"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Build optimization is about <strong>making the build itself fast</strong> — not the runtime bundle. Slow builds hurt developer velocity, bloat CI cost, and delay deploys. The dominant levers are caching, parallelization, and choosing fast tools.</p>
-<ul>
-  <li><strong>Modern compilers</strong>: <strong>esbuild</strong> (Go), <strong>swc</strong> (Rust), <strong>Rspack</strong> (Rust port of Webpack), <strong>Turbopack</strong> (Rust, incremental). 10-100× faster than Babel + Webpack.</li>
-  <li><strong>Persistent file-system cache</strong>: bundlers cache transformed modules + chunk graphs across builds. <strong>Webpack 5 filesystem cache</strong>, <strong>Vite cache</strong>, <strong>Turbopack persistent cache</strong>.</li>
-  <li><strong>Incremental builds</strong>: rebuild only what changed. Vite dev = native ESM (no rebundle); production tools track module dependency graphs.</li>
-  <li><strong>Parallelization</strong>: esbuild parallelizes via Go's goroutines; <strong>Turborepo</strong> / <strong>Nx</strong> orchestrate parallel + cached builds across a monorepo.</li>
-  <li><strong>Source maps</strong> strategy: <code>eval-cheap-module-source-map</code> in dev (fast), <code>hidden-source-map</code> in prod (uploaded to Sentry, not exposed).</li>
-  <li><strong>HMR (Hot Module Replacement)</strong>: swap modules without full reload — keeps state across edits.</li>
-  <li><strong>Tree shaking + minification</strong>: terser, swc minify, esbuild minify. swc / esbuild are 10-50× faster than terser.</li>
-  <li><strong>CI cache</strong>: cache <code>node_modules</code>, build outputs, persistent compiler caches. 5min build → 30s on cache hit.</li>
-  <li><strong>Codegen</strong> at build time: GraphQL types, route manifests, TS declarations. Cache aggressively.</li>
-  <li><strong>Bundle splitting</strong>: balance between chunk count and HTTP/2 multiplexing. Don't blindly split into 1000 micro-chunks.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Slow build = wasted developer time × team size × deploys per day. Pick fast tools (esbuild / swc / Rust-based bundlers), enable persistent caches, parallelize across a monorepo, and cache aggressively in CI. A 5-second build feels free; a 5-minute build poisons workflow.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Build optimization is about making <strong>the build itself</strong> fast — not the runtime bundle — and the three dominant levers are <strong>fast native tools, aggressive caching, and parallelization</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Build perf ≠ runtime perf.</strong> Build optimization speeds developer iteration, CI cost, and deploy frequency; runtime perf is bundle size / code splitting / images — a separate topic. Conflating them misdirects work.</li>
+    <li><strong>Use Rust/Go tools over Babel + Webpack:</strong> esbuild (Go), swc (Rust), Rspack, Turbopack — native code, true parallelism, faster parsers give <strong>10-100× speedups</strong>.</li>
+    <li><strong>The fastest build is the one you don't run</strong> — cache in layers: in-memory (dev server) → filesystem (Webpack 5 / Vite / Turbopack) → CI cache → distributed remote cache (Turborepo / Nx).</li>
+    <li><strong>Incremental beats full rebuild.</strong> Vite dev doesn't bundle — serves native ESM, so only the changed file recompiles and startup stays roughly constant with project size; prod uses Rollup.</li>
+    <li><strong>Separate type-check from emit:</strong> use swc/esbuild to emit (syntax only, fast), <code>tsc --noEmit</code> to type-check, run them in parallel; add <code>incremental</code> + <code>tsBuildInfoFile</code> for 5-10× faster repeat checks.</li>
+    <li><strong>Replace Terser with swc/esbuild minify</strong> — minification is often the slowest stage; the Rust/Go minifiers are 10-50× faster.</li>
+    <li><strong>Monorepos:</strong> Turborepo / Nx hash inputs per task per package, restore outputs on cache hit, build in topological order, parallelize leaves, and use affected detection to skip unchanged packages.</li>
+    <li><strong>CI caching is high-leverage:</strong> cache node_modules, build outputs, and compiler caches to turn a 5-minute build into 30 seconds; use <code>npm ci</code> for strict, deterministic installs.</li>
+    <li><strong>Source maps:</strong> fast <code>eval-cheap-module-source-map</code> in dev; <code>hidden-source-map</code> in prod (emitted, no sourceMappingURL comment, uploaded to Sentry) so errors symbolicate without exposing source.</li>
+    <li><strong>Profile before optimizing</strong> — find the slowest 1-2 stages (Webpack <code>--profile</code>, <code>DEBUG=vite:*</code>, <code>tsc --extendedDiagnostics</code>) and set bundle size budgets so regressions fail the build.</li>
+    <li><strong>HMR (Hot Module Replacement)</strong> swaps a changed module into the running app without a full reload, so state survives edits; React Fast Refresh is the React flavour.</li>
+    <li><strong>Codegen at build time</strong> (GraphQL types, route manifests, TS declarations) should be cached aggressively too.</li>
+    <li><strong>Bundle splitting is a balance</strong> between chunk count and HTTP/2 multiplexing; don't blindly split into 1000 micro-chunks.</li>
+    <li><strong>Why it matters:</strong> slow build = wasted developer time × team size × deploys per day. A 5-second build feels free; a 5-minute build poisons workflow.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Using tsc as your bundler and Babel + Terser for transform/minify.</strong> tsc is a type checker that happens to emit JS — it is slow at emit; Babel and Terser are single-threaded JS. Fix: emit with esbuild/swc, run <code>tsc --noEmit</code> only for type checking (in parallel), and swap Terser for swc/esbuild minify — config-level changes with 2-10× speedups each.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Build optimization makes the build faster — developer iteration, CI cost, deploy frequency — which is separate from runtime perf like bundle size and code splitting."</div>
+  <div class="revision-say">"The three levers are fast native tools (esbuild/swc/Rspack/Turbopack), caching in layers (memory → filesystem → CI → remote), and parallelization; and I profile first to optimize the actual bottleneck."</div>
+  <div class="revision-say">"I separate type-check from emit — swc/esbuild emits fast, tsc --noEmit type-checks in parallel — and in a monorepo I use Turborepo with content-hash caching and affected detection."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Build vs runtime — different concerns</h3>
 <p>Two distinct optimization domains:</p>
 <ul>
@@ -68,10 +77,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why CI caching is high-leverage</h3>
 <p>Every PR build re-runs from scratch unless you cache. Caching <code>node_modules</code> (saves 30-60s of npm install), the persistent compiler cache (saves transform work), and final outputs can turn 5-minute builds into 30-second ones. Most CI providers (GitHub Actions, CircleCI, GitLab) have built-in cache primitives.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "build pipeline" picture</h3>
 <div class="diagram">
 <pre>
@@ -161,10 +170,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"Build optimizations make my app faster for users." Build optimization makes <em>the build</em> faster — affecting developer iteration speed, CI cost, deploy frequency. Runtime perf is governed by bundle size, code splitting, image optimization (separate topic). Conflating the two leads to misdirected work.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Choosing fast tools</h3>
 <table>
   <thead><tr><th>Need</th><th>Recommendation (2024+)</th></tr></thead>
@@ -385,10 +394,10 @@ performance: {
   maxAssetSize: 250000,
   maxEntrypointSize: 250000,
 }</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Vite migration from CRA</h3>
 <pre><code class="language-bash">npm create vite@latest my-app -- --template react-ts
 # Copy over src/ from CRA
@@ -576,10 +585,11 @@ await build({
 # Total: 45s
 
 # 6× faster CI = faster PR feedback, fewer "is the build done yet" interruptions</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Babel plugins that swc doesn't support</h3>
 <p>swc's plugin system is improving but doesn't have feature parity with Babel. Niche plugins (custom JSX transforms, decorators with specific options, some transpilation passes) may not work. Audit before migrating.</p>
 
@@ -639,10 +649,9 @@ await build({
 
 <h3>20. Watch mode misses changes</h3>
 <p>File system watcher (chokidar) limits on Linux (default 8192 inotify watches). Symlinks, network drives can confuse. <code>echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf</code>.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — running tsc as the bundler</h3>
 <p>tsc is a type checker that happens to emit JS. Slow at emit. Use esbuild / swc / Vite for emit; <code>tsc --noEmit</code> for type check.</p>
 
@@ -687,10 +696,10 @@ await build({
 
 <h3>Anti-pattern 15 — no build size budget</h3>
 <p>Bundle grows over months; nobody notices until users complain. Set budgets in config (chunkSizeWarningLimit, performance.maxAssetSize) + CI gate.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How do you make a build faster?</div>
   <div class="qa-answer">
@@ -898,48 +907,26 @@ await build({
     <li>You set bundle size budgets in build config.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Build optimization is about making <strong>the build itself</strong> fast — not the runtime bundle — and the three dominant levers are <strong>fast native tools, aggressive caching, and parallelization</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Build perf ≠ runtime perf.</strong> Build optimization speeds developer iteration, CI cost, and deploy frequency; runtime perf is bundle size / code splitting / images — a separate topic. Conflating them misdirects work.</li>
-    <li><strong>Use Rust/Go tools over Babel + Webpack:</strong> esbuild (Go), swc (Rust), Rspack, Turbopack — native code, true parallelism, faster parsers give <strong>10-100× speedups</strong>.</li>
-    <li><strong>The fastest build is the one you don't run</strong> — cache in layers: in-memory (dev server) → filesystem (Webpack 5 / Vite / Turbopack) → CI cache → distributed remote cache (Turborepo / Nx).</li>
-    <li><strong>Incremental beats full rebuild.</strong> Vite dev doesn't bundle — serves native ESM, so only the changed file recompiles and startup stays roughly constant with project size; prod uses Rollup.</li>
-    <li><strong>Separate type-check from emit:</strong> use swc/esbuild to emit (syntax only, fast), <code>tsc --noEmit</code> to type-check, run them in parallel; add <code>incremental</code> + <code>tsBuildInfoFile</code> for 5-10× faster repeat checks.</li>
-    <li><strong>Replace Terser with swc/esbuild minify</strong> — minification is often the slowest stage; the Rust/Go minifiers are 10-50× faster.</li>
-    <li><strong>Monorepos:</strong> Turborepo / Nx hash inputs per task per package, restore outputs on cache hit, build in topological order, parallelize leaves, and use affected detection to skip unchanged packages.</li>
-    <li><strong>CI caching is high-leverage:</strong> cache node_modules, build outputs, and compiler caches to turn a 5-minute build into 30 seconds; use <code>npm ci</code> for strict, deterministic installs.</li>
-    <li><strong>Source maps:</strong> fast <code>eval-cheap-module-source-map</code> in dev; <code>hidden-source-map</code> in prod (emitted, no sourceMappingURL comment, uploaded to Sentry) so errors symbolicate without exposing source.</li>
-    <li><strong>Profile before optimizing</strong> — find the slowest 1-2 stages (Webpack <code>--profile</code>, <code>DEBUG=vite:*</code>, <code>tsc --extendedDiagnostics</code>) and set bundle size budgets so regressions fail the build.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Using tsc as your bundler and Babel + Terser for transform/minify.</strong> tsc is a type checker that happens to emit JS — it is slow at emit; Babel and Terser are single-threaded JS. Fix: emit with esbuild/swc, run <code>tsc --noEmit</code> only for type checking (in parallel), and swap Terser for swc/esbuild minify — config-level changes with 2-10× speedups each.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Build optimization makes the build faster — developer iteration, CI cost, deploy frequency — which is separate from runtime perf like bundle size and code splitting."</div>
-  <div class="revision-say">"The three levers are fast native tools (esbuild/swc/Rspack/Turbopack), caching in layers (memory → filesystem → CI → remote), and parallelization; and I profile first to optimize the actual bottleneck."</div>
-  <div class="revision-say">"I separate type-check from emit — swc/esbuild emits fast, tsc --noEmit type-checks in parallel — and in a monorepo I use Turborepo with content-hash caching and affected detection."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. How is build optimization different from runtime performance work like bundle size and code splitting?</div>
+  <div class="qa-answer">
+    <p>Build optimization makes <em>the build</em> faster, which affects developer iteration speed, CI cost and deploy frequency. Runtime perf is governed by bundle size, code splitting and image optimization, which is a separate topic. Even a 50KB bundle still requires the build to compile sources, transform syntax, resolve modules, optimize, hash and minify on every run. Conflating the two leads to misdirected work, such as shrinking the bundle when the real complaint is a 5-minute CI build.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you distinguish build-time optimization from runtime perf like bundle size and code splitting?</li>
-    <li>Can you name the three levers — fast native tools, layered caching, and parallelization?</li>
-    <li>Can you describe the caching layers from memory → filesystem → CI → remote?</li>
-    <li>Can you explain why you profile the build before optimizing anything?</li>
-    <li>Can you separate type-check from emit to keep the build fast?</li>
-    <li>Can you explain why blindly splitting into 1000 micro-chunks hurts instead of helps?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. Why should you profile the build before optimizing anything?</div>
+  <div class="qa-answer">
+    <p>Because the cost is usually concentrated in one or two stages, often minification, type-checking, or a single misbehaving plugin. Profiling (Webpack <code>--profile --json</code>, <code>DEBUG="vite:*"</code>, <code>tsc --extendedDiagnostics</code>, Turborepo <code>--profile</code>, esbuild <code>metafile</code>) shows which stage that is, so you fix the real bottleneck first instead of guessing. After each change, re-measure; the target is under a minute incremental and under three minutes cold.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q18. Why does blindly splitting a bundle into 1000 micro-chunks hurt instead of help?</div>
+  <div class="qa-answer">
+    <p>Bundle splitting is a balance between chunk count and HTTP/2 multiplexing. Splitting helps up to a point, but past it each extra chunk adds work for the build and more requests for the browser to coordinate, without a matching gain. Split along meaningful boundaries rather than maximizing chunk count, and use bundle size budgets in the build config so regressions are caught.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

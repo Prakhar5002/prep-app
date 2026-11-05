@@ -1,37 +1,46 @@
 window.PREP_SITE.registerTopic({
-  id: 'rn-navigation',
-  module: 'React Native',
-  title: 'Navigation',
-  estimatedReadTime: '28 min',
-  tags: ['react-native', 'navigation', 'react-navigation', 'stack', 'tab', 'drawer', 'deep-linking', 'expo-router'],
+  id: "rn-navigation",
+  module: "React Native",
+  title: "Navigation",
+  estimatedReadTime: "28 min",
+  tags: ["react-native","navigation","react-navigation","stack","tab","drawer","deep-linking","expo-router"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Navigation in React Native is not in the framework — it's a library. The standard choices in 2025:</p>
-<ul>
-  <li><strong>React Navigation (v7)</strong> — the most-used library. Comprehensive, JS-based with native primitives under the hood via <code>react-native-screens</code>. Stack / Tab / Drawer navigators.</li>
-  <li><strong>Expo Router (v5-era, 2026)</strong> — file-based routing on top of React Navigation. "Pages" = files. Feels like Next.js for mobile.</li>
-  <li><strong>React Native Navigation (Wix)</strong> — fully native-driven navigation. Less popular now but still used where 100% native-thread navigation is required.</li>
-</ul>
-<p>Core concepts apply to all three:</p>
-<ul>
-  <li><strong>Navigators</strong> — containers that manage a stack of screens (Stack, Tab, Drawer, Modal).</li>
-  <li><strong>Screens</strong> — the individual "pages" registered with a navigator.</li>
-  <li><strong>Navigation state</strong> — the tree of active screens; serializable.</li>
-  <li><strong>Params</strong> — data passed between screens (keep it small and serializable; deep-link parseable).</li>
-  <li><strong>Linking</strong> — map URLs to navigation state for deep links, universal links, push notifications.</li>
-  <li><strong>Typed navigation</strong> — with TypeScript, declare the param list per navigator so <code>navigate()</code> is type-checked.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Pick React Navigation by default. Use Expo Router if you want file-based routes and are already on Expo. Use Wix RNN only when you have a strong native-thread navigation requirement. Regardless, get the TypeScript types right from day 1 — untyped navigation is a common source of runtime bugs.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Navigation is <strong>a library, not part of RN</strong> — default to React Navigation's native stack, type the ParamList from day one, and keep route params small and JSON-serializable.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Navigation is a library, not part of RN.</strong> Default to <strong>React Navigation (v7)</strong>; <strong>Expo Router</strong> for file-based routes on Expo; <strong>Wix RNN</strong> only for a hard fully-native requirement.</li>
+    <li><strong>React Navigation is native under the hood</strong> via <code>react-native-screens</code> — each screen is a native primitive (UINavigationController / Fragment) so transitions and gestures are native 60fps.</li>
+    <li><strong>Core concepts:</strong> Navigators (Stack / Tab / Drawer / Modal), Screens, Navigation state (a serializable JSON tree), Params, Linking, and typed navigation via a per-navigator ParamList.</li>
+    <li><strong>Type the ParamList from day one</strong> and use the typed hooks — untyped navigation (a misspelled screen name, a missing param) is a common source of runtime bugs that TypeScript turns into compile errors.</li>
+    <li><strong>Keep params small and JSON-serializable</strong> — state is serialized for persistence and deep links. Functions, class instances, and big objects break persistence; store complex data in a cache and pass the id.</li>
+    <li><strong>navigate</strong> = go to a screen (if already in the stack, pop back to it and update params); <strong>push</strong> = always add a new instance; <strong>replace</strong> = swap the current screen (no back); <strong>reset</strong> = replace the whole navigation tree (nuclear).</li>
+    <li><code>goBack</code> = one back, <code>popToTop</code> = back to the stack root, <code>reset</code> = whole tree — prefer the least drastic that fits.</li>
+    <li><strong>Deep linking</strong> via the <code>linking</code> prop maps URLs → state (<code>prefixes</code> + <code>config.screens</code>). iOS uses Universal Links (apple-app-site-association + associated-domains entitlement); Android uses App Links (intent filters + Digital Asset Links). Cold-start links are handled automatically.</li>
+    <li><strong>Auth flow:</strong> swap the root screen based on auth status — the navigator re-renders and history is implicitly reset. Cleaner than manual reset.</li>
+    <li><strong>Screen lifecycle:</strong> screens stay <em>mounted</em> while in the stack (even underneath, unfocused); pushing does NOT unmount the screen below; popping unmounts. Use <code>useFocusEffect</code> to pause/resume work on focus.</li>
+    <li><strong>Prefer native stack</strong> (<code>createNativeStackNavigator</code>) over the legacy JS stack — faster and more platform-native; use JS stack only for custom animated transitions.</li>
+    <li><strong>Modals belong in the ROOT stack</strong>, not inside a tab's stack — otherwise the tab bar stays visible.</li>
+    <li>Always <strong>unsubscribe navigation listeners</strong> (<code>nav.addListener</code> returns the unsubscribe); <code>beforeRemove</code> guards dirty forms against back/swipe.</li>
+    <li><strong>Centralize screen analytics</strong> via <code>onStateChange</code> on NavigationContainer rather than per-screen logging.</li>
+    <li><strong>Expo Router file conventions:</strong> <code>(group)</code> (no URL impact), <code>[param]</code> (dynamic), <code>[...slug]</code> (catch-all), <code>_layout.tsx</code> (layout), <code>+not-found.tsx</code> (404).</li>
+    <li>Tab screens are kept mounted by default; <code>lazy: true</code> / <code>unmountOnBlur</code> trade memory against preserved state.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Stuffing large or non-serializable data into route params</strong> — functions, class instances, big objects. Navigation state is serialized for persistence and deep links, so it silently breaks. Fix: keep params to primitives and ids, store the heavy data in a cache or store, and pass only the id. (Related: put modals in the ROOT stack, not inside a tab's stack, or the tab bar stays visible.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I default to React Navigation with the native stack, type the ParamList from day one, and keep params small and serializable — big data goes in a store and I pass an id."</div>
+  <div class="revision-say">"navigate reuses an existing screen and updates params, push always adds a new one, replace swaps with no back, and reset rebuilds the whole tree — I use reset only for auth transitions."</div>
+  <div class="revision-say">"Deep linking is the linking prop mapping URLs to state, backed by Universal Links on iOS and App Links on Android; cold-start links are handled by the NavigationContainer automatically."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why navigation isn't built into RN</h3>
 <p>Unlike the browser with its URL bar, mobile apps don't have a built-in navigation model. Different platforms prefer different patterns (iOS stack navigation, Android Fragments, bottom tabs, drawers). React Native ships the primitive (the Navigator container) but leaves the UX patterns to libraries.</p>
 
@@ -64,10 +73,10 @@ window.PREP_SITE.registerTopic({
   <li>Handling the "cold start via link" case — app launches, must know where to go.</li>
 </ul>
 <p>React Navigation's <code>linking</code> prop covers all of this declaratively.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "navigator tree" picture</h3>
 <div class="diagram">
 <pre>
@@ -137,10 +146,10 @@ function Post({ route, navigation }: PostScreenProps) {
   <div class="callout-title">Common misconception</div>
   <p>"Navigation params can hold anything." They're passed through navigation state which is serialized for persistence and deep links. Functions, class instances, large objects break persistence. Keep params small and JSON-serializable. For complex data, store in a cache keyed by id and pass only the id.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Installing React Navigation</h3>
 <pre><code>npm install @react-navigation/native @react-navigation/native-stack
 npm install react-native-screens react-native-safe-area-context
@@ -327,10 +336,10 @@ const routeNameRef = useRef&lt;string&gt;();
   initialState={persistedState}
 &gt;</code></pre>
 <p>Useful on iOS state restoration. Be careful — serializable params required.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — typed stack</h3>
 <pre><code class="language-ts">// types.ts
 export type RootStackParamList = {
@@ -503,10 +512,11 @@ nav.navigate('Edit');
 <pre><code class="language-tsx">useFocusEffect(useCallback(() =&gt; {
   analytics.screen('Post', { id: route.params.id });
 }, [route.params.id]));</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Functions and class instances in params break persistence</h3>
 <p>Navigation state is serialized to JSON for persistence and deep-linking. Non-JSON values (functions, Maps, Sets, class instances) don't survive. Keep params primitive; store complex objects in a store and pass the id.</p>
 
@@ -572,10 +582,9 @@ nav.navigate('Edit');
 
 <h3>20. Expo Router + React Navigation APIs</h3>
 <p>Expo Router is built on React Navigation; many hooks still work. But prefer Expo Router's own <code>useRouter</code>, <code>useLocalSearchParams</code>, <code>Link</code> for Expo Router-specific features.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — passing functions / instances as params</h3>
 <p>Breaks state persistence and deep links. Use a store or event bus for callbacks.</p>
 
@@ -621,10 +630,10 @@ nav.navigate('Edit');
 
 <h3>Anti-pattern 15 — missing "beforeRemove" guard on dirty forms</h3>
 <p>User edits a form, swipes back, loses changes. Add <code>beforeRemove</code> listener with a confirm prompt.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What are the main navigation options in RN?</div>
   <div class="qa-answer">
@@ -830,53 +839,26 @@ nav.navigate('Post', { id: '1' });  // typed
     <li>You pick Expo Router when file-based routing fits and you're on Expo.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Navigation is <strong>a library, not part of RN</strong> — default to React Navigation's native stack, type the ParamList from day one, and keep route params small and JSON-serializable.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Navigation is a library, not part of RN.</strong> Default to <strong>React Navigation (v7)</strong>; <strong>Expo Router</strong> for file-based routes on Expo; <strong>Wix RNN</strong> only for a hard fully-native requirement.</li>
-    <li><strong>React Navigation is native under the hood</strong> via <code>react-native-screens</code> — each screen is a native primitive (UINavigationController / Fragment) so transitions and gestures are native 60fps.</li>
-    <li><strong>Core concepts:</strong> Navigators (Stack / Tab / Drawer / Modal), Screens, Navigation state (a serializable JSON tree), Params, Linking, and typed navigation via a per-navigator ParamList.</li>
-    <li><strong>Keep params small and JSON-serializable</strong> — state is serialized for persistence and deep links. Functions, class instances, and big objects break persistence; store complex data in a cache and pass the id.</li>
-    <li><strong>navigate</strong> = go to a screen (if already in the stack, pop back to it and update params); <strong>push</strong> = always add a new instance; <strong>replace</strong> = swap the current screen (no back); <strong>reset</strong> = replace the whole navigation tree (nuclear).</li>
-    <li><code>goBack</code> = one back, <code>popToTop</code> = back to the stack root, <code>reset</code> = whole tree — prefer the least drastic that fits.</li>
-    <li><strong>Deep linking</strong> via the <code>linking</code> prop maps URLs → state (<code>prefixes</code> + <code>config.screens</code>). iOS uses Universal Links (apple-app-site-association + associated-domains entitlement); Android uses App Links (intent filters + Digital Asset Links). Cold-start links are handled automatically.</li>
-    <li><strong>Auth flow:</strong> swap the root screen based on auth status — the navigator re-renders and history is implicitly reset. Cleaner than manual reset.</li>
-    <li><strong>Screen lifecycle:</strong> screens stay <em>mounted</em> while in the stack (even underneath, unfocused); pushing does NOT unmount the screen below; popping unmounts. Use <code>useFocusEffect</code> to pause/resume work on focus.</li>
-    <li><strong>Prefer native stack</strong> (<code>createNativeStackNavigator</code>) over the legacy JS stack — faster and more platform-native; use JS stack only for custom animated transitions.</li>
-    <li><strong>Modals belong in the ROOT stack</strong>, not inside a tab's stack — otherwise the tab bar stays visible.</li>
-    <li>Always <strong>unsubscribe navigation listeners</strong> (<code>nav.addListener</code> returns the unsubscribe); <code>beforeRemove</code> guards dirty forms against back/swipe.</li>
-    <li><strong>Centralize screen analytics</strong> via <code>onStateChange</code> on NavigationContainer rather than per-screen logging.</li>
-    <li><strong>Expo Router file conventions:</strong> <code>(group)</code> (no URL impact), <code>[param]</code> (dynamic), <code>[...slug]</code> (catch-all), <code>_layout.tsx</code> (layout), <code>+not-found.tsx</code> (404).</li>
-    <li>Tab screens are kept mounted by default; <code>lazy: true</code> / <code>unmountOnBlur</code> trade memory against preserved state.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Stuffing large or non-serializable data into route params</strong> — functions, class instances, big objects. Navigation state is serialized for persistence and deep links, so it silently breaks. Fix: keep params to primitives and ids, store the heavy data in a cache or store, and pass only the id. (Related: put modals in the ROOT stack, not inside a tab's stack, or the tab bar stays visible.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I default to React Navigation with the native stack, type the ParamList from day one, and keep params small and serializable — big data goes in a store and I pass an id."</div>
-  <div class="revision-say">"navigate reuses an existing screen and updates params, push always adds a new one, replace swaps with no back, and reset rebuilds the whole tree — I use reset only for auth transitions."</div>
-  <div class="revision-say">"Deep linking is the linking prop mapping URLs to state, backed by Universal Links on iOS and App Links on Android; cold-start links are handled by the NavigationContainer automatically."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. How is a deep link handled on a cold start versus when the app is already running?</div>
+  <div class="qa-answer">
+    <p>On a <strong>cold start</strong>, the NavigationContainer's <code>linking</code> config reads the initial URL when it mounts and builds the matching navigation state, so you only have to configure <code>prefixes</code> and <code>config.screens</code> and declare the scheme / universal-link domains in the native manifests. When the app is <strong>already running or backgrounded</strong>, the same linking config maps the incoming URL onto the existing state. Notifications need both paths explicitly: <code>getInitialNotification()</code> for the notification that launched the app, and a listener such as <code>onNotificationOpenedApp</code> for taps while it is in the background — each extracts the link from the payload and calls <code>Linking.openURL(link)</code>. Test all three paths (cold start, background return, notification open); a link that works in one often silently fails in another.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain how the <code>linking</code> config maps a URL to navigation state?</li>
-    <li>Can you contrast Universal Links on iOS with App Links on Android and the verification file each needs?</li>
-    <li>Can you explain how a cold-start deep link is handled vs one received while the app is running?</li>
-    <li>Can you contrast stack, tab, and drawer navigators and say when you nest them?</li>
-    <li>Can you pass and read params safely, and reset a stack to a fresh route?</li>
-    <li>Can you explain how <code>react-native-screens</code> changes what stays mounted in the background?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. How do you pass and read route params safely, and how do you reset a stack to a fresh route?</div>
+  <div class="qa-answer">
+    <p>Declare a typed ParamList (e.g. <code>Post: { id: string }</code>) so <code>navigation.navigate('Post', { id })</code> is checked at compile time, and read them with a typed <code>useRoute&lt;RouteProp&lt;RootStackParamList, 'Post'&gt;&gt;()</code>. Keep params small and serializable — pass an id and load the data from a cache or store, never functions or big objects, because navigation state is serialized for persistence and deep links. Use <code>setParams</code> to update the current screen's params. To start fresh, call <code>navigation.reset({ index: 0, routes: [{ name: 'Main' }] })</code>, which replaces the whole tree; reserve it for major transitions like login/logout, because a plain navigate or push would leave the Login screen reachable with back.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q18. How does react-native-screens change what stays mounted when a screen goes into the background?</div>
+  <div class="qa-answer">
+    <p>react-native-screens turns each navigator screen into a real native screen container — UINavigationController on iOS, a Fragment on Android, UITabBarController for tabs — so transitions, gestures and screen lifecycle are native and stay at 60fps regardless of what React is doing. On the React side, a screen that is covered by a pushed screen stays <em>mounted</em>: it gets <code>blur</code> / <code>focus</code> events but is not remounted, and its state, effects and listeners keep running; only popping it unmounts it. Tab screens are also kept mounted by default. So you pause background work with <code>useFocusEffect</code>, and on tabs choose <code>lazy: true</code> or <code>unmountOnBlur</code> to trade memory against preserved state.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

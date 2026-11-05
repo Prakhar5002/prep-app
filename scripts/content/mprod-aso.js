@@ -1,33 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'mprod-aso',
-  module: 'mobile-prod',
-  title: 'App Store Optimization',
-  estimatedReadTime: '40 min',
-  tags: ['aso', 'app-store-optimization', 'app-store-connect', 'play-console', 'keywords', 'screenshots', 'ratings', 'aso-tools', 'mobile-growth'],
+  id: "mprod-aso",
+  module: "mobile-prod",
+  title: "App Store Optimization",
+  estimatedReadTime: "40 min",
+  tags: ["aso","app-store-optimization","app-store-connect","play-console","keywords","screenshots","ratings","aso-tools","mobile-growth"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>ASO (App Store Optimization)</strong> is the practice of making your app discoverable in the App Store and Google Play, and converting browsers who land on your store page into installers. It is to mobile what SEO is to the web — but with a smaller surface, more visual emphasis, and faster feedback loops.</p>
-<ul>
-  <li><strong>Two halves.</strong> <em>Discovery</em>: get found through search/browse/recommendations. <em>Conversion</em>: turn the store page view into an install.</li>
-  <li><strong>Discovery levers:</strong> app name, subtitle, keywords (iOS only — Android indexes the description), category, ratings volume + score, install velocity, country availability.</li>
-  <li><strong>Conversion levers:</strong> icon, screenshots, preview video, short description (Android), subtitle (iOS), promotional text (iOS), localized listing.</li>
-  <li><strong>Apple Search Ads</strong> for iOS, <strong>Google App Campaigns</strong> for Android — paid ASO. Often cheaper than Facebook/Google Display for installs.</li>
-  <li><strong>Default tools:</strong> <strong>App Store Connect</strong> + <strong>Play Console</strong> for first-party data, <strong>AppFollow</strong> / <strong>Sensor Tower</strong> / <strong>data.ai (App Annie)</strong> / <strong>SplitMetrics</strong> for keyword research and competitive analysis.</li>
-  <li><strong>A/B testing.</strong> Apple's <em>Product Page Optimization</em> tests 3 variants of icon/screenshots/preview against the original. Google's <em>Store Listing Experiments</em> tests text + visuals.</li>
-  <li><strong>Ratings &amp; reviews.</strong> Both stores favor apps with higher ratings; ratings improve install conversion 5–15% per half-star. <em>Prompt smartly</em>; don't ask after a crash.</li>
-  <li><strong>Localization is huge.</strong> Translated screenshots + descriptions can lift install rate 50–200% in target markets — single highest-leverage low-effort intervention.</li>
-</ul>
-<p><strong>Mantra:</strong> "Be findable. Look obvious. Show value in three seconds. Localize everything. Earn the rating prompt."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">ASO = <strong>making an app discoverable in the store and converting the page view into an install</strong> — SEO plus conversion-rate optimization applied to two stores with different indexing rules.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>ASO is to mobile what SEO is to the web</strong> — smaller surface, more visual, faster feedback loops.</li>
+    <li><strong>Two halves:</strong> <em>discovery</em> (search/browse/recommendations) and <em>conversion</em> (turning the page view into an install).</li>
+    <li><strong>iOS vs Android indexing:</strong> iOS has a hidden 100-char <strong>keywords field</strong> and does NOT index the description; Android has no keywords field and <strong>indexes the full description</strong>.</li>
+    <li><strong>Discovery levers:</strong> app name (weighs most), subtitle/short description, keywords, category, ratings volume + score, install velocity, retention. <strong>Conversion levers:</strong> icon, first 3 screenshots, preview video, subtitle, ratings, localization.</li>
+    <li>Keyword research = <strong>relevance × volume ÷ difficulty</strong> (App Store Connect + Play Console for first-party data; AppFollow / Sensor Tower / data.ai / SplitMetrics for research); rank for terms your app actually serves, not just high-volume ones like "free."</li>
+    <li>iOS keywords field: use ~95 of 100 chars, comma-separated no spaces, <strong>no plurals</strong> (Apple stems), no words already in the name, no competitor/trademark names (rejection risk).</li>
+    <li><strong>First screenshot carries ~80% of conversion weight</strong>; use text overlays showing outcomes, sequence a story (hook → problem → solution → proof → CTA).</li>
+    <li><strong>Localization is the highest-leverage low-effort lever:</strong> 50–200% install lift — translate the screenshots, not just the text, with a native speaker.</li>
+    <li><strong>Ratings lift install conversion ~5–15% per half-star.</strong> Prompt strategy: fire after a positive moment (iOS caps at 3/year), never after a crash or on first launch; soft-prompt "Are you enjoying?" and route detractors to a private feedback form.</li>
+    <li><strong>Crash/ANR hurt ASO:</strong> Google demotes over ~1.09% crash / ~0.47% ANR; both stores weight retention — fix retention and crashes before chasing keyword tweaks.</li>
+    <li>A/B tools: Apple <strong>PPO</strong> (built-in A/B of up to 3 icon/screenshot/video variants vs the original) and <strong>CPP</strong> (per-traffic-source variants, no comparison); Google <strong>Store Listing Experiments</strong>; paid ASO via Apple Search Ads / Google App Campaigns (often cheaper per install than Facebook / Google Display).</li>
+    <li><strong>Mantra:</strong> be findable, look obvious, show value in three seconds, localize everything, earn the rating prompt.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>ASO over product:</strong> trying to fix retention with better ASO. ASO only drives install <em>volume</em> — if retention/crash is broken, install velocity drops, ranking collapses, and the budget is wasted. Fix retention and crashes first; ASO compounds on top. Related trap: chasing keyword volume over relevance (ranking #1 for "free" brings installs that never activate and drag ranking down).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"ASO has two halves — discovery and conversion — and the biggest platform difference is that iOS uses a hidden keywords field while Android indexes the full description."</div>
+  <div class="revision-say">"I research keywords by relevance times volume over difficulty, put the top one or two in the name and subtitle, and make the first screenshot carry the value prop because it's ~80% of the conversion weight."</div>
+  <div class="revision-say">"Localization is the highest-leverage low-effort lever — I'd translate the screenshots, not just the text — and I'd fix crash and retention before chasing keyword tweaks because both stores demote on those."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is ASO, structurally?</h3>
 <p>It's a discipline at the intersection of SEO, conversion-rate optimization, and product marketing — applied to two stores (App Store + Google Play) with their own ranking algorithms, indexing rules, and editorial behaviors.</p>
 
@@ -98,12 +107,10 @@ window.PREP_SITE.registerTopic({
   <li>Quarterly A/B tests on screenshot variants and store listing copy.</li>
   <li>Crash rate &lt; 1% and ANR rate &lt; 0.5% (Google's bad-behavior threshold).</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The two-funnel model</h3>
 <pre><code class="language-text">DISCOVERY               CONVERSION                LIFECYCLE
   search rank             page view                 install
@@ -189,12 +196,10 @@ DO NOT include category words like "free" or "best":
   <li>Pre-prompt with a custom dialog: "Are you enjoying MyApp?" → if Yes, fire the OS rating prompt; if No, route them to a feedback form to quietly catch detractors.</li>
   <li>Track which prompts produce ratings; iterate timing.</li>
 </ol>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Setting up store metadata — App Store Connect</h3>
 <p><strong>App Information</strong> (versioned per release):</p>
 <ul>
@@ -325,12 +330,10 @@ if (InAppReview.isAvailable()) {
 
 <h3>Retention &amp; crash hygiene affecting ASO</h3>
 <p>Crashes &gt; 1.09% perceptible (Google) → demotion. ANR &gt; 0.47% perceptible → demotion. Both stores weight retention; D7 retention bumps category ranking. <strong>Fix retention bugs and crashes before chasing keyword tweaks.</strong></p>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Optimizing the iOS keyword field</h3>
 <pre><code class="language-text">App name (30): "Habitly: Daily Habit Tracker"
 Subtitle (30): "Build streaks, log routines"
@@ -498,12 +501,11 @@ Recovery actions:
 
 Output: 1 page summary + 3 prioritized action items for next quarter.
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Apple keyword indexing nuances</h3>
 <ul>
   <li>Apple stems plurals automatically — listing "run" covers "running"; listing both wastes characters.</li>
@@ -584,12 +586,9 @@ Output: 1 page summary + 3 prioritized action items for next quarter.
 
 <h3>App removal &amp; appeal process</h3>
 <p>If your app is removed for a policy violation, both stores have an appeal process via developer support. Average resolution: 1–4 weeks. Best prevention: read store guidelines before submitting.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Keyword stuffing</h3>
 <pre><code class="language-text">// BAD
 description: "Best habit tracker, best routine, best planner, best journal, best fitness, best app..."
@@ -662,12 +661,10 @@ useEffect(() =&gt; { StoreReview.requestReview(); }, []);
 
 <h3>Anti-pattern 10: neglecting smaller markets</h3>
 <p>You're laser-focused on US/UK. Brazil + Indonesia + Vietnam are growing 30%/year and have lower competition. Top 5 markets ≠ best 5 markets for you.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -779,55 +776,26 @@ useEffect(() =&gt; { StoreReview.requestReview(); }, []);
   <li>"I'd build a competitor monitoring alert: when a top-3 competitor changes screenshots, we get notified within 24h."</li>
   <li>"I'd integrate App Store / Play data with our analytics warehouse to attribute installs to traffic sources end-to-end."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">ASO = <strong>making an app discoverable in the store and converting the page view into an install</strong> — SEO plus conversion-rate optimization applied to two stores with different indexing rules.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Two halves:</strong> <em>discovery</em> (search/browse/recommendations) and <em>conversion</em> (turning the page view into an install).</li>
-    <li><strong>iOS vs Android indexing:</strong> iOS has a hidden 100-char <strong>keywords field</strong> and does NOT index the description; Android has no keywords field and <strong>indexes the full description</strong>.</li>
-    <li><strong>Discovery levers:</strong> app name (weighs most), subtitle/short description, keywords, category, ratings volume + score, install velocity, retention. <strong>Conversion levers:</strong> icon, first 3 screenshots, preview video, subtitle, ratings, localization.</li>
-    <li>Keyword research = <strong>relevance × volume ÷ difficulty</strong> (AppFollow / Sensor Tower / data.ai); rank for terms your app actually serves, not just high-volume ones like "free."</li>
-    <li>iOS keywords field: use ~95 of 100 chars, comma-separated no spaces, <strong>no plurals</strong> (Apple stems), no words already in the name, no competitor/trademark names (rejection risk).</li>
-    <li><strong>First screenshot carries ~80% of conversion weight</strong>; use text overlays showing outcomes, sequence a story (hook → problem → solution → proof → CTA).</li>
-    <li><strong>Localization is the highest-leverage low-effort lever:</strong> 50–200% install lift — translate the screenshots, not just the text, with a native speaker.</li>
-    <li><strong>Ratings prompt strategy:</strong> fire after a positive moment (iOS caps at 3/year), never after a crash or on first launch; soft-prompt "Are you enjoying?" and route detractors to a private feedback form.</li>
-    <li><strong>Crash/ANR hurt ASO:</strong> Google demotes over ~1.09% crash / ~0.47% ANR; both stores weight retention — fix retention and crashes before chasing keyword tweaks.</li>
-    <li>A/B tools: Apple <strong>PPO</strong> (built-in A/B of icon/screenshots/video) and <strong>CPP</strong> (per-traffic-source variants, no comparison); Google <strong>Store Listing Experiments</strong>; paid ASO via Apple Search Ads / Google App Campaigns.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>ASO over product:</strong> trying to fix retention with better ASO. ASO only drives install <em>volume</em> — if retention/crash is broken, install velocity drops, ranking collapses, and the budget is wasted. Fix retention and crashes first; ASO compounds on top. Related trap: chasing keyword volume over relevance (ranking #1 for "free" brings installs that never activate and drag ranking down).</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"ASO has two halves — discovery and conversion — and the biggest platform difference is that iOS uses a hidden keywords field while Android indexes the full description."</div>
-  <div class="revision-say">"I research keywords by relevance times volume over difficulty, put the top one or two in the name and subtitle, and make the first screenshot carry the value prop because it's ~80% of the conversion weight."</div>
-  <div class="revision-say">"Localization is the highest-leverage low-effort lever — I'd translate the screenshots, not just the text — and I'd fix crash and retention before chasing keyword tweaks because both stores demote on those."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Separate ASO discovery levers from conversion levers. What are the top few of each?</div>
+  <div class="qa-answer">
+    <p><strong>Discovery</strong> is getting found through search, browse and recommendations: the app name (weighs most on iOS), then subtitle / short description, the iOS keywords field or Android's indexed description, install volume and velocity, ratings volume and score, post-install engagement and retention, crash/ANR rate on Play, update freshness, and editorial featuring. <strong>Conversion</strong> is what happens in the ~3 seconds after someone lands on the page: the icon, screenshots 1 to 3 (visible without scrolling), the subtitle or short description as a one-line value prop, a preview video that hooks in 1 to 2 seconds, reviews and star count as social proof, and localization so the page feels native.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you separate discovery levers from conversion levers and name the top few of each?</li>
-    <li>Can you explain the iOS keywords field vs Android's indexed-description difference and how you'd use each?</li>
-    <li>Can you describe how you research and prioritize keywords (relevance × volume ÷ difficulty)?</li>
-    <li>Can you lay out a screenshot story arc and say why the first screenshot matters most?</li>
-    <li>Can you describe a smart ratings-prompt flow and why timing and the detractor gate matter?</li>
-    <li>Can you explain why crash/ANR and retention affect ranking, and why you'd fix them before ASO tweaks?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. How does the iOS keywords field differ from Android's indexed description, and how do you use each?</div>
+  <div class="qa-answer">
+    <p>iOS has a hidden 100-character keywords field and does <strong>not</strong> index the description. Fill about 95 of the 100 characters, comma-separated with no spaces; skip plurals and stems (Apple stems, so "run" covers "runs" and "running"); skip words already in the app name; and avoid competitor names (trademark rejection risk) and words like "free" or "best". Google Play has no keywords field but indexes the title, short description and full description, so keyword density in the description matters more. Put the primary keyword in the 80-character short description and the first paragraph (indexed most), then work in long-tail search terms as natural prose rather than stuffing.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. Lay out a screenshot story arc. Why does the first screenshot matter most?</div>
+  <div class="qa-answer">
+    <p>The first screenshot carries roughly 80% of the conversion weight, because most users decide without scrolling. Sequence the set as a story: <strong>hook</strong> ("Build streaks that stick") → <strong>problem</strong> ("Most habits fail in week 1") → <strong>solution</strong> ("Start small. Win every day.") → <strong>proof</strong> (a usage number) → features → <strong>CTA</strong>. Use text overlays, which outperform pure phone mockups by 20 to 50% because users skim, and show outcomes rather than features ("Save 10 hours a week" beats "Drag-and-drop kanban"). Keep screenshots current with the real UI, and translate the visuals, not just the description, for each target market.</p>
+  </div>
+</div>
+` },
+
   ]
 });

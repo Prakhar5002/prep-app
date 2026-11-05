@@ -1,33 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'rn-styling',
-  module: 'React Native',
-  title: 'Styling',
-  estimatedReadTime: '22 min',
-  tags: ['react-native', 'styling', 'stylesheet', 'flexbox', 'theme', 'nativewind', 'tamagui', 'platform'],
+  id: "rn-styling",
+  module: "React Native",
+  title: "Styling",
+  estimatedReadTime: "22 min",
+  tags: ["react-native","styling","stylesheet","flexbox","theme","nativewind","tamagui","platform"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>RN styles are plain JavaScript objects, not CSS. No cascade, no selectors, no media queries. Flexbox is the layout primitive — via Facebook's Yoga engine.</p>
-<ul>
-  <li><strong>StyleSheet.create</strong> — defines style objects once, references stable, values validated.</li>
-  <li><strong>Flexbox defaults differ</strong>: <code>flexDirection: 'column'</code> (not row), items stretch by default.</li>
-  <li><strong>No inheritance except Text</strong> — font styles on a parent <code>&lt;Text&gt;</code> inherit to child <code>&lt;Text&gt;</code>s. Nothing else inherits.</li>
-  <li><strong>No hover</strong> on mobile. <strong>No media queries</strong> — use <code>useWindowDimensions</code> / <code>Dimensions.get('window')</code> for responsive logic.</li>
-  <li><strong>Platform differences</strong>: shadows (iOS shadow*, Android elevation), text rendering, safe areas. Use <code>Platform.select</code>.</li>
-  <li><strong>Modern styling libs</strong>: <strong>NativeWind</strong> (Tailwind classes), <strong>Tamagui</strong> (compile-time optimized design system), <strong>Dripsy</strong>, <strong>Unistyles</strong>.</li>
-  <li><strong>Theming</strong>: context-based theme with tokens (colors, spacing, typography). Supported natively by most design system libs.</li>
-  <li><strong>Dynamic sizing</strong>: percentage values (<code>width: '50%'</code>), flex, aspectRatio, <code>useWindowDimensions</code>.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Styles are JS objects + Flexbox. Master the three differences from web (column default, no cascade except Text, no media queries) and you've moved past the friction. For a design system, use tokens and a library (NativeWind, Tamagui) to stop writing inline styles.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">RN styles are <strong>plain JS objects plus Flexbox (via Yoga)</strong> — no CSS cascade, no selectors, no media queries; master the differences from web and reach for tokens + a library for a design system.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Styles are JavaScript objects, not CSS</strong> — no parser, no cascade, no selectors. The style array (<code>style={[a, cond &amp;&amp; b, {...}]}</code>) is your cascade substitute: later values win, and <code>false</code>/<code>null</code>/<code>undefined</code> are ignored.</li>
+    <li><strong>The three web differences that bite:</strong> <code>flexDirection</code> defaults to <code>column</code> (web is row); <strong>nothing inherits except font styles Text→Text</strong> (a parent View's color/background doesn't paint through); and <strong>there are no media queries</strong> — use <code>useWindowDimensions()</code> for responsive logic.</li>
+    <li><strong>Flexbox is the only layout engine</strong> (Yoga): <code>alignItems: 'stretch'</code> by default, <code>flex: 1</code> fills the main axis, percentages/gap/aspectRatio supported — but <strong>no CSS Grid, no float, no position: fixed</strong>.</li>
+    <li><strong><code>StyleSheet.create</code></strong> gives stable references (safer for <code>React.memo</code>) and dev-time validation; Fabric removed the old bridge-ID optimization but the organizational win remains.</li>
+    <li><strong>Platform differences need <code>Platform.select</code></strong>: iOS uses <code>shadow*</code>, Android uses <code>elevation</code> (which needs a non-transparent background); Android text needs <code>includeFontPadding: false</code> for vertical centering. Deeper splits go in <code>.ios.tsx</code>/<code>.android.tsx</code> files.</li>
+    <li><strong>Values are DPI-independent points, not pixels;</strong> use <code>StyleSheet.hairlineWidth</code> for crisp 1-physical-pixel dividers.</li>
+    <li><strong>Theme with semantic tokens</strong> (bg.primary, space.md) via a ThemeContext reading <code>useColorScheme()</code>, so a light/dark switch updates every color coherently — hard-coded colors mean dark mode touches dozens of files.</li>
+    <li><strong>Responsive = <code>useWindowDimensions()</code></strong> (reactive to rotation and iPad split view), not <code>Dimensions.get('window')</code> (static at read time). Size dynamically with percentages (<code>width: '50%'</code>), flex and <code>aspectRatio</code>; there is no <code>:hover</code> on mobile — pressed states come from Pressable.</li>
+    <li><strong>Design-system libraries:</strong> NativeWind (Tailwind classes, compiled at build time), Tamagui (compile-time-optimized design system), Unistyles, Dripsy, Restyle — pick one and stay consistent.</li>
+    <li>Always handle the <strong>safe area</strong> (insets / SafeAreaView) so content clears the notch and home indicator, and design for <strong>accessibility font scaling</strong> (cap with <code>maxFontSizeMultiplier</code>) instead of pixel-perfect fixed sizes.</li>
+    <li>Flatten deep View trees — each View is a native view and adds layout cost; prefer <code>gap</code> and padding over wrapper-and-margin hacks.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Assuming styles inherit and cascade like CSS.</strong> Setting <code>color</code> or a background on a parent View does nothing to its children — only font styles inherit, and only from a <code>&lt;Text&gt;</code> parent to child <code>&lt;Text&gt;</code>. The runner-up trap is expecting a horizontal row by default and getting a vertical stack because <code>flexDirection</code> defaults to <code>column</code>. Fix: pass styles explicitly (or via a theme/helper component) and be deliberate about <code>flexDirection</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"RN styles are JS objects with Flexbox — no cascade or selectors, and the only inheritance is font styles from Text to Text."</div>
+  <div class="revision-say">"flexDirection defaults to column, there are no media queries so I use useWindowDimensions, and platform shadow vs elevation goes through Platform.select."</div>
+  <div class="revision-say">"For a design system I drive everything off semantic theme tokens with a ThemeContext on useColorScheme, so dark mode is one switch, not a hundred edits."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why styles are JavaScript, not CSS</h3>
 <p>RN doesn't have a CSS parser or cascade engine. Styles are plain JS objects passed to the <code>style</code> prop. The renderer (Fabric) reads them and applies to native views. Result: no selectors, no stylesheets in the HTML sense, no cascade.</p>
 <p>Why? Performance and simplicity. Parsing CSS selectors across thousands of native views would be expensive. JS objects with direct property → attribute mapping are trivial to apply. The tradeoff: you lose the cascade.</p>
@@ -67,10 +75,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why theming matters on mobile</h3>
 <p>Users expect light/dark mode following system preferences. Design systems use semantic tokens (bg.primary, text.muted) so a theme switch updates all colors coherently. Implementation: a ThemeContext at the root with current tokens; components consume via hook.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "flex by default" picture</h3>
 <div class="diagram">
 <pre>
@@ -140,10 +148,10 @@ const styles = StyleSheet.create({
   <div class="callout-title">Common misconception</div>
   <p>"Styles inherit like CSS." Only font styles on a <code>&lt;Text&gt;</code> parent inherit to child <code>&lt;Text&gt;</code>s. Nothing else inherits. A background color on a parent View doesn't "paint through" to children. If you want a style applied everywhere, pass it explicitly or use a theme tokens + helper component.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>StyleSheet basics</h3>
 <pre><code class="language-tsx">const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
@@ -272,10 +280,10 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const scale = (size: number) =&gt; (SCREEN_WIDTH / 375) * size;  // 375 = base iPhone width
 // Then: fontSize: scale(16)
 // Or use useWindowDimensions() for reactivity</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — card</h3>
 <pre><code class="language-tsx">const styles = StyleSheet.create({
   card: {
@@ -337,7 +345,8 @@ const scale = (size: number) =&gt; (SCREEN_WIDTH / 375) * size;  // 375 = base i
 <h3>Example 5 — Text with inline styling</h3>
 <pre><code class="language-tsx">&lt;Text style={styles.paragraph}&gt;
   Welcome back, &lt;Text style={{ fontWeight: '700' }}&gt;{name}&lt;/Text&gt;!
-  {'\n'}Your last login was &lt;Text style={{ color: '#666' }}&gt;{time}&lt;/Text&gt;.
+  {'
+'}Your last login was &lt;Text style={{ color: '#666' }}&gt;{time}&lt;/Text&gt;.
 &lt;/Text&gt;</code></pre>
 
 <h3>Example 6 — NativeWind</h3>
@@ -421,10 +430,11 @@ import { useFonts } from 'expo-font';
 const [loaded] = useFonts({ 'Inter-Regular': require('./assets/Inter-Regular.ttf') });
 if (!loaded) return &lt;Splash /&gt;;
 // Bare RN: add fonts to iOS (Info.plist) and Android (assets/fonts), then re-link.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. flexDirection defaults to column</h3>
 <p>Web's Flexbox defaults to row. Easy mistake — you write a "horizontal bar" and see it stacked vertically. Always explicit on flexDirection when intentional.</p>
 
@@ -485,10 +495,9 @@ if (!loaded) return &lt;Splash /&gt;;
 
 <h3>20. Third-party libs may break your dark mode</h3>
 <p>A library that hard-codes colors ignores your ThemeProvider. Check docs for themable variants. Sometimes you need to patch (patch-package) or wrap.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — inline styles everywhere</h3>
 <pre><code class="language-tsx">&lt;View style={{ flex: 1, padding: 16, backgroundColor: '#fff' }} /&gt;</code></pre>
 <p>New object every render — breaks memoization of children, pollutes diff. Use StyleSheet.create for stable objects.</p>
@@ -541,10 +550,10 @@ const styles = isDark ? darkStyles : lightStyles;</code></pre>
 
 <h3>Anti-pattern 15 — not configuring custom fonts properly</h3>
 <p>Font loaded but name mismatch with actual PostScript name → falls back to system. Use <code>expo-font</code> or a tool to verify names. Check both platforms.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How does RN styling differ from CSS?</div>
   <div class="qa-answer">
@@ -712,49 +721,14 @@ const styles = StyleSheet.create({
     <li>You handle font scaling and dark mode from day 1.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">RN styles are <strong>plain JS objects plus Flexbox (via Yoga)</strong> — no CSS cascade, no selectors, no media queries; master the differences from web and reach for tokens + a library for a design system.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Styles are JavaScript objects, not CSS</strong> — no parser, no cascade, no selectors. The style array (<code>style={[a, cond &amp;&amp; b, {...}]}</code>) is your cascade substitute: later values win, and <code>false</code>/<code>null</code>/<code>undefined</code> are ignored.</li>
-    <li><strong>The three web differences that bite:</strong> <code>flexDirection</code> defaults to <code>column</code> (web is row); <strong>nothing inherits except font styles Text→Text</strong> (a parent View's color/background doesn't paint through); and <strong>there are no media queries</strong> — use <code>useWindowDimensions()</code> for responsive logic.</li>
-    <li><strong>Flexbox is the only layout engine</strong> (Yoga): <code>alignItems: 'stretch'</code> by default, <code>flex: 1</code> fills the main axis, percentages/gap/aspectRatio supported — but <strong>no CSS Grid, no float, no position: fixed</strong>.</li>
-    <li><strong><code>StyleSheet.create</code></strong> gives stable references (safer for <code>React.memo</code>) and dev-time validation; Fabric removed the old bridge-ID optimization but the organizational win remains.</li>
-    <li><strong>Platform differences need <code>Platform.select</code></strong>: iOS uses <code>shadow*</code>, Android uses <code>elevation</code> (which needs a non-transparent background); Android text needs <code>includeFontPadding: false</code> for vertical centering. Deeper splits go in <code>.ios.tsx</code>/<code>.android.tsx</code> files.</li>
-    <li><strong>Values are DPI-independent points, not pixels;</strong> use <code>StyleSheet.hairlineWidth</code> for crisp 1-physical-pixel dividers.</li>
-    <li><strong>Theme with semantic tokens</strong> (bg.primary, space.md) via a ThemeContext reading <code>useColorScheme()</code>, so a light/dark switch updates every color coherently — hard-coded colors mean dark mode touches dozens of files.</li>
-    <li><strong>Responsive = <code>useWindowDimensions()</code></strong> (reactive to rotation and iPad split view), not <code>Dimensions.get('window')</code> (static at read time).</li>
-    <li><strong>Design-system libraries:</strong> NativeWind (Tailwind classes, compiled at build time), Tamagui (compile-time-optimized design system), Unistyles, Restyle — pick one and stay consistent.</li>
-    <li>Always handle the <strong>safe area</strong> (insets / SafeAreaView) so content clears the notch and home indicator, and design for <strong>accessibility font scaling</strong> (cap with <code>maxFontSizeMultiplier</code>) instead of pixel-perfect fixed sizes.</li>
-    <li>Flatten deep View trees — each View is a native view and adds layout cost; prefer <code>gap</code> and padding over wrapper-and-margin hacks.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Assuming styles inherit and cascade like CSS.</strong> Setting <code>color</code> or a background on a parent View does nothing to its children — only font styles inherit, and only from a <code>&lt;Text&gt;</code> parent to child <code>&lt;Text&gt;</code>. The runner-up trap is expecting a horizontal row by default and getting a vertical stack because <code>flexDirection</code> defaults to <code>column</code>. Fix: pass styles explicitly (or via a theme/helper component) and be deliberate about <code>flexDirection</code>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"RN styles are JS objects with Flexbox — no cascade or selectors, and the only inheritance is font styles from Text to Text."</div>
-  <div class="revision-say">"flexDirection defaults to column, there are no media queries so I use useWindowDimensions, and platform shadow vs elevation goes through Platform.select."</div>
-  <div class="revision-say">"For a design system I drive everything off semantic theme tokens with a ThemeContext on useColorScheme, so dark mode is one switch, not a hundred edits."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. StyleSheet.create vs inline style objects — what is the difference and why does it matter?</div>
+  <div class="qa-answer">
+    <p>An inline object like <code>style={{ flex: 1, padding: 16 }}</code> is a brand-new object on every render, which breaks <code>React.memo</code> on children (their style prop always looks changed) and adds noise to the diff. <code>StyleSheet.create</code> defines the objects once, so references are stable across renders, unknown properties are warned about in dev, and styles live in one named sheet instead of being scattered through JSX. Historically it also mapped styles to numeric IDs to cut bridge traffic; Fabric removed that optimization, so the raw perf gap is now small — but the stability and organization benefits remain, which is why inline styles everywhere is still an anti-pattern. Inline is fine for genuinely dynamic values, merged via the style array.</p>
+  </div>
 </div>
-`},
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you drive an app's colors off semantic theme tokens so dark mode is one switch, not a hundred edits?</li>
-    <li>Can you explain how RN flexbox differs from the web — default column, no CSS units?</li>
-    <li>Can you build a responsive layout without media queries using <code>useWindowDimensions</code> and percentages?</li>
-    <li>Can you contrast <code>StyleSheet.create</code> with inline styles and say why the difference matters?</li>
-    <li>Can you theme with <code>useColorScheme</code> and a <code>ThemeContext</code>?</li>
-    <li>Can you handle platform-specific styling and hairline borders across pixel densities?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

@@ -1,30 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'andr-folder-tour',
-  module: 'Android Native (Deep)',
-  title: 'Anatomy of android/ Folder',
-  estimatedReadTime: '22 min',
-  tags: ['android', 'gradle', 'folder-structure', 'androidmanifest', 'kotlin', 'java', 'react-native', 'prebuild', 'expo', 'source-sets', 'gradlew', 'proguard', 'autolinking', 'jni', 'jnilibs', 'local-properties', 'settings-gradle', 'gradle-properties', 'mainactivity', 'mainapplication'],
+  id: "andr-folder-tour",
+  module: "Android Native (Deep)",
+  title: "Anatomy of android/ Folder",
+  estimatedReadTime: "22 min",
+  tags: ["android","gradle","folder-structure","androidmanifest","kotlin","java","react-native","prebuild","expo","source-sets","gradlew","proguard","autolinking","jni","jnilibs","local-properties","settings-gradle","gradle-properties","mainactivity","mainapplication"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>The <code>android/</code> folder is a standard Gradle project: a root project plus a set of <strong>modules</strong>. In a React Native app the only module that ships to users is <code>app/</code>; everything else is autolinked native library modules and Gradle plumbing.</p>
-<p>Learn to read it in three layers:</p>
-<ul>
-  <li><strong>Top level</strong> — build orchestration: <code>build.gradle</code> (root), <code>settings.gradle</code>, <code>gradle.properties</code>, the <code>gradlew</code> wrapper, and the git-ignored <code>local.properties</code>.</li>
-  <li><strong>The <code>app/</code> module</strong> — your actual app: <code>app/build.gradle</code>, <code>proguard-rules.pro</code>, <code>debug.keystore</code>, and the <code>src/main</code>, <code>src/debug</code>, <code>src/release</code> source sets holding <code>AndroidManifest.xml</code>, your Kotlin/Java <code>MainActivity</code> + <code>MainApplication</code>, and <code>res/</code> resources.</li>
-  <li><strong>Generated/ignored</strong> — <code>.gradle/</code>, <code>build/</code>, <code>.cxx/</code>, and codegen/autolinking output that you never edit and never commit.</li>
-</ul>
-<p>If you are on Expo (which all of Prakhar's apps are), this entire folder is <strong>generated</strong> by <code>expo prebuild</code> from <code>app.json</code> / <code>app.config.js</code> plus config plugins — hand-edits get wiped on <code>--clean</code>.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p><code>android/</code> is a Gradle multi-module project where <code>app/</code> is the shipped module and every RN library is an autolinked module; on Expo the whole folder is a build artifact of <code>app.json</code> + config plugins, so you edit the config, not the folder.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><code>android/</code> is a <strong>Gradle multi-module project</strong> where <code>app/</code> is the shipped module and every RN library is an autolinked module; on Expo the whole folder is <strong>generated</strong> from <code>app.json</code> + config plugins, so you edit the config, not the folder.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Top level = build orchestration.</strong> Root <code>build.gradle</code> (global SDK/plugin versions in <code>ext</code>), <code>settings.gradle</code> (declares modules + autolinking), <code>gradle.properties</code> (flags: <code>newArchEnabled</code>, <code>hermesEnabled</code>, <code>android.useAndroidX</code>, <code>reactNativeArchitectures</code>).</li>
+    <li><strong>The wrapper</strong> = <code>gradlew</code> + <code>gradlew.bat</code> + <code>gradle/wrapper/gradle-wrapper.jar</code> + <code>gradle-wrapper.properties</code> (<code>distributionUrl</code> pins the version). Always <code>./gradlew</code>; all four files are committed.</li>
+    <li><strong><code>local.properties</code></strong> holds <code>sdk.dir</code> (and optional <code>ndk.dir</code>) — machine-specific, <strong>git-ignored</strong>; missing it = "SDK location not found".</li>
+    <li><strong><code>app/</code> is the shipped module</strong> (<code>:app</code>). <code>app/build.gradle</code> sets <code>applicationId</code>, <code>versionCode</code>, <code>versionName</code>, <code>minSdk</code>/<code>compileSdk</code>/<code>targetSdk</code>, <code>signingConfigs</code>, <code>buildTypes</code>.</li>
+    <li><strong><code>proguard-rules.pro</code></strong> = R8/ProGuard <code>-keep</code> rules; only matters when <code>minifyEnabled true</code> (release). Release-only crashes are usually a missing keep rule (debug does not minify).</li>
+    <li><strong><code>debug.keystore</code></strong> is committed and public (<code>android</code>/<code>androiddebugkey</code>) for shared debug signing — NEVER for release.</li>
+    <li><strong>Source sets:</strong> <code>src/main</code> (every build) plus <code>src/debug</code> / <code>src/release</code> overrides; Gradle merges manifests and lets build-type files replace <code>main</code>.</li>
+    <li><strong><code>src/main</code> contents:</strong> <code>AndroidManifest.xml</code> (package, permissions, <code>&lt;application android:name=".MainApplication"&gt;</code>, launcher <code>MainActivity</code>); <code>java/</code> or <code>kotlin/</code> with <code>MainActivity</code> + <code>MainApplication</code>; <code>res/</code> (<code>drawable/</code>, <code>mipmap-*</code> launcher icons, <code>values/</code>, <code>xml/</code>, <code>raw/</code>); <code>assets/</code> (release <code>index.android.bundle</code>); <code>jniLibs/</code> (prebuilt <code>.so</code> per ABI) / <code>jni/</code> (C/C++ source + CMake).</li>
+    <li><strong>Never commit / never hand-edit:</strong> <code>build/</code>, <code>app/build/</code> (incl. <code>generated/</code> = codegen + <code>PackageList.java</code>), <code>.gradle/</code>, <code>.cxx/</code>, <code>local.properties</code>.</li>
+    <li><strong>Autolinking:</strong> <code>npx react-native config</code> scans <code>node_modules</code> &rarr; <code>settings.gradle</code> <code>include</code>s each lib module &rarr; <code>app/build.gradle</code> adds <code>implementation project(':lib')</code> &rarr; <code>PackageList(this).packages</code> in <code>MainApplication</code>.</li>
+    <li><strong>Expo/CNG:</strong> whole folder generated by <code>expo prebuild</code>; edit <code>app.json</code>/config plugins/<code>expo-build-properties</code>; hand-edits wiped by <code>--clean</code>. sw-mobile/sw-ticketing are all prebuild + OLD arch (Paper, <code>newArchEnabled=false</code>).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Hand-editing <code>android/</code> on an Expo project</strong> (a manifest entry, a gradle flag) — it works locally, then <code>expo prebuild --clean</code> silently wipes it. Fix: put the change in <code>app.json</code> / a config plugin / <code>expo-build-properties</code> so it survives regeneration. (Second trap: a release-only crash is almost always a missing <code>proguard-rules.pro</code> keep rule, since debug does not run R8.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"<code>android/</code> is a Gradle multi-module project: <code>settings.gradle</code> lists the modules, root <code>build.gradle</code> sets global versions, and <code>app/</code> is the only module that ships. Every RN library is an autolinked module."</div>
+  <div class="revision-say">"Source sets merge by build type — <code>src/main</code> for everything, <code>src/debug</code>/<code>src/release</code> for overrides. Release turns on <code>minifyEnabled</code>, so a release-only crash is usually a missing ProGuard keep rule."</div>
+  <div class="revision-say">"On Expo the whole folder is generated from <code>app.json</code> and config plugins, so I never hand-edit it — I change <code>expo-build-properties</code> or a config plugin and re-prebuild, or <code>--clean</code> wipes my edits."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What the folder actually is</h3>
 <p>When you run an Android build, you are not running "React Native" — you are running <strong>Gradle</strong>, Android's build system, which compiles a real native Android app that happens to embed the React Native runtime and load your JS bundle. The <code>android/</code> folder is that Gradle project on disk. Everything Android Studio, <code>gradlew</code>, and the Play Store care about lives here. The JS side (Metro, your <code>App.tsx</code>) is loaded at runtime; the <code>android/</code> folder is what gets compiled into the <code>.apk</code> / <code>.aab</code>.</p>
 
@@ -49,10 +60,10 @@ window.PREP_SITE.registerTopic({
 </table>
 
 <p>For how Gradle itself evaluates and what tasks run, see the sibling topic <strong>andr-gradle</strong>; for the manifest in depth see <strong>andr-manifest</strong>; for <code>MainActivity</code>/<code>MainApplication</code> internals see <strong>andr-entry-code</strong>. This topic is the map — those are the deep dives on individual rooms.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The whole tree at a glance</h3>
 <div class="diagram">
 <pre>
@@ -124,10 +135,10 @@ android/                         &lt;- ROOT Gradle project
   <div class="callout-title">🧩 Expo note — this whole folder is a build artifact</div>
   <p>In an Expo prebuild / Continuous Native Generation (CNG) project — which is every one of Prakhar's apps (<code>sw-mobile</code>, <code>sw-ticketing</code>) — the entire <code>android/</code> tree is <strong>generated</strong> by <code>npx expo prebuild</code> from <code>app.json</code> / <code>app.config.js</code> and config plugins. Many teams git-ignore it entirely. Any hand-edit you make here is fair game to be <strong>wiped</strong> by <code>expo prebuild --clean</code>. So think of this whole map as "the output", and edit the config that produces it instead (covered in Mechanics and the Expo notes throughout).</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>1. Root build.gradle — global build config</h3>
 <p>The <em>project-level</em> build script. It does NOT build anything itself; it sets versions and repositories that every module inherits. Classic RN template:</p>
 <pre><code class="language-groovy">// android/build.gradle
@@ -373,10 +384,10 @@ applyNativeModulesAppBuildGradle(project)</code></pre>
   </tbody>
 </table>
 <p>None of these are committed and none should be hand-edited — a change there is overwritten on the next build.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — "Where do I bump the app version?"</h3>
 <p>Edit <code>android/app/build.gradle</code> &rarr; <code>defaultConfig</code>:</p>
 <pre><code class="language-groovy">versionCode 43        // must strictly increase for each Play upload
@@ -429,10 +440,11 @@ cd android &amp;&amp; ./gradlew clean</code></pre>
 
 <h3>Example 12 — "Add a raw sound file"</h3>
 <p>Drop it in <code>app/src/main/res/raw/ping.mp3</code> and reference by resource id <code>R.raw.ping</code>. On Expo, a config plugin or <code>expo-asset</code> copies it in during prebuild.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Editing generated files under Expo</h3>
 <p>Any change inside <code>android/</code> on a CNG project is a ticking bomb — <code>expo prebuild --clean</code> deletes and regenerates the folder, silently discarding your edit. Always move the change into <code>app.json</code> / a config plugin / <code>expo-build-properties</code>.</p>
 
@@ -477,10 +489,9 @@ cd android &amp;&amp; ./gradlew clean</code></pre>
 
 <h3>15. New Arch codegen output looks like source but is not</h3>
 <p>Files under <code>app/build/generated/</code> (spec classes, <code>PackageList.java</code>) are compelling to open and edit — they are regenerated every build. Change the TS spec / library instead.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — hand-editing android/ on an Expo project</h3>
 <p>You add a manifest entry directly, it works locally, then a teammate runs <code>expo prebuild --clean</code> and it vanishes. Always encode native changes as config plugins / <code>app.json</code>.</p>
 
@@ -522,10 +533,10 @@ cd android &amp;&amp; ./gradlew clean</code></pre>
 
 <h3>Anti-pattern 14 — assuming android/ is "the RN code"</h3>
 <p>It is a real Gradle Android project; RN is just an embedded dependency plus a bundle. Reasoning about it as a normal Android app is what unlocks native debugging.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Walk me through the top level of an RN android/ folder.</div>
   <div class="qa-answer">
@@ -645,50 +656,7 @@ cd android &amp;&amp; ./gradlew clean</code></pre>
     <li>You list what must never be committed (build/, .gradle/, .cxx/, local.properties).</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><code>android/</code> is a <strong>Gradle multi-module project</strong> where <code>app/</code> is the shipped module and every RN library is an autolinked module; on Expo the whole folder is <strong>generated</strong> from <code>app.json</code> + config plugins, so you edit the config, not the folder.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Top level = build orchestration.</strong> Root <code>build.gradle</code> (global SDK/plugin versions in <code>ext</code>), <code>settings.gradle</code> (declares modules + autolinking), <code>gradle.properties</code> (flags: <code>newArchEnabled</code>, <code>hermesEnabled</code>, <code>android.useAndroidX</code>, <code>reactNativeArchitectures</code>).</li>
-    <li><strong>The wrapper</strong> = <code>gradlew</code> + <code>gradlew.bat</code> + <code>gradle/wrapper/gradle-wrapper.jar</code> + <code>gradle-wrapper.properties</code> (<code>distributionUrl</code> pins the version). Always <code>./gradlew</code>; all four files are committed.</li>
-    <li><strong><code>local.properties</code></strong> holds <code>sdk.dir</code> (and optional <code>ndk.dir</code>) — machine-specific, <strong>git-ignored</strong>; missing it = "SDK location not found".</li>
-    <li><strong><code>app/</code> is the shipped module</strong> (<code>:app</code>). <code>app/build.gradle</code> sets <code>applicationId</code>, <code>versionCode</code>, <code>versionName</code>, <code>minSdk</code>/<code>compileSdk</code>/<code>targetSdk</code>, <code>signingConfigs</code>, <code>buildTypes</code>.</li>
-    <li><strong><code>proguard-rules.pro</code></strong> = R8/ProGuard <code>-keep</code> rules; only matters when <code>minifyEnabled true</code> (release). Release-only crashes are usually a missing keep rule (debug does not minify).</li>
-    <li><strong><code>debug.keystore</code></strong> is committed and public (<code>android</code>/<code>androiddebugkey</code>) for shared debug signing — NEVER for release.</li>
-    <li><strong>Source sets:</strong> <code>src/main</code> (every build) plus <code>src/debug</code> / <code>src/release</code> overrides; Gradle merges manifests and lets build-type files replace <code>main</code>.</li>
-    <li><strong><code>src/main</code> contents:</strong> <code>AndroidManifest.xml</code> (package, permissions, <code>&lt;application android:name=".MainApplication"&gt;</code>, launcher <code>MainActivity</code>); <code>java/</code> or <code>kotlin/</code> with <code>MainActivity</code> + <code>MainApplication</code>; <code>res/</code> (<code>drawable/</code>, <code>mipmap-*</code> launcher icons, <code>values/</code>, <code>xml/</code>, <code>raw/</code>); <code>assets/</code> (release <code>index.android.bundle</code>); <code>jniLibs/</code> (prebuilt <code>.so</code> per ABI) / <code>jni/</code> (C/C++ source + CMake).</li>
-    <li><strong>Never commit / never hand-edit:</strong> <code>build/</code>, <code>app/build/</code> (incl. <code>generated/</code> = codegen + <code>PackageList.java</code>), <code>.gradle/</code>, <code>.cxx/</code>, <code>local.properties</code>.</li>
-    <li><strong>Autolinking:</strong> <code>npx react-native config</code> scans <code>node_modules</code> &rarr; <code>settings.gradle</code> <code>include</code>s each lib module &rarr; <code>app/build.gradle</code> adds <code>implementation project(':lib')</code> &rarr; <code>PackageList(this).packages</code> in <code>MainApplication</code>.</li>
-    <li><strong>Expo/CNG:</strong> whole folder generated by <code>expo prebuild</code>; edit <code>app.json</code>/config plugins/<code>expo-build-properties</code>; hand-edits wiped by <code>--clean</code>. sw-mobile/sw-ticketing are all prebuild + OLD arch (Paper, <code>newArchEnabled=false</code>).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Hand-editing <code>android/</code> on an Expo project</strong> (a manifest entry, a gradle flag) — it works locally, then <code>expo prebuild --clean</code> silently wipes it. Fix: put the change in <code>app.json</code> / a config plugin / <code>expo-build-properties</code> so it survives regeneration. (Second trap: a release-only crash is almost always a missing <code>proguard-rules.pro</code> keep rule, since debug does not run R8.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"<code>android/</code> is a Gradle multi-module project: <code>settings.gradle</code> lists the modules, root <code>build.gradle</code> sets global versions, and <code>app/</code> is the only module that ships. Every RN library is an autolinked module."</div>
-  <div class="revision-say">"Source sets merge by build type — <code>src/main</code> for everything, <code>src/debug</code>/<code>src/release</code> for overrides. Release turns on <code>minifyEnabled</code>, so a release-only crash is usually a missing ProGuard keep rule."</div>
-  <div class="revision-say">"On Expo the whole folder is generated from <code>app.json</code> and config plugins, so I never hand-edit it — I change <code>expo-build-properties</code> or a config plugin and re-prebuild, or <code>--clean</code> wipes my edits."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name every top-level file in <code>android/</code> and say what each one does?</li>
-    <li>Can you explain what a Gradle module is and which modules an RN app has?</li>
-    <li>Can you describe how <code>src/main</code>, <code>src/debug</code>, and <code>src/release</code> source sets merge?</li>
-    <li>Can you distinguish <code>minSdk</code>, <code>compileSdk</code>, and <code>targetSdk</code> and where they are set?</li>
-    <li>Can you explain why a release build crashes when debug does not, and where the fix lives?</li>
-    <li>Can you trace how an autolinked library gets from <code>node_modules</code> into the running app?</li>
-    <li>Can you list which directories must never be committed and why, and what changes on an Expo prebuild project?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

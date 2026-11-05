@@ -1,30 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'rncfg-package-json',
-  module: 'RN Project & Config (Deep)',
-  title: 'package.json Deep',
-  estimatedReadTime: '23 min',
-  tags: ['package-json', 'npm', 'yarn', 'pnpm', 'bun', 'dependencies', 'devdependencies', 'peerdependencies', 'optionaldependencies', 'semver', 'caret', 'tilde', 'lockfile', 'package-lock', 'yarn-lock', 'npm-ci', 'scripts', 'engines', 'packagemanager', 'workspaces', 'monorepo', 'hoisting', 'nohoist', 'overrides', 'resolutions', 'patch-package', 'autolinking', 'codegenconfig', 'expo-install', 'expo-doctor', 'metro', 'watchfolders', 'react-native', 'expo'],
+  id: "rncfg-package-json",
+  module: "RN Project & Config (Deep)",
+  title: "package.json Deep",
+  estimatedReadTime: "23 min",
+  tags: ["package-json","npm","yarn","pnpm","bun","dependencies","devdependencies","peerdependencies","optionaldependencies","semver","caret","tilde","lockfile","package-lock","yarn-lock","npm-ci","scripts","engines","packagemanager","workspaces","monorepo","hoisting","nohoist","overrides","resolutions","patch-package","autolinking","codegenconfig","expo-install","expo-doctor","metro","watchfolders","react-native","expo"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><code>package.json</code> is the manifest at the root of every RN / Expo app. It names the package, pins its dependency versions, defines the scripts you run daily, and carries RN-specific blocks (<code>codegenConfig</code>, the <code>expo</code> object, <code>react-native</code> config) that drive the native build.</p>
-<p>The parts that bite in React Native specifically:</p>
-<ul>
-  <li><strong>Autolinking scans <code>dependencies</code></strong> — a native library in <code>devDependencies</code> won't link, and the module is "not found" at runtime.</li>
-  <li><strong>Semver on native modules is dangerous</strong> — a <code>^</code> caret can silently pull a version whose native code no longer matches your installed RN, so Expo apps pin exact versions via <code>expo install</code>.</li>
-  <li><strong>The lockfile is the real source of truth</strong> — <code>package.json</code> declares ranges; <code>package-lock.json</code> / <code>yarn.lock</code> records the exact tree. Commit it or your CI, your teammates, and your build servers install different code.</li>
-  <li><strong>patch-package is the RN escape hatch</strong> — when a dependency ships broken native code, you patch <code>node_modules</code> and replay it on every install via a <code>postinstall</code> hook.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p><code>package.json</code> declares intent (ranges + config); the lockfile records reality (the exact tree). In RN, <code>dependencies</code> is what autolinking sees, exact pins protect native code, and patch-package is how you fix a dependency you can't wait on upstream to fix.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><code>package.json</code> declares intent (ranges + RN config) and the <strong>lockfile records the exact tree</strong>; in RN, <code>dependencies</code> is what autolinking compiles, exact pins protect native code, and <strong>patch-package</strong> is how you carry a dependency fix across installs.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Core fields:</strong> <code>name</code>, <code>version</code>, <code>private: true</code> (apps, required for workspaces), <code>main</code> (Expo <code>AppEntry.js</code> / bare <code>index.js</code>), the <code>react-native</code> entry/config field, <code>scripts</code>, <code>engines</code> (Node), <code>packageManager</code> (Corepack pin).</li>
+    <li><strong>Typical scripts:</strong> <code>start</code>, <code>android</code>, <code>ios</code>, <code>pod-install</code>, <code>postinstall</code> (patch-package), <code>test</code>, <code>lint</code>, <code>typecheck</code>, <code>eas:build:*</code> / <code>eas:submit:*</code>. Npm runs <code>pre</code>/<code>post</code> hooks automatically.</li>
+    <li><strong>dependencies</strong> = everything at runtime incl. native modules — <strong>autolinking scans it</strong>; <strong>devDependencies</strong> = build/test/lint tools (<code>@types</code>, eslint, jest, babel, typescript, detox); <strong>peerDependencies</strong> = host must provide (react, react-native) so there's one copy; <strong>optionalDependencies</strong> = install may fail without aborting.</li>
+    <li><strong>Semver:</strong> <code>^</code> minor+patch (0.x: minor is breaking, so <code>^0.79</code> = &lt;0.80), <code>~</code> patch-only, bare = exact, <code>*</code> = any (peers), <code>||</code> unions, <code>-rc.1</code> pre-releases only match if opted in. Pin RN + native modules exactly — caret on native code is dangerous.</li>
+    <li><strong>Lockfiles:</strong> <code>package-lock.json</code> (npm) / <code>yarn.lock</code> / <code>pnpm-lock.yaml</code> / <code>bun.lockb</code> — commit them for deterministic installs; never two in one repo. <code>npm ci</code> (Yarn <code>--immutable</code>, pnpm <code>--frozen-lockfile</code>) installs strictly from the lock in CI.</li>
+    <li><strong>overrides (npm) / resolutions (Yarn) / pnpm.overrides:</strong> force a transitive version — dedupe React (fixes invalid hook call), pin a transitive native dep, or hotfix a broken transitive.</li>
+    <li><strong>workspaces (monorepo):</strong> hoist shared deps to root (dedupes React); <strong>nohoist</strong> keeps native singletons per-app; Metro needs <code>watchFolders</code> + <code>resolver.nodeModulesPaths</code> for hoisted deps.</li>
+    <li><strong>patch-package:</strong> edit <code>node_modules</code> → <code>npx patch-package &lt;pkg&gt;</code> → <code>patches/&lt;pkg&gt;+&lt;ver&gt;.patch</code> → <code>postinstall: patch-package</code> replays it. Real cases: jail-monkey rooted-detection launch crash, iOS-launch patches.</li>
+    <li><strong>RN blocks:</strong> <code>codegenConfig</code> (TurboModule/Fabric specs), <code>react-native</code> field (native <code>sourceDir</code>), <code>expo.install.exclude</code> (stop expo install from re-pinning a package).</li>
+    <li><strong>Expo:</strong> <code>expo install</code> writes SDK-compatible versions (not <code>npm install</code>); audit with <code>npx expo install --check</code> / <code>expo-doctor</code>, repair with <code>--fix</code>. Prebuild wipes hand-edited <code>android/</code>/<code>ios/</code> — use config plugins / <code>expo-build-properties</code>.</li>
+    <li><strong>Pitfalls:</strong> duplicate React → invalid hook call; native module mislabeled as a dev dep; forgetting to commit the lockfile; <code>--ignore-scripts</code> skipping patch-package; caret on native modules; mixing package managers.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Putting a native module in <code>devDependencies</code> (or caret-ranging it).</strong> Autolinking scans <code>dependencies</code> only, so the native code never compiles in — you get "Native module not found" at runtime even though the JS import resolves. Fix: native/runtime deps go in <code>dependencies</code>, pinned exactly (or via <code>expo install</code>), and the lockfile holds the tree.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"package.json declares ranges plus RN config, but the lockfile records the exact tree — commit it and use npm ci so CI, teammates, and build servers install identical code."</div>
+  <div class="revision-say">"Native modules go in dependencies because RN autolinking scans that set, and I pin them exactly — a caret can pull native code built for a different RN and crash at launch. In Expo I use expo install so versions match the SDK."</div>
+  <div class="revision-say">"When a dependency ships a bug I can't wait on, I patch-package the file and replay it via a postinstall hook — that's how I carried the jail-monkey launch-crash fix without forking."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What package.json is</h3>
 <p>A JSON manifest read by your package manager (npm / Yarn / pnpm / Bun), by the RN CLI's <strong>autolinking</strong>, by <strong>Metro</strong>, by <strong>codegen</strong>, and by Expo's tooling. It answers: what is this package called, what version is it, what does it depend on, what scripts can I run, and what native/build configuration applies.</p>
 
@@ -48,10 +59,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why RN/Expo distrust the caret</h3>
 <p>JS-only packages tolerate <code>^</code> because a minor bump is usually backward-compatible source. A native module is different: its compiled Kotlin/ObjC is built against a specific RN version's headers and its autolinking contract. A minor bump can require a different RN, a different <code>compileSdkVersion</code>, or a codegen change. That's why <code>expo install</code> resolves versions the installed SDK was tested against, and why lockfiles matter so much here.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Declaration vs resolution</h3>
 <div class="diagram">
 <pre>
@@ -106,10 +117,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"It works locally, so the section doesn't matter." It works locally because everything is flat in your <code>node_modules</code> during development. The section matters when autolinking decides what native code to compile, when a CI does a production-only install, and when your package is consumed by someone else. Put runtime/native deps in <code>dependencies</code>.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>A representative RN / Expo package.json</h3>
 <pre><code class="language-json">{
   "name": "sw-mobile",
@@ -300,10 +311,10 @@ npx patch-package jail-monkey
   <li><strong><code>react-native</code> field</strong> — a library uses it to declare its native <code>sourceDir</code> for autolinking, or an app can use <code>react-native.config.js</code> for the same.</li>
   <li><strong><code>expo.install.exclude</code></strong> — stop <code>expo install</code>/<code>expo install --check</code> from forcing the SDK-pinned version of a package when you deliberately need a different one; it silences the doctor warning for that package.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — native module in the wrong section (broken autolinking)</h3>
 <pre><code class="language-json">// WRONG — react-native-mmkv is native but lives in devDependencies
 {
@@ -419,10 +430,11 @@ pnpm install --frozen-lockfile</code></pre>
     "react-native-screens": "3.34.0"
   }
 }</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Autolinking only scans dependencies</h3>
 <p>A native module in <code>devDependencies</code> (or <code>peerDependencies</code> only) won't be linked into the Gradle/Pods build. Symptom: "Native module not found" / null module at runtime. Move it to <code>dependencies</code>.</p>
 
@@ -470,10 +482,9 @@ pnpm install --frozen-lockfile</code></pre>
 
 <h3>16. dist-tags vs versions</h3>
 <p><code>npm install react-native@latest</code> resolves a moving tag, not a fixed version. In an RN app that's risky — prefer an exact version (or <code>expo install</code>) so the lockfile is the pin, not a tag that moved yesterday.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — native module in devDependencies</h3>
 <p>Autolinking ignores it, the native code never compiles in, and you burn an hour on a "module not found" that's actually a one-line section move.</p>
 
@@ -518,10 +529,10 @@ pnpm install --frozen-lockfile</code></pre>
 
 <h3>Anti-pattern 15 — bloating dependencies with dev-only tools</h3>
 <p>Types, ESLint, Jest, Detox in <code>dependencies</code> enlarge a published package's install and blur intent. Keep build/test/lint tooling in <code>devDependencies</code>.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. dependencies vs devDependencies vs peerDependencies — what goes where in an RN app?</div>
   <div class="qa-answer">
@@ -651,50 +662,7 @@ pnpm install --frozen-lockfile</code></pre>
     <li>You never hand-edit <code>android/</code>/<code>ios/</code> in a prebuild project.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><code>package.json</code> declares intent (ranges + RN config) and the <strong>lockfile records the exact tree</strong>; in RN, <code>dependencies</code> is what autolinking compiles, exact pins protect native code, and <strong>patch-package</strong> is how you carry a dependency fix across installs.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Core fields:</strong> <code>name</code>, <code>version</code>, <code>private: true</code> (apps, required for workspaces), <code>main</code> (Expo <code>AppEntry.js</code> / bare <code>index.js</code>), the <code>react-native</code> entry/config field, <code>scripts</code>, <code>engines</code> (Node), <code>packageManager</code> (Corepack pin).</li>
-    <li><strong>Typical scripts:</strong> <code>start</code>, <code>android</code>, <code>ios</code>, <code>pod-install</code>, <code>postinstall</code> (patch-package), <code>test</code>, <code>lint</code>, <code>typecheck</code>, <code>eas:build:*</code> / <code>eas:submit:*</code>. Npm runs <code>pre</code>/<code>post</code> hooks automatically.</li>
-    <li><strong>dependencies</strong> = everything at runtime incl. native modules — <strong>autolinking scans it</strong>; <strong>devDependencies</strong> = build/test/lint tools (<code>@types</code>, eslint, jest, babel, typescript, detox); <strong>peerDependencies</strong> = host must provide (react, react-native) so there's one copy; <strong>optionalDependencies</strong> = install may fail without aborting.</li>
-    <li><strong>Semver:</strong> <code>^</code> minor+patch (0.x: minor is breaking, so <code>^0.79</code> = &lt;0.80), <code>~</code> patch-only, bare = exact, <code>*</code> = any (peers), <code>||</code> unions, <code>-rc.1</code> pre-releases only match if opted in. Pin RN + native modules exactly — caret on native code is dangerous.</li>
-    <li><strong>Lockfiles:</strong> <code>package-lock.json</code> (npm) / <code>yarn.lock</code> / <code>pnpm-lock.yaml</code> / <code>bun.lockb</code> — commit them for deterministic installs; never two in one repo. <code>npm ci</code> (Yarn <code>--immutable</code>, pnpm <code>--frozen-lockfile</code>) installs strictly from the lock in CI.</li>
-    <li><strong>overrides (npm) / resolutions (Yarn) / pnpm.overrides:</strong> force a transitive version — dedupe React (fixes invalid hook call), pin a transitive native dep, or hotfix a broken transitive.</li>
-    <li><strong>workspaces (monorepo):</strong> hoist shared deps to root (dedupes React); <strong>nohoist</strong> keeps native singletons per-app; Metro needs <code>watchFolders</code> + <code>resolver.nodeModulesPaths</code> for hoisted deps.</li>
-    <li><strong>patch-package:</strong> edit <code>node_modules</code> → <code>npx patch-package &lt;pkg&gt;</code> → <code>patches/&lt;pkg&gt;+&lt;ver&gt;.patch</code> → <code>postinstall: patch-package</code> replays it. Real cases: jail-monkey rooted-detection launch crash, iOS-launch patches.</li>
-    <li><strong>RN blocks:</strong> <code>codegenConfig</code> (TurboModule/Fabric specs), <code>react-native</code> field (native <code>sourceDir</code>), <code>expo.install.exclude</code> (stop expo install from re-pinning a package).</li>
-    <li><strong>Expo:</strong> <code>expo install</code> writes SDK-compatible versions (not <code>npm install</code>); audit with <code>npx expo install --check</code> / <code>expo-doctor</code>, repair with <code>--fix</code>. Prebuild wipes hand-edited <code>android/</code>/<code>ios/</code> — use config plugins / <code>expo-build-properties</code>.</li>
-    <li><strong>Pitfalls:</strong> duplicate React → invalid hook call; native module mislabeled as a dev dep; forgetting to commit the lockfile; <code>--ignore-scripts</code> skipping patch-package; caret on native modules; mixing package managers.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Putting a native module in <code>devDependencies</code> (or caret-ranging it).</strong> Autolinking scans <code>dependencies</code> only, so the native code never compiles in — you get "Native module not found" at runtime even though the JS import resolves. Fix: native/runtime deps go in <code>dependencies</code>, pinned exactly (or via <code>expo install</code>), and the lockfile holds the tree.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"package.json declares ranges plus RN config, but the lockfile records the exact tree — commit it and use npm ci so CI, teammates, and build servers install identical code."</div>
-  <div class="revision-say">"Native modules go in dependencies because RN autolinking scans that set, and I pin them exactly — a caret can pull native code built for a different RN and crash at launch. In Expo I use expo install so versions match the SDK."</div>
-  <div class="revision-say">"When a dependency ships a bug I can't wait on, I patch-package the file and replay it via a postinstall hook — that's how I carried the jail-monkey launch-crash fix without forking."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why a native module must live in <code>dependencies</code>, and what autolinking does with that section?</li>
-    <li>Can you contrast <code>^</code>, <code>~</code>, and exact versions, and say why RN pins native modules exactly?</li>
-    <li>Can you explain what a lockfile records, why it's committed, and the difference between <code>npm install</code> and <code>npm ci</code>?</li>
-    <li>Can you use <code>overrides</code>/<code>resolutions</code> to dedupe React and describe the invalid-hook-call bug?</li>
-    <li>Can you set up a monorepo with <code>workspaces</code>, <code>nohoist</code>, and Metro <code>watchFolders</code>?</li>
-    <li>Can you wire patch-package with a <code>postinstall</code> hook and explain when to reach for it?</li>
-    <li>Can you say why <code>expo install</code> beats <code>npm install</code> in an Expo app and what <code>expo-doctor</code> checks?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

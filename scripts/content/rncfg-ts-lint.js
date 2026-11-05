@@ -1,30 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'rncfg-ts-lint',
-  module: 'RN Project & Config (Deep)',
-  title: 'TypeScript & Linting',
-  estimatedReadTime: '22 min',
-  tags: ['tsconfig', 'typescript', 'eslint', 'prettier', 'react-native-eslint-config', 'eslint-config-expo', 'type-checking', 'declaration-files', 'ambient-modules', 'paths', 'path-aliases', 'module-resolver', 'flat-config', 'husky', 'lint-staged', 'exhaustive-deps', 'noEmit', 'skipLibCheck', 'react-native-svg-transformer', 'react-native-config'],
+  id: "rncfg-ts-lint",
+  module: "RN Project & Config (Deep)",
+  title: "TypeScript & Linting",
+  estimatedReadTime: "22 min",
+  tags: ["tsconfig","typescript","eslint","prettier","react-native-eslint-config","eslint-config-expo","type-checking","declaration-files","ambient-modules","paths","path-aliases","module-resolver","flat-config","husky","lint-staged","exhaustive-deps","noEmit","skipLibCheck","react-native-svg-transformer","react-native-config"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Three separate tools sit on top of your source and each has one job. They do NOT run your app — they run over your files while you code and in CI:</p>
-<ul>
-  <li><strong>TypeScript (tsc)</strong> — the <em>type checker</em>. Driven by <code>tsconfig.json</code>. In RN it runs with <code>noEmit</code> (or <code>tsc --noEmit</code>): it checks types and produces NO JavaScript. Babel does the actual transpile.</li>
-  <li><strong>ESLint</strong> — the <em>linter</em>. Catches bugs and enforces rules (unused vars, missing hook deps, banned patterns). Configured by <code>eslint.config.js</code> (flat) or legacy <code>.eslintrc</code>.</li>
-  <li><strong>Prettier</strong> — the <em>formatter</em>. Only cares about whitespace, quotes, commas. It has no opinion about correctness.</li>
-</ul>
-<p>The single most important mental split: <strong>Babel transpiles and runs your code; tsc only type-checks it.</strong> Babel strips the types and never looks at them — so a red squiggle from tsc can sit right next to code that runs perfectly at runtime, and vice-versa. That gap is the source of half the "but it works!" confusion in RN.</p>
-<p>The second most important thing: <strong>path aliases must be declared twice</strong> — once in <code>tsconfig.json</code> <code>paths</code> (so tsc and your editor resolve them) and once in <code>babel.config.js</code> <code>module-resolver</code> (so they actually exist at runtime). Declare one but not the other and you get a build that type-checks but crashes, or an app that runs but shows red imports everywhere.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Babel runs your code and never type-checks it; tsc type-checks and never runs it; ESLint finds bugs; Prettier fixes whitespace. Path aliases live in TWO files (tsconfig <code>paths</code> + babel <code>module-resolver</code>) or they break.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Babel transpiles and runs your code (stripping types, never checking them); tsc only type-checks with <code>noEmit</code>; ESLint finds bugs; Prettier fixes whitespace</strong> — and path aliases must be declared in BOTH <code>tsconfig paths</code> and <code>babel module-resolver</code> or they break.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Two pipelines:</strong> Babel (<code>@babel/preset-typescript</code> in <code>metro-react-native-babel-preset</code> / <code>babel-preset-expo</code>) strips types one file at a time and emits the JS Metro bundles; <strong>tsc runs separately with <code>noEmit: true</code></strong> and checks the whole program, emitting nothing. That's why CI needs a distinct <code>npx tsc --noEmit</code>. None of tsc/ESLint/Prettier runs your app — they run over your files in the editor and in CI.</li>
+    <li><strong>tsconfig extends a base:</strong> <code>@react-native/typescript-config</code> (bare) or <code>expo/tsconfig.base</code> (Expo). You mostly add <code>baseUrl</code> + <code>paths</code>.</li>
+    <li><strong>Key compilerOptions:</strong> <code>strict</code>, <code>jsx: react-native</code> (leave JSX for Babel), <code>moduleResolution: bundler</code> (match Metro / honor <code>exports</code>), <code>noEmit</code>, <code>esModuleInterop</code>, <code>allowJs</code>, <code>skipLibCheck</code> (skip node_modules .d.ts — speed + avoid third-party clashes), <code>resolveJsonModule</code>, <code>types</code>/<code>typeRoots</code>.</li>
+    <li><strong>Path aliases live in TWO (often three) files:</strong> tsconfig <code>paths</code> = tsc + editor only; babel <code>module-resolver</code> = the actual runtime rewrite; Jest <code>moduleNameMapper</code> for tests. Miss babel → "Unable to resolve module" at runtime; miss tsconfig → red squiggle but app runs. Restart Metro with <code>--reset-cache</code> after babel changes.</li>
+    <li><strong>Type error ≠ runtime error.</strong> Babel erases types, so tsc is advisory: red squiggles can run fine, and green tsc can still crash (validate API/deep-link boundaries at runtime with zod).</li>
+    <li><strong>Declaration files (.d.ts):</strong> ambient <code>declare module '*.png'</code> for assets, <code>declare module '*.svg'</code> as <code>React.FC&lt;SvgProps&gt;</code> (react-native-svg-transformer), typed env via <code>declare module 'react-native-config'</code> or <code>'@env'</code>. Must sit inside <code>include</code>; keep global ambient files free of top-level import/export or they become modules and stop applying.</li>
+    <li><strong>Extend third-party types</strong> with declaration merging — the classic is augmenting <code>ReactNavigation.RootParamList</code> so <code>navigate()</code> is globally typed.</li>
+    <li><strong>ESLint = bugs/patterns.</strong> Shared config: <code>@react-native/eslint-config</code> (bare) / <code>eslint-config-expo</code> / <code>eslint-config-universe</code>. Bundles plugins: <code>react</code>, <code>react-hooks</code>, <code>react-native</code>, <code>@typescript-eslint</code>, <code>import</code>. Flat config (<code>eslint.config.js</code>, <code>ignores</code>) in ESLint 9 vs legacy <code>.eslintrc</code> + <code>.eslintignore</code> — don't keep both.</li>
+    <li><strong>Rules to name:</strong> <code>react-hooks/exhaustive-deps</code> (stale-closure detector — the star), <code>rules-of-hooks</code>, <code>react-native/no-inline-styles</code>, <code>no-unused-styles</code>, <code>@typescript-eslint/no-unused-vars</code>/<code>no-explicit-any</code>.</li>
+    <li><strong>Prettier = whitespace only</strong> (<code>.prettierrc</code>). Add <strong><code>eslint-config-prettier</code> LAST</strong> to turn off ESLint's stylistic rules so the two don't fight. (Not <code>eslint-plugin-prettier</code>.)</li>
+    <li><strong>Git hooks:</strong> husky (<code>prepare: "husky"</code> installs on <code>npm install</code>) + lint-staged. Pre-commit runs <code>eslint --fix</code> + <code>prettier --write</code> on STAGED files, then <code>tsc --noEmit</code> on the WHOLE project (type errors span files). CI mirrors with typecheck/lint/<code>prettier --check</code>. <code>--no-verify</code> bypasses hooks.</li>
+    <li><strong>Expo deltas:</strong> <code>expo/tsconfig.base</code>, generated <code>expo-env.d.ts</code> + <code>.expo/types</code> (never edit), <code>EXPO_PUBLIC_*</code> env, <code>eslint-config-expo</code>, <code>expo lint</code>, <code>expo customize tsconfig.json</code>; still <code>npx tsc --noEmit</code> to type-check.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Declaring a path alias in only one place</strong> — tsconfig <code>paths</code> quiets the editor and lets <code>tsc --noEmit</code> pass, but ONLY babel <code>module-resolver</code> makes the import exist at runtime. tsconfig-only → "Unable to resolve module @/foo" crash; babel-only → app runs but red squiggles + no autocomplete. Fix both, add Jest <code>moduleNameMapper</code>, and restart Metro with <code>--reset-cache</code>. (Related trap: assuming a green <code>tsc</code> means runtime safety — types are erased by Babel, so validate external data yourself.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"In React Native, Babel transpiles and runs the code — it strips the types one file at a time and never checks them — while tsc runs separately with <code>noEmit</code> purely to type-check the whole program. That's why Metro can bundle code with type errors and why CI needs its own <code>tsc --noEmit</code>."</div>
+  <div class="revision-say">"A path alias has to be declared twice: tsconfig <code>paths</code> for tsc and the editor, and babel <code>module-resolver</code> for the actual runtime rewrite. Declare only one and you get either a runtime resolve crash or a red squiggle on code that runs — plus Jest needs the same alias in <code>moduleNameMapper</code>."</div>
+  <div class="revision-say">"tsc owns types, ESLint owns bugs like missing hook deps via <code>exhaustive-deps</code>, and Prettier owns whitespace. I add <code>eslint-config-prettier</code> last so ESLint and Prettier don't fight, and I gate all three on commit with husky + lint-staged and again in CI."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What this layer is</h3>
 <p>Every serious RN project ships a set of "dev-time" config files that never appear in the bundle but shape everything you type: <code>tsconfig.json</code>, one or more <code>.d.ts</code> declaration files, <code>eslint.config.js</code> (or <code>.eslintrc.js</code>), <code>.prettierrc</code>, and Git-hook config for <code>husky</code> + <code>lint-staged</code>. Together they form the <strong>static analysis</strong> layer: tools that read your code without executing it and tell you about problems before you ever hit the simulator.</p>
 
@@ -53,10 +65,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why Git hooks</h3>
 <p><code>husky</code> + <code>lint-staged</code> move these checks to <strong>commit time</strong> so broken code never enters history. The classic setup: on <code>pre-commit</code>, run Prettier + ESLint <code>--fix</code> on only the staged files, and run <code>tsc --noEmit</code> on the whole project. This is the local mirror of what CI enforces, so you fail in 3 seconds on your machine instead of 6 minutes in the pipeline.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "two pipelines" picture — the single most important diagram here</h3>
 <div class="diagram">
 <pre>
@@ -138,10 +150,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"If <code>tsc</code> passes, my app is type-safe at runtime." No. Types are erased by Babel before the code ever runs — there is <strong>zero</strong> runtime type enforcement. A JSON response typed as <code>User</code> can be anything at runtime; tsc only checked that your code <em>treats</em> it as a User. For real boundaries (API responses, deep links) validate with a runtime schema library (zod, io-ts) — the type is just a compile-time promise.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>File 1 — tsconfig.json (bare React Native)</h3>
 <p>The RN template keeps this tiny by extending a shared base. <code>@react-native/typescript-config</code> ships the RN-correct defaults (Hermes lib, JSX mode, strictness):</p>
 <pre><code class="language-json">// tsconfig.json  (bare RN, 0.71+)
@@ -352,10 +364,10 @@ npm run typecheck   # tsc --noEmit  → the thing Metro never does
 npm run lint        # eslint .      (Expo: expo lint)
 npx prettier --check .</code></pre>
 <p>Note <code>prettier --check</code> (verify, exit non-zero on drift) in CI vs <code>--write</code> (mutate) locally. Expo wraps linting as <code>expo lint</code>, which installs/config-bootstraps ESLint for you on first run.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — the minimal RN tsconfig that extends the base</h3>
 <pre><code class="language-json">{
   "extends": "@react-native/typescript-config/tsconfig.json",
@@ -432,10 +444,11 @@ navigation.navigate('BookingDetails');                       // ❌ TS: missing 
 <pre><code class="language-bash">npx tsc --noEmit          # type-check (no Expo wrapper needed)
 npx expo customize tsconfig.json   # scaffold/refresh the tsconfig
 npx expo lint             # bootstraps eslint-config-expo + runs eslint</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Alias in tsconfig but not babel (or vice-versa)</h3>
 <p>The number-one config bug. tsconfig <code>paths</code> = editor/tsc only; babel <code>module-resolver</code> = runtime. You need both, kept identical. Symptom-to-cause: "Unable to resolve module" at runtime → babel missing; TS2307 red squiggle but app runs → tsconfig missing.</p>
 
@@ -483,10 +496,9 @@ npx expo lint             # bootstraps eslint-config-expo + runs eslint</code></
 
 <h3>16. Path alias breaks Jest</h3>
 <p>Jest doesn't read babel <code>module-resolver</code> the same way for module <em>resolution</em> unless configured. You often need a matching <code>moduleNameMapper</code> in <code>jest.config.js</code> mirroring the SAME aliases — so an alias can live in THREE places (tsconfig, babel, jest).</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — declaring a path alias in only one file</h3>
 <p>tsconfig <code>paths</code> without babel <code>module-resolver</code> (or the reverse). Type-checks but crashes at runtime, or runs but shows red imports. Always mirror; add to Jest's <code>moduleNameMapper</code> too.</p>
 
@@ -531,10 +543,10 @@ npx expo lint             # bootstraps eslint-config-expo + runs eslint</code></
 
 <h3>Anti-pattern 15 — copying a web tsconfig (jsx: react-jsx, dom lib)</h3>
 <p>Using a Create-React-App-style tsconfig with <code>"jsx": "react-jsx"</code> and <code>"lib": ["dom"]</code> in RN. You want <code>jsx: react-native</code> and the RN lib set (no DOM) — extend <code>@react-native/typescript-config</code> or <code>expo/tsconfig.base</code> instead of hand-rolling.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. In an RN project, what compiles your TypeScript — tsc or Babel? What does the other one do?</div>
   <div class="qa-answer">
@@ -654,51 +666,32 @@ npx expo lint             # bootstraps eslint-config-expo + runs eslint</code></
     <li>You set up husky + lint-staged with per-file ESLint and whole-project <code>tsc --noEmit</code>, mirrored in CI.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Babel transpiles and runs your code (stripping types, never checking them); tsc only type-checks with <code>noEmit</code>; ESLint finds bugs; Prettier fixes whitespace</strong> — and path aliases must be declared in BOTH <code>tsconfig paths</code> and <code>babel module-resolver</code> or they break.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Two pipelines:</strong> Babel (<code>@babel/preset-typescript</code> in <code>metro-react-native-babel-preset</code> / <code>babel-preset-expo</code>) strips types one file at a time and emits the JS Metro bundles; <strong>tsc runs separately with <code>noEmit: true</code></strong> and checks the whole program, emitting nothing. That's why CI needs a distinct <code>npx tsc --noEmit</code>.</li>
-    <li><strong>tsconfig extends a base:</strong> <code>@react-native/typescript-config</code> (bare) or <code>expo/tsconfig.base</code> (Expo). You mostly add <code>baseUrl</code> + <code>paths</code>.</li>
-    <li><strong>Key compilerOptions:</strong> <code>strict</code>, <code>jsx: react-native</code> (leave JSX for Babel), <code>moduleResolution: bundler</code> (match Metro / honor <code>exports</code>), <code>noEmit</code>, <code>esModuleInterop</code>, <code>allowJs</code>, <code>skipLibCheck</code> (skip node_modules .d.ts — speed + avoid third-party clashes), <code>resolveJsonModule</code>, <code>types</code>/<code>typeRoots</code>.</li>
-    <li><strong>Path aliases live in TWO (often three) files:</strong> tsconfig <code>paths</code> = tsc + editor only; babel <code>module-resolver</code> = the actual runtime rewrite; Jest <code>moduleNameMapper</code> for tests. Miss babel → "Unable to resolve module" at runtime; miss tsconfig → red squiggle but app runs. Restart Metro with <code>--reset-cache</code> after babel changes.</li>
-    <li><strong>Type error ≠ runtime error.</strong> Babel erases types, so tsc is advisory: red squiggles can run fine, and green tsc can still crash (validate API/deep-link boundaries at runtime with zod).</li>
-    <li><strong>Declaration files (.d.ts):</strong> ambient <code>declare module '*.png'</code> for assets, <code>declare module '*.svg'</code> as <code>React.FC&lt;SvgProps&gt;</code> (react-native-svg-transformer), typed env via <code>declare module 'react-native-config'</code> or <code>'@env'</code>. Must sit inside <code>include</code>; keep global ambient files free of top-level import/export or they become modules and stop applying.</li>
-    <li><strong>Extend third-party types</strong> with declaration merging — the classic is augmenting <code>ReactNavigation.RootParamList</code> so <code>navigate()</code> is globally typed.</li>
-    <li><strong>ESLint = bugs/patterns.</strong> Shared config: <code>@react-native/eslint-config</code> (bare) / <code>eslint-config-expo</code> / <code>eslint-config-universe</code>. Bundles plugins: <code>react</code>, <code>react-hooks</code>, <code>react-native</code>, <code>@typescript-eslint</code>, <code>import</code>. Flat config (<code>eslint.config.js</code>, <code>ignores</code>) in ESLint 9 vs legacy <code>.eslintrc</code> + <code>.eslintignore</code> — don't keep both.</li>
-    <li><strong>Rules to name:</strong> <code>react-hooks/exhaustive-deps</code> (stale-closure detector — the star), <code>rules-of-hooks</code>, <code>react-native/no-inline-styles</code>, <code>no-unused-styles</code>, <code>@typescript-eslint/no-unused-vars</code>/<code>no-explicit-any</code>.</li>
-    <li><strong>Prettier = whitespace only</strong> (<code>.prettierrc</code>). Add <strong><code>eslint-config-prettier</code> LAST</strong> to turn off ESLint's stylistic rules so the two don't fight. (Not <code>eslint-plugin-prettier</code>.)</li>
-    <li><strong>Git hooks:</strong> husky (<code>prepare: "husky"</code> installs on <code>npm install</code>) + lint-staged. Pre-commit runs <code>eslint --fix</code> + <code>prettier --write</code> on STAGED files, then <code>tsc --noEmit</code> on the WHOLE project (type errors span files). CI mirrors with typecheck/lint/<code>prettier --check</code>. <code>--no-verify</code> bypasses hooks.</li>
-    <li><strong>Expo deltas:</strong> <code>expo/tsconfig.base</code>, generated <code>expo-env.d.ts</code> + <code>.expo/types</code> (never edit), <code>EXPO_PUBLIC_*</code> env, <code>eslint-config-expo</code>, <code>expo lint</code>, <code>expo customize tsconfig.json</code>; still <code>npx tsc --noEmit</code> to type-check.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Declaring a path alias in only one place</strong> — tsconfig <code>paths</code> quiets the editor and lets <code>tsc --noEmit</code> pass, but ONLY babel <code>module-resolver</code> makes the import exist at runtime. tsconfig-only → "Unable to resolve module @/foo" crash; babel-only → app runs but red squiggles + no autocomplete. Fix both, add Jest <code>moduleNameMapper</code>, and restart Metro with <code>--reset-cache</code>. (Related trap: assuming a green <code>tsc</code> means runtime safety — types are erased by Babel, so validate external data yourself.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"In React Native, Babel transpiles and runs the code — it strips the types one file at a time and never checks them — while tsc runs separately with <code>noEmit</code> purely to type-check the whole program. That's why Metro can bundle code with type errors and why CI needs its own <code>tsc --noEmit</code>."</div>
-  <div class="revision-say">"A path alias has to be declared twice: tsconfig <code>paths</code> for tsc and the editor, and babel <code>module-resolver</code> for the actual runtime rewrite. Declare only one and you get either a runtime resolve crash or a red squiggle on code that runs — plus Jest needs the same alias in <code>moduleNameMapper</code>."</div>
-  <div class="revision-say">"tsc owns types, ESLint owns bugs like missing hook deps via <code>exhaustive-deps</code>, and Prettier owns whitespace. I add <code>eslint-config-prettier</code> last so ESLint and Prettier don't fight, and I gate all three on commit with husky + lint-staged and again in CI."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Write the ambient .d.ts declarations that let you import PNGs, SVGs as components, and typed env vars.</div>
+  <div class="qa-answer">
+    <p>Put them in a project-root <code>declarations.d.ts</code> that sits inside tsconfig <code>include</code>. Images get a bare <code>declare module '*.png';</code> (same for jpg/webp). SVGs via react-native-svg-transformer get <code>declare module '*.svg'</code> whose default export is a <code>React.FC&lt;SvgProps&gt;</code>. Env vars get <code>declare module 'react-native-config'</code> with a <code>NativeConfig</code> interface listing keys like <code>API_URL: string</code>, or <code>declare module '@env'</code> exporting typed constants for babel-plugin-dotenv-import.</p>
+<pre><code class="language-ts">declare module '*.png';
+declare module '*.svg' {
+  import React from 'react';
+  import { SvgProps } from 'react-native-svg';
+  const content: React.FC&lt;SvgProps&gt;;
+  export default content;
+}
+declare module '@env' {
+  export const API_URL: string;
+  export const STAGE: 'uat' | 'prod';
+}</code></pre>
+    <p>The .d.ts only tells tsc the import has a type; Metro's transformer does the actual import. In Expo you usually skip the env part, because <code>EXPO_PUBLIC_*</code> vars are typed automatically via the generated <code>expo-env.d.ts</code>.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain which tool compiles your TypeScript in RN, which one type-checks it, and why <code>noEmit</code> is set?</li>
-    <li>Can you say exactly why a path alias must live in both <code>tsconfig paths</code> and <code>babel module-resolver</code>, and what breaks if it's in only one?</li>
-    <li>Can you explain why a type error is not a runtime error (and why a green tsc can still crash)?</li>
-    <li>Can you write ambient <code>.d.ts</code> declarations for importing PNGs, SVGs-as-components, and typed env vars?</li>
-    <li>Can you separate the jobs of tsc, ESLint, and Prettier, and stop ESLint and Prettier from fighting?</li>
-    <li>Can you name the key RN ESLint rules (exhaustive-deps, no-inline-styles) and what class of bug each catches?</li>
-    <li>Can you set up husky + lint-staged so ESLint/Prettier run on staged files but <code>tsc --noEmit</code> runs whole-project, and mirror it in CI?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. Name the key RN ESLint rules and the class of bug each one catches.</div>
+  <div class="qa-answer">
+    <p><code>react-hooks/exhaustive-deps</code> catches stale closures: a <code>useEffect</code>/<code>useCallback</code>/<code>useMemo</code> dependency array that omits a value the callback reads, so the effect doesn't re-run when it should. <code>react-hooks/rules-of-hooks</code> errors on conditionally-called hooks. <code>react-native/no-inline-styles</code> flags <code>style={{...}}</code> literals, which are re-created every render (GC pressure, and they can defeat memoization), so you hoist them to <code>StyleSheet.create</code>; <code>react-native/no-unused-styles</code> then flags StyleSheet keys nobody uses. On the TS side, <code>@typescript-eslint/no-unused-vars</code> and <code>no-explicit-any</code> keep type hygiene.</p>
+  </div>
 </div>
-`}
+` },
 
-]
+  ]
 });

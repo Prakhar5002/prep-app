@@ -1,33 +1,44 @@
 window.PREP_SITE.registerTopic({
-  id: 'build-pm',
-  module: 'Build Tooling',
-  title: 'Package Managers',
-  estimatedReadTime: '24 min',
-  tags: ['build', 'package-manager', 'npm', 'yarn', 'pnpm', 'bun', 'lockfile', 'workspaces', 'semver'],
+  id: "build-pm",
+  module: "Build Tooling",
+  title: "Package Managers",
+  estimatedReadTime: "24 min",
+  tags: ["build","package-manager","npm","yarn","pnpm","bun","lockfile","workspaces","semver"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Package managers install dependencies, manage versions, and orchestrate scripts. Choice affects install speed, disk usage, and monorepo workflow.</p>
-<ul>
-  <li><strong>npm</strong> — bundled with Node. Mature, slowest install. Lockfile: <code>package-lock.json</code>.</li>
-  <li><strong>Yarn</strong> — Facebook's pioneering pm. Yarn 1 (Classic) and Yarn 4 (Berry, modern). Faster than npm; PnP option for stricter dep resolution. Lockfile: <code>yarn.lock</code>.</li>
-  <li><strong>pnpm</strong> — content-addressable global store; node_modules is symlinks. ~2× faster install, ~3× less disk. Lockfile: <code>pnpm-lock.yaml</code>. Default for many monorepos.</li>
-  <li><strong>Bun</strong> — Zig-based, fastest install (often 5-30× over npm). Also a JS runtime + bundler. Lockfile: <code>bun.lock</code> (text, default since Bun 1.2 in 2025); the old binary <code>bun.lockb</code> is legacy.</li>
-  <li><strong>Lockfile</strong> — pins exact resolved versions; commit it; <code>npm ci</code> / <code>pnpm install --frozen-lockfile</code> in CI.</li>
-  <li><strong>Workspaces</strong> — monorepo support. npm 7+, Yarn, pnpm, Bun all support. pnpm has the strictest hoisting controls.</li>
-  <li><strong>Semver</strong> — <code>^1.2.3</code> = compatible (1.x.x), <code>~1.2.3</code> = patch (1.2.x), <code>1.2.3</code> = exact.</li>
-  <li><strong>npm scripts</strong> — package.json <code>"scripts"</code> + <code>"run-script"</code>. All managers run them.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>For new projects: <strong>pnpm</strong> (faster, less disk, strict). For monorepos: pnpm or Yarn workspaces. Use <code>npm ci</code> / <code>pnpm install --frozen-lockfile</code> in CI for deterministic installs. Commit your lockfile.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A package manager <strong>resolves deps, locks exact versions, lays out <code>node_modules</code>, and runs scripts</strong> — pnpm's content-addressable store + symlinks make it the fast, disk-efficient, strict default; always commit the lockfile and use a frozen install in CI.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The five jobs:</strong> resolve dependencies against semver ranges, download, install into <code>node_modules</code> (flat copies for npm/Yarn, symlinks for pnpm), lock versions, and run package.json scripts + manage workspaces.</li>
+    <li><strong>npm</strong> = bundled, mature, slowest (<code>package-lock.json</code>); <strong>Yarn</strong> = Classic (1, maintenance) vs Berry (4, plugin-based, PnP option, <code>yarn.lock</code>); <strong>pnpm</strong> = ~2× faster, ~3× less disk, strict (<code>pnpm-lock.yaml</code>); <strong>Bun</strong> = Zig, fastest, also runtime+bundler+test-runner (<code>bun.lock</code> text default since Bun 1.2).</li>
+    <li><strong>pnpm saves space</strong> by storing each package version once in a global content-addressable store (<code>~/.pnpm-store</code>) and symlinking into each project — 100 projects share one copy of <code>react@18.2.0</code>.</li>
+    <li><strong>Phantom dependencies</strong> = code that requires a package it never declared, working only because npm/Yarn hoisted it from a transitive dep; it breaks when the upstream drops it. pnpm's strict layout exposes only direct deps and catches this at install time.</li>
+    <li><strong>Lockfiles pin exact resolved versions + integrity hashes</strong> so every install is identical — always commit it; without it you get "works on my machine."</li>
+    <li><strong>Semver:</strong> <code>^1.2.3</code> = compatible (minor+patch, &lt;2.0.0), <code>~1.2.3</code> = patch only (&lt;1.3.0), <code>1.2.3</code> = exact. Default install writes <code>^</code>; the lockfile pins the actual version regardless.</li>
+    <li><strong>Workspaces</strong> put multiple packages in one repo sharing deps; internal refs use <code>workspace:*</code> to link the local checkout. Pair with Turborepo/Nx for build ordering and task orchestration.</li>
+    <li><strong>dependencies</strong> (runtime) vs <strong>devDependencies</strong> (dev-only, not installed transitively) vs <strong>peerDependencies</strong> ("you provide it", avoids duplicate React) vs <strong>optionalDependencies</strong> (install if possible).</li>
+    <li><strong>corepack</strong> (Node 16.10+) reads the <code>packageManager</code> field and pins the PM version for everyone — stops "you have pnpm 8, I have pnpm 9."</li>
+    <li><strong>overrides</strong> (npm/pnpm) / <strong>resolutions</strong> (Yarn 1) force a transitive dep version — the go-to for patching a CVE before upstream updates.</li>
+    <li><strong>postinstall scripts</strong> run arbitrary code on install — a supply-chain risk; use <code>--ignore-scripts</code> for untrusted packages and vet with tools like socket.dev/Snyk.</li>
+    <li>Never commit <code>node_modules</code>, never mix PMs on one project, and use <code>--omit=dev</code> in production Docker images.</li>
+    <li><strong>npm scripts</strong> live in package.json <code>"scripts"</code> and run the same way under every package manager.</li>
+    <li>Workspaces are supported by npm 7+, Yarn, pnpm and Bun; <strong>pnpm has the strictest hoisting controls</strong>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Running <code>npm install</code> in CI instead of <code>npm ci</code>.</strong> <code>install</code> re-resolves and silently rewrites the lockfile when it drifts from package.json, so CI can install different versions than you tested. Fix: use the frozen install everywhere in CI — <code>npm ci</code> / <code>pnpm install --frozen-lockfile</code> / <code>yarn install --immutable</code> — which fails loudly if the lockfile and package.json disagree.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I default to pnpm for new projects and monorepos — content-addressable store plus symlinks means faster installs, ~3× less disk, and strict resolution that kills phantom dependencies."</div>
+  <div class="revision-say">"Commit the lockfile and use a frozen install in CI (<code>npm ci</code> or <code>--frozen-lockfile</code>) — that's what guarantees CI installs exactly what I tested locally."</div>
+  <div class="revision-say">"Caret plus a committed lockfile is the recipe: <code>^</code> allows compatible minor/patch bumps while the lockfile pins the actual resolved version, and corepack pins the package-manager version itself."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What a package manager does</h3>
 <ol>
   <li><strong>Resolves dependencies</strong> — given a package, find versions that satisfy semver ranges of all packages.</li>
@@ -58,10 +69,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why workspaces</h3>
 <p>Monorepo support: multiple packages in one repo, sharing dependencies + linked locally. Without workspaces: each package has its own <code>node_modules</code>; cross-package changes require <code>npm link</code> dance. Workspaces handle this automatically — install once at root, internal packages linked.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "node_modules layout" picture</h3>
 <div class="diagram">
 <pre>
@@ -141,10 +152,10 @@ packages:
   <div class="callout-title">Common misconception</div>
   <p>"You can mix package managers on the same project." Don't. Each writes a different lockfile (<code>package-lock.json</code> vs <code>yarn.lock</code> vs <code>pnpm-lock.yaml</code>). Mixing produces inconsistent installs across team. Pick one, enforce via <code>"packageManager"</code> field + corepack.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>npm essentials</h3>
 <pre><code class="language-bash">npm init -y                    # create package.json
 npm install react              # install + add to dependencies
@@ -324,10 +335,10 @@ yarn audit</code></pre>
 
 npm version patch              # bump version + git tag
 npm publish                    # publish to registry</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — switch project from npm to pnpm</h3>
 <pre><code class="language-bash">rm -rf node_modules package-lock.json
 npm i -g pnpm
@@ -511,10 +522,11 @@ pnpm store status                       # global store info</code></pre>
 }
 // OR via .npmignore (similar to .gitignore)
 // Verify what'll be published: npm pack --dry-run</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Multiple lockfiles in repo</h3>
 <p>Both <code>package-lock.json</code> and <code>yarn.lock</code> committed. Each PM uses its own; results diverge. Pick one, delete others, document in README.</p>
 
@@ -579,10 +591,9 @@ pnpm store status                       # global store info</code></pre>
 
 <h3>20. <code>npm publish</code> 2FA</h3>
 <p>Stronger auth (npm now requires for public packages). Configure with <code>npm profile enable-2fa auth-and-writes</code>. CI publishes need automation tokens with limited scope.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — committing node_modules</h3>
 <p>Bloats repo, slow clones, merge conflicts. Always in <code>.gitignore</code>. Lockfile is enough for reproducibility.</p>
 
@@ -627,10 +638,10 @@ pnpm store status                       # global store info</code></pre>
 
 <h3>Anti-pattern 15 — pinning all versions exactly</h3>
 <p><code>"react": "18.2.0"</code> everywhere. Misses patch updates. Caret <code>^</code> is usually right; lockfile pins anyway.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. npm vs Yarn vs pnpm?</div>
   <div class="qa-answer">
@@ -797,50 +808,7 @@ pnpm store status                       # global store info</code></pre>
     <li>You know about phantom deps and pnpm's strict layout.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A package manager <strong>resolves deps, locks exact versions, lays out <code>node_modules</code>, and runs scripts</strong> — pnpm's content-addressable store + symlinks make it the fast, disk-efficient, strict default; always commit the lockfile and use a frozen install in CI.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>The five jobs:</strong> resolve dependencies against semver ranges, download, install into <code>node_modules</code> (flat copies for npm/Yarn, symlinks for pnpm), lock versions, and run package.json scripts + manage workspaces.</li>
-    <li><strong>npm</strong> = bundled, mature, slowest (<code>package-lock.json</code>); <strong>Yarn</strong> = Classic (1, maintenance) vs Berry (4, plugin-based, PnP option, <code>yarn.lock</code>); <strong>pnpm</strong> = ~2× faster, ~3× less disk, strict (<code>pnpm-lock.yaml</code>); <strong>Bun</strong> = Zig, fastest, also runtime+bundler+test-runner (<code>bun.lock</code> text default since Bun 1.2).</li>
-    <li><strong>pnpm saves space</strong> by storing each package version once in a global content-addressable store (<code>~/.pnpm-store</code>) and symlinking into each project — 100 projects share one copy of <code>react@18.2.0</code>.</li>
-    <li><strong>Phantom dependencies</strong> = code that requires a package it never declared, working only because npm/Yarn hoisted it from a transitive dep; it breaks when the upstream drops it. pnpm's strict layout exposes only direct deps and catches this at install time.</li>
-    <li><strong>Lockfiles pin exact resolved versions + integrity hashes</strong> so every install is identical — always commit it; without it you get "works on my machine."</li>
-    <li><strong>Semver:</strong> <code>^1.2.3</code> = compatible (minor+patch, &lt;2.0.0), <code>~1.2.3</code> = patch only (&lt;1.3.0), <code>1.2.3</code> = exact. Default install writes <code>^</code>; the lockfile pins the actual version regardless.</li>
-    <li><strong>Workspaces</strong> put multiple packages in one repo sharing deps; internal refs use <code>workspace:*</code> to link the local checkout. Pair with Turborepo/Nx for build ordering and task orchestration.</li>
-    <li><strong>dependencies</strong> (runtime) vs <strong>devDependencies</strong> (dev-only, not installed transitively) vs <strong>peerDependencies</strong> ("you provide it", avoids duplicate React) vs <strong>optionalDependencies</strong> (install if possible).</li>
-    <li><strong>corepack</strong> (Node 16.10+) reads the <code>packageManager</code> field and pins the PM version for everyone — stops "you have pnpm 8, I have pnpm 9."</li>
-    <li><strong>overrides</strong> (npm/pnpm) / <strong>resolutions</strong> (Yarn 1) force a transitive dep version — the go-to for patching a CVE before upstream updates.</li>
-    <li><strong>postinstall scripts</strong> run arbitrary code on install — a supply-chain risk; use <code>--ignore-scripts</code> for untrusted packages and vet with tools like socket.dev/Snyk.</li>
-    <li>Never commit <code>node_modules</code>, never mix PMs on one project, and use <code>--omit=dev</code> in production Docker images.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Running <code>npm install</code> in CI instead of <code>npm ci</code>.</strong> <code>install</code> re-resolves and silently rewrites the lockfile when it drifts from package.json, so CI can install different versions than you tested. Fix: use the frozen install everywhere in CI — <code>npm ci</code> / <code>pnpm install --frozen-lockfile</code> / <code>yarn install --immutable</code> — which fails loudly if the lockfile and package.json disagree.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I default to pnpm for new projects and monorepos — content-addressable store plus symlinks means faster installs, ~3× less disk, and strict resolution that kills phantom dependencies."</div>
-  <div class="revision-say">"Commit the lockfile and use a frozen install in CI (<code>npm ci</code> or <code>--frozen-lockfile</code>) — that's what guarantees CI installs exactly what I tested locally."</div>
-  <div class="revision-say">"Caret plus a committed lockfile is the recipe: <code>^</code> allows compatible minor/patch bumps while the lockfile pins the actual resolved version, and corepack pins the package-manager version itself."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain how pnpm's content-addressable store plus symlinks cut install time and disk?</li>
-    <li>Can you explain what a phantom dependency is and how strict resolution kills it?</li>
-    <li>Can you say why you commit the lockfile and use a frozen install (<code>npm ci</code> / <code>--frozen-lockfile</code>) in CI?</li>
-    <li>Can you explain the caret + lockfile recipe — what <code>^</code> allows vs what the lockfile pins?</li>
-    <li>Can you explain what corepack does for pinning the package-manager version itself?</li>
-    <li>Can you compare npm, Yarn, pnpm, and Bun on install speed, disk usage, and lockfile?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

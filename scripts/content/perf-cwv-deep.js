@@ -1,40 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'perf-cwv-deep',
-  module: 'Frontend Performance',
-  title: 'Core Web Vitals Deep',
-  estimatedReadTime: '28 min',
-  tags: ['performance', 'web-vitals', 'lcp', 'inp', 'cls', 'fcp', 'ttfb', 'rum'],
+  id: "perf-cwv-deep",
+  module: "Frontend Performance",
+  title: "Core Web Vitals Deep",
+  estimatedReadTime: "28 min",
+  tags: ["performance","web-vitals","lcp","inp","cls","fcp","ttfb","rum"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>Core Web Vitals</strong> are Google's shortlist of user-experience metrics that also happen to influence search ranking. As of 2024+, there are three:</p>
-<table>
-  <thead><tr><th>Metric</th><th>What it measures</th><th>Good</th><th>Needs work</th><th>Poor</th></tr></thead>
-  <tbody>
-    <tr><td><strong>LCP</strong> — Largest Contentful Paint</td><td>Time until the biggest element above the fold is painted</td><td>&lt; 2.5 s</td><td>2.5–4 s</td><td>&gt; 4 s</td></tr>
-    <tr><td><strong>INP</strong> — Interaction to Next Paint</td><td>Worst-case input-to-paint latency (replaced FID in March 2024)</td><td>&lt; 200 ms</td><td>200–500 ms</td><td>&gt; 500 ms</td></tr>
-    <tr><td><strong>CLS</strong> — Cumulative Layout Shift</td><td>Sum of unexpected layout shifts during the session</td><td>&lt; 0.1</td><td>0.1–0.25</td><td>&gt; 0.25</td></tr>
-  </tbody>
-</table>
-
-<p>Supporting metrics still worth tracking:</p>
-<ul>
-  <li><strong>TTFB</strong> — Time to First Byte: server + network latency before any content arrives.</li>
-  <li><strong>FCP</strong> — First Contentful Paint: first text, SVG, or image paint.</li>
-  <li><strong>FID</strong> — First Input Delay (legacy, replaced by INP).</li>
-</ul>
-
-<p>Google publishes thresholds as the 75th-percentile of real-world users — you need 75% of sessions to be "good" to pass.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>LCP is about how fast the big thing shows up. INP is about how responsive every interaction feels, worst case. CLS is about how much the page jumps around. Each has a specific optimization playbook — treat them as distinct problems, not "make the site fast."</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>LCP is how fast the big thing shows up, INP is how responsive every interaction feels, CLS is how much the page jumps</strong> — three distinct problems, each with its own playbook, all judged at the 75th percentile of real users.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>LCP (Largest Contentful Paint)</strong> — time until the largest above-the-fold element paints. Good &lt; 2.5s. Fix: cut TTFB, remove render-blocking resources, <code>fetchpriority="high"</code> + preload the hero, modern formats + responsive <code>srcset</code>.</li>
+    <li><strong>INP (Interaction to Next Paint)</strong> — worst-case input-to-paint latency across the session; <strong>replaced FID in March 2024</strong>. Good &lt; 200ms. Fix: break up long tasks, yield, <code>startTransition</code>, move work to a Worker, ship less JS.</li>
+    <li><strong>CLS (Cumulative Layout Shift)</strong> — sum of unexpected shifts, each = impact fraction × distance fraction. Good &lt; 0.1. Fix: dimensions/aspect-ratio on media, reserve space for ads/embeds/skeletons, <code>font-display: optional</code> or matched fallback metrics, animate with <code>transform</code>.</li>
+    <li><strong>The p75 rule:</strong> a page passes only if 75% of real sessions are "good" — you can't median your way through, so cutting tail latency (slowest devices/networks) is usually higher-leverage than shaving 50ms off an already-fast path.</li>
+    <li><strong>Lab ≠ field.</strong> Lighthouse is one synthetic run on one device; search ranking uses Chrome UX Report field data (CrUX/RUM). Track both — field to know what to fix, lab to debug it.</li>
+    <li>Why INP replaced FID: FID only measured the <strong>first</strong> input; INP catches ongoing responsiveness (crucial for SPAs where users interact many times without a hard navigation).</li>
+    <li>INP has three phases — <strong>input delay</strong> (main thread busy), <strong>processing</strong> (your handlers), <strong>presentation</strong> (render + paint). Diagnose which phase is slow before fixing.</li>
+    <li>CLS excludes shifts within ~500ms of user input (<code>hadRecentInput</code>), so opening a modal or infinite-scroll doesn't count against you.</li>
+    <li><strong>Third-party scripts often dominate INP</strong> — audit them, defer/async, or relocate to a Worker with Partytown.</li>
+    <li>Instrument with the <strong>web-vitals</strong> library (~2KB): <code>onLCP/onINP/onCLS</code> → <code>sendBeacon</code> to your RUM endpoint with context (URL, connection, device), aggregate p75 per page.</li>
+    <li><strong>Full bands:</strong> LCP good &lt; 2.5s / needs work 2.5–4s / poor &gt; 4s; INP &lt; 200ms / 200–500ms / &gt; 500ms; CLS &lt; 0.1 / 0.1–0.25 / &gt; 0.25. Supporting metrics: <strong>TTFB</strong> (server + network before any content) and <strong>FCP</strong> (first text/SVG/image paint).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Optimizing the lab score while real users still suffer — and lazy-loading the LCP image.</strong> Teams push Lighthouse to 100 on a fast machine while field p75 LCP stays at 3.5s; the two often diverge sharply. The classic concrete regression: <code>loading="lazy"</code> on the hero image (or a CSS <code>background-image</code> hero the preload scanner can't see) delays the LCP fetch. Fix: trust CrUX/RUM over lab, keep the hero eager with <code>fetchpriority="high"</code> + preload as an <code>&lt;img&gt;</code>, and optimize for the slowest 25%, not the median.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"LCP, INP, CLS — measured at p75 of real users. INP replaced FID in March 2024 because FID only saw the first interaction; INP catches worst-case responsiveness across the whole session."</div>
+  <div class="revision-say">"Lab and field diverge — Lighthouse is one synthetic run, ranking uses CrUX field data. I optimize what RUM says is bad and use the lab to debug it."</div>
+  <div class="revision-say">"Each metric has its own playbook: preload and prioritize the hero for LCP, break up long tasks and use startTransition for INP, reserve space and match font metrics for CLS."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why Web Vitals exist</h3>
 <p>Legacy perf metrics like <code>load</code> and <code>DOMContentLoaded</code> don't correlate well with user experience. A page with <code>load</code> at 2s might have its main content visible at 500ms or at 4s — same <code>load</code>, very different UX. Web Vitals focus on user-perceived moments: when does the user see content? When do their inputs respond? How stable is what they see?</p>
 
@@ -65,10 +66,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>The "75th percentile" rule</h3>
 <p>Google evaluates pages at the p75 of real-user metrics. "Good LCP" means 75% of page loads had LCP under 2.5s. You can't be "good" if only your median is good — the long tail matters. That's why reducing tail latency (slowest users, slowest devices) is often higher-leverage than shaving 50ms off an already-fast experience.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "three experiences" picture</h3>
 <div class="diagram">
 <pre>
@@ -141,10 +142,10 @@ distance fraction = (largest move distance, any moving element) / max(viewport h
   <div class="callout-title">Common misconception</div>
   <p>"Lighthouse score is Core Web Vitals." No — Lighthouse is a lab test on one device with one network profile. CWV scoring for search ranking uses the Chrome UX Report field data (CrUX) — real users. They often differ significantly. Track both and know which is which.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Measuring CWV in code</h3>
 <p>The canonical library is Google's <code>web-vitals</code> (~2 KB). It handles observer timing, session windows for CLS, reporting on pagehide:</p>
 <pre><code class="language-js">import { onLCP, onINP, onCLS, onFCP, onTTFB } from 'web-vitals';
@@ -258,10 +259,10 @@ new PerformanceObserver((list) =&gt; {
   <li><strong>web-vitals library</strong> for RUM.</li>
   <li><strong>Chrome DevTools Performance panel</strong> — debug individual interactions.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — preload hero image</h3>
 <pre><code class="language-html">&lt;link rel="preload" as="image" href="/hero.webp" fetchpriority="high" /&gt;
 &lt;img src="/hero.webp" alt="" width="1200" height="600" fetchpriority="high" /&gt;</code></pre>
@@ -405,10 +406,11 @@ self.onmessage = (e) =&gt; self.postMessage(JSON.parse(e.data));</code></pre>
     timestamp: Date.now(),
   }));
 });</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. LCP candidate changes during load</h3>
 <p>The largest element changes as content progressively loads. Browser keeps updating until user interacts. If a late-arriving hero image becomes largest, it resets the clock — the LCP is its paint time, which may be bad.</p>
 
@@ -468,10 +470,9 @@ self.onmessage = (e) =&gt; self.postMessage(JSON.parse(e.data));</code></pre>
 
 <h3>20. Slow DNS/TCP to third-party origins</h3>
 <p>Every third-party origin needs DNS + TCP + TLS. Five analytics vendors = five full round-trips. Use <code>preconnect</code> to the critical ones, eliminate the non-critical ones.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — lazy-loading the LCP image</h3>
 <pre><code class="language-html">&lt;img src="hero.webp" loading="lazy" /&gt;</code></pre>
 <p>Defers the fetch → LCP suffers. <code>loading="lazy"</code> is for below-the-fold only. Use <code>loading="eager"</code> (default) + <code>fetchpriority="high"</code> for the hero.</p>
@@ -519,10 +520,10 @@ self.onmessage = (e) =&gt; self.postMessage(JSON.parse(e.data));</code></pre>
 
 <h3>Anti-pattern 15 — ignoring mobile</h3>
 <p>Perf is typically 3-10× worse on mobile. 4G and mid-tier Android phones are your real benchmark, not a M1 MacBook on fiber.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Name and define the Core Web Vitals.</div>
   <div class="qa-answer">
@@ -696,47 +697,24 @@ self.onmessage = (e) =&gt; self.postMessage(JSON.parse(e.data));</code></pre>
     <li>You know third-party scripts often dominate INP; Partytown / async are tools.</li>
   </ul>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>LCP is how fast the big thing shows up, INP is how responsive every interaction feels, CLS is how much the page jumps</strong> — three distinct problems, each with its own playbook, all judged at the 75th percentile of real users.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>LCP (Largest Contentful Paint)</strong> — time until the largest above-the-fold element paints. Good &lt; 2.5s. Fix: cut TTFB, remove render-blocking resources, <code>fetchpriority="high"</code> + preload the hero, modern formats + responsive <code>srcset</code>.</li>
-    <li><strong>INP (Interaction to Next Paint)</strong> — worst-case input-to-paint latency across the session; <strong>replaced FID in March 2024</strong>. Good &lt; 200ms. Fix: break up long tasks, yield, <code>startTransition</code>, move work to a Worker, ship less JS.</li>
-    <li><strong>CLS (Cumulative Layout Shift)</strong> — sum of unexpected shifts, each = impact fraction × distance fraction. Good &lt; 0.1. Fix: dimensions/aspect-ratio on media, reserve space for ads/embeds/skeletons, <code>font-display: optional</code> or matched fallback metrics, animate with <code>transform</code>.</li>
-    <li><strong>The p75 rule:</strong> a page passes only if 75% of real sessions are "good" — you can't median your way through, so cutting tail latency (slowest devices/networks) is usually higher-leverage than shaving 50ms off an already-fast path.</li>
-    <li><strong>Lab ≠ field.</strong> Lighthouse is one synthetic run on one device; search ranking uses Chrome UX Report field data (CrUX/RUM). Track both — field to know what to fix, lab to debug it.</li>
-    <li>Why INP replaced FID: FID only measured the <strong>first</strong> input; INP catches ongoing responsiveness (crucial for SPAs where users interact many times without a hard navigation).</li>
-    <li>INP has three phases — <strong>input delay</strong> (main thread busy), <strong>processing</strong> (your handlers), <strong>presentation</strong> (render + paint). Diagnose which phase is slow before fixing.</li>
-    <li>CLS excludes shifts within ~500ms of user input (<code>hadRecentInput</code>), so opening a modal or infinite-scroll doesn't count against you.</li>
-    <li><strong>Third-party scripts often dominate INP</strong> — audit them, defer/async, or relocate to a Worker with Partytown.</li>
-    <li>Instrument with the <strong>web-vitals</strong> library (~2KB): <code>onLCP/onINP/onCLS</code> → <code>sendBeacon</code> to your RUM endpoint with context (URL, connection, device), aggregate p75 per page.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Optimizing the lab score while real users still suffer — and lazy-loading the LCP image.</strong> Teams push Lighthouse to 100 on a fast machine while field p75 LCP stays at 3.5s; the two often diverge sharply. The classic concrete regression: <code>loading="lazy"</code> on the hero image (or a CSS <code>background-image</code> hero the preload scanner can't see) delays the LCP fetch. Fix: trust CrUX/RUM over lab, keep the hero eager with <code>fetchpriority="high"</code> + preload as an <code>&lt;img&gt;</code>, and optimize for the slowest 25%, not the median.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"LCP, INP, CLS — measured at p75 of real users. INP replaced FID in March 2024 because FID only saw the first interaction; INP catches worst-case responsiveness across the whole session."</div>
-  <div class="revision-say">"Lab and field diverge — Lighthouse is one synthetic run, ranking uses CrUX field data. I optimize what RUM says is bad and use the lab to debug it."</div>
-  <div class="revision-say">"Each metric has its own playbook: preload and prioritize the hero for LCP, break up long tasks and use startTransition for INP, reserve space and match font metrics for CLS."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. How is a CLS score calculated?</div>
+  <div class="qa-answer">
+    <p>Each unexpected shift scores <strong>impact fraction × distance fraction</strong>. Impact fraction is the union of viewport area occupied by the moving elements before and after the shift, divided by viewport area; distance fraction is the largest distance any moving element moved, divided by the larger of viewport height or width. Example: a 200px element moving 400px down in an 800px viewport gives impact ≈ 0.5 and distance 0.5, so 0.25. Shifts are summed within a session window, and shifts within about 500ms of user input (<code>hadRecentInput</code>) are excluded. Eliminate them with dimensions or <code>aspect-ratio</code> on media, reserved space for ads and embeds, matched fallback-font metrics, and <code>transform</code> animations.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name each Core Web Vital, its threshold, and its most common cause?</li>
-    <li>Can you preload and prioritize the LCP element and explain why it helps?</li>
-    <li>Can you break INP into input delay, processing time, and presentation delay?</li>
-    <li>Can you name the components of a CLS score and how to eliminate each shift?</li>
-    <li>Can you contrast lab data with field/RUM data and explain the 75th-percentile rule?</li>
-    <li>Can you measure LCP or INP in code with a <code>PerformanceObserver</code>?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. How would you measure LCP or INP in code without a library?</div>
+  <div class="qa-answer">
+    <p>Use a <code>PerformanceObserver</code> with <code>buffered: true</code>. For LCP, observe <code>largest-contentful-paint</code>, keep the last entry's <code>startTime</code>, and send it with <code>navigator.sendBeacon</code> when <code>visibilityState</code> becomes hidden. For INP, observe <code>event</code> entries (with a <code>durationThreshold</code> such as 40) and track the worst <code>duration</code>. For CLS, observe <code>layout-shift</code> and sum <code>entry.value</code> where <code>!entry.hadRecentInput</code>. Official INP excludes outliers and uses high-percentile selection, so use <code>web-vitals</code> for correct semantics in production.</p>
+<pre><code class="language-ts">new PerformanceObserver((list) =&gt; {
+  const entries = list.getEntries();
+  lcp = entries[entries.length - 1].startTime;
+}).observe({ type: 'largest-contentful-paint', buffered: true });</code></pre>
+  </div>
 </div>
-`}
+` },
 
-]
+  ]
 });

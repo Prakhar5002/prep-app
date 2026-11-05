@@ -1,32 +1,38 @@
 window.PREP_SITE.registerTopic({
-  id: 'off-pwa',
-  module: 'offline',
-  title: 'PWA Manifest & Install',
-  estimatedReadTime: '45 min',
-  tags: ['pwa', 'manifest', 'web-app-manifest', 'install', 'beforeinstallprompt', 'icons', 'splash', 'tauri', 'twa'],
+  id: "off-pwa",
+  module: "offline",
+  title: "PWA Manifest & Install",
+  estimatedReadTime: "45 min",
+  tags: ["pwa","manifest","web-app-manifest","install","beforeinstallprompt","icons","splash","tauri","twa"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>A <strong>Progressive Web App (PWA)</strong> is a web app that, on top of the regular browser experience, can be <em>installed</em> to the home screen, run in its own window without browser chrome, work offline (via Service Worker), receive push notifications, and feel like a native app. The minimum-viable trio: <strong>HTTPS</strong>, a <strong>Web App Manifest</strong> (a JSON file describing icon / name / display mode), and a <strong>Service Worker</strong> with a <code>fetch</code> handler.</p>
-<ul>
-  <li><strong>Manifest essentials:</strong> <code>name</code>, <code>short_name</code>, <code>icons</code> (192 + 512), <code>start_url</code>, <code>display</code> (<code>standalone</code> for app feel), <code>background_color</code>, <code>theme_color</code>.</li>
-  <li><strong>Install prompt:</strong> Chrome / Edge fire <code>beforeinstallprompt</code> when criteria met; you decide when to call <code>.prompt()</code>. iOS Safari has no programmatic prompt — user must tap "Add to Home Screen" manually.</li>
-  <li><strong>Display modes:</strong> <code>browser</code> (default), <code>minimal-ui</code>, <code>standalone</code> (no browser chrome — most "app-like"), <code>fullscreen</code>.</li>
-  <li><strong>iOS quirks:</strong> Safari supports PWAs but has limited manifest support; relies on <code>apple-touch-icon</code> link tags + <code>apple-mobile-web-app-*</code> meta tags. Push notifications since iOS 16.4 (installed PWAs only).</li>
-  <li><strong>Lighthouse PWA audit</strong> is the source-of-truth checklist: HTTPS, viewport, manifest, SW, offline, installability.</li>
-  <li><strong>Beyond browser PWAs:</strong> Trusted Web Activities (Android — wrap PWA in APK for Play Store), Tauri / Capacitor (wrap web tech in native shell), Edge Side Panel apps.</li>
-  <li><strong>RN angle:</strong> not a PWA, but the install / offline / push primitives map to native equivalents (App Store install, AsyncStorage / MMKV, FCM / APNs).</li>
-</ul>
-<p><strong>Mantra:</strong> "Manifest declares intent; Service Worker delivers behavior; Lighthouse keeps you honest. iOS gets a thinner version — design for that."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A PWA is a web app that <strong>installs, runs in its own window, works offline, and gets push</strong> — the minimum-viable trio is HTTPS, a Web App Manifest, and a Service Worker with a fetch handler.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Manifest declares intent; Service Worker delivers behavior; Lighthouse keeps you honest.</strong> Both manifest and SW are required for installability.</li>
+    <li>Manifest essentials: <code>name</code>, <code>short_name</code>, <code>icons</code> (192 + 512, plus a maskable one), <code>start_url</code>, <code>display</code> (<code>standalone</code> for app feel), <code>background_color</code>, <code>theme_color</code>.</li>
+    <li>Install prompt: Chrome/Edge fire <code>beforeinstallprompt</code> when criteria are met and you decide when to call <code>.prompt()</code> (<code>preventDefault()</code> suppresses the mini-infobar); iOS Safari has no programmatic prompt — the user taps Share → "Add to Home Screen".</li>
+    <li>Display modes: <code>browser</code> (default), <code>minimal-ui</code>, <code>standalone</code> (no browser chrome — most app-like), <code>fullscreen</code>.</li>
+    <li>iOS is a thinner version: limited manifest support, relies on <code>apple-touch-icon</code> and <code>apple-mobile-web-app-*</code> tags; push only since iOS 16.4 and only for installed PWAs; no Background or Periodic Sync.</li>
+    <li>Lighthouse's PWA audit is the source-of-truth installability checklist: HTTPS, viewport, manifest, SW, offline, installability.</li>
+    <li>Beyond browser PWAs: Trusted Web Activities (wrap the PWA in an APK for the Play Store), Tauri/Capacitor native shells, Edge Side Panel apps.</li>
+    <li>RN angle: not a PWA, but install / offline / push map to native equivalents (App Store install, AsyncStorage / MMKV, FCM / APNs).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>A SW with no fetch handler isn't installable</strong>, and a missing <em>maskable</em> icon means Android OEMs crop the square icon and the logo loses its corners. Design iOS as a deliberately thinner version rather than assuming parity.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A PWA is HTTPS plus a manifest plus a Service Worker with a fetch handler — the manifest declares intent, the SW delivers behavior."</div>
+  <div class="revision-say">"iOS gets a thinner version — no programmatic install prompt and limited manifest support — so I design for that, not for parity."</div>
+  <div class="revision-say">"I ship a maskable icon; otherwise Android crops the square one and the logo loses its corners."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "PWA" actually means</h3>
 <p>A web app that meets a small set of criteria the browser uses to grant <em>app-like</em> capabilities: install to home screen, standalone window without URL bar, Service Worker for offline + push, file system access (in some browsers), background sync, app shortcuts, share targets.</p>
 
@@ -89,12 +95,10 @@ window.PREP_SITE.registerTopic({
   <li>Standalone mode but app still navigates to external links inside the PWA frame.</li>
   <li>Update never surfaced; users stuck on stale code.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The Web App Manifest</h3>
 <p>A JSON file the browser reads when the page loads (via <code>&lt;link rel="manifest"&gt;</code>). Declarative — no code runs.</p>
 
@@ -240,12 +244,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>Capacitor / Tauri</td><td>Real native shell with full system access</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Bare-minimum PWA</h3>
 <pre><code class="language-html">&lt;!-- index.html --&gt;
 &lt;!DOCTYPE html&gt;
@@ -505,12 +507,10 @@ if ('clearAppBadge' in navigator) {
 }
 </code></pre>
 <p>Register a custom URL scheme; <code>web+myapp://abc123</code> opens your PWA.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Full PWA setup with vite-plugin-pwa</h3>
 <pre><code class="language-typescript">// vite.config.ts
 import { defineConfig } from 'vite';
@@ -767,12 +767,11 @@ window.addEventListener('appinstalled', () =&gt; {
 const mode = window.matchMedia('(display-mode: standalone)').matches ? 'pwa' : 'browser';
 analytics.identify({ display_mode: mode });
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>iOS Safari quirks</h3>
 <ul>
   <li>Limited manifest support — most fields ignored. Use apple-* meta tags.</li>
@@ -887,12 +886,9 @@ analytics.identify({ display_mode: mode });
   <li>Lighthouse PWA checks expect HTTPS; localhost is exempt but the production check is the real bar.</li>
   <li>Run against the deployed staging site; not your local dev server.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common PWA mistakes</h3>
 <ol>
   <li><strong>Missing maskable icon.</strong> Android OEMs crop square icons; logo loses corners.</li>
@@ -1014,12 +1010,10 @@ self.addEventListener('fetch', (e) =&gt; {
 
 <h3>Anti-pattern: theme_color that doesn't match brand</h3>
 <p>theme_color tints the status bar in standalone mode. Mismatched with app body = jarring transition. Pick a value that matches your top app bar color.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common PWA interview prompts</h3>
 <ol>
   <li>What makes a web app a PWA?</li>
@@ -1157,53 +1151,32 @@ self.addEventListener('fetch', (e) =&gt; {
   <li><strong>PWA Manifest & Install</strong> (this topic) — manifest fields, install prompt UX, iOS guidance, Trusted Web Activity, Lighthouse audit.</li>
 </ul>
 <p>4 topics. Together they cover the full offline-first, installable web-app stack — what it takes to ship a real product that works without the network and feels like an app.</p>
-`
-    },
 
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A PWA is a web app that <strong>installs, runs in its own window, works offline, and gets push</strong> — the minimum-viable trio is HTTPS, a Web App Manifest, and a Service Worker with a fetch handler.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Manifest essentials: <code>name</code>, <code>short_name</code>, <code>icons</code> (192 + 512), <code>start_url</code>, <code>display</code> (<code>standalone</code> for app feel), <code>background_color</code>, <code>theme_color</code>.</li>
-    <li>Install prompt: Chrome/Edge fire <code>beforeinstallprompt</code> when criteria are met and you decide when to call <code>.prompt()</code>; iOS Safari has no programmatic prompt — the user taps "Add to Home Screen".</li>
-    <li>Display modes: browser, minimal-ui, standalone (most app-like), fullscreen.</li>
-    <li>iOS is a thinner version: limited manifest support, relies on <code>apple-touch-icon</code> and <code>apple-mobile-web-app-*</code> tags; push only since iOS 16.4 and only for installed PWAs.</li>
-    <li>Lighthouse's PWA audit is the source-of-truth installability checklist: HTTPS, viewport, manifest, SW, offline.</li>
-    <li>Beyond browser PWAs: Trusted Web Activities (Android/Play Store) and Tauri/Capacitor native shells.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>A SW with no fetch handler isn't installable</strong>, and a missing <em>maskable</em> icon means Android OEMs crop the square icon and the logo loses its corners. Design iOS as a deliberately thinner version rather than assuming parity.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A PWA is HTTPS plus a manifest plus a Service Worker with a fetch handler — the manifest declares intent, the SW delivers behavior."</div>
-  <div class="revision-say">"iOS gets a thinner version — no programmatic install prompt and limited manifest support — so I design for that, not for parity."</div>
-  <div class="revision-say">"I ship a maskable icon; otherwise Android crops the square one and the logo loses its corners."</div>
+<div class="qa-block">
+  <div class="qa-question">Q1. Which manifest fields actually matter, and what does <code>display: standalone</code> do?</div>
+  <div class="qa-answer">
+    <p>The ones that matter: <code>name</code> (install prompt and splash), <code>short_name</code> (home-screen label, 12 chars or fewer), <code>icons</code> (at least 192px and 512px, plus a maskable variant), <code>start_url</code> (what opens on launch; add <code>?source=pwa</code> for analytics), <code>display</code>, <code>background_color</code> (splash background) and <code>theme_color</code> (status bar / UI chrome). <code>display: standalone</code> opens the app in its own window with no browser chrome (no URL bar or tabs) and tints the status bar with <code>theme_color</code>, which is what makes it feel like a native app.</p>
+  </div>
 </div>
-`
-    },
+<div class="qa-block">
+  <div class="qa-question">Q2. How does the install prompt differ between Chrome and iOS Safari?</div>
+  <div class="qa-answer">
+    <p>Chrome (and Edge, Samsung Internet) fires <code>beforeinstallprompt</code> once the installability criteria are met. You call <code>e.preventDefault()</code> to suppress the automatic mini-infobar, stash the event, and call <code>.prompt()</code> from your own install button at a good moment. iOS Safari has no <code>beforeinstallprompt</code> and no programmatic prompt at all: the user must tap Share, then "Add to Home Screen". So on iOS you detect the platform and that you're not already standalone, and show your own guidance UI explaining those steps.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. What iOS PWA limitations do you design around?</div>
+  <div class="qa-answer">
+    <p>Safari ignores most of the manifest, so you add <code>apple-touch-icon</code> and <code>apple-mobile-web-app-*</code> meta tags (and splash images). There's no install prompt, push works only since iOS 16.4 and only for installed PWAs, and there's no Background Sync or Periodic Sync. Storage is evicted after about 7 days idle unless installed, and cookies are shared with Safari, so clearing Safari clears the PWA. Standalone mode can also lose the login session when the user follows an external link. So I treat iOS as a deliberately thinner version.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. What does the Lighthouse PWA audit check?</div>
+  <div class="qa-answer">
+    <p>It checks for a web app manifest with the required fields, a registered Service Worker that handles <code>fetch</code>, that the page loads offline (responds with 200), a viewport meta tag with <code>width=device-width</code>, an apple touch icon, a themed splash screen (<code>theme_color</code> and <code>background_color</code> set), at least one maskable icon, and content sized for the viewport. A perfect score isn't the goal in itself; installable, offline-capable and accessible is.</p>
+  </div>
+</div>
+` },
 
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the minimum requirements for an installable PWA?</li>
-    <li>Can you list the manifest fields that actually matter and what <code>display: standalone</code> does?</li>
-    <li>Can you explain how the install prompt differs between Chrome and iOS Safari?</li>
-    <li>Can you explain why a maskable icon matters on Android?</li>
-    <li>Can you name the iOS limitations you design around?</li>
-    <li>Can you say what the Lighthouse PWA audit checks?</li>
-  </ul>
-</div>
-`
-    }
   ]
 });

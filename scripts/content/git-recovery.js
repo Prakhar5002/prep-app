@@ -1,33 +1,44 @@
 window.PREP_SITE.registerTopic({
-  id: 'git-recovery',
-  module: 'git',
-  title: 'Recovery (reflog etc.)',
-  estimatedReadTime: '40 min',
-  tags: ['git', 'reflog', 'recovery', 'lost-commits', 'reset', 'revert', 'gc', 'fsck'],
+  id: "git-recovery",
+  module: "git",
+  title: "Recovery (reflog etc.)",
+  estimatedReadTime: "40 min",
+  tags: ["git","reflog","recovery","lost-commits","reset","revert","gc","fsck"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Git is mostly forgiving — almost any "I lost my work" panic has a recovery path, if you act quickly. The reflog is your safety net for local operations; <code>git fsck</code> finds dangling objects; revert + reset address shared-history changes. Senior engineers know the recovery toolkit cold, because the cost of <em>not</em> knowing is hours of redoing work or losing it forever.</p>
-<ul>
-  <li><strong>Reflog records every move of HEAD</strong> in your local repo. Lost a commit via reset / rebase / branch-delete? Reflog has it for ~90 days by default.</li>
-  <li><strong>Most "destroyed" commits aren't gone</strong> — they're orphaned. Garbage collection eventually removes them; until then, they're recoverable.</li>
-  <li><strong>Recovery patterns:</strong> <code>git reset --hard &lt;sha&gt;</code> to return to a state; <code>git cherry-pick</code> to extract a lost commit; <code>git checkout &lt;sha&gt; -- &lt;file&gt;</code> for file-level recovery.</li>
-  <li><strong>For shared-history mistakes</strong> (force-pushed bad code, merged wrong branch): <code>git revert</code> creates an undoing commit. Don't try to rewrite shared history.</li>
-  <li><strong>For lost work:</strong> reflog + cherry-pick. For lost branches: reflog + branch creation. For lost stashes: <code>git fsck --lost-found</code>.</li>
-  <li><strong>The "I committed to wrong branch"</strong> recovery: cherry-pick to right branch, reset wrong branch.</li>
-  <li><strong>The "I leaked a secret"</strong> recovery: rotate secret first, then scrub history with <code>git filter-repo</code> (in coordination with team).</li>
-  <li><strong>Mobile / RN context:</strong> long builds make recovery especially valuable — losing 2 hours of work plus rebuild time hurts. Build the recovery muscle memory.</li>
-</ul>
-<p><strong>Mantra:</strong> "Don't panic. Reflog is your friend. Most things are recoverable for ~90 days. Reset for local; revert for shared. Push critical work somewhere remote for true safety."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Almost any <strong>committed</strong> work is recoverable — the reflog records every move of HEAD locally for ~30–90 days — so <strong>don't panic, stop, and run <code>git reflog</code> before you touch anything</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The reflog records every move of HEAD locally</strong> (commits, checkouts, resets, rebases, merges); "lost" commits usually sit there ~90 days (30 for unreachable) before garbage collection prunes them.</li>
+    <li><strong>Most "destroyed" commits aren't gone — they're orphaned</strong>, still in the object database until garbage collection removes them; recovery is just pointing a ref back at them.</li>
+    <li><strong>Committed work is almost always recoverable; uncommitted working-tree changes are fragile</strong> — a <code>reset --hard</code> or <code>clean -fdx</code> over them is gone for good.</li>
+    <li>First move on any disaster: <strong>stop, don't run more commands, run <code>git reflog</code>, identify the good state, then act</strong> — panicked follow-up commands cause most permanent loss.</li>
+    <li>Lost commits after <code>reset --hard</code> or a bad rebase: <code>git reset --hard HEAD@{1}</code> or <code>git reset --hard ORIG_HEAD</code> (Git sets ORIG_HEAD before rebase / merge / reset).</li>
+    <li><strong>Deleted branch: find its tip in the reflog, then <code>git branch &lt;name&gt; &lt;sha&gt;</code></strong> re-creates the ref — deleting a ref never deletes the commits.</li>
+    <li>Dropped or cleared stash survives as a dangling commit — find it with <code>git fsck --lost-found</code> (or <code>--unreachable --no-reflogs</code>), then <code>git stash apply &lt;sha&gt;</code> or branch it.</li>
+    <li><strong>Reset for local recovery; <code>git revert</code> for shared mistakes</strong> — never rewrite history others already pulled; revert adds an undoing commit that's safe to push.</li>
+    <li>File-level recovery: <code>git checkout &lt;sha&gt; -- path/to/file</code> pulls one file back from any commit in history.</li>
+    <li><strong>Reflog is local-only and time-bounded</strong> — disk failure or GC wipes it, so push critical work (even a backup branch) and tag / branch before risky operations for true safety.</li>
+    <li><strong>Leaked a secret: rotate the secret first</strong> (assume it's compromised), then scrub with <code>git filter-repo</code> and coordinate the force-push and re-clone with the team.</li>
+    <li>Lost work: reflog + cherry-pick; lost branch: reflog + branch creation; lost stash: <code>git fsck --lost-found</code>.</li>
+    <li>Wrong-branch commit: cherry-pick it onto the right branch, then reset the wrong branch (or revert it if already pushed).</li>
+    <li>Act fast — auto-GC triggers on ordinary operations and eventually prunes unreachable orphans.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Running <code>git reset --hard</code> with uncommitted changes:</strong> the reflog can bring back the commit you moved off of, but the uncommitted staged and working-tree edits it discarded were never in Git and are unrecoverable. Fix: run <code>git status</code> before any <code>reset --hard</code>, and stash or commit WIP first.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Don't panic — almost anything committed is recoverable from the reflog for weeks; I stop, run git reflog, then reset or branch back to the good state."</div>
+  <div class="revision-say">"Reset and reflog for local recovery; revert for anything already shared — I never rewrite history other people have."</div>
+  <div class="revision-say">"The reflog is local-only and time-bounded, so for real safety I push critical work to a remote backup branch and tag before risky operations."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The Git "object permanence" mental model</h3>
 <p>When you commit in Git, the commit object is stored in <code>.git/objects/</code> with a unique SHA-1 (or SHA-256). Once stored, the object is unchanged — content-addressable. Even when no branch / tag references it, the object remains until garbage collection.</p>
 <p>This is the foundation of Git's recovery story: <em>most "destroyed" things are merely unreferenced</em>. They sit in the object database, unreachable through normal commands but recoverable via reflog or fsck.</p>
@@ -117,12 +128,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>Act methodically.</strong> Test each step. Verify before proceeding.</li>
 </ol>
 <p>Most disasters are recoverable when handled calmly. The damage is usually done by panicked subsequent commands.</p>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "where could this be?" framework</h3>
 <p>When you can't find your work, ask: where could it possibly be?</p>
 <table>
@@ -222,12 +231,10 @@ git reset --hard backup/&lt;date&gt;</code></pre>
   <li>Post-mortem the cause: how do we prevent next time?</li>
 </ul>
 <p>Recovery isn't only technical; the social layer matters.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>The reflog: read it</h3>
 <pre><code># Show HEAD's reflog (most common):
 git reflog
@@ -490,12 +497,10 @@ git reset --hard backup/pre-experiment</code></pre>
 # git rl           - show reflog
 # git oops         - undo the last destructive operation
 # git recover 5    - go back 5 reflog steps</code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🔍 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: "I did <code>git reset --hard HEAD~5</code>; my work is gone!"</h3>
 <p><strong>Setup:</strong> 5 commits of work that took all morning. Reset by accident.</p>
 
@@ -546,7 +551,7 @@ git push origin feature/X
 # Step 5 (optional): Set up local "deletion gate"
 # In ~/.gitconfig:
 # [alias]
-#   br-delete = "!f() { read -p 'Are you sure? (yes/no): ' yn; if [ \"$yn\" = \"yes\" ]; then git branch -D $1; fi; }; f"
+#   br-delete = "!f() { read -p 'Are you sure? (yes/no): ' yn; if [ "$yn" = "yes" ]; then git branch -D $1; fi; }; f"
 # Now use: git br-delete feature/X (asks confirmation)</code></pre>
 
 <h3>Example 3: "Bad rebase produced wrong code"</h3>
@@ -730,12 +735,11 @@ git status   # tells you what's in progress; --abort or --continue
 # Check OS time machine / backup if configured.
 
 # LESSON: Commit early and often; even WIP. Auto-save isn't enough.</code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Reflog has been pruned</h3>
 <p>If garbage collection ran (default 30 days for unreachable, 90 for reachable), the reflog entry may be gone:</p>
 <pre><code>git reflog
@@ -873,12 +877,9 @@ git reset --hard ORIG_HEAD
   <li>Xcode preferences / breakpoints: not committed; lost on machine wipe (consider dotfiles management).</li>
   <li>Simulator state: ephemeral; expect to recreate.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern: panicking and running more commands</h3>
 <p><strong>Looks like:</strong> Lost work; immediately try every Git command you can think of.</p>
 <p><strong>Why bad:</strong> Each operation can complicate recovery; some operations destroy reflog entries.</p>
@@ -970,12 +971,10 @@ git reset --hard ORIG_HEAD
 <p><strong>Looks like:</strong> First time using <code>reflog</code> is during an actual emergency.</p>
 <p><strong>Why bad:</strong> Stress + unfamiliarity = errors. Compounds the disaster.</p>
 <p><strong>Fix:</strong> Practice on a sandbox repo. Make and recover from each failure mode (reset, branch delete, stash drop, bad rebase). Build muscle memory.</p>
-`
-    },
-    {
-      id: 'interview',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>"How do you recover lost work in Git?"</h3>
 <p>Common at senior+ interviews. Tests practical Git fluency.</p>
 
@@ -1165,49 +1164,7 @@ So:
 <h3>The 30-second mantra</h3>
 <p><em>"Don't panic. Reflog has almost everything for ~30-90 days. Reset for local recovery; revert for shared. Push critical work to remote for durability. Practice recovery on a sandbox before the real emergency. Most disasters are recoverable when handled calmly."</em></p>
 <p>Recovery skills are confidence skills. Engineers who know they can undo mistakes work boldly with Git; engineers who don't tip-toe and avoid useful operations. Build the muscle memory; the boldness compounds.</p>
-`
-    },
-    { id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Almost any <strong>committed</strong> work is recoverable — the reflog records every move of HEAD locally for ~30–90 days — so <strong>don't panic, stop, and run <code>git reflog</code> before you touch anything</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>The reflog records every move of HEAD locally</strong> (commits, checkouts, resets, rebases, merges); "lost" commits usually sit there ~90 days (30 for unreachable) before garbage collection prunes them.</li>
-    <li><strong>Committed work is almost always recoverable; uncommitted working-tree changes are fragile</strong> — a <code>reset --hard</code> or <code>clean -fdx</code> over them is gone for good.</li>
-    <li>First move on any disaster: <strong>stop, don't run more commands, run <code>git reflog</code>, identify the good state, then act</strong> — panicked follow-up commands cause most permanent loss.</li>
-    <li>Lost commits after <code>reset --hard</code> or a bad rebase: <code>git reset --hard HEAD@{1}</code> or <code>git reset --hard ORIG_HEAD</code> (Git sets ORIG_HEAD before rebase / merge / reset).</li>
-    <li><strong>Deleted branch: find its tip in the reflog, then <code>git branch &lt;name&gt; &lt;sha&gt;</code></strong> re-creates the ref — deleting a ref never deletes the commits.</li>
-    <li>Dropped or cleared stash survives as a dangling commit — find it with <code>git fsck --lost-found</code> (or <code>--unreachable --no-reflogs</code>), then <code>git stash apply &lt;sha&gt;</code> or branch it.</li>
-    <li><strong>Reset for local recovery; <code>git revert</code> for shared mistakes</strong> — never rewrite history others already pulled; revert adds an undoing commit that's safe to push.</li>
-    <li>File-level recovery: <code>git checkout &lt;sha&gt; -- path/to/file</code> pulls one file back from any commit in history.</li>
-    <li><strong>Reflog is local-only and time-bounded</strong> — disk failure or GC wipes it, so push critical work (even a backup branch) and tag / branch before risky operations for true safety.</li>
-    <li><strong>Leaked a secret: rotate the secret first</strong> (assume it's compromised), then scrub with <code>git filter-repo</code> and coordinate the force-push and re-clone with the team.</li>
-    <li>Wrong-branch commit: cherry-pick it onto the right branch, then reset the wrong branch (or revert it if already pushed).</li>
-    <li>Act fast — auto-GC triggers on ordinary operations and eventually prunes unreachable orphans.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Running <code>git reset --hard</code> with uncommitted changes:</strong> the reflog can bring back the commit you moved off of, but the uncommitted staged and working-tree edits it discarded were never in Git and are unrecoverable. Fix: run <code>git status</code> before any <code>reset --hard</code>, and stash or commit WIP first.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Don't panic — almost anything committed is recoverable from the reflog for weeks; I stop, run git reflog, then reset or branch back to the good state."</div>
-  <div class="revision-say">"Reset and reflog for local recovery; revert for anything already shared — I never rewrite history other people have."</div>
-  <div class="revision-say">"The reflog is local-only and time-bounded, so for real safety I push critical work to a remote backup branch and tag before risky operations."</div>
-</div>
-`
-    },
-    { id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain what the reflog records, and how long entries survive before garbage collection?</li>
-    <li>Can you recover a commit lost to a bad <code>reset --hard</code> or rebase using reflog or <code>ORIG_HEAD</code>?</li>
-    <li>Can you restore a branch you deleted with <code>-D</code> that had unmerged commits?</li>
-    <li>Can you recover a dropped stash with <code>git fsck</code>?</li>
-    <li>Can you say why you'd revert rather than reset to fix a mistake on a shared branch?</li>
-    <li>Can you explain what is NOT recoverable, and how to back up before risky operations?</li>
-  </ul>
-</div>
-`
-    }
+` },
+
   ]
 });

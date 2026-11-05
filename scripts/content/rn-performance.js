@@ -1,38 +1,45 @@
 window.PREP_SITE.registerTopic({
-  id: 'rn-performance',
-  module: 'React Native',
-  title: 'Performance',
-  estimatedReadTime: '28 min',
-  tags: ['react-native', 'performance', 'flashlist', 'reanimated', 'hermes', 'profiler', 'bundle', 'ram-bundle'],
+  id: "rn-performance",
+  module: "React Native",
+  title: "Performance",
+  estimatedReadTime: "28 min",
+  tags: ["react-native","performance","flashlist","reanimated","hermes","profiler","bundle","ram-bundle"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>RN performance work targets the four places things get slow:</p>
-<ol>
-  <li><strong>Startup time</strong> — time from tap to first usable UI. Biggest factor: JS bundle size + parse time.</li>
-  <li><strong>Render time</strong> — component rendering, diffing, native view creation. Memoize hot paths, virtualize lists.</li>
-  <li><strong>Frame rate</strong> — scroll and animation smoothness. Move work to UI thread via Reanimated.</li>
-  <li><strong>Memory</strong> — leaks accumulate over sessions. Eliminate cycles, unmount virtualized items.</li>
-</ol>
-<ul>
-  <li><strong>Hermes</strong> (default) — pre-compiled bytecode, smaller heap, faster startup vs JSC.</li>
-  <li><strong>New Architecture (Fabric + TurboModules + JSI)</strong> — default since RN 0.76. Synchronous native calls, concurrent rendering, removes bridge bottleneck.</li>
-  <li><strong>FlashList</strong> over FlatList for long lists — cell recycling dramatically reduces memory + render churn.</li>
-  <li><strong>Reanimated + Gesture Handler</strong> — animations and gestures run on UI thread; stay smooth even when JS is busy.</li>
-  <li><strong>Expo Image / Fast Image</strong> for production image handling with caching, placeholders, memory management.</li>
-  <li><strong>inlineRequires: true</strong> in Metro — defers module loading to first use; improves startup.</li>
-  <li><strong>Profile before optimizing</strong>: React Native DevTools, React DevTools Profiler, Xcode Instruments, Android Studio Profiler.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Mobile is slower and pickier than web. Hermes and the New Architecture are on by default now (Hermes since 0.70, New Arch since 0.76) — keep them on, use FlashList for lists, Reanimated for animations, Expo Image for images, and inlineRequires for startup. Profile to confirm fixes — intuition fails more often on mobile than on desktop.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Profile first on a real mid-range Android, then fix the right thread</strong> — mobile is slower and pickier than web, and intuition about "the slow part" fails more often than not.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Four targets, four playbooks:</strong> startup (bundle size + parse), render (memoize + virtualize), frame rate (move work to the UI thread), memory (kill leaks + retain cycles).</li>
+    <li><strong>Three threads:</strong> JS (components, handlers, network), UI (native views, gestures, Reanimated worklets), Shadow (Yoga layout). Blocking JS → state lags but scroll still works; blocking UI → everything freezes.</li>
+    <li><strong>Profile before optimizing</strong> — intuition fails more on mobile. Many cheap renders often cost more than one expensive one; a 3MB hero image beats a fancy animation for jank.</li>
+    <li><strong>Profiling tools:</strong> the Perf Monitor (JS vs UI FPS), React Native DevTools, the React DevTools Profiler, Xcode Instruments and the Android Studio Profiler.</li>
+    <li><strong>Profile on a physical mid-range Android</strong> — simulators and flagship iPhones hide problems.</li>
+    <li><strong>Hermes</strong> (default since 0.70): pre-compiled bytecode → 30–50% faster startup, smaller binary, lower heap. Keep it on.</li>
+    <li><strong>New Architecture</strong> (Fabric + TurboModules + JSI, default since 0.76): synchronous native calls (no JSON bridge), lazy TurboModules, bridgeless, real Concurrent React.</li>
+    <li><strong>FlashList over FlatList</strong> for long lists — recycles native views (like RecyclerView/UITableView) instead of unmounting. v2 (2025) dropped the required <code>estimatedItemSize</code>.</li>
+    <li><strong>Reanimated + Gesture Handler:</strong> worklets run on the UI thread via JSI → animations stay smooth even when the JS thread is busy.</li>
+    <li><strong>expo-image / FastImage</strong> for caching, placeholders (blurhash), and automatic memory management. Never ship full-res images for thumbnails.</li>
+    <li><strong>inlineRequires: true</strong> in Metro defers module loading to first use → faster startup.</li>
+    <li><strong>What breaks memoization:</strong> inline functions (<code>onPress={() =&gt; …}</code>), inline objects, and inline style arrays create new references every render. Stabilize with <code>useCallback</code>/<code>useMemo</code>/pre-declared constants.</li>
+    <li><strong>Memoization is not free</strong> — for cheap components the comparison cost exceeds the saving. Profile first.</li>
+    <li><strong>JS FPS vs UI FPS:</strong> low JS + high UI → JS-thread bottleneck (fix renders/offload work); low UI + high JS → native-side (fewer views, simpler layouts).</li>
+    <li><strong>Heavy JS work</strong> (filter/sort/parse) locking the app → <code>startTransition</code>, debounce input, <code>InteractionManager.runAfterInteractions</code>, or a worker/native module.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Optimizing without profiling — and over-memoizing everything.</strong> Wrapping every component in <code>React.memo</code> and every value in <code>useMemo</code>/<code>useCallback</code> isn't free: each one costs a comparison plus the memoized box, and for cheap components that cost exceeds the saving. Worse, memo is silently defeated by inline functions, objects, and style arrays passed as props (a new reference every render). Fix: profile on a physical device to find the actual hot path, then stabilize only those props and memoize only what measurably benefits.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I profile first on a physical mid-range Android, then read JS FPS vs UI FPS — that tells me whether the bottleneck is the JS thread or the native side before I change anything."</div>
+  <div class="revision-say">"My defaults are Hermes and the New Architecture on, FlashList for long lists, Reanimated for animations and gestures, and expo-image for images."</div>
+  <div class="revision-say">"Animation jank usually means work on the wrong thread — I move it to the UI thread with Reanimated worklets so it's decoupled from a busy JS thread."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why mobile performance is harder than web</h3>
 <ul>
   <li><strong>Device variety</strong> — from flagship iPhones to $100 Android devices with 1GB RAM.</li>
@@ -79,10 +86,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why bundle size matters</h3>
 <p>Every kilobyte of JS is downloaded (if OTA update), parsed, compiled, kept in memory. On low-end devices, parse/compile dominates startup. Aim for code-split routes, tree-shake, avoid shipping debug libs in production.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "three threads" picture</h3>
 <div class="diagram">
 <pre>
@@ -160,10 +167,10 @@ Scale to 100 rows? Multiply. Scale to 1000? Virtualize.</code></pre>
   <div class="callout-title">Common misconception</div>
   <p>"Premature memoization is harmless." It's not free — each <code>useMemo</code>/<code>useCallback</code> costs comparisons + the memoized box. For cheap components, the cost exceeds the saving. Profile to find which parts actually benefit.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Startup — Hermes + bytecode</h3>
 <pre><code>// android/gradle.properties
 hermesEnabled=true
@@ -295,10 +302,10 @@ Shows two numbers: JS FPS and UI FPS. Below 60 means dropped frames.</code></pre
 <pre><code>npx react-native bundle --platform ios --dev false --entry-file index.js --bundle-output main.jsbundle --sourcemap-output main.jsbundle.map
 npx source-map-explorer main.jsbundle main.jsbundle.map
 // Shows what's taking space — catch a 500KB lib you forgot about.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — memoized row</h3>
 <pre><code class="language-tsx">const Row = React.memo(function Row({ item, onPress }: Props) {
   return (
@@ -439,10 +446,11 @@ use_react_native!(:new_arch_enabled =&gt; true, :hermes_enabled =&gt; true)
 
 <h3>Example 15 — memory snapshot via React Native DevTools</h3>
 <p>Open React Native DevTools → Memory → Take snapshot. Interact with the app → take another snapshot → compare. Growing components = likely leaks.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. FlashList estimatedItemSize wrong</h3>
 <p>Estimate used for initial layout. Too small → empty space flashes. Too big → over-scroll. Use a realistic average.</p>
 
@@ -504,10 +512,9 @@ export function put(k, v) { cache.set(k, v); }
 
 <h3>20. iOS simulator performance is misleading</h3>
 <p>Simulator uses Mac CPU — often faster than a real device. Always profile on a physical device (preferably a mid-range Android).</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — inline renderItem / onPress</h3>
 <p>New function every render → children can't memoize. useCallback + React.memo.</p>
 
@@ -552,10 +559,10 @@ export function put(k, v) { cache.set(k, v); }
 
 <h3>Anti-pattern 15 — no perf budget / no CI</h3>
 <p>App bloats over months; regression only noticed when user complains. Set startup + bundle budgets; fail PR if exceeded.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. An app feels janky during scroll. How do you debug?</div>
   <div class="qa-answer">
@@ -753,52 +760,32 @@ npx source-map-explorer main.jsbundle main.jsbundle.map</code></pre>
     <li>You know memoization is not free — profile first.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Profile first on a real mid-range Android, then fix the right thread</strong> — mobile is slower and pickier than web, and intuition about "the slow part" fails more often than not.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Four targets, four playbooks:</strong> startup (bundle size + parse), render (memoize + virtualize), frame rate (move work to the UI thread), memory (kill leaks + retain cycles).</li>
-    <li><strong>Three threads:</strong> JS (components, handlers, network), UI (native views, gestures, Reanimated worklets), Shadow (Yoga layout). Blocking JS → state lags but scroll still works; blocking UI → everything freezes.</li>
-    <li><strong>Profile before optimizing</strong> — intuition fails more on mobile. Many cheap renders often cost more than one expensive one; a 3MB hero image beats a fancy animation for jank.</li>
-    <li><strong>Profile on a physical mid-range Android</strong> — simulators and flagship iPhones hide problems.</li>
-    <li><strong>Hermes</strong> (default since 0.70): pre-compiled bytecode → 30–50% faster startup, smaller binary, lower heap. Keep it on.</li>
-    <li><strong>New Architecture</strong> (Fabric + TurboModules + JSI, default since 0.76): synchronous native calls (no JSON bridge), lazy TurboModules, bridgeless, real Concurrent React.</li>
-    <li><strong>FlashList over FlatList</strong> for long lists — recycles native views (like RecyclerView/UITableView) instead of unmounting. v2 (2025) dropped the required <code>estimatedItemSize</code>.</li>
-    <li><strong>Reanimated + Gesture Handler:</strong> worklets run on the UI thread via JSI → animations stay smooth even when the JS thread is busy.</li>
-    <li><strong>expo-image / FastImage</strong> for caching, placeholders (blurhash), and automatic memory management. Never ship full-res images for thumbnails.</li>
-    <li><strong>inlineRequires: true</strong> in Metro defers module loading to first use → faster startup.</li>
-    <li><strong>What breaks memoization:</strong> inline functions (<code>onPress={() =&gt; …}</code>), inline objects, and inline style arrays create new references every render. Stabilize with <code>useCallback</code>/<code>useMemo</code>/pre-declared constants.</li>
-    <li><strong>Memoization is not free</strong> — for cheap components the comparison cost exceeds the saving. Profile first.</li>
-    <li><strong>JS FPS vs UI FPS:</strong> low JS + high UI → JS-thread bottleneck (fix renders/offload work); low UI + high JS → native-side (fewer views, simpler layouts).</li>
-    <li><strong>Heavy JS work</strong> (filter/sort/parse) locking the app → <code>startTransition</code>, debounce input, <code>InteractionManager.runAfterInteractions</code>, or a worker/native module.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Optimizing without profiling — and over-memoizing everything.</strong> Wrapping every component in <code>React.memo</code> and every value in <code>useMemo</code>/<code>useCallback</code> isn't free: each one costs a comparison plus the memoized box, and for cheap components that cost exceeds the saving. Worse, memo is silently defeated by inline functions, objects, and style arrays passed as props (a new reference every render). Fix: profile on a physical device to find the actual hot path, then stabilize only those props and memoize only what measurably benefits.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I profile first on a physical mid-range Android, then read JS FPS vs UI FPS — that tells me whether the bottleneck is the JS thread or the native side before I change anything."</div>
-  <div class="revision-say">"My defaults are Hermes and the New Architecture on, FlashList for long lists, Reanimated for animations and gestures, and expo-image for images."</div>
-  <div class="revision-say">"Animation jank usually means work on the wrong thread — I move it to the UI thread with Reanimated worklets so it's decoupled from a busy JS thread."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. What are the common causes of unnecessary re-renders in RN, and how do you fix each?</div>
+  <div class="qa-answer">
+    <p>The usual culprits: inline <code>renderItem</code> / <code>onPress</code> functions, inline objects and inline style arrays passed as props — each is a new reference every render, so children can't memoize (fix: <code>useCallback</code> / <code>useMemo</code> / pre-declared constants plus <code>React.memo</code> on the child); unmemoized list rows re-rendering on every scroll tick (fix: memo the Row, or FlashList); one massive Context, where every change re-renders every consumer (fix: split contexts by update frequency, or use a selector-based store); and inactive tab screens re-rendering and running effects (fix: <code>lazy</code> / <code>unmountOnBlur</code>, <code>useFocusEffect</code>). Find them with the React DevTools Profiler rather than guessing.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why animation jank usually means work on the wrong thread and how you move it?</li>
-    <li>Can you profile a slow list — which tools and which metrics do you watch?</li>
-    <li>Can you list the common causes of unnecessary re-renders and their fixes?</li>
-    <li>Can you contrast the JS thread, the UI thread, and the native/shadow side for performance?</li>
-    <li>Can you explain how Hermes and inline requires improve startup time?</li>
-    <li>Can you spot a memoization mistake where <code>useMemo</code> or <code>useCallback</code> costs more than it saves?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. Contrast the JS thread, the UI thread and the shadow thread from a performance point of view.</div>
+  <div class="qa-answer">
+    <p>The <strong>JS thread</strong> runs React components, event handlers, network calls and any heavy JS; the <strong>UI thread</strong> owns the native views (UIView / android.view.View), native scrolling and touches, GPU composition and Reanimated worklets; the <strong>shadow thread</strong> runs Yoga layout, computing sizes alongside the UI thread. Blocking JS makes state updates lag while native scroll and gestures keep working; blocking the UI thread freezes everything visually; layout-heavy work (deep view trees, large text measurement, animating width/height) loads the layout side. The Perf Monitor tells you which: low JS FPS means fix renders or offload work, low UI FPS means reduce views and simplify layouts.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q18. How do Hermes and inline requires improve startup time?</div>
+  <div class="qa-answer">
+    <p>Startup is dominated by loading the JS VM and parsing/compiling the bundle, especially on low-end devices. <strong>Hermes</strong> pre-compiles JS to bytecode (<code>.hbc</code>) at build time, so the device loads bytecode instead of parsing source — roughly 30-50% faster startup, a smaller binary and a smaller heap; it has been the default since RN 0.70 (dev builds still use source for Fast Refresh). <strong>inlineRequires</strong>, set in <code>metro.config.js</code> under <code>transformer.getTransformOptions</code>, defers each <code>require()</code> until the module is first used, so large libraries don't execute eagerly at launch. Combine them with lazy-loading rare screens and deferring non-critical init via <code>InteractionManager.runAfterInteractions</code>.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q19. How do you spot a memoization mistake where useMemo or useCallback costs more than it saves?</div>
+  <div class="qa-answer">
+    <p>Memoization is not free: every <code>React.memo</code>, <code>useMemo</code> and <code>useCallback</code> adds a comparison of dependencies or props plus the stored value on every render. The two classic mistakes are wrapping cheap components and trivial values everywhere, where the comparison costs more than just re-rendering, and memoizing a child while still passing it an inline function, object or style array, so the memo check runs and fails every time. The tell is that the Profiler shows no reduction in renders or time after adding it. Profile first, memoize only the hot path you measured (e.g. list rows), and make sure the props you pass are actually stable.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

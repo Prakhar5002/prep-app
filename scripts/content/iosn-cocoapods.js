@@ -1,25 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'iosn-cocoapods',
-  module: 'iOS Native (Deep)',
-  title: 'CocoaPods & Dependencies',
-  estimatedReadTime: '24 min',
-  tags: ['cocoapods', 'podfile', 'podfile-lock', 'pods', 'use-frameworks', 'ruby', 'gem', 'bundler', 'gemfile', 'autolinking', 'use-native-modules', 'spm', 'swift-package-manager', 'hermes', 'hermes-engine', 'podspec', 'post-install', 'pod-install', 'xcconfig', 'new-architecture', 'expo', 'ios', 'react-native'],
+  id: "iosn-cocoapods",
+  module: "iOS Native (Deep)",
+  title: "CocoaPods & Dependencies",
+  estimatedReadTime: "24 min",
+  tags: ["cocoapods","podfile","podfile-lock","pods","use-frameworks","ruby","gem","bundler","gemfile","autolinking","use-native-modules","spm","swift-package-manager","hermes","hermes-engine","podspec","post-install","pod-install","xcconfig","new-architecture","expo","ios","react-native"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>CocoaPods</strong> is the Ruby-based dependency manager that stitches your React Native app's native iOS code together. It reads a <code>Podfile</code>, resolves every native library (React itself, Hermes, and each autolinked native module) into the <code>Pods/</code> folder, and wires them into an <code>.xcworkspace</code> that Xcode opens instead of the bare <code>.xcodeproj</code>.</p>
-<p>On RN, you almost never write pod declarations by hand. <strong>Autolinking</strong> (<code>use_native_modules!</code>) scans <code>node_modules</code> and injects a pod for every package that ships a <code>.podspec</code>. Your job is understanding the <code>Podfile</code>, the <code>post_install</code> hook that patches build settings, and the <code>Podfile.lock</code> that pins exact versions.</p>
-<p>The two commands you live by: <code>bundle exec pod install</code> (resolve + integrate, run after any native dependency change) and reading errors out of the <strong>"[CP] Check Pods Manifest.lock"</strong> build phase when the lock drifts. A JS/Metro reload never picks up a native pod change — you must reinstall pods and rebuild.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>CocoaPods is a Ruby gem that turns your <code>Podfile</code> + autolinked native modules into a <code>Pods/</code> project and an <code>.xcworkspace</code>; <code>Podfile.lock</code> pins the exact versions you commit, and the <code>post_install</code> hook is where RN patches deployment target, excluded archs, Hermes, and C++ flags.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">CocoaPods is a <strong>Ruby gem</strong> that turns your <code>Podfile</code> plus autolinked native module podspecs into a <code>Pods/</code> project and an <code>.xcworkspace</code>; <code>Podfile.lock</code> pins the exact versions you commit, and the <code>post_install</code> hook is where RN patches deployment target, excluded archs, Hermes, and C++ flags.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Ruby all the way down:</strong> CocoaPods is a gem; the <code>Gemfile</code> pins the gem, <code>bundle install</code> resolves it, and <code>bundle exec pod install</code> runs that pinned version so everyone uses the same CocoaPods.</li>
+    <li><strong>Podfile anatomy:</strong> <code>platform :ios, min_ios_version_supported</code>, the <code>require</code> of RN's ruby scripts, <code>use_native_modules!</code> (autolinking), <code>use_react_native!(:path, :hermes_enabled, :fabric_enabled)</code>, hand-written <code>pod</code> lines (<code>:path</code>/<code>:git</code>/<code>:tag</code>/<code>:configurations</code>), <code>use_expo_modules!</code>, and the <code>post_install do |installer|</code> hook.</li>
+    <li><strong><code>post_install</code> is the patch block:</strong> it calls <code>react_native_post_install</code> and loops pod targets to set <code>IPHONEOS_DEPLOYMENT_TARGET</code>, <code>EXCLUDED_ARCHS</code>, Hermes settings, and C++ flags — the only place build-setting patches survive a reinstall.</li>
+    <li><strong>install vs update vs deintegrate:</strong> <code>pod install</code> honors the lock (everyday); <code>pod update Name</code> bumps that pod and rewrites the lock; <code>pod deintegrate</code> rips CocoaPods out of the project for a clean recovery.</li>
+    <li><strong>Native change ⇒ reinstall, not reload.</strong> Metro only rebundles JS; a new native module / RN bump / Podfile edit needs <code>pod install</code> + a full Xcode rebuild.</li>
+    <li><strong><code>Podfile.lock</code> is committed:</strong> pins exact versions + per-pod checksums + the CocoaPods version; the "[CP] Check Pods Manifest.lock" build phase fails when it drifts from <code>Pods/Manifest.lock</code> ("sandbox is not in sync") — fix with <code>pod install</code>.</li>
+    <li><strong><code>Pods/</code> is generated + git-ignored:</strong> holds <code>Pods.xcodeproj</code>, <code>Target Support Files/Pods-App/*.xcconfig</code>, <code>Manifest.lock</code>, <code>Headers/</code>. Open <code>.xcworkspace</code>, never <code>.xcodeproj</code>.</li>
+    <li><strong><code>use_frameworks!</code> static vs dynamic:</strong> switches every pod from static libs to frameworks; <code>:static</code> bakes into the binary, <code>:dynamic</code> embeds/signs <code>.framework</code>s (slower launch, dSYMs). It's target-wide — Firebase needs <code>$RNFirebaseAsStaticFramework = true</code> with static, and legacy Flipper was incompatible.</li>
+    <li><strong>Hermes is the <code>hermes-engine</code> pod</strong> (usually the prebuilt subspec); ships its own dSYM you must upload or Hermes crash frames stay unsymbolicated.</li>
+    <li><strong><code>.podspec</code></strong> = a pod's Ruby manifest: <code>s.source_files</code>, <code>s.dependency</code>, <code>s.platforms</code>. Autolinking (<code>use_native_modules!</code> → <code>npx react-native config</code>) injects a pod for every node_modules package that ships one — so you almost never hand-write <code>pod</code> lines for RN libraries.</li>
+    <li><strong>SPM</strong> is Apple's manager (Package.swift); RN support is gradual, but CocoaPods dominates because autolinking, Hermes, codegen, and most modules are podspec-wired and <code>post_install</code> has no SPM equivalent.</li>
+    <li><strong>New arch on iOS:</strong> <code>RCT_NEW_ARCH_ENABLED=1 bundle exec pod install</code> flips codegen + Fabric for that install only.</li>
+    <li><strong>Expo reality:</strong> prebuild generates <code>ios/</code> (Podfile included) and runs <code>pod install</code> for you; set deployment target / linkage via <code>expo-build-properties</code>, patch the Podfile via a config plugin, and know <code>expo prebuild --clean</code> wipes hand edits. EAS caches pods.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Installing a native library, reloading Metro, and expecting it to work.</strong> A JS reload never loads native code — the library's pod isn't in the binary until you run <code>bundle exec pod install</code> and rebuild in Xcode. (And never delete the "Check Pods Manifest.lock" phase to silence "sandbox not in sync" — that ships a binary built against the wrong native versions; run <code>pod install</code> instead.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"CocoaPods is a Ruby gem that reads the Podfile and autolinked podspecs, resolves them into <code>Pods/</code>, and builds an <code>.xcworkspace</code>. <code>Podfile.lock</code> pins exact versions with checksums and I always commit it."</div>
+  <div class="revision-say">"Autolinking's <code>use_native_modules!</code> injects a pod per native package, so after <code>npm install</code> I run <code>bundle exec pod install</code> and rebuild — a JS reload can't load native code."</div>
+  <div class="revision-say">"<code>use_frameworks!</code> flips linkage for the whole target, so enabling it for one Swift SDK can cascade into Hermes and Firebase settings; the <code>post_install</code> hook is where I patch deployment target, excluded archs, and C++ flags."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What CocoaPods actually is</h3>
 <p>CocoaPods is a <strong>dependency manager for Cocoa (iOS/macOS) projects</strong>, written in Ruby and distributed as a <strong>Ruby gem</strong>. It plays the same role for native iOS libraries that npm/yarn plays for JS packages: you declare what you want, it resolves a compatible version graph, downloads the source, and integrates it into your Xcode build. A single library it manages is called a <strong>pod</strong>.</p>
 <p>Each pod is described by a <code>.podspec</code> (a Ruby file) that says what source files it ships, which frameworks it links, and what other pods it depends on. CocoaPods reads all the podspecs it needs, resolves versions, generates a separate <code>Pods.xcodeproj</code>, and creates a <strong><code>.xcworkspace</code></strong> that contains both your app project and the Pods project. That is why after adding pods you must open <code>MyApp.xcworkspace</code>, never <code>MyApp.xcodeproj</code> — the bare project doesn't know about the pods.</p>
@@ -49,10 +67,10 @@ gem 'activesupport', '&gt;= 6.1.7.5', '!= 7.1.0'</code></pre>
 
 <h3>CocoaPods CDN vs <code>pod repo update</code></h3>
 <p>Historically CocoaPods cloned the entire <strong>Specs repo</strong> (~1GB of every podspec ever published) to your machine. Modern CocoaPods uses the <strong>CDN</strong> (<code>trunk</code> at <code>cdn.cocoapods.org</code>) declared as <code>source 'https://cdn.cocoapods.org/'</code> at the top of the Podfile, fetching only the podspecs it needs on demand — much faster first install. When a pod version fails to resolve because your local spec cache is stale, <code>pod repo update</code> (or <code>pod install --repo-update</code>) refreshes the spec index. On the CDN this is mostly automatic, but <code>--repo-update</code> is still the fix for "could not find compatible versions" after a library publishes a new release.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "who reads what" picture</h3>
 <div class="diagram">
 <pre>
@@ -102,10 +120,10 @@ gem 'activesupport', '&gt;= 6.1.7.5', '!= 7.1.0'</code></pre>
   <div class="callout-title">Common misconception</div>
   <p>"The <code>Pods/</code> folder is my dependency source of truth, so I should commit it." No. <code>Pods/</code> is <strong>generated</strong> and typically git-ignored in RN apps; <code>Podfile</code> + <code>Podfile.lock</code> are the source of truth, and <code>pod install</code> regenerates <code>Pods/</code> deterministically from them.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Podfile anatomy — line by line</h3>
 <pre><code class="language-ruby"># ios/Podfile
 # 1. Resolve RN + Hermes helper scripts from node_modules
@@ -280,10 +298,10 @@ RCT_NEW_ARCH_ENABLED=1 bundle exec pod install
 # Back to old arch (Paper):
 RCT_NEW_ARCH_ENABLED=0 bundle exec pod install</code></pre>
 <p>The <code>RCT_NEW_ARCH_ENABLED</code> env var flips codegen and Fabric on for that <code>pod install</code>, generating the TurboModule/Fabric C++ glue. Cross-reference the <code>rn-architecture</code> topic for what old (Bridge/Paper) vs new (Fabric, TurboModules, JSI, Codegen, bridgeless) actually change at runtime — here the point is just that the switch is thrown at <code>pod install</code> time on iOS.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — first-time setup after cloning an RN repo</h3>
 <pre><code class="language-bash">git clone git@github.com:me/sw-mobile.git
 cd sw-mobile
@@ -384,10 +402,11 @@ npx expo run:ios                     # build + launch
   s.source_files = 'ios/**/*.{h,m,mm}'
   s.dependency 'React-Core'
 end</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Opening the wrong file</h3>
 <p>Opening <code>MyApp.xcodeproj</code> after pods are installed gives "module not found" / missing header errors because the bare project doesn't reference the Pods. Always open <code>MyApp.xcworkspace</code>.</p>
 
@@ -437,10 +456,9 @@ end</code></pre>
   <div class="callout-title">🧩 Expo note — the ios/ folder is generated</div>
   <p>In Expo prebuild / Continuous Native Generation (CNG) projects like <code>sw-mobile</code> and <code>sw-ticketing</code>, the entire <code>ios/</code> directory (Podfile included) is generated from <code>app.json</code>/<code>app.config.js</code> + config plugins. <code>expo prebuild --clean</code> deletes and regenerates it, wiping any hand edits to the Podfile or <code>post_install</code>. Set deployment target and framework linkage through <strong><code>expo-build-properties</code></strong>, and use a <strong>config plugin</strong> (a <code>withPodfile</code>/<code>withDangerousMod</code> mod) for anything the Podfile needs that build-properties can't express. On EAS Build the resolved Pods are cached between builds for speed.</p>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — not committing Podfile.lock</h3>
 <p>Without it, every teammate and CI resolves potentially different native versions. Commit <code>Podfile.lock</code> always; that's the whole point of a lock file.</p>
 
@@ -485,10 +503,10 @@ end</code></pre>
 
 <h3>Anti-pattern 15 — ignoring the CocoaPods gem version in the lock</h3>
 <p>The <code>COCOAPODS:</code> line in <code>Podfile.lock</code> flip-flopping between commits signals people running different tool versions. Pin it in the <code>Gemfile</code> and use Bundler.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What is CocoaPods and why does React Native use it?</div>
   <div class="qa-answer">
@@ -615,52 +633,7 @@ end</code></pre>
     <li>You know Expo prebuild owns the Podfile and you patch via expo-build-properties / config plugins.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">CocoaPods is a <strong>Ruby gem</strong> that turns your <code>Podfile</code> plus autolinked native module podspecs into a <code>Pods/</code> project and an <code>.xcworkspace</code>; <code>Podfile.lock</code> pins the exact versions you commit, and the <code>post_install</code> hook is where RN patches deployment target, excluded archs, Hermes, and C++ flags.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Ruby all the way down:</strong> CocoaPods is a gem; the <code>Gemfile</code> pins the gem, <code>bundle install</code> resolves it, and <code>bundle exec pod install</code> runs that pinned version so everyone uses the same CocoaPods.</li>
-    <li><strong>Podfile anatomy:</strong> <code>platform :ios, min_ios_version_supported</code>, the <code>require</code> of RN's ruby scripts, <code>use_native_modules!</code> (autolinking), <code>use_react_native!(:path, :hermes_enabled, :fabric_enabled)</code>, hand-written <code>pod</code> lines (<code>:path</code>/<code>:git</code>/<code>:tag</code>/<code>:configurations</code>), <code>use_expo_modules!</code>, and the <code>post_install do |installer|</code> hook.</li>
-    <li><strong><code>post_install</code> is the patch block:</strong> it calls <code>react_native_post_install</code> and loops pod targets to set <code>IPHONEOS_DEPLOYMENT_TARGET</code>, <code>EXCLUDED_ARCHS</code>, Hermes settings, and C++ flags — the only place build-setting patches survive a reinstall.</li>
-    <li><strong>install vs update vs deintegrate:</strong> <code>pod install</code> honors the lock (everyday); <code>pod update Name</code> bumps that pod and rewrites the lock; <code>pod deintegrate</code> rips CocoaPods out of the project for a clean recovery.</li>
-    <li><strong>Native change ⇒ reinstall, not reload.</strong> Metro only rebundles JS; a new native module / RN bump / Podfile edit needs <code>pod install</code> + a full Xcode rebuild.</li>
-    <li><strong><code>Podfile.lock</code> is committed:</strong> pins exact versions + per-pod checksums + the CocoaPods version; the "[CP] Check Pods Manifest.lock" build phase fails when it drifts from <code>Pods/Manifest.lock</code> ("sandbox is not in sync") — fix with <code>pod install</code>.</li>
-    <li><strong><code>Pods/</code> is generated + git-ignored:</strong> holds <code>Pods.xcodeproj</code>, <code>Target Support Files/Pods-App/*.xcconfig</code>, <code>Manifest.lock</code>, <code>Headers/</code>. Open <code>.xcworkspace</code>, never <code>.xcodeproj</code>.</li>
-    <li><strong><code>use_frameworks!</code> static vs dynamic:</strong> switches every pod from static libs to frameworks; <code>:static</code> bakes into the binary, <code>:dynamic</code> embeds/signs <code>.framework</code>s (slower launch, dSYMs). It's target-wide — Firebase needs <code>$RNFirebaseAsStaticFramework = true</code> with static, and legacy Flipper was incompatible.</li>
-    <li><strong>Hermes is the <code>hermes-engine</code> pod</strong> (usually the prebuilt subspec); ships its own dSYM you must upload or Hermes crash frames stay unsymbolicated.</li>
-    <li><strong><code>.podspec</code></strong> = a pod's Ruby manifest: <code>s.source_files</code>, <code>s.dependency</code>, <code>s.platforms</code>. Autolinking (<code>use_native_modules!</code> → <code>npx react-native config</code>) injects a pod for every node_modules package that ships one.</li>
-    <li><strong>SPM</strong> is Apple's manager (Package.swift); RN support is gradual, but CocoaPods dominates because autolinking, Hermes, codegen, and most modules are podspec-wired and <code>post_install</code> has no SPM equivalent.</li>
-    <li><strong>New arch on iOS:</strong> <code>RCT_NEW_ARCH_ENABLED=1 bundle exec pod install</code> flips codegen + Fabric for that install only.</li>
-    <li><strong>Expo reality:</strong> prebuild generates <code>ios/</code> (Podfile included) and runs <code>pod install</code> for you; set deployment target / linkage via <code>expo-build-properties</code>, patch the Podfile via a config plugin, and know <code>expo prebuild --clean</code> wipes hand edits. EAS caches pods.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Installing a native library, reloading Metro, and expecting it to work.</strong> A JS reload never loads native code — the library's pod isn't in the binary until you run <code>bundle exec pod install</code> and rebuild in Xcode. (And never delete the "Check Pods Manifest.lock" phase to silence "sandbox not in sync" — that ships a binary built against the wrong native versions; run <code>pod install</code> instead.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"CocoaPods is a Ruby gem that reads the Podfile and autolinked podspecs, resolves them into <code>Pods/</code>, and builds an <code>.xcworkspace</code>. <code>Podfile.lock</code> pins exact versions with checksums and I always commit it."</div>
-  <div class="revision-say">"Autolinking's <code>use_native_modules!</code> injects a pod per native package, so after <code>npm install</code> I run <code>bundle exec pod install</code> and rebuild — a JS reload can't load native code."</div>
-  <div class="revision-say">"<code>use_frameworks!</code> flips linkage for the whole target, so enabling it for one Swift SDK can cascade into Hermes and Firebase settings; the <code>post_install</code> hook is where I patch deployment target, excluded archs, and C++ flags."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain what CocoaPods is, that it's a Ruby gem, and why RN depends on it?</li>
-    <li>Can you walk through the Podfile pieces — <code>platform</code>, <code>use_native_modules!</code>, <code>use_react_native!</code>, and the <code>post_install</code> hook — and what each does?</li>
-    <li>Can you say what <code>Podfile.lock</code> pins, why it's committed, and what the "Check Pods Manifest.lock" build phase enforces?</li>
-    <li>Can you contrast <code>pod install</code>, <code>pod update</code>, and <code>pod deintegrate</code>, and explain why a JS reload can't pick up a native pod change?</li>
-    <li>Can you explain <code>use_frameworks!</code> static vs dynamic and why it's a whole-target decision that breaks Hermes/Firebase/Flipper?</li>
-    <li>Can you describe how a <code>.podspec</code> plus autolinking makes a native module "just work," and why CocoaPods still beats SPM for RN?</li>
-    <li>Can you explain how Expo prebuild owns the Podfile and how you patch deployment target / linkage without hand-editing it?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

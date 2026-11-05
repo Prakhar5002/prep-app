@@ -1,28 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'js-this',
-  module: 'JavaScript Deep',
-  title: 'this Keyword',
-  estimatedReadTime: '25 min',
-  tags: ['this', 'binding-rules', 'arrow-functions', 'call-apply-bind', 'context', 'fundamentals'],
+  id: "js-this",
+  module: "JavaScript Deep",
+  title: "this Keyword",
+  estimatedReadTime: "25 min",
+  tags: ["this","binding-rules","arrow-functions","call-apply-bind","context","fundamentals"],
   sections: [
 
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><code>this</code> is a special identifier whose value is determined <strong>at call time</strong>, not where the function is written. It's decided by <em>how</em> the function is invoked.</p>
-<p>There are four binding rules, checked in priority order:</p>
-<ol>
-  <li><strong>new</strong> binding — <code>new Foo()</code> → <code>this</code> = the new object.</li>
-  <li><strong>Explicit</strong> — <code>fn.call(ctx)</code> / <code>fn.apply(ctx)</code> / <code>fn.bind(ctx)</code> → <code>this</code> = ctx.</li>
-  <li><strong>Implicit</strong> — <code>obj.fn()</code> → <code>this</code> = obj.</li>
-  <li><strong>Default</strong> — <code>fn()</code> (bare call) → <code>this</code> = global (<code>window</code>) in sloppy mode, <code>undefined</code> in strict mode / ES modules.</li>
-</ol>
-<p><strong>Arrow functions</strong> break the rules: they have NO <code>this</code> of their own. They inherit <code>this</code> from the enclosing lexical scope. <code>call</code>/<code>apply</code>/<code>bind</code> can't change an arrow's <code>this</code>.</p>
-<div class="callout insight">
-  <div class="callout-title">🧠 The secret</div>
-  <p>Look at the call expression. The part immediately before the <code>()</code> usually becomes <code>this</code>. If there's nothing before it (bare call), default rules apply. If it's <code>new</code>, the new object. If it's <code>call/apply/bind</code>, the explicit argument.</p>
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><code>this</code> is decided at <strong>call time by HOW a function is invoked</strong> — priority <code>new</code> &gt; explicit (<code>call</code>/<code>apply</code>/<code>bind</code>) &gt; implicit (<code>obj.method()</code>) &gt; default (<code>undefined</code> in strict) — and arrows have no <code>this</code> of their own.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong><code>this</code> is decided at call time by HOW a function is invoked</strong> — not by where it was written.</li>
+    <li>Four binding rules, in priority order: <strong><code>new</code> &gt; explicit (<code>call</code>/<code>apply</code>/<code>bind</code>) &gt; implicit (<code>obj.method()</code>) &gt; default (bare <code>fn()</code>)</strong>.</li>
+    <li><code>new Fn()</code> → <code>this</code> is the new object; explicit → the passed context; implicit → the object before the dot; default → global (sloppy) or <strong><code>undefined</code></strong> (strict / ES modules).</li>
+    <li><strong>Arrow functions have no <code>this</code> of their own</strong> — they inherit it lexically from where they're defined; <code>call</code>/<code>apply</code>/<code>bind</code> can NOT change an arrow's <code>this</code>.</li>
+    <li><strong>Read the call expression:</strong> whatever sits immediately before the <code>()</code> usually becomes <code>this</code> — nothing (bare call) → default rule; <code>new</code> → the new object; <code>call</code>/<code>apply</code>/<code>bind</code> → the explicit argument.</li>
+    <li>In implicit binding only the <em>last</em> object in the path matters: <code>b.a.greet()</code> → <code>this</code> is <code>a</code>, not <code>b</code>.</li>
+    <li><strong>You "lose <code>this</code>" whenever the dot is dropped</strong>: assigning a method to a variable, passing it as a callback, destructuring it, or returning the reference.</li>
+    <li><code>bind</code> cannot be re-bound — <code>fn.bind(a).bind(b)</code> stays bound to <code>a</code>.</li>
+    <li><strong><code>new</code> beats <code>bind</code></strong>: <code>new (Fn.bind(ctx))()</code> ignores <code>ctx</code> and uses the fresh object.</li>
+    <li>Classes are always strict, so a detached method call throws a <code>TypeError</code> (<code>this</code> is <code>undefined</code>) rather than silently using the global.</li>
+    <li>Arrows can't be <code>new</code>'d — they have no <code>[[Construct]]</code>.</li>
+    <li>DOM event handlers: a regular <code>function</code> gets <code>this</code> = the element; an arrow gets the lexical <code>this</code>. Array methods like <code>forEach</code>/<code>map</code> accept a <code>thisArg</code> second argument.</li>
+    <li>Fix lost <code>this</code> with <code>bind</code>, an arrow wrapper (<code>() =&gt; obj.method()</code>), or an arrow class field.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Losing <code>this</code> by dropping the dot: <code>const f = obj.method; f()</code> makes <code>this</code> <code>undefined</code> in strict mode (and classes are always strict). Fix with <code>bind</code>, an arrow wrapper, or a class arrow field — and remember <code>call</code>/<code>apply</code>/<code>bind</code> can <strong>never</strong> change an arrow's <code>this</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"<code>this</code> is decided at call time by how a function is invoked — four rules in priority: <code>new</code>, explicit bind, implicit dot, then default."</div>
+  <div class="revision-say">"Arrow functions have no <code>this</code> of their own; they inherit it lexically, and <code>call</code>/<code>apply</code>/<code>bind</code> can't change it."</div>
+  <div class="revision-say">"The moment you detach a method from its object — destructure it or pass it as a callback — you lose the dot, and <code>this</code> becomes <code>undefined</code> in strict mode."</div>
 </div>
-`},
+` },
 
-{ id: 'what-why', title: '🧠 What & Why', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is <code>this</code>?</h3>
 <p><code>this</code> is a keyword that refers to an object — the <em>execution context's object reference</em>. Every non-arrow function, when called, receives a <code>this</code> binding as part of its Execution Context.</p>
 
@@ -44,9 +59,10 @@ window.PREP_SITE.registerTopic({
   <li>Top-level code in an <strong>ES module</strong> (it's <code>undefined</code>).</li>
   <li>In <strong>strict-mode</strong> top-level code (it's <code>undefined</code>).</li>
 </ul>
-`},
+` },
 
-{ id: 'rules', title: '🪜 The Four Rules (priority order)', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "rules", title: "🪜 The Four Rules (priority order)", collapsible: true, html: `
 <h3>Rule 1 — <code>new</code> binding (highest priority)</h3>
 <pre><code class="language-js">function Person(name) {
   this.name = name;
@@ -133,9 +149,10 @@ obj.greet();   // undefined — arrow's 'this' is inherited, NOT obj</code></pre
     }, 1000);
   }
 }</code></pre>
-`},
+` },
 
-{ id: 'mental-model', title: '⚙️ Mental Model', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "⚙️ Mental Model", collapsible: true, html: `
 <h3>Read the call expression</h3>
 <p>When you see a function call, answer three questions:</p>
 <ol>
@@ -175,9 +192,10 @@ obj.greet();   // undefined — arrow's 'this' is inherited, NOT obj</code></pre
 </ol>
 
 <p>In all cases, the dot is lost. Fix with <code>bind</code>, arrow wrapping, or by using arrow functions from the start.</p>
-`},
+` },
 
-{ id: 'examples', title: '📦 Examples (progressive)', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Method call vs bare call</h3>
 <pre><code class="language-js">const obj = {
   name: 'Prakhar',
@@ -345,9 +363,11 @@ button.addEventListener('click', () =&gt; {
 obj.outer();</code></pre>
 
 <p>Inside <code>outer</code>, <code>this = obj</code>. But <code>inner()</code> is a bare call; <code>this</code> resets to default binding.</p>
-`},
+` },
 
-{ id: 'edge-cases', title: '🔍 All Edge Cases', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Arrow in object literal — lexical <code>this</code> is the outer scope</h3>
 <pre><code class="language-js">const obj = {
   arrow: () =&gt; console.log(this)   // outer 'this' (global / undefined in module)
@@ -496,9 +516,9 @@ el.addEventListener('click', () =&gt; {
 Foo.create();   // new Foo instance</code></pre>
 
 <p>Static methods have <code>this</code> = the class constructor, not an instance.</p>
-`},
 
-{ id: 'bugs-anti', title: '🐛 Common Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1 — Losing <code>this</code> when passing methods</h3>
 <pre><code class="language-js">class Counter {
   count = 0;
@@ -573,9 +593,10 @@ addEventListener('click', ...);   // ❌ 'this' in addEventListener expects wind
 }</code></pre>
 
 <p>Use arrow: <code>.then(r =&gt; this.parse(r))</code>.</p>
-`},
+` },
 
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>How this gets asked</h3>
 <ol>
   <li>"What does this code log?" — puzzle with mix of methods, callbacks, arrows.</li>
@@ -769,49 +790,38 @@ wrap();              // ?</code></pre>
   <li>"What happens to <code>this</code> in a class method passed as a callback?"</li>
   <li>"Why are arrow functions lighter memory-wise?" (no own <code>this</code>/<code>arguments</code> — shared with enclosing.)</li>
 </ul>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><code>this</code> is decided at <strong>call time by HOW a function is invoked</strong> — priority <code>new</code> &gt; explicit (<code>call</code>/<code>apply</code>/<code>bind</code>) &gt; implicit (<code>obj.method()</code>) &gt; default (<code>undefined</code> in strict) — and arrows have no <code>this</code> of their own.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong><code>this</code> is decided at call time by HOW a function is invoked</strong> — not by where it was written.</li>
-    <li>Four binding rules, in priority order: <strong><code>new</code> &gt; explicit (<code>call</code>/<code>apply</code>/<code>bind</code>) &gt; implicit (<code>obj.method()</code>) &gt; default (bare <code>fn()</code>)</strong>.</li>
-    <li><code>new Fn()</code> → <code>this</code> is the new object; explicit → the passed context; implicit → the object before the dot; default → global (sloppy) or <strong><code>undefined</code></strong> (strict / ES modules).</li>
-    <li><strong>Arrow functions have no <code>this</code> of their own</strong> — they inherit it lexically from where they're defined; <code>call</code>/<code>apply</code>/<code>bind</code> can NOT change an arrow's <code>this</code>.</li>
-    <li>In implicit binding only the <em>last</em> object in the path matters: <code>b.a.greet()</code> → <code>this</code> is <code>a</code>, not <code>b</code>.</li>
-    <li><strong>You "lose <code>this</code>" whenever the dot is dropped</strong>: assigning a method to a variable, passing it as a callback, destructuring it, or returning the reference.</li>
-    <li><code>bind</code> cannot be re-bound — <code>fn.bind(a).bind(b)</code> stays bound to <code>a</code>.</li>
-    <li><strong><code>new</code> beats <code>bind</code></strong>: <code>new (Fn.bind(ctx))()</code> ignores <code>ctx</code> and uses the fresh object.</li>
-    <li>Classes are always strict, so a detached method call throws a <code>TypeError</code> (<code>this</code> is <code>undefined</code>) rather than silently using the global.</li>
-    <li>Arrows can't be <code>new</code>'d — they have no <code>[[Construct]]</code>.</li>
-    <li>DOM event handlers: a regular <code>function</code> gets <code>this</code> = the element; an arrow gets the lexical <code>this</code>. Array methods like <code>forEach</code>/<code>map</code> accept a <code>thisArg</code> second argument.</li>
-    <li>Fix lost <code>this</code> with <code>bind</code>, an arrow wrapper (<code>() =&gt; obj.method()</code>), or an arrow class field.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Losing <code>this</code> by dropping the dot: <code>const f = obj.method; f()</code> makes <code>this</code> <code>undefined</code> in strict mode (and classes are always strict). Fix with <code>bind</code>, an arrow wrapper, or a class arrow field — and remember <code>call</code>/<code>apply</code>/<code>bind</code> can <strong>never</strong> change an arrow's <code>this</code>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"<code>this</code> is decided at call time by how a function is invoked — four rules in priority: <code>new</code>, explicit bind, implicit dot, then default."</div>
-  <div class="revision-say">"Arrow functions have no <code>this</code> of their own; they inherit it lexically, and <code>call</code>/<code>apply</code>/<code>bind</code> can't change it."</div>
-  <div class="revision-say">"The moment you detach a method from its object — destructure it or pass it as a callback — you lose the dot, and <code>this</code> becomes <code>undefined</code> in strict mode."</div>
+<div class="qa-block">
+  <div class="qa-question">Q11. What are the four <code>this</code> binding rules in priority order, and what is <code>this</code> under each?</div>
+  <div class="qa-answer">
+    <p><code>this</code> is decided at call time by how the function is invoked, checking these rules from highest priority down. (1) <strong><code>new</code> binding</strong>: <code>new Foo()</code> → the newly created object. (2) <strong>Explicit</strong>: <code>fn.call(ctx)</code>, <code>fn.apply(ctx, args)</code> or <code>fn.bind(ctx)</code> → <code>ctx</code>. (3) <strong>Implicit</strong>: <code>obj.fn()</code> → <code>obj</code>, the object immediately before the dot. (4) <strong>Default</strong>: a bare <code>fn()</code> → <code>undefined</code> in strict mode and ES modules, the global object (<code>window</code>) in sloppy mode. <code>new</code> beats even <code>bind</code>: <code>new (Fn.bind(ctx))()</code> ignores <code>ctx</code>. Arrow functions sit outside all four rules.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you state the four <code>this</code> binding rules in priority order?</li>
-    <li>Can you predict <code>this</code> for <code>new</code>, <code>call</code>/<code>apply</code>/<code>bind</code>, <code>obj.method()</code>, and a bare <code>fn()</code>?</li>
-    <li>Can you explain why <code>call</code>/<code>apply</code>/<code>bind</code> cannot change an arrow function's <code>this</code>?</li>
-    <li>Can you explain why <code>b.a.greet()</code> binds <code>this</code> to <code>a</code>, not <code>b</code>?</li>
-    <li>Can you list the ways you "lose <code>this</code>" and three ways to fix a detached method?</li>
-    <li>Can you explain why a detached class method throws a <code>TypeError</code> instead of silently using the global?</li>
-    <li>Can you implement <code>call</code>, <code>apply</code>, and <code>bind</code> from scratch?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q12. Why can't <code>call</code>, <code>apply</code> or <code>bind</code> change an arrow function's <code>this</code>?</div>
+  <div class="qa-answer">
+    <p>An arrow function has no <code>this</code> binding of its own — it doesn't receive one when called. Inside it, <code>this</code> is just a variable lookup that resolves through the enclosing lexical scope at definition time, exactly like any outer variable. <code>call</code>/<code>apply</code>/<code>bind</code> work by supplying the <code>this</code> for a new call, so for an arrow there's nothing for them to set: <code>arrow.bind(ctx)()</code> doesn't error, but it still uses the inherited <code>this</code> (argument binding still works). For the same reason arrows can't be used with <code>new</code> — they have no <code>[[Construct]]</code>.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q13. Why does <code>b.a.greet()</code> bind <code>this</code> to <code>a</code> and not <code>b</code>?</div>
+  <div class="qa-answer">
+    <p>Implicit binding uses only the object immediately before the final dot — the one the method is actually read from at the call. In <code>b.a.greet()</code>, <code>b.a</code> is evaluated first to get the object <code>a</code>, then <code>greet</code> is called on it, so <code>this</code> is <code>a</code> and <code>this.name</code> is <code>'A'</code>. Everything earlier in the path just helps locate that object and has no effect on <code>this</code>.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q14. How do you "lose <code>this</code>", and how do you fix a detached method?</div>
+  <div class="qa-answer">
+    <p>You lose <code>this</code> whenever the dot is dropped between reading a method and calling it: assigning it to a variable (<code>const f = obj.method; f()</code>), passing it as a callback (<code>setTimeout(obj.method, 0)</code>), destructuring it (<code>const { method } = obj</code>), or returning the method reference from another function. The call becomes a bare call, so the default rule applies. Three fixes: <code>bind</code> it (<code>obj.method.bind(obj)</code>, or bind in the constructor), wrap it in an arrow (<code>() =&gt; obj.method()</code>) so the dot is kept, or define it as an arrow class field (<code>bark = () =&gt; ...</code>), which captures the instance's <code>this</code> per instance.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q15. Why does a detached class method throw a <code>TypeError</code> instead of silently using the global object?</div>
+  <div class="qa-answer">
+    <p>Class bodies are always strict mode. When <code>const b = d.bark; b()</code> runs, it's a bare call, and under strict mode the default binding is <code>undefined</code>, not the global object. Reading <code>this.name</code> then means reading a property of <code>undefined</code>, which throws a <code>TypeError</code>. In sloppy-mode code the same detached call would quietly use <code>window</code> and return a wrong value, so the class behaviour is actually the safer one — it fails loudly.</p>
+  </div>
+</div>
+` },
 
-]});
+  ]
+});

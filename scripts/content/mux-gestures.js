@@ -1,32 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'mux-gestures',
-  module: 'mobile-ux',
-  title: 'Mobile Gestures',
-  estimatedReadTime: '45 min',
-  tags: ['gestures', 'touch', 'pointer', 'react-native-gesture-handler', 'reanimated', 'pan', 'pinch', 'swipe', 'long-press', 'haptics'],
+  id: "mux-gestures",
+  module: "mobile-ux",
+  title: "Mobile Gestures",
+  estimatedReadTime: "45 min",
+  tags: ["gestures","touch","pointer","react-native-gesture-handler","reanimated","pan","pinch","swipe","long-press","haptics"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Mobile gestures are how users actually interact with phones — taps, swipes, pinches, long-presses, drags, edge-pulls. Get them right and the app feels alive; get them wrong and users uninstall. For React Native, this almost always means <strong>react-native-gesture-handler (RNGH)</strong> + <strong>Reanimated worklets</strong> running on the UI thread, not the legacy JS-thread <code>PanResponder</code>.</p>
-<ul>
-  <li><strong>Native gestures users expect:</strong> tap, double-tap, long-press, pan, pinch, rotate, fling/swipe, edge-swipe-back, pull-to-refresh, swipe-to-action.</li>
-  <li><strong>Why RNGH:</strong> recognises gestures on the native UI thread; handles the responder system, gesture composition (simultaneous, exclusive, sequential), and back-pressure.</li>
-  <li><strong>Why Reanimated:</strong> drives gesture-linked animation on the UI thread (60–120 fps), bypassing the JS thread entirely. Worklets run native.</li>
-  <li><strong>Composition:</strong> <code>Gesture.Race()</code> picks one, <code>Gesture.Simultaneous()</code> runs both, <code>Gesture.Exclusive()</code> prefers in order.</li>
-  <li><strong>Touch budget:</strong> tap target 44pt (iOS) / 48dp (Android); drag threshold ~10pt; long-press threshold 500ms; swipe velocity threshold ~300dp/s.</li>
-  <li><strong>Haptic + sound:</strong> haptic on commit / threshold cross — never per-frame; sound only with explicit user expectation.</li>
-  <li><strong>Don't fight the system:</strong> edge-swipe-back, pull-to-refresh, status-bar-tap-to-top, two-finger pan, three-finger swipe-up are reserved.</li>
-</ul>
-<p><strong>Mantra:</strong> "Recognise on the native thread. Animate on the UI thread. Compose deliberately. Respect system gestures."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Recognise on the native UI thread (RNGH), animate on the UI thread (Reanimated worklets), compose deliberately, and respect system gestures</strong> — that is the whole discipline of modern RN gestures.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Use react-native-gesture-handler + Reanimated, not PanResponder.</strong> PanResponder bridges every touch event through JS (~60ms lag on mid-range); RNGH recognises natively before JS sees the touch.</li>
+    <li><strong>A worklet is a JS function shipped to the UI thread</strong> — it reads/writes shared values and drives <code>useAnimatedStyle</code> at 60–120fps with zero bridge crossings; it can't call setState/async without <code>runOnJS</code>.</li>
+    <li><strong>Three composition operators:</strong> <code>Gesture.Race</code> (first to recognise wins), <code>Gesture.Simultaneous</code> (both active — pinch+pan), <code>Gesture.Exclusive</code> (try A, fall back to B — double- then single-tap). Nest them for complex behavior.</li>
+    <li><strong>Gesture lifecycle states:</strong> UNDETERMINED → BEGAN → ACTIVE → END, or CANCELLED / FAILED. Fire side effects on END, not on CANCELLED.</li>
+    <li><strong>Resolve conflicts with a vertical scroll via <code>activeOffsetX([-10,10])</code> + <code>failOffsetY([-5,5])</code></strong> — the pan only activates on horizontal motion.</li>
+    <li><strong>Parent/child arbitration:</strong> gestures cascade child-first; use <code>simultaneousWithExternalGesture</code> and <code>requireExternalGestureToFail</code> for cross-component cooperation.</li>
+    <li><strong>Clamp translation during the drag</strong> so a spring back doesn't have to recover from hundreds of points of overshoot / fly off screen.</li>
+    <li><strong>Haptics only at threshold crossings / commit — never per frame</strong> (battery drain + buzzy); use a crossed flag in <code>onUpdate</code>. Sound only where the user explicitly expects it.</li>
+    <li><strong>Gestures users expect:</strong> tap, double-tap, long-press, pan, pinch, rotate, fling/swipe, edge-swipe-back, pull-to-refresh, swipe-to-action.</li>
+    <li><strong>Don't override system-reserved gestures:</strong> iOS edge-swipe-back, pull-to-refresh, status-bar-tap-to-top; Android back/home/recents edges. Inset ~24dp from edges to avoid fighting back-swipe.</li>
+    <li><strong>Reach for libraries</strong> for the hard stuff: <code>@gorhom/bottom-sheet</code>, <code>react-native-draggable-flatlist</code>, RNGH <code>Swipeable</code>, FlatList <code>refreshControl</code> — reinventing them loses time.</li>
+    <li><strong>Thresholds to remember:</strong> tap ~10pt / 250ms, long-press 500ms, pan ~10pt to BEGAN, fling ~300dp/s; touch targets 44pt / 48dp with <code>hitSlop</code> to extend.</li>
+    <li><strong>Respect Reduce Motion</strong> via <code>useReducedMotion</code>, expose <code>accessibilityActions</code> for custom gestures, and mirror swipe directions with <code>I18nManager.isRTL</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Calling <code>setState</code> (or any React/async code) directly inside a worklet — it throws or reads stale values. <strong>Fix:</strong> wrap it in <code>runOnJS(setCount)(count + 1)</code>. Same discipline keeps worklets to simple math + shared-value writes so you never drop frames.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"RNGH recognises on the native UI thread and Reanimated worklets drive the animation there too — so the drag never crosses the bridge, unlike PanResponder which lags on mid-range devices."</div>
+  <div class="revision-say">"I compose deliberately: Simultaneous(pinch, pan) for a photo viewer, Race(tap, longPress) for a press menu, and activeOffsetX + failOffsetY to stop a swipe-row fighting the scroll."</div>
+  <div class="revision-say">"Haptics fire at threshold crossings, never per frame, and I never block the system back-swipe or pull-to-refresh."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "gesture" means in mobile</h3>
 <p>A <strong>gesture</strong> is a recognised pattern of touch events (or pointer events on iPad / mouse / pen) that the system or your app interprets as a discrete intent. The OS ships gesture recognisers (UIPanGestureRecognizer on iOS, GestureDetector on Android); apps add their own on top, often through React Native bindings.</p>
 
@@ -100,12 +111,10 @@ window.PREP_SITE.registerTopic({
   <li>Haptic on every frame of a drag (battery drain + buzzy).</li>
   <li>No pull-to-refresh on a list that updates from the network.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The gesture lifecycle (RNGH state machine)</h3>
 <table>
   <thead><tr><th>State</th><th>When</th></tr></thead>
@@ -216,12 +225,10 @@ const pan = Gesture.Pan().onUpdate((e) =&gt; {
     <tr><td>Stylus (Samsung S Pen)</td><td>Hover, button press, tilt</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Setting up RNGH + Reanimated</h3>
 <pre><code class="language-typescript">// App.tsx
 import 'react-native-gesture-handler'; // must be top of entry file
@@ -480,12 +487,10 @@ const pan = Gesture.Pan()
   &lt;/GestureDetector&gt;
 &lt;/ScrollView&gt;
 </code></pre>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Tinder-style swipe deck</h3>
 <pre><code class="language-typescript">function Card({ user, onSwipeLeft, onSwipeRight }) {
   const translateX = useSharedValue(0);
@@ -702,12 +707,11 @@ function ReorderableList({ items, onReorder }) {
   );
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Gesture conflicts with parent scroll</h3>
 <ul>
   <li>Horizontal swipe-to-delete inside vertical FlatList: pan and scroll fight.</li>
@@ -815,12 +819,9 @@ function ReorderableList({ items, onReorder }) {
   <li>Custom gesture refs need manual <code>useEffect</code> cleanup if you set up listeners.</li>
   <li>Avoid creating new Gesture objects each render — wrap in <code>useMemo</code> if heavy.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 10 most common gesture mistakes in RN</h3>
 <ol>
   <li><strong>Using PanResponder in 2026.</strong> Bridge cost = laggy drag. Use RNGH + Reanimated.</li>
@@ -958,12 +959,10 @@ const pan = Gesture.Pan()
 
 <h3>Anti-pattern: long-press without visual feedback</h3>
 <p>Long-press fires after 500ms but no visual indication anything is happening. Users feel they pressed wrong. Animate scale, opacity, or shadow during the hold.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common gesture interview prompts</h3>
 <ol>
   <li>Build a swipe-to-dismiss bottom sheet from scratch.</li>
@@ -1091,57 +1090,20 @@ const pan = Gesture.Pan()
   <li>"Audit a real RN app for gesture lag — Reanimated profiler + frame counter."</li>
   <li>"Compare RNGH's approach to Flutter's GestureDetector — different mental model, similar primitives."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Recognise on the native UI thread (RNGH), animate on the UI thread (Reanimated worklets), compose deliberately, and respect system gestures</strong> — that is the whole discipline of modern RN gestures.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Use react-native-gesture-handler + Reanimated, not PanResponder.</strong> PanResponder bridges every touch event through JS (~60ms lag on mid-range); RNGH recognises natively before JS sees the touch.</li>
-    <li><strong>A worklet is a JS function shipped to the UI thread</strong> — it reads/writes shared values and drives <code>useAnimatedStyle</code> at 60–120fps with zero bridge crossings; it can't call setState/async without <code>runOnJS</code>.</li>
-    <li><strong>Three composition operators:</strong> <code>Gesture.Race</code> (first to recognise wins), <code>Gesture.Simultaneous</code> (both active — pinch+pan), <code>Gesture.Exclusive</code> (try A, fall back to B — double- then single-tap). Nest them for complex behavior.</li>
-    <li><strong>Gesture lifecycle states:</strong> UNDETERMINED → BEGAN → ACTIVE → END, or CANCELLED / FAILED. Fire side effects on END, not on CANCELLED.</li>
-    <li><strong>Resolve conflicts with a vertical scroll via <code>activeOffsetX([-10,10])</code> + <code>failOffsetY([-5,5])</code></strong> — the pan only activates on horizontal motion.</li>
-    <li><strong>Parent/child arbitration:</strong> gestures cascade child-first; use <code>simultaneousWithExternalGesture</code> and <code>requireExternalGestureToFail</code> for cross-component cooperation.</li>
-    <li><strong>Clamp translation during the drag</strong> so a spring back doesn't have to recover from hundreds of points of overshoot / fly off screen.</li>
-    <li><strong>Haptics only at threshold crossings / commit — never per frame</strong> (battery drain + buzzy); use a crossed flag in <code>onUpdate</code>.</li>
-    <li><strong>Don't override system-reserved gestures:</strong> iOS edge-swipe-back, pull-to-refresh, status-bar-tap-to-top; Android back/home/recents edges. Inset ~24dp from edges to avoid fighting back-swipe.</li>
-    <li><strong>Reach for libraries</strong> for the hard stuff: <code>@gorhom/bottom-sheet</code>, <code>react-native-draggable-flatlist</code>, RNGH <code>Swipeable</code>, FlatList <code>refreshControl</code> — reinventing them loses time.</li>
-    <li><strong>Thresholds to remember:</strong> tap ~10pt / 250ms, long-press 500ms, pan ~10pt to BEGAN, fling ~300dp/s; touch targets 44pt / 48dp with <code>hitSlop</code> to extend.</li>
-    <li><strong>Respect Reduce Motion</strong> via <code>useReducedMotion</code>, expose <code>accessibilityActions</code> for custom gestures, and mirror swipe directions with <code>I18nManager.isRTL</code>.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Calling <code>setState</code> (or any React/async code) directly inside a worklet — it throws or reads stale values. <strong>Fix:</strong> wrap it in <code>runOnJS(setCount)(count + 1)</code>. Same discipline keeps worklets to simple math + shared-value writes so you never drop frames.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"RNGH recognises on the native UI thread and Reanimated worklets drive the animation there too — so the drag never crosses the bridge, unlike PanResponder which lags on mid-range devices."</div>
-  <div class="revision-say">"I compose deliberately: Simultaneous(pinch, pan) for a photo viewer, Race(tap, longPress) for a press menu, and activeOffsetX + failOffsetY to stop a swipe-row fighting the scroll."</div>
-  <div class="revision-say">"Haptics fire at threshold crossings, never per frame, and I never block the system back-swipe or pull-to-refresh."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. How do you choose between Gesture.Race, Gesture.Simultaneous and Gesture.Exclusive for a given interaction?</div>
+  <div class="qa-answer">
+    <p>Ask what the user intends when two gestures could fire on the same area. <code>Gesture.Race(a, b)</code>: the first to recognise wins and the others fail, e.g. tap vs long-press on a press menu. <code>Gesture.Simultaneous(a, b)</code>: both can be active at once, e.g. pinch + pan or pinch + rotate in a photo viewer. <code>Gesture.Exclusive(a, b)</code>: try <code>a</code> first and only fall back to <code>b</code> if it fails, e.g. double-tap then single-tap. Use Exclusive only when needed, because the single tap now waits and feels laggy. Nest them for complex behaviour, e.g. <code>Gesture.Simultaneous(pinch, Gesture.Race(pan, longPress))</code>, and always compose explicitly: two custom gestures on one area without composition behave non-deterministically across iOS and Android.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why RNGH + Reanimated beats PanResponder in terms of threads and the bridge?</li>
-    <li>Can you say what a worklet is, what it can touch, and when you need runOnJS?</li>
-    <li>Can you pick the right composition operator (Race / Simultaneous / Exclusive) for a given interaction?</li>
-    <li>Can you make a horizontal swipe row coexist with a vertical scroll using activation/fail offsets?</li>
-    <li>Can you state where haptics belong and which system gestures you must never override?</li>
-    <li>Can you name the libraries you'd reach for instead of building bottom sheets, reorder lists, or pull-to-refresh from scratch?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Where do haptics belong in a gesture, and which system gestures must you never override?</div>
+  <div class="qa-answer">
+    <p>Haptics go at meaningful state transitions, never per frame during a drag: a medium impact when crossing a threshold (snapping to the next card), a light impact when a long-press triggers a preview, heavy impact plus a warning notification when committing a destructive action, success or error notifications for outcomes. Track a "crossed" flag in <code>onUpdate</code> so it fires once. System-reserved gestures on iOS: edge-swipe-back, swipe down from the top, swipe up from the bottom, two-finger pan in editable text, shake to undo, and tap the status bar to scroll to top. On Android: the back gesture on the left and right edges, home and recents along the bottom edge, and the notification shade from the top. Keep custom pans inset about 24dp/pt from the edges, or use <code>setSystemGestureExclusionRects</code> on Android, and don't replace pull-to-refresh.</p>
+  </div>
 </div>
-`
-    }
+` },
+
   ]
 });

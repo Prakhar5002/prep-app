@@ -1,33 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-heaps',
-  module: 'dsa',
-  title: 'Heaps',
-  estimatedReadTime: '40 min',
-  tags: ['heap', 'priority-queue', 'min-heap', 'max-heap', 'top-k', 'kth-largest', 'merge-k-lists', 'sort'],
+  id: "dsa-heaps",
+  module: "dsa",
+  title: "Heaps",
+  estimatedReadTime: "40 min",
+  tags: ["heap","priority-queue","min-heap","max-heap","top-k","kth-largest","merge-k-lists","sort"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>A <strong>heap</strong> is a complete binary tree with the <strong>heap property</strong>: every parent is ≤ (min-heap) or ≥ (max-heap) its children. It's the canonical implementation of a <strong>priority queue</strong> — the data structure for "give me the smallest / largest item" in O(log n).</p>
-<ul>
-  <li><strong>Array-backed.</strong> No node objects; index <code>i</code>'s children are at <code>2i+1</code> and <code>2i+2</code>; parent at <code>(i-1)/2</code>.</li>
-  <li><strong>Three operations:</strong> <em>peek</em> (O(1)), <em>push</em> (O(log n)), <em>pop</em> (O(log n)).</li>
-  <li><strong>Build heap from array</strong> in O(n) via "siftDown from middle backwards" — surprisingly linear despite n × log n appearance.</li>
-  <li><strong>JavaScript has NO built-in heap.</strong> Roll your own (~50 lines) or use a library — interview-ready hand-rolled implementations are mandatory.</li>
-  <li><strong>Top-K pattern:</strong> for "kth largest" or "k smallest," maintain a min-heap of size k as you scan. O(n log k) — better than full sort O(n log n) when k ≪ n.</li>
-  <li><strong>Median maintenance:</strong> two heaps (max-heap for lower half, min-heap for upper half) — peek both in O(1).</li>
-  <li><strong>Merge K sorted lists:</strong> heap of head pointers. O(N log K).</li>
-  <li><strong>Heaps are NOT sorted.</strong> Only the root is guaranteed extreme; siblings can be in any order.</li>
-</ul>
-<p><strong>Mantra:</strong> "Heap when you need fastest extreme. Min-heap of size K for top-K. Two heaps for median. Always hand-rolled in JS."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A heap is an <strong>array-backed complete binary tree that gives you the smallest/largest item in O(1) peek and O(log n) push/pop</strong> — the go-to for top-K, median, merge-K, and "repeatedly extract the extreme."</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Heap = complete binary tree with the heap property</strong> (every parent ≤ children for a min-heap, ≥ for a max-heap); the root is the extreme.</li>
+    <li><strong>Array-backed, no node objects:</strong> for index <code>i</code>, children are <code>2i+1</code> and <code>2i+2</code>, parent is <code>(i-1)&gt;&gt;1</code>. Push sifts up, pop moves the last element to the root and sifts down — both O(log n); peek is O(1).</li>
+    <li><strong>A heap is NOT sorted</strong> — only the root is guaranteed extreme; siblings are in any order, and searching for an arbitrary element is O(n).</li>
+    <li><strong>JavaScript has no built-in heap</strong> — hand-roll one (~30 lines) with a numeric comparator; you'll implement it in the interview.</li>
+    <li><strong>Top-K pattern:</strong> for the K <em>largest</em> keep a <em>min</em>-heap of size K (K smallest → max-heap); pop when it overflows. O(n log K), better than a full O(n log n) sort when K ≪ n.</li>
+    <li><strong>Median of a stream = two heaps:</strong> a max-heap for the lower half and a min-heap for the upper half, rebalanced so their sizes differ by ≤ 1; median is a peek (or average of two peeks).</li>
+    <li><strong>Merge K sorted lists = min-heap of the K head pointers</strong>, O(N log K); Dijkstra/Prim = min-heap keyed by distance/weight.</li>
+    <li><strong>Build a heap from an array in O(n)</strong> ("heapify": sift down from the last non-leaf backwards) — not O(n log n) from N pushes.</li>
+    <li>Binary heaps don't support efficient decrease-key or arbitrary delete — use <strong>lazy deletion</strong>: push a new entry and skip stale ones on pop (guard with a validity/distance check).</li>
+    <li>Comparator must return a <em>number</em> (negative/0/positive), not a boolean; equal-priority items aren't stable — add an insertion index to tie-break if FIFO matters.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Using the wrong heap direction for top-K:</strong> for the K <em>largest</em> elements you need a <em>min</em>-heap of size K (so the smallest of your K is the one you evict), and for K smallest a max-heap — beginners reach for the intuitive-but-backwards one. Two more silent killers: a comparator that returns a boolean instead of <code>a - b</code>, and building the heap with N pushes (O(n log n)) when O(n) heapify exists.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A heap is a priority queue — O(1) peek, O(log n) push and pop — and it's array-backed, so children live at 2i+1 and 2i+2."</div>
+  <div class="revision-say">"For the K largest I keep a min-heap of size K and pop when it overflows: O(n log K), which beats sorting when K is much smaller than n."</div>
+  <div class="revision-say">"For a streaming median I run two heaps — a max-heap for the low half and a min-heap for the high half — and keep them balanced, so the median is just a peek."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a heap?</h3>
 <p>A heap is a binary tree (almost always represented as an array) with two properties:</p>
 <ol>
@@ -86,12 +93,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>Not searchable.</strong> "Is X in the heap?" is O(n). Use a Set for membership; the heap for ordering.</li>
   <li><strong>Not stable.</strong> Equal-priority items emerge in implementation-dependent order. If you need stability, store <code>[priority, insertCount, value]</code> tuples.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Array layout</h3>
 <pre><code class="language-text">Index:  0  1  2  3  4  5  6  7  8  9
 Value: [1, 3, 5, 7, 9, 8, 11, 15, 17, 14]
@@ -191,12 +196,10 @@ Median():
 
 <h3>The "lazy deletion" trick</h3>
 <p>Heaps don't support efficient "delete arbitrary element" or "decrease key." Workaround: keep a separate map of "current valid version" per key. When popping, check if the popped entry is still valid; if not, discard and continue.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Min-heap implementation (JS)</h3>
 <pre><code class="language-js">class MinHeap {
   constructor() { this.h = []; }
@@ -404,12 +407,10 @@ function siftDown(arr, i, n) {
   return heap.h.map(e =&gt; e[1]);
 }
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Last Stone Weight (max-heap pop loop)</h3>
 <pre><code class="language-js">function lastStoneWeight(stones) {
   const heap = new Heap((a, b) =&gt; b - a);   // max-heap
@@ -567,12 +568,11 @@ s.next();   // 'FIRE'
 s.next();   // 'write report'
 s.next();   // 'coffee'
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Empty heap pop</h3>
 <p>Implementations should return <code>undefined</code> (or throw, depending on convention). Never return a stale value.</p>
 
@@ -642,12 +642,9 @@ const h = new Heap((a, b) =&gt; a.pri - b.pri);
 
 <h3>Recursive sift overflowing stack</h3>
 <p>A recursive sift down on a heap of 10⁷ elements has log₂(10⁷) ≈ 23 frames — fine. But naive implementations using deep recursion through unrelated objects can overflow. Iterative sift loops are the standard.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: comparator returns boolean</h3>
 <pre><code class="language-js">// BAD
 const cmp = (a, b) =&gt; a &gt; b;   // returns true/false (1/0); not a proper -, 0, +
@@ -760,12 +757,10 @@ item.pri = 1;   // heap doesn't know; root may now be wrong
 
 <h3>Anti-pattern 10: not benchmarking on the actual data shape</h3>
 <p>Heap perf is consistent O(log n) but constants matter. For very small n (&lt; 32), naive linear scans win. Profile when perf matters.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 14 problems worth memorizing patterns for</h3>
 <table>
   <thead><tr><th>Problem</th><th>Pattern</th></tr></thead>
@@ -862,51 +857,41 @@ item.pri = 1;   // heap doesn't know; root may now be wrong
   <li>"I'd extract the heap into a small library — JS's missing built-in is annoying enough that we end up rewriting it on every project."</li>
   <li>"I'd profile heap allocation pressure; in a hot loop with millions of pushes, the array growth strategy matters."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A heap is an <strong>array-backed complete binary tree that gives you the smallest/largest item in O(1) peek and O(log n) push/pop</strong> — the go-to for top-K, median, merge-K, and "repeatedly extract the extreme."</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Heap = complete binary tree with the heap property</strong> (every parent ≤ children for a min-heap, ≥ for a max-heap); the root is the extreme.</li>
-    <li><strong>Array-backed, no node objects:</strong> for index <code>i</code>, children are <code>2i+1</code> and <code>2i+2</code>, parent is <code>(i-1)&gt;&gt;1</code>. Push sifts up, pop moves the last element to the root and sifts down — both O(log n); peek is O(1).</li>
-    <li><strong>A heap is NOT sorted</strong> — only the root is guaranteed extreme; siblings are in any order, and searching for an arbitrary element is O(n).</li>
-    <li><strong>JavaScript has no built-in heap</strong> — hand-roll one (~30 lines) with a numeric comparator; you'll implement it in the interview.</li>
-    <li><strong>Top-K pattern:</strong> for the K <em>largest</em> keep a <em>min</em>-heap of size K (K smallest → max-heap); pop when it overflows. O(n log K), better than a full O(n log n) sort when K ≪ n.</li>
-    <li><strong>Median of a stream = two heaps:</strong> a max-heap for the lower half and a min-heap for the upper half, rebalanced so their sizes differ by ≤ 1; median is a peek (or average of two peeks).</li>
-    <li><strong>Merge K sorted lists = min-heap of the K head pointers</strong>, O(N log K); Dijkstra/Prim = min-heap keyed by distance/weight.</li>
-    <li><strong>Build a heap from an array in O(n)</strong> ("heapify": sift down from the last non-leaf backwards) — not O(n log n) from N pushes.</li>
-    <li>Binary heaps don't support efficient decrease-key or arbitrary delete — use <strong>lazy deletion</strong>: push a new entry and skip stale ones on pop (guard with a validity/distance check).</li>
-    <li>Comparator must return a <em>number</em> (negative/0/positive), not a boolean; equal-priority items aren't stable — add an insertion index to tie-break if FIFO matters.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Using the wrong heap direction for top-K:</strong> for the K <em>largest</em> elements you need a <em>min</em>-heap of size K (so the smallest of your K is the one you evict), and for K smallest a max-heap — beginners reach for the intuitive-but-backwards one. Two more silent killers: a comparator that returns a boolean instead of <code>a - b</code>, and building the heap with N pushes (O(n log n)) when O(n) heapify exists.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A heap is a priority queue — O(1) peek, O(log n) push and pop — and it's array-backed, so children live at 2i+1 and 2i+2."</div>
-  <div class="revision-say">"For the K largest I keep a min-heap of size K and pop when it overflows: O(n log K), which beats sorting when K is much smaller than n."</div>
-  <div class="revision-say">"For a streaming median I run two heaps — a max-heap for the low half and a min-heap for the high half — and keep them balanced, so the median is just a peek."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you state the complexity of push, pop, and peek on a heap?</li>
-    <li>Can you recognize a &quot;top-k&quot; or streaming problem as a heap problem?</li>
-    <li>Can you code a heap-based top-k solution from memory?</li>
-    <li>Can you explain the two-heap streaming-median trick?</li>
-    <li>Can you decide between a min-heap and a max-heap for a given problem?</li>
-    <li>Can you name 2 problems heaps solve?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. What do push, pop and peek cost on a binary heap, and why?</div>
+  <div class="qa-answer">
+    <p>Peek is <code>O(1)</code> because the extreme is always at index 0. Push appends to the end of the array and sifts up; pop moves the last element to the root and sifts down. Both are <code>O(log n)</code> because the heap is a complete binary tree of height <code>log n</code>. Building a heap from an existing array with heapify is <code>O(n)</code>, not <code>O(n log n)</code>, while searching for an arbitrary element is <code>O(n)</code> because a heap is not sorted.</p>
+  </div>
 </div>
-`}
-]
+<div class="qa-block">
+  <div class="qa-question">Q2. Write a heap-based solution for the K largest elements.</div>
+  <div class="qa-answer">
+    <p>Keep a <em>min</em>-heap of size K; its root is the smallest of the current top K, so anything larger replaces it.</p>
+    <pre><code class="language-js">function topK(nums, k) {
+  const heap = new MinHeap();
+  for (const x of nums) {
+    if (heap.size() &lt; k) heap.push(x);
+    else if (x &gt; heap.peek()) { heap.pop(); heap.push(x); }
+  }
+  return heap.h;   // the K largest, not sorted
+}</code></pre>
+    <p><code>O(n log K)</code> time and <code>O(K)</code> space, better than a full <code>O(n log n)</code> sort when K is much smaller than n. JS has no built-in heap, so you hand-roll <code>MinHeap</code>. Handle K = 0 and K &gt; n.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Explain the two-heap trick for the median of a stream.</div>
+  <div class="qa-answer">
+    <p>Keep a max-heap for the lower half and a min-heap for the upper half. Insert each number into the correct side, then rebalance so the sizes differ by at most one. The median is the root of the larger heap, or the average of both roots when the sizes are equal. Insert is <code>O(log n)</code> and reading the median is <code>O(1)</code>. The classic bug is forgetting to rebalance, which gives a wrong median.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How do you decide between a min-heap and a max-heap?</div>
+  <div class="qa-answer">
+    <p>If you repeatedly extract the extreme, use the heap for that extreme: a min-heap for "always smallest first" (merge K sorted lists, Dijkstra, meeting rooms by end time), a max-heap for "always largest first" (Last Stone Weight, Task Scheduler by frequency). For bounded top-K it flips: K <em>largest</em> uses a <em>min</em>-heap of size K and K <em>smallest</em> (or K closest points) uses a max-heap, because the root must be the element you evict.</p>
+  </div>
+</div>
+` },
+
+  ]
 });

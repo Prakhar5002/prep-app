@@ -1,25 +1,44 @@
 window.PREP_SITE.registerTopic({
-  id: 'rncfg-metro',
-  module: 'RN Project & Config (Deep)',
-  title: 'Metro Bundler',
-  estimatedReadTime: '24 min',
-  tags: ['metro', 'bundler', 'metro-config', 'resolver', 'transformer', 'serializer', 'sourceexts', 'assetexts', 'hermes', 'monorepo', 'cache', 'watchman', 'inline-requires', 'fast-refresh', 'jsbundle', 'expo', 'react-native', 'port-8081', 'babel', 'source-maps', 'autolinking'],
+  id: "rncfg-metro",
+  module: "RN Project & Config (Deep)",
+  title: "Metro Bundler",
+  estimatedReadTime: "24 min",
+  tags: ["metro","bundler","metro-config","resolver","transformer","serializer","sourceexts","assetexts","hermes","monorepo","cache","watchman","inline-requires","fast-refresh","jsbundle","expo","react-native","port-8081","babel","source-maps","autolinking"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Metro is React Native's default JavaScript bundler. It takes your hundreds of <code>.js</code>/<code>.ts</code>/<code>.tsx</code> files plus assets and produces <strong>one</strong> JavaScript bundle the JS engine (Hermes or JSC) can run, along with a source map. It was built specifically for RN: fast <strong>incremental</strong> rebuilds, sub-second Fast Refresh, and a dev server that streams your app to the device.</p>
-<p>In development Metro runs as an HTTP server on <strong>port 8081</strong>. The app fetches <code>http://localhost:8081/index.bundle?platform=ios&amp;dev=true</code>, gets the bundle, and Metro keeps the socket open to push Fast Refresh / Hot Module Replacement (HMR) updates when you save.</p>
-<p>Every bundle passes through <strong>three stages</strong>: <strong>Resolution</strong> (build the module dependency graph), <strong>Transformation</strong> (Babel-transform each file, one worker per CPU), and <strong>Serialization</strong> (concatenate into a single bundle + source map). You steer all three from <code>metro.config.js</code> via the <code>resolver</code>, <code>transformer</code>, and <code>serializer</code> keys.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Metro is RN's purpose-built bundler that turns your module graph into one bundle through Resolution → Transformation → Serialization, serving it over HTTP on port 8081 in dev with Fast Refresh — and when a bundle looks stale or "ghosts," the answer is almost always <code>--reset-cache</code>.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Metro is RN's purpose-built bundler that turns your module graph into <strong>one</strong> bundle through <strong>Resolution → Transformation → Serialization</strong>, served over HTTP on <strong>port 8081</strong> with Fast Refresh in dev — and stale bundles almost always mean <strong>reset the cache</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>What it is:</strong> RN's default JS bundler (ships with RN and Expo). Emits ONE self-contained bundle (no HTML, no web-style chunks), understands <code>.ios/.android/.native</code> files and the <code>react-native</code> package field, and includes the dev server.</li>
+    <li><strong>Three stages:</strong> <strong>Resolution</strong> (metro-resolver builds the module graph from the entry, applying sourceExts/platform/mainFields/blockList) → <strong>Transformation</strong> (Babel per file in a worker pool, disk-cached) → <strong>Serialization</strong> (numeric module ids, wrap + order + polyfills → one bundle + source map).</li>
+    <li><strong>Dev server on port 8081:</strong> app fetches <code>/index.bundle?platform=ios&amp;dev=true&amp;minify=false</code>; <code>platform</code> picks platform files, <code>dev</code> toggles <code>__DEV__</code>/Fast Refresh. Sibling routes: <code>/status</code>, <code>/index.map</code>, <code>/reload</code>. Fast Refresh/HMR pushes deltas over a WebSocket, preserving component state when safe.</li>
+    <li><strong>metro.config.js:</strong> build with <code>getDefaultConfig(__dirname)</code> + <code>mergeConfig(defaults, overrides)</code> — never spread defaults by hand. Three sections map to the three stages: <code>resolver</code>, <code>transformer</code>, <code>serializer</code>.</li>
+    <li><strong>resolver keys:</strong> <code>sourceExts</code> (js/jsx/ts/tsx/json), <code>assetExts</code> (png/ttf/mp4…), <code>resolverMainFields</code> (<code>['react-native','browser','main']</code>), <code>extraNodeModules</code> (aliases/pins), <code>nodeModulesPaths</code>, <code>blockList</code> (was <code>blacklistRE</code>), <code>disableHierarchicalLookup</code>, <code>unstable_enablePackageExports</code>, symlink support.</li>
+    <li><strong>transformer keys:</strong> <code>babelTransformerPath</code> (e.g. react-native-svg-transformer), <code>getTransformOptions</code> → <strong><code>inlineRequires</code></strong> (lazy module init, big startup win), <code>minifierPath</code>, <code>assetPlugins</code>.</li>
+    <li><strong>serializer keys:</strong> <code>getModulesRunBeforeMainModule</code>, <code>createModuleIdFactory</code> (deterministic ids for OTA/CodePush/EAS Update), <code>customSerializer</code>.</li>
+    <li><strong>SVG-as-component:</strong> set <code>babelTransformerPath</code> to react-native-svg-transformer, REMOVE <code>svg</code> from <code>assetExts</code>, ADD <code>svg</code> to <code>sourceExts</code>.</li>
+    <li><strong>Hermes:</strong> Metro emits plain JS → build phase runs <code>hermesc</code> (<code>hermesCommand</code>) to compile to bytecode <code>.hbc</code> baked into the binary → faster launch/less memory; JSC is the fallback when Hermes is off. Metro doesn't run Hermes itself.</li>
+    <li><strong>Release:</strong> no Metro at runtime. The "Bundle React Native code and images" Xcode phase / Android Gradle plugin runs <code>react-native bundle</code> → <code>main.jsbundle</code> (iOS) / <code>index.android.bundle</code> (Android), <code>--assets-dest</code> for images, usually then Hermes bytecode. RAM bundles are legacy (obsolete under Hermes + inline requires).</li>
+    <li><strong>Cache fixes:</strong> <code>--reset-cache</code> (Expo <code>-c</code>) for stale/ghost bundles, <code>watchman watch-del-all</code> when edits don't show, nuke <code>$TMPDIR/metro-*</code> as the hammer, <code>lsof -ti:8081 | xargs kill -9</code> or <code>--port</code> for "8081 in use."</li>
+    <li><strong>Monorepo:</strong> <code>watchFolders = [workspaceRoot]</code>, <code>nodeModulesPaths</code> = app + root, <code>disableHierarchicalLookup: true</code>, and pin <code>react</code>/<code>react-native</code> via <code>extraNodeModules</code> to avoid duplicate-React / Invalid hook call.</li>
+    <li><strong>Expo:</strong> use <code>expo/metro-config</code>'s <code>getDefaultConfig</code> (asset registry, <code>isCSSEnabled</code>, expo-router); customize via <code>npx expo customize metro.config.js</code>; the SAME file is used by <code>eas build</code>.</li>
+    <li><strong>Device debugging:</strong> on a real phone <code>localhost</code> is the phone → use <code>adb reverse tcp:8081 tcp:8081</code> or a LAN IP host to reach Metro.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Replacing (instead of extending) <code>sourceExts</code>/<code>assetExts</code>, or spreading over <code>getDefaultConfig</code> by hand</strong> — you wipe the built-in <code>js/ts/tsx</code> extensions and nothing resolves. Always derive arrays from the default (<code>[...base.resolver.sourceExts, 'svg']</code>) and combine with <code>mergeConfig</code>. Second trap: chasing a "stale bundle" for ten minutes when <code>--reset-cache</code> + <code>watchman watch-del-all</code> fixes it in seconds.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Metro is RN's bundler. Every build is Resolution → Transformation → Serialization: it builds the module graph, Babel-transforms each file in a worker pool with disk caching, then serializes everything into one bundle plus a source map. In dev it serves that on port 8081 with Fast Refresh."</div>
+  <div class="revision-say">"You steer it from metro.config.js — resolver, transformer, serializer map onto the three stages. For SVGs I move 'svg' from assetExts to sourceExts and set the svg babel transformer. For startup I rely on inlineRequires."</div>
+  <div class="revision-say">"In release there's no Metro: the Xcode/Gradle build phase runs react-native bundle to main.jsbundle / index.android.bundle, then Hermes compiles it to bytecode baked into the app. When a dev bundle looks stale, I reset the Metro cache and clear Watchman."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What Metro is</h3>
 <p>Metro is a JavaScript bundler — the tool that reads your entry file (<code>index.js</code>), follows every <code>import</code>/<code>require</code>, transforms each file down to a form the engine understands, and stitches them into a single output. For web you would use Webpack, Vite, esbuild, or Rollup; for React Native you use Metro. It ships with React Native (and with Expo, via <code>@expo/metro-config</code>). The project lives under <code>metro</code>, <code>metro-config</code>, <code>metro-resolver</code>, <code>metro-transform-worker</code>, and friends in your <code>node_modules</code>.</p>
 
@@ -57,10 +76,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Fast Refresh / HMR</h3>
 <p>Fast Refresh is RN's hot-reloading. On save, Metro re-transforms only the changed module, sends the delta over a WebSocket, and the RN runtime swaps that module and re-renders — preserving component state where it safely can (React function components with Hooks). It replaces the old "Live Reload" (full reload) and "Hot Reloading" toggles. If a module has side effects at import time or exports non-components, Fast Refresh falls back to a full reload of that module tree.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The three stages of every bundle</h3>
 <div class="diagram">
 <pre>
@@ -132,10 +151,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"Metro runs on the phone." No. In development the bundle is built on your machine by the Metro server and streamed to the device; in release there is no Metro at all — a pre-built bundle (usually Hermes bytecode) is shipped inside the binary. That is why a release build works with your laptop off, and why a dev build shows the red "Could not connect to development server" screen when Metro isn't running.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>metro.config.js anatomy (bare React Native)</h3>
 <p>A fresh RN app ships this file. <code>getDefaultConfig</code> gives you RN's sensible defaults; <code>mergeConfig</code> deep-merges your overrides on top (never spread by hand — arrays like <code>sourceExts</code> need proper merge semantics).</p>
 <pre><code class="language-js">// metro.config.js  (bare RN)
@@ -195,7 +214,7 @@ module.exports = config;</code></pre>
   extraNodeModules: {
     '@app': require('path').resolve(__dirname, 'src'),
   },
-  blockList: exclusionList([/nested\/.*\/react-native\/.*/]),
+  blockList: exclusionList([/nested/.*/react-native/.*/]),
   resolverMainFields: ['react-native', 'browser', 'main'],
   unstable_enablePackageExports: true,
 };</code></pre>
@@ -250,10 +269,10 @@ npx react-native bundle \\
   --bundle-output android/app/src/main/assets/index.android.bundle \\
   --assets-dest android/app/src/main/res</code></pre>
 <p>In a normal Xcode build the <strong>"Bundle React Native code and images"</strong> build phase runs this for you (via <code>react-native-xcode.sh</code>), producing <code>main.jsbundle</code>. On Android, the Gradle React plugin produces <code>index.android.bundle</code> under <code>assets/</code>. <strong>RAM bundles</strong> (<code>--ram-bundle</code> / unbundle) were a legacy way to load modules on demand to cut startup; with Hermes bytecode + inline requires they are effectively obsolete.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Minimal bare-RN metro.config.js</h3>
 <pre><code class="language-js">const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 module.exports = mergeConfig(getDefaultConfig(__dirname), {});</code></pre>
@@ -295,7 +314,7 @@ module.exports = mergeConfig(getDefaultConfig(__dirname), {
 <pre><code class="language-js">const exclusionList = require('metro-config/src/defaults/exclusionList');
 module.exports = mergeConfig(getDefaultConfig(__dirname), {
   resolver: {
-    blockList: exclusionList([/legacy-app\/node_modules\/react-native\/.*/]),
+    blockList: exclusionList([/legacy-app/node_modules/react-native/.*/]),
   },
 });</code></pre>
 
@@ -359,10 +378,11 @@ module.exports = mergeConfig(getDefaultConfig(__dirname), {
     sourceExts: ['native.ts', 'native.tsx', ...getDefaultConfig(__dirname).resolver.sourceExts],
   },
 });</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Port 8081 already in use</h3>
 <p>"error listen EADDRINUSE :::8081" means another Metro (or an unrelated process) holds the port. Find and kill it: <code>lsof -ti:8081 | xargs kill -9</code>, or start on another port with <code>--port 8088</code> and update the device's debug server host.</p>
 
@@ -410,10 +430,9 @@ module.exports = mergeConfig(getDefaultConfig(__dirname), {
 
 <h3>16. maxWorkers on CI</h3>
 <p>On memory-limited CI, the default (all CPUs) worker pool can OOM during transform. Set <code>--max-workers 2</code> or <code>maxWorkers: 2</code> in config.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — hand-editing defaults instead of mergeConfig</h3>
 <p>Spreading over <code>getDefaultConfig</code> by hand drops nested defaults (e.g. clobbering <code>resolver.assetExts</code> entirely). Always <code>mergeConfig(defaultConfig, overrides)</code> and derive arrays FROM the default (<code>[...base.resolver.sourceExts, 'x']</code>).</p>
 
@@ -455,10 +474,10 @@ module.exports = mergeConfig(getDefaultConfig(__dirname), {
 
 <h3>Anti-pattern 14 — not clearing cache after a native/dep upgrade</h3>
 <p>Upgrading RN/Expo or a Babel plugin without <code>--reset-cache</code> can serve transforms from the old toolchain → baffling runtime errors. Reset once after any toolchain bump.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What is Metro and why does React Native use it instead of Webpack?</div>
   <div class="qa-answer">
@@ -588,53 +607,7 @@ module.exports = mergeConfig(getDefaultConfig(__dirname), {
     <li>You know Expo uses <code>expo/metro-config</code> and EAS reuses the same file.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Metro is RN's purpose-built bundler that turns your module graph into <strong>one</strong> bundle through <strong>Resolution → Transformation → Serialization</strong>, served over HTTP on <strong>port 8081</strong> with Fast Refresh in dev — and stale bundles almost always mean <strong>reset the cache</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>What it is:</strong> RN's default JS bundler (ships with RN and Expo). Emits ONE self-contained bundle (no HTML, no web-style chunks), understands <code>.ios/.android/.native</code> files and the <code>react-native</code> package field, and includes the dev server.</li>
-    <li><strong>Three stages:</strong> <strong>Resolution</strong> (metro-resolver builds the module graph from the entry, applying sourceExts/platform/mainFields/blockList) → <strong>Transformation</strong> (Babel per file in a worker pool, disk-cached) → <strong>Serialization</strong> (numeric module ids, wrap + order + polyfills → one bundle + source map).</li>
-    <li><strong>Dev server on port 8081:</strong> app fetches <code>/index.bundle?platform=ios&amp;dev=true&amp;minify=false</code>; <code>platform</code> picks platform files, <code>dev</code> toggles <code>__DEV__</code>/Fast Refresh. Sibling routes: <code>/status</code>, <code>/index.map</code>, <code>/reload</code>. Fast Refresh/HMR pushes deltas over a WebSocket, preserving component state when safe.</li>
-    <li><strong>metro.config.js:</strong> build with <code>getDefaultConfig(__dirname)</code> + <code>mergeConfig(defaults, overrides)</code> — never spread defaults by hand. Three sections map to the three stages: <code>resolver</code>, <code>transformer</code>, <code>serializer</code>.</li>
-    <li><strong>resolver keys:</strong> <code>sourceExts</code> (js/jsx/ts/tsx/json), <code>assetExts</code> (png/ttf/mp4…), <code>resolverMainFields</code> (<code>['react-native','browser','main']</code>), <code>extraNodeModules</code> (aliases/pins), <code>nodeModulesPaths</code>, <code>blockList</code> (was <code>blacklistRE</code>), <code>disableHierarchicalLookup</code>, <code>unstable_enablePackageExports</code>, symlink support.</li>
-    <li><strong>transformer keys:</strong> <code>babelTransformerPath</code> (e.g. react-native-svg-transformer), <code>getTransformOptions</code> → <strong><code>inlineRequires</code></strong> (lazy module init, big startup win), <code>minifierPath</code>, <code>assetPlugins</code>.</li>
-    <li><strong>serializer keys:</strong> <code>getModulesRunBeforeMainModule</code>, <code>createModuleIdFactory</code> (deterministic ids for OTA/CodePush/EAS Update), <code>customSerializer</code>.</li>
-    <li><strong>SVG-as-component:</strong> set <code>babelTransformerPath</code> to react-native-svg-transformer, REMOVE <code>svg</code> from <code>assetExts</code>, ADD <code>svg</code> to <code>sourceExts</code>.</li>
-    <li><strong>Hermes:</strong> Metro emits plain JS → build phase runs <code>hermesc</code> (<code>hermesCommand</code>) to compile to bytecode <code>.hbc</code> baked into the binary → faster launch/less memory; JSC is the fallback when Hermes is off. Metro doesn't run Hermes itself.</li>
-    <li><strong>Release:</strong> no Metro at runtime. The "Bundle React Native code and images" Xcode phase / Android Gradle plugin runs <code>react-native bundle</code> → <code>main.jsbundle</code> (iOS) / <code>index.android.bundle</code> (Android), <code>--assets-dest</code> for images, usually then Hermes bytecode. RAM bundles are legacy (obsolete under Hermes + inline requires).</li>
-    <li><strong>Cache fixes:</strong> <code>--reset-cache</code> (Expo <code>-c</code>) for stale/ghost bundles, <code>watchman watch-del-all</code> when edits don't show, nuke <code>$TMPDIR/metro-*</code> as the hammer, <code>lsof -ti:8081 | xargs kill -9</code> or <code>--port</code> for "8081 in use."</li>
-    <li><strong>Monorepo:</strong> <code>watchFolders = [workspaceRoot]</code>, <code>nodeModulesPaths</code> = app + root, <code>disableHierarchicalLookup: true</code>, and pin <code>react</code>/<code>react-native</code> via <code>extraNodeModules</code> to avoid duplicate-React / Invalid hook call.</li>
-    <li><strong>Expo:</strong> use <code>expo/metro-config</code>'s <code>getDefaultConfig</code> (asset registry, <code>isCSSEnabled</code>, expo-router); customize via <code>npx expo customize metro.config.js</code>; the SAME file is used by <code>eas build</code>.</li>
-    <li><strong>Device debugging:</strong> on a real phone <code>localhost</code> is the phone → use <code>adb reverse tcp:8081 tcp:8081</code> or a LAN IP host to reach Metro.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Replacing (instead of extending) <code>sourceExts</code>/<code>assetExts</code>, or spreading over <code>getDefaultConfig</code> by hand</strong> — you wipe the built-in <code>js/ts/tsx</code> extensions and nothing resolves. Always derive arrays from the default (<code>[...base.resolver.sourceExts, 'svg']</code>) and combine with <code>mergeConfig</code>. Second trap: chasing a "stale bundle" for ten minutes when <code>--reset-cache</code> + <code>watchman watch-del-all</code> fixes it in seconds.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Metro is RN's bundler. Every build is Resolution → Transformation → Serialization: it builds the module graph, Babel-transforms each file in a worker pool with disk caching, then serializes everything into one bundle plus a source map. In dev it serves that on port 8081 with Fast Refresh."</div>
-  <div class="revision-say">"You steer it from metro.config.js — resolver, transformer, serializer map onto the three stages. For SVGs I move 'svg' from assetExts to sourceExts and set the svg babel transformer. For startup I rely on inlineRequires."</div>
-  <div class="revision-say">"In release there's no Metro: the Xcode/Gradle build phase runs react-native bundle to main.jsbundle / index.android.bundle, then Hermes compiles it to bytecode baked into the app. When a dev bundle looks stale, I reset the Metro cache and clear Watchman."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name Metro's three stages and say what each one produces?</li>
-    <li>Can you decode a bundle URL like <code>/index.bundle?platform=ios&amp;dev=true</code> and say what runs on port 8081?</li>
-    <li>Can you map <code>resolver</code>/<code>transformer</code>/<code>serializer</code> to the three stages and name the key fields in each?</li>
-    <li>Can you configure Metro so an SVG import becomes a React component?</li>
-    <li>Can you explain what inlineRequires does and why it helps startup?</li>
-    <li>Can you trace how a Metro bundle becomes Hermes bytecode and what ships in a release binary?</li>
-    <li>Can you write the classic monorepo Metro config and say why each of watchFolders / nodeModulesPaths / disableHierarchicalLookup is there?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

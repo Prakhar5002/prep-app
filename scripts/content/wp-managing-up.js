@@ -1,33 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'wp-managing-up',
-  module: 'workplace',
-  title: 'Managing Up & 1:1s',
-  estimatedReadTime: '40 min',
-  tags: ['managing-up', 'one-on-ones', 'manager', 'communication', 'career', 'feedback'],
+  id: "wp-managing-up",
+  module: "workplace",
+  title: "Managing Up & 1:1s",
+  estimatedReadTime: "40 min",
+  tags: ["managing-up","one-on-ones","manager","communication","career","feedback"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Your relationship with your manager is the single highest-leverage relationship in your career — they shape your scope, defend your packet in calibration, write your eval, decide your raise, and give (or block) the references that follow you. "Managing up" isn't politics; it's a skill that makes your manager's job easier and your career better. Engineers who treat 1:1s as status reports waste them; engineers who run 1:1s as their own meeting (with agenda + outcomes) compound advantage over years.</p>
-<ul>
-  <li><strong>1:1s are your meeting.</strong> Bring an agenda. Drive it. The manager's job is to be useful to you in that 30-60 min.</li>
-  <li><strong>Don't status-update — surface.</strong> Status goes in async docs. 1:1 is for blockers, ambiguity, calibration, career, sensitive topics.</li>
-  <li><strong>The 4 categories:</strong> Work-now (what's blocking?); Feedback (give + get); Career (where am I going?); Relationship (how's our rapport?).</li>
-  <li><strong>Manage up = make their job easier.</strong> Give them context, summarize escalations, propose solutions not just problems, signal early when you'll miss a deadline.</li>
-  <li><strong>Ask for what you want.</strong> "I want to be considered for the X project." "I want feedback on Y." Managers are bad mind-readers.</li>
-  <li><strong>Disagreement is allowed (and required).</strong> Senior signal: pushing back productively in private; committing publicly when manager makes the call.</li>
-  <li><strong>Calibration with your manager is a year-long thing,</strong> not a year-end conversation. Quarterly: "am I on track? what's missing?"</li>
-  <li><strong>Bad managers are real;</strong> some can't be saved. Recognize early; plan exit / transfer if structural.</li>
-</ul>
-<p><strong>Mantra:</strong> "1:1 is your meeting. Surface, don't status-report. Give context, propose solutions. Ask for what you want. Calibrate quarterly. Disagree privately, commit publicly."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The 1:1 is <strong>your meeting</strong> — surface (don't status-report), make your manager's job easier, ask for what you want, calibrate quarterly, and disagree in private while committing in public.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Your manager relationship is the <strong>single highest-leverage relationship</strong> in your career — they shape scope, defend your packet in calibration, write your eval, decide your raise, and carry your references for years.</li>
+    <li><strong>Managing up isn't politics</strong> — it's making your manager's job easier: give them context, summarize escalations, propose solutions (not just problems), and signal early when you'll miss a deadline.</li>
+    <li><strong>1:1s are your meeting:</strong> bring an agenda, drive it, leave with 1-3 decisions or commitments. Status belongs in async docs.</li>
+    <li><strong>Surface, don't status-report</strong> — bring the things where the manager's input changes the outcome (blockers, ambiguity, decisions, sensitive topics), not what they already know from standup.</li>
+    <li>The <strong>four categories:</strong> work-now (blockers), feedback (give + get), career (trajectory), relationship (rapport check).</li>
+    <li><strong>No surprises:</strong> flag bad news the moment it becomes likely, not when it lands — with a proposed mitigation. Managers recover from early bad news; they cannot recover from being blindsided.</li>
+    <li><strong>Ask for what you want</strong> — projects, visibility, feedback, comp. Managers are bad mind-readers; if you don't ask, the default is no.</li>
+    <li><strong>Disagree privately, commit publicly:</strong> raise the concern in the 1:1 with an alternative, execute fully once they decide, and re-raise only on new information. Strong opinions, weakly held.</li>
+    <li><strong>Pull in negative feedback</strong> actively — "what would calibration peers object to?" beats "how am I doing?" which just gets "great".</li>
+    <li><strong>Calibrate quarterly,</strong> not at year-end: "am I on track? what's the gap? what's the plan?" — this is what prevents perf-review surprises.</li>
+    <li>Use a <strong>1-page brief</strong> (TL;DR, options, recommendation, decision needed) for complex topics to save your manager context-loading time.</li>
+    <li>Adjust to your manager's style (data vs story, written vs verbal), stay <strong>loyal in public and candid in private</strong>, and never trash-talk them to peers or skip-level.</li>
+    <li>Bad managers are real and some can't be saved — recognize it early, build skip-level and cross-team relationships so your career isn't single-manager-dependent, and plan a transfer/exit if the trust contract is structurally broken.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Treating the 1:1 as a status report and waiting to be noticed.</strong> Reciting what you worked on wastes the highest-leverage 30 minutes of your week, and assuming your manager will notice your ambitions means projects, visibility, and promo default to "no". Bring an agenda, surface the real decisions, and ask explicitly.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I treat 1:1s as my meeting — I bring an agenda and we spend the time on blockers, decisions, and career, because status is already visible async."</div>
+  <div class="revision-say">"My rule is no surprises: I flag risk the moment it becomes likely, with a proposed mitigation, so my manager can manage up before it lands."</div>
+  <div class="revision-say">"I disagree in private and commit in public — I make my case with an alternative, and once the decision is made I execute fully even if I had concerns."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What managing up actually is</h3>
 <p>"Managing up" is the practice of making your manager's job easier so they can be more effective for you. Not flattery. Not politics. Concrete behaviors:</p>
 <ul>
@@ -89,12 +99,10 @@ window.PREP_SITE.registerTopic({
 </ul>
 
 <p>If this contract isn't there, the 1:1 isn't fixing the relationship. The relationship is broken; address that or transfer / leave.</p>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The 4 categories of 1:1 topics</h3>
 <table>
   <thead><tr><th>Category</th><th>Examples</th><th>Frequency</th></tr></thead>
@@ -248,12 +256,10 @@ window.PREP_SITE.registerTopic({
 </code></pre>
 
 <p>Send before the 1:1 (or async). Saves your manager 20 min of context-loading. Compounds trust.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Setting up the 1:1 cadence</h3>
 <ul>
   <li><strong>Weekly</strong> if you're early in the relationship, on a high-stakes project, or new to the team.</li>
@@ -414,12 +420,10 @@ permission to retry]."
   <li>Once they decide: execute fully + publicly support.</li>
   <li>Disagreement reflects character; loyalty in public reflects professionalism. Senior engineers do both.</li>
 </ul>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Strong 1:1 agenda</h3>
 <pre><code class="language-text"># 1:1 — May 4, 2026
 
@@ -631,12 +635,11 @@ architecture; recently shipped passkeys auth.
 </code></pre>
 
 <p><strong>What's strong:</strong> clear purpose, specific questions that show curiosity + ambition, awareness of what not to do.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Manager who micromanages</h3>
 <ul>
   <li>Wants daily updates; questions every decision; revises your work.</li>
@@ -751,12 +754,9 @@ architecture; recently shipped passkeys auth.
   <li>Find at least one skip-level / cross-team peer in your time zone for daily collaboration; reduces over-reliance on the US-time-zone manager.</li>
   <li>For visibility: explicit + written, since you can't pop into hallway conversations.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common managing-up mistakes</h3>
 <ol>
   <li><strong>Treating 1:1 as status report.</strong> Status is async; 1:1 is for surfacing.</li>
@@ -1004,12 +1004,10 @@ read]."
 
 [Result: 1:1 is a tool for the relationship, not a complaint hotline.]
 </code></pre>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Behavioral interview prompts that map here</h3>
 <ol>
   <li>"Tell me about your relationship with your manager."</li>
@@ -1148,57 +1146,32 @@ result validated the call."
   <li>"Read 'The Manager's Path' by Camille Fournier — even as IC, the manager perspective sharpens managing-up skills."</li>
   <li>"Audit your last 5 1:1s — were they status reports or surfacing meetings? What would you change?"</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">The 1:1 is <strong>your meeting</strong> — surface (don't status-report), make your manager's job easier, ask for what you want, calibrate quarterly, and disagree in private while committing in public.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Your manager relationship is the <strong>single highest-leverage relationship</strong> in your career — they shape scope, defend your packet in calibration, write your eval, and carry your references for years.</li>
-    <li><strong>1:1s are your meeting:</strong> bring an agenda, drive it, leave with 1-3 decisions or commitments. Status belongs in async docs.</li>
-    <li><strong>Surface, don't status-report</strong> — bring the things where the manager's input changes the outcome (blockers, ambiguity, decisions, sensitive topics), not what they already know from standup.</li>
-    <li>The <strong>four categories:</strong> work-now (blockers), feedback (give + get), career (trajectory), relationship (rapport check).</li>
-    <li><strong>No surprises:</strong> flag bad news the moment it becomes likely, not when it lands — with a proposed mitigation. Managers recover from early bad news; they cannot recover from being blindsided.</li>
-    <li><strong>Ask for what you want</strong> — projects, visibility, feedback, comp. Managers are bad mind-readers; if you don't ask, the default is no.</li>
-    <li><strong>Disagree privately, commit publicly:</strong> raise the concern in the 1:1 with an alternative, execute fully once they decide, and re-raise only on new information. Strong opinions, weakly held.</li>
-    <li><strong>Pull in negative feedback</strong> actively — "what would calibration peers object to?" beats "how am I doing?" which just gets "great".</li>
-    <li><strong>Calibrate quarterly,</strong> not at year-end: "am I on track? what's the gap? what's the plan?" — this is what prevents perf-review surprises.</li>
-    <li>Use a <strong>1-page brief</strong> (TL;DR, options, recommendation, decision needed) for complex topics to save your manager context-loading time.</li>
-    <li>Adjust to your manager's style (data vs story, written vs verbal), stay <strong>loyal in public and candid in private</strong>, and never trash-talk them to peers or skip-level.</li>
-    <li>Bad managers are real — build skip-level and cross-team relationships so your career isn't single-manager-dependent; plan a transfer/exit if the trust contract is structurally broken.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Treating the 1:1 as a status report and waiting to be noticed.</strong> Reciting what you worked on wastes the highest-leverage 30 minutes of your week, and assuming your manager will notice your ambitions means projects, visibility, and promo default to "no". Bring an agenda, surface the real decisions, and ask explicitly.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I treat 1:1s as my meeting — I bring an agenda and we spend the time on blockers, decisions, and career, because status is already visible async."</div>
-  <div class="revision-say">"My rule is no surprises: I flag risk the moment it becomes likely, with a proposed mitigation, so my manager can manage up before it lands."</div>
-  <div class="revision-say">"I disagree in private and commit in public — I make my case with an alternative, and once the decision is made I execute fully even if I had concerns."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. How do you run a 1:1 as your own meeting, and what's the difference between surfacing and status-reporting?</div>
+  <div class="qa-answer">
+    <p>I bring an agenda in a shared 1:1 doc and drive the time: a quick human check-in, 10-15 minutes on my blockers and decisions, then the manager's agenda, a few minutes on career or next quarter, and a wrap with explicit commitments. Status is something the manager couldn't act on even if they wanted to ("I'm working on Y", "I shipped the migration"); it belongs in async docs. Surfacing is anything where their input changes the outcome: "Y is at risk — two paths, cut scope or pull in another engineer; I lean A, what do you think?" or "The cutover had a 12-minute outage; here's the postmortem, I'd value your read."</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain how you run a 1:1 as your meeting, and the difference between surfacing and status-reporting?</li>
-    <li>Can you tell a concise STAR story about delivering bad news early, with a mitigation, instead of blindsiding your manager?</li>
-    <li>Can you describe a time you disagreed with your manager, made your case, and then committed to their decision?</li>
-    <li>Can you explain how you ask for what you want — a project, visibility, comp — specifically rather than waiting to be noticed?</li>
-    <li>Can you describe how you run a quarterly career check to avoid perf-review surprises?</li>
-    <li>Can you explain how you would handle a hands-off, micromanaging, or untrustworthy manager without trash-talking them?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Tell me about a time you delivered bad news early, with a mitigation, instead of blindsiding your manager.</div>
+  <div class="qa-answer">
+    <p>Situation: a Friday deadline, and in Tuesday's 1:1 my confidence had dropped to about 60% — an indexing job was running 24h instead of 8h on full data, and the web team's API endpoint was slipping to the next Tuesday. Action: I flagged it then rather than on Friday, gave the realistic worst case (Wednesday next week), and offered two plans — ship Friday with the web endpoint mocked behind a flag, or hold the full launch to Tuesday — and recommended A while naming its flag complexity. Result: my manager chose A in one conversation, asked for a rock-solid flag fallback and the web team's commitment by Wednesday, and I followed up with a Friday status. Managers can recover from early bad news; they can't recover from being blindsided.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. How do you ask for what you want — a project, visibility, comp — rather than waiting to be noticed?</div>
+  <div class="qa-answer">
+    <p>I make specific, actionable asks, because managers can't read minds and the default without asking is no. For a project: "I'd like to drive the RN architecture initiative as tech lead — are you supportive of that being mine, and what would I need to demonstrate first?" For promo: "My target this cycle is L5 — what's the gap?" For visibility: "Can you nominate me for the org all-hands slot when the passkeys work hits a milestone?" or "Could you intro me for a skip-level 1:1?" Comp is more involved and gets its own conversation. Asking gets you either "yes, here's how" or "no, here's why", and both are useful.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How do you run a quarterly career check so perf reviews hold no surprises?</div>
+  <div class="qa-answer">
+    <p>Once a quarter I dedicate a 1:1 to career, separate from operational topics, with a fixed agenda: where am I (target level, scope, feedback signals), am I on track (the manager's read, not mine — I listen), what's the gap to next, what's the H2 plan, and what support I need. The key questions are specific: "If we ran calibration today, what's the strongest objection?" and "What 2-3 things in the next two quarters would close that gap?" I then send a follow-up doc capturing the plan with dates and check progress monthly. A concrete, mutually agreed plan makes a year-end surprise very unlikely.</p>
+  </div>
+</div>
+` },
+
   ]
 });

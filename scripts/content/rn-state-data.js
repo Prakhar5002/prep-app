@@ -1,32 +1,44 @@
 window.PREP_SITE.registerTopic({
-  id: 'rn-state-data',
-  module: 'React Native',
-  title: 'State & Data (MMKV / React Query)',
-  estimatedReadTime: '24 min',
-  tags: ['react-native', 'state', 'mmkv', 'react-query', 'zustand', 'async-storage', 'data', 'persistence'],
+  id: "rn-state-data",
+  module: "React Native",
+  title: "State & Data (MMKV / React Query)",
+  estimatedReadTime: "24 min",
+  tags: ["react-native","state","mmkv","react-query","zustand","async-storage","data","persistence"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>RN state management uses the same React patterns you know, but with mobile-specific storage, caching, and sync considerations.</p>
-<ul>
-  <li><strong>Component state</strong>: <code>useState</code> / <code>useReducer</code>. Same as web.</li>
-  <li><strong>Global client state</strong>: <strong>Zustand</strong> is the modern default. Redux Toolkit still fine for large apps. Avoid Context for frequently-changing data.</li>
-  <li><strong>Server state</strong>: <strong>TanStack Query (React Query)</strong>. Handles caching, revalidation, retries, optimistic updates, offline queues, pagination.</li>
-  <li><strong>Storage — persistent, sync, fast</strong>: <strong>react-native-mmkv</strong>. JSI-powered, ~30× faster than AsyncStorage, synchronous API. Use for settings, tokens, cached data.</li>
-  <li><strong>Storage — structured / queryable</strong>: <strong>WatermelonDB</strong> (sync + reactive) or <strong>op-sqlite</strong> / <strong>expo-sqlite</strong> (raw SQL). For thousands of records with relationships.</li>
-  <li><strong>AsyncStorage</strong>: the OG; still supported but slower (bridge-based). Migrate to MMKV unless bound to a lib.</li>
-  <li><strong>Offline-first</strong>: cache + queue pattern. TanStack Query + MMKV persistor + mutation queue handles most cases.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Default stack: Zustand for client state + TanStack Query for server state + MMKV for persistence. Reach for SQLite-based stores only when you have large datasets with relational queries.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Separate server state from client state and pick storage by data shape</strong> — Zustand + TanStack Query + MMKV as the default, with tokens always in hardware-backed secure storage.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Default stack:</strong> Zustand for client state + TanStack Query (React Query) for server state + MMKV for persistence. Reach for SQLite only when scale and relations justify it.</li>
+    <li><strong>Four kinds of state:</strong> server (TanStack Query), client (Zustand / Redux), persistent (MMKV small, SQLite large), and route/URL (React Navigation or Expo Router params).</li>
+    <li><strong>Zustand</strong>: selector subscriptions (a component re-renders only when its selected slice changes), no provider tree, small API, middleware (persist / devtools / immer). Use <strong>Context</strong> only for rarely-changing ambient values (theme, locale). <strong>Redux Toolkit</strong> is still fine for large apps with strict patterns.</li>
+    <li><strong>TanStack Query</strong> handles caching, revalidation, retries, optimistic mutations, offline queues, and pagination. Mobile wins: focus refetch (foreground), network-aware reconnect refetch, and a persistable cache.</li>
+    <li><strong>MMKV over AsyncStorage:</strong> JSI-based direct C++ via mmap, <em>synchronous</em>, ~30× faster (~0.01ms vs ~1–5ms per op), multiple named instances, built-in AES encryption. AsyncStorage is bridge-based and async — still supported, but migrate to MMKV unless a library binds you to it.</li>
+    <li><strong>Never store auth tokens in AsyncStorage or plain MMKV</strong> — use OS-level secure storage (<code>expo-secure-store</code> / <code>react-native-keychain</code>, backed by iOS Keychain / Android Keystore, hardware-bound).</li>
+    <li><strong>Offline-first pattern:</strong> TanStack Query Persist to MMKV + NetInfo/<code>onlineManager</code> + a mutation queue replayed on reconnect with idempotency keys + optimistic updates.</li>
+    <li><strong>Optimistic update recipe:</strong> <code>onMutate</code> cancel in-flight queries → snapshot previous → <code>setQueryData</code> optimistic → <code>onError</code> rollback → <code>onSettled</code> invalidate to reconcile.</li>
+    <li><strong>SQLite / WatermelonDB</strong> only for thousands of records, relational queries (join/filter/sort), or reactive queries. Options: WatermelonDB (reactive + sync), expo-sqlite / op-sqlite, Drizzle ORM for typed SQL.</li>
+    <li><strong>Split Zustand stores by domain</strong> (auth / settings / cart / ui); each persists independently and components subscribe only to what they need.</li>
+    <li><strong>focusManager</strong>: wire <code>AppState</code> 'active' → focused so <code>refetchOnWindowFocus</code> gives fresh data when the app resumes.</li>
+    <li><strong>staleTime vs gcTime:</strong> staleTime = how long data is considered fresh (default 0, no refetch during it); gcTime (formerly cacheTime) = how long inactive data stays cached before GC (default 5 min).</li>
+    <li><strong>Centralize logout</strong>: clear the auth store, call <code>qc.clear()</code>, delete secure-store tokens, and <code>clearAll()</code> the user-data MMKV instance — prevents one user's data leaking into the next session.</li>
+    <li><strong>Version persisted cache keys</strong> (include app version) so an API-shape change on upgrade doesn't crash rehydration.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Storing auth tokens in AsyncStorage or plain MMKV.</strong> Both are unencrypted app storage — tokens sit in plaintext and are trivially extractable on a rooted/jailbroken device. Fix: keep tokens in OS-level secure storage (<code>expo-secure-store</code> / <code>react-native-keychain</code>, backed by iOS Keychain / Android Keystore, hardware-bound), and on logout centralize the cleanup — clear the auth store, <code>qc.clear()</code> the Query cache, delete the secure-store tokens, and <code>clearAll()</code> the user MMKV instance so one user's data never leaks into the next session.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"My default is Zustand for client state, TanStack Query for server state, and MMKV for persistence — SQLite or WatermelonDB only when I have lots of relational data."</div>
+  <div class="revision-say">"MMKV beats AsyncStorage because it's JSI-based and synchronous — roughly 30× faster — but tokens go in secure storage like expo-secure-store, never plain MMKV."</div>
+  <div class="revision-say">"For offline I persist the Query cache to MMKV, watch the network with NetInfo, and queue mutations with idempotency keys to replay on reconnect, with optimistic updates in the meantime."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why mobile state differs from web state</h3>
 <p>Everything you know about React state applies. But mobile has distinct concerns:</p>
 <ul>
@@ -83,10 +95,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>op-sqlite</strong> / <strong>expo-sqlite</strong>: raw SQL access.</li>
   <li><strong>Drizzle ORM</strong> on top: TypeScript-first SQL.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "four kinds of state" picture</h3>
 <div class="diagram">
 <pre>
@@ -154,10 +166,10 @@ const cache = new MMKV({ id: 'cache', encryptionKey: 'key' });</code></pre>
   <div class="callout-title">Common misconception</div>
   <p>"AsyncStorage is enough for everything." For a simple flag, yes. For settings read on every screen, auth tokens checked in navigation guards, cached server state — AsyncStorage's 1-5ms per read adds up. MMKV's sub-millisecond reads make sync access viable.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Zustand with persist to MMKV</h3>
 <pre><code class="language-ts">import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -303,10 +315,10 @@ function Inbox() {
   return &lt;FlatList data={messages} ... /&gt;;
 }
 // Automatic re-render on row changes; sync protocol built-in.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Zustand store</h3>
 <pre><code class="language-ts">import { create } from 'zustand';
 
@@ -468,10 +480,11 @@ async function migrateAsyncStorageToMMKV() {
   }
   await AsyncStorage.clear();
 }</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. MMKV initialization and native install</h3>
 <p>MMKV requires a native rebuild after install (it's a native library). Forgetting leads to "MMKV not found" at runtime. Run <code>pod install</code> on iOS and rebuild.</p>
 
@@ -536,10 +549,9 @@ async function migrateAsyncStorageToMMKV() {
 
 <h3>20. React Query keys as arrays of objects</h3>
 <p>Keys must be serializable. Stable identity rules apply: <code>['user', { id }]</code> is fine, <code>['user', { id, nonce: Math.random() }]</code> breaks caching.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — AsyncStorage for hot-path reads</h3>
 <p>Reading auth token on every navigation = async round-trip every time. Migrate to MMKV.</p>
 
@@ -584,10 +596,10 @@ async function migrateAsyncStorageToMMKV() {
 
 <h3>Anti-pattern 15 — forgetting to clear on logout</h3>
 <p>Next user sees previous user's cached feed. Central logout routine: clear auth store, call <code>qc.clear()</code>, clear user-data MMKV instance.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Which state management libraries do you use in RN and why?</div>
   <div class="qa-answer">
@@ -788,52 +800,26 @@ AppState.addEventListener('change', (status) =&gt; {
     <li>You reach for SQLite only when data scale and relations justify it.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Separate server state from client state and pick storage by data shape</strong> — Zustand + TanStack Query + MMKV as the default, with tokens always in hardware-backed secure storage.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Default stack:</strong> Zustand for client state + TanStack Query (React Query) for server state + MMKV for persistence. Reach for SQLite only when scale and relations justify it.</li>
-    <li><strong>Four kinds of state:</strong> server (TanStack Query), client (Zustand / Redux), persistent (MMKV small, SQLite large), and route/URL (React Navigation or Expo Router params).</li>
-    <li><strong>Zustand</strong>: selector subscriptions (a component re-renders only when its selected slice changes), no provider tree, small API, middleware (persist / devtools / immer). Use <strong>Context</strong> only for rarely-changing ambient values (theme, locale).</li>
-    <li><strong>TanStack Query</strong> handles caching, revalidation, retries, optimistic mutations, offline queues, and pagination. Mobile wins: focus refetch (foreground), network-aware reconnect refetch, and a persistable cache.</li>
-    <li><strong>MMKV over AsyncStorage:</strong> JSI-based direct C++ via mmap, <em>synchronous</em>, ~30× faster (~0.01ms vs ~1–5ms per op), multiple named instances, built-in AES encryption. AsyncStorage is bridge-based and async.</li>
-    <li><strong>Never store auth tokens in AsyncStorage or plain MMKV</strong> — use OS-level secure storage (<code>expo-secure-store</code> / <code>react-native-keychain</code>, backed by iOS Keychain / Android Keystore, hardware-bound).</li>
-    <li><strong>Offline-first pattern:</strong> TanStack Query Persist to MMKV + NetInfo/<code>onlineManager</code> + a mutation queue replayed on reconnect with idempotency keys + optimistic updates.</li>
-    <li><strong>Optimistic update recipe:</strong> <code>onMutate</code> cancel in-flight queries → snapshot previous → <code>setQueryData</code> optimistic → <code>onError</code> rollback → <code>onSettled</code> invalidate to reconcile.</li>
-    <li><strong>SQLite / WatermelonDB</strong> only for thousands of records, relational queries (join/filter/sort), or reactive queries. Options: WatermelonDB (reactive + sync), expo-sqlite / op-sqlite, Drizzle ORM for typed SQL.</li>
-    <li><strong>Split Zustand stores by domain</strong> (auth / settings / cart / ui); each persists independently and components subscribe only to what they need.</li>
-    <li><strong>focusManager</strong>: wire <code>AppState</code> 'active' → focused so <code>refetchOnWindowFocus</code> gives fresh data when the app resumes.</li>
-    <li><strong>staleTime vs gcTime:</strong> staleTime = how long data is considered fresh (default 0, no refetch during it); gcTime (formerly cacheTime) = how long inactive data stays cached before GC (default 5 min).</li>
-    <li><strong>Centralize logout</strong>: clear the auth store, call <code>qc.clear()</code>, delete secure-store tokens, and <code>clearAll()</code> the user-data MMKV instance — prevents one user's data leaking into the next session.</li>
-    <li><strong>Version persisted cache keys</strong> (include app version) so an API-shape change on upgrade doesn't crash rehydration.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Storing auth tokens in AsyncStorage or plain MMKV.</strong> Both are unencrypted app storage — tokens sit in plaintext and are trivially extractable on a rooted/jailbroken device. Fix: keep tokens in OS-level secure storage (<code>expo-secure-store</code> / <code>react-native-keychain</code>, backed by iOS Keychain / Android Keystore, hardware-bound), and on logout centralize the cleanup — clear the auth store, <code>qc.clear()</code> the Query cache, delete the secure-store tokens, and <code>clearAll()</code> the user MMKV instance so one user's data never leaks into the next session.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"My default is Zustand for client state, TanStack Query for server state, and MMKV for persistence — SQLite or WatermelonDB only when I have lots of relational data."</div>
-  <div class="revision-say">"MMKV beats AsyncStorage because it's JSI-based and synchronous — roughly 30× faster — but tokens go in secure storage like expo-secure-store, never plain MMKV."</div>
-  <div class="revision-say">"For offline I persist the Query cache to MMKV, watch the network with NetInfo, and queue mutations with idempotency keys to replay on reconnect, with optimistic updates in the meantime."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. When do you reach for local component state vs a global store vs React Query?</div>
+  <div class="qa-answer">
+    <p>Classify the state first. Anything one component (or a small subtree) owns — an input value, a toggle, a modal's open flag — stays in <code>useState</code> / <code>useReducer</code>, same as web. Client state shared across screens (auth session, settings, cart, UI preferences) goes in a global store like Zustand, split by domain, with components subscribing via selectors. Anything that comes from the server goes in TanStack Query, because it is really a cache that needs revalidation, retries, dedupe and offline handling — copying it into a global store means re-implementing all of that badly. Context is only for rarely-changing ambient values such as theme or locale.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain when to reach for local state vs a global store vs React Query?</li>
-    <li>Can you describe how you persist the React Query cache to MMKV for offline use?</li>
-    <li>Can you walk through an offline mutation queue with idempotency keys and replay on reconnect?</li>
-    <li>Can you explain optimistic updates and how you roll back on failure?</li>
-    <li>Can you contrast MMKV with AsyncStorage and say why MMKV is faster?</li>
-    <li>Can you explain staleTime vs cacheTime and how refetch-on-reconnect behaves?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. How do you persist the React Query cache to MMKV for offline use?</div>
+  <div class="qa-answer">
+    <p>Create a dedicated MMKV instance (e.g. <code>new MMKV({ id: 'rq-cache' })</code>), wrap it in <code>createSyncStoragePersister</code> with <code>getItem</code> / <code>setItem</code> / <code>removeItem</code> mapped to <code>getString</code> / <code>set</code> / <code>delete</code>, and replace <code>QueryClientProvider</code> with <code>PersistQueryClientProvider</code> passing <code>persistOptions={{ persister, maxAge: 1000*60*60*24 }}</code>. On the next cold start the cache is restored synchronously, so users see the last-loaded data instantly, and pending mutations are persisted too. The sync persister needs sync I/O, which is why MMKV fits; with AsyncStorage you must use <code>createAsyncStoragePersister</code>. Version the persisted keys so an API-shape change on upgrade doesn't break rehydration.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q18. How does refetch-on-reconnect work in TanStack Query on mobile?</div>
+  <div class="qa-answer">
+    <p>TanStack Query is network-aware: a reconnect triggers a refetch of stale queries, and with <code>networkMode: 'online'</code> mutations pause while offline and resume on reconnect. On React Native it can't see the browser's online events, so you wire it up yourself: <code>onlineManager.setEventListener</code> subscribes to NetInfo and calls <code>setOnline(!!state.isConnected)</code>. The companion is <code>focusManager</code>, fed from <code>AppState</code> ('active' = focused), so returning to the app also revalidates. Note <code>staleTime</code> still applies: data inside its fresh window is not refetched on reconnect or focus, while <code>gcTime</code> (formerly cacheTime) only controls how long inactive data stays cached.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

@@ -1,33 +1,49 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-hashing',
-  module: 'DSA',
-  title: 'Hashing',
-  estimatedReadTime: '24 min',
-  tags: ['dsa', 'hash', 'map', 'set', 'frequency', 'lookup', 'prefix-sum'],
+  id: "dsa-hashing",
+  module: "DSA",
+  title: "Hashing",
+  estimatedReadTime: "24 min",
+  tags: ["dsa","hash","map","set","frequency","lookup","prefix-sum"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Hash maps + hash sets give O(1) average lookup. Trade space for time. Foundation of countless algorithms.</p>
-<ul>
-  <li><strong>Set</strong>: presence check ("have I seen this?"). <code>Set.has(x)</code> O(1).</li>
-  <li><strong>Map</strong>: key → value lookup. <code>Map.get(key)</code> O(1) avg.</li>
-  <li><strong>Frequency count</strong>: value → count. Many problems reduce to counting.</li>
-  <li><strong>Index map</strong>: value → first/last index seen.</li>
-  <li><strong>Group by</strong>: key → list of items.</li>
-  <li><strong>Prefix sum + hash</strong>: range sum / count problems with O(n) time.</li>
-  <li><strong>Two-sum pattern</strong>: complement lookup with hash map — O(n) time, O(n) space.</li>
-  <li><strong>Anagram / canonical form</strong>: sorted string or char-count tuple as map key.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>If your brute force has nested loops doing lookups, hash map probably reduces to O(n). The space is usually worth the time saving.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A hash map <strong>trades <code>O(n)</code> space for <code>O(1)</code> average lookup</strong> — whenever brute force does a nested-loop search, a hash usually collapses it to <code>O(n)</code>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Hash map/set = <code>O(1)</code> average lookup, insert, and delete</strong> — trade <code>O(n)</code> space for time.</li>
+    <li><strong>Set for presence</strong> ("have I seen this?"); <strong>Map for key → value</strong> (counts, indices, group-by).</li>
+    <li><strong>Prefer Map over object</strong> for algorithm work: any key type without coercion, insertion-order iteration, and <code>map.size</code>.</li>
+    <li><strong>If brute force has a nested-loop lookup, a hash map usually collapses it to <code>O(n)</code>.</strong> The space is normally worth it.</li>
+    <li><strong>Two-sum pattern:</strong> check for the complement <em>before</em> storing the current value — this also handles duplicates correctly. <code>O(n)</code> time, <code>O(n)</code> space.</li>
+    <li><strong>Frequency count</strong> (value → count) is the foundation of anagram, top-K, and majority-element problems.</li>
+    <li><strong>Prefix sum + hash</strong> for subarray-sum-equals-K: a prefix → count map initialized with <code>[0, 1]</code> (the empty prefix); works with negatives, where a sliding window would not.</li>
+    <li><strong>Group by canonical form</strong> (sorted string or char-count signature) for anagrams; the count signature is <code>O(n·k)</code> vs sort's <code>O(n·k log k)</code> on long strings.</li>
+    <li><strong>Top-K frequent</strong> via bucket sort by frequency is <code>O(n)</code> (a heap alternative is <code>O(n log k)</code>).</li>
+    <li><strong>Longest consecutive sequence:</strong> only start counting from a sequence's smallest member (<code>n - 1</code> not in the set), which keeps it <code>O(n)</code>.</li>
+    <li><strong>For a small fixed charset (26 letters), use an Array indexed by char code</strong> — faster than a Map (no hash computation).</li>
+    <li><strong>Arrays/objects as keys don't compare by value</strong> — serialize compound keys (e.g. <code>"r,c"</code>); and in the counter idiom guard with <code>map.has(k)</code> or <code>?? 0</code> because <code>0</code> is falsy.</li>
+    <li><strong>Hash is <code>O(1)</code> only on average</strong> — all keys colliding is <code>O(n)</code> worst case; adversarial input is defended with randomized hashing.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> <code>O(1)</code> average per operation, so most hash solutions are <code>O(n)</code>; pair-sum splits (4-sum II) are <code>O(n²)</code> instead of the <code>O(n⁴)</code> brute force.</li>
+    <li><strong>Space:</strong> <code>O(n)</code> for the map/set (or <code>O(charset)</code> for a fixed count array).</li>
+    <li><strong>Signal → reach for it:</strong> presence/dedup → Set · frequency/top-K → count Map · complement search → two-sum-style map · subarray sum (including negatives) → prefix sum + hash · group anagrams → canonical-form key · any brute force with a nested lookup → replace the inner scan with a hash.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>In the two-sum idiom, check for the complement BEFORE inserting the current value</strong> — inserting first lets an element pair with itself, and it also mishandles duplicates. Two more classic slips: forgetting to seed the prefix-sum map with <code>[0, 1]</code> (the empty prefix, needed when a subarray starts at index 0), and using <code>if (map[k])</code> in the counter idiom where a stored <code>0</code> is falsy — guard with <code>map.has(k)</code> or <code>?? 0</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"When my brute force is doing nested-loop lookups, I reach for a hash map — it usually trades O(n) space to bring the time down to O(n)."</div>
+  <div class="revision-say">"For subarray-sum problems with negatives I use prefix sum plus a hash map, initialized with (0, 1) for the empty prefix — sliding window won't work with negative numbers."</div>
+  <div class="revision-say">"Hash lookup is O(1) on average, not worst case — all keys colliding degrades to O(n), which is why engines use randomized hashing against adversarial input."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What hash structures give you</h3>
 <ul>
   <li><strong>Constant-time membership / lookup</strong>: <code>set.has(x)</code>, <code>map.get(k)</code>.</li>
@@ -72,10 +88,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>Hashing tuples / coords</td><td>Visited cells in BFS/DFS, point sets</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "lookup speedup" picture</h3>
 <div class="diagram">
 <pre>
@@ -148,10 +164,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"Hash map is always faster than array for lookup." For small fixed sets (e.g., 26 lowercase letters), <code>new Array(26)</code> indexed by char code is faster than a Map (no hash computation). Use the right tool for the data shape.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>JS Map basics</h3>
 <pre><code class="language-js">const map = new Map();
 map.set('a', 1);
@@ -360,10 +376,10 @@ map.has('1,2');                              // true</code></pre>
 <pre><code class="language-js">// Hash an object as key
 const key = JSON.stringify({a: 1, b: 2});    // '{"a":1,"b":2}'
 // Caveat: key order matters; not portable across all object shapes.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Two sum</h3>
 <pre><code class="language-js">function twoSum(nums, target) {
   const seen = new Map();
@@ -551,10 +567,11 @@ function squareSum(n) {
 }
 // O(n²) instead of O(n⁴) brute force.
 // Hash map of pair sums; lookup complement.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Map / Set with object keys</h3>
 <p>Two different array literals with same values are different references — different keys. <code>map.set([1,2], 'a'); map.has([1,2])</code> is false. Use serialized strings for compound keys.</p>
 
@@ -617,10 +634,9 @@ const union = new Set([...a, ...b]);</code></pre>
 
 <h3>20. Float keys</h3>
 <p>Map: works but precision (0.1 + 0.2 ≠ 0.3). Use rounded / scaled integers when feasible.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — using array.includes in nested loop</h3>
 <pre><code class="language-js">// O(n²)
 for (const a of arr1)
@@ -698,10 +714,10 @@ for (const [k, v] of map)
 
 <h3>Anti-pattern 15 — hashing every grid cell as string</h3>
 <p>For grid of m×n, use 2D array of booleans instead of <code>Set</code> with <code>"r,c"</code> keys. Faster + less memory.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. When use a hash map?</div>
   <div class="qa-answer">
@@ -907,56 +923,20 @@ for (const [k, v] of map)
     <li>You delete keys at count 0 when tracking distinct via size.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A hash map <strong>trades <code>O(n)</code> space for <code>O(1)</code> average lookup</strong> — whenever brute force does a nested-loop search, a hash usually collapses it to <code>O(n)</code>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Hash map/set = <code>O(1)</code> average lookup, insert, and delete</strong> — trade <code>O(n)</code> space for time.</li>
-    <li><strong>Set for presence</strong> ("have I seen this?"); <strong>Map for key → value</strong> (counts, indices, group-by).</li>
-    <li><strong>Prefer Map over object</strong> for algorithm work: any key type without coercion, insertion-order iteration, and <code>map.size</code>.</li>
-    <li><strong>If brute force has a nested-loop lookup, a hash map usually collapses it to <code>O(n)</code>.</strong> The space is normally worth it.</li>
-    <li><strong>Two-sum pattern:</strong> check for the complement <em>before</em> storing the current value — this also handles duplicates correctly. <code>O(n)</code> time, <code>O(n)</code> space.</li>
-    <li><strong>Frequency count</strong> (value → count) is the foundation of anagram, top-K, and majority-element problems.</li>
-    <li><strong>Prefix sum + hash</strong> for subarray-sum-equals-K: a prefix → count map initialized with <code>[0, 1]</code> (the empty prefix); works with negatives, where a sliding window would not.</li>
-    <li><strong>Group by canonical form</strong> (sorted string or char-count signature) for anagrams; the count signature is <code>O(n·k)</code> vs sort's <code>O(n·k log k)</code> on long strings.</li>
-    <li><strong>Top-K frequent</strong> via bucket sort by frequency is <code>O(n)</code> (a heap alternative is <code>O(n log k)</code>).</li>
-    <li><strong>Longest consecutive sequence:</strong> only start counting from a sequence's smallest member (<code>n - 1</code> not in the set), which keeps it <code>O(n)</code>.</li>
-    <li><strong>For a small fixed charset (26 letters), use an Array indexed by char code</strong> — faster than a Map (no hash computation).</li>
-    <li><strong>Arrays/objects as keys don't compare by value</strong> — serialize compound keys (e.g. <code>"r,c"</code>); and in the counter idiom guard with <code>map.has(k)</code> or <code>?? 0</code> because <code>0</code> is falsy.</li>
-    <li><strong>Hash is <code>O(1)</code> only on average</strong> — all keys colliding is <code>O(n)</code> worst case; adversarial input is defended with randomized hashing.</li>
-  </ul>
-  <h4>Complexity &amp; when to reach for it</h4>
-  <ul>
-    <li><strong>Time:</strong> <code>O(1)</code> average per operation, so most hash solutions are <code>O(n)</code>; pair-sum splits (4-sum II) are <code>O(n²)</code> instead of the <code>O(n⁴)</code> brute force.</li>
-    <li><strong>Space:</strong> <code>O(n)</code> for the map/set (or <code>O(charset)</code> for a fixed count array).</li>
-    <li><strong>Signal → reach for it:</strong> presence/dedup → Set · frequency/top-K → count Map · complement search → two-sum-style map · subarray sum (including negatives) → prefix sum + hash · group anagrams → canonical-form key · any brute force with a nested lookup → replace the inner scan with a hash.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>In the two-sum idiom, check for the complement BEFORE inserting the current value</strong> — inserting first lets an element pair with itself, and it also mishandles duplicates. Two more classic slips: forgetting to seed the prefix-sum map with <code>[0, 1]</code> (the empty prefix, needed when a subarray starts at index 0), and using <code>if (map[k])</code> in the counter idiom where a stored <code>0</code> is falsy — guard with <code>map.has(k)</code> or <code>?? 0</code>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"When my brute force is doing nested-loop lookups, I reach for a hash map — it usually trades O(n) space to bring the time down to O(n)."</div>
-  <div class="revision-say">"For subarray-sum problems with negatives I use prefix sum plus a hash map, initialized with (0, 1) for the empty prefix — sliding window won't work with negative numbers."</div>
-  <div class="revision-say">"Hash lookup is O(1) on average, not worst case — all keys colliding degrades to O(n), which is why engines use randomized hashing against adversarial input."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. How do hash tables handle collisions?</div>
+  <div class="qa-answer">
+    <p>Two keys can hash to the same bucket. With <strong>chaining</strong>, each bucket holds a small list of entries and a lookup scans that list. With <strong>open addressing</strong>, every entry lives in the array itself and a collision probes for another slot. Either way, lookup stays <code>O(1)</code> on average only while keys spread evenly, which is why tables resize (a rehash is <code>O(n)</code>, amortized <code>O(1)</code> per insert). If all keys collide, every operation degrades to <code>O(n)</code>; engines defend against crafted input with randomized hashing.</p>
+  </div>
 </div>
-`},
+<div class="qa-block">
+  <div class="qa-question">Q17. What goes wrong when you use an array or object as a Map key?</div>
+  <div class="qa-answer">
+    <p>Map compares object keys by reference, not by value. <code>map.set([1, 2], 'a')</code> followed by <code>map.has([1, 2])</code> returns <code>false</code> because the second array is a different reference. Encode compound keys as strings instead (<code>'1,2'</code>), use a 2D boolean array when grid bounds are known, or use <code>JSON.stringify</code> with care, since key order matters and it is slow on hot paths.</p>
+  </div>
+</div>
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you state the average vs worst-case complexity of hash operations?</li>
-    <li>Can you explain how collisions are handled (chaining vs open addressing)?</li>
-    <li>Can you recognize when a hash map turns an O(n&sup2;) scan into O(n)?</li>
-    <li>Can you explain why adversarial input degrades a hash table to O(n)?</li>
-    <li>Can you name the trap of using a mutable object as a key?</li>
-    <li>Can you name 2 problems hashing solves?</li>
-  </ul>
-</div>
-`}
-]
+  ]
 });

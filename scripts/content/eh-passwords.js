@@ -1,31 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'eh-passwords',
-  module: 'eh',
-  title: 'Password Attacks & Cracking',
-  estimatedReadTime: '34 min',
-  tags: ['ethical-hacking', 'security', 'pentest', 'passwords', 'hashcat', 'john-the-ripper', 'hydra', 'credential-stuffing', 'spraying'],
+  id: "eh-passwords",
+  module: "eh",
+  title: "Password Attacks & Cracking",
+  estimatedReadTime: "34 min",
+  tags: ["ethical-hacking","security","pentest","passwords","hashcat","john-the-ripper","hydra","credential-stuffing","spraying"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<div class="callout danger">
-  <div class="callout-title">⚠️ Authorized targets only — this is exactly as illegal to misuse as anything else in this module</div>
-  <p>Every technique below — online brute-forcing with <code>hydra</code>/<code>medusa</code>/<code>ncrack</code>/<code>patator</code>, offline cracking with <code>john</code>/<code>hashcat</code>, password spraying, credential stuffing — is unauthorized access under the CFAA and its international equivalents (covered in Foundations, Ethics &amp; Legal) the instant it's pointed at a live account, service, or hash dump you don't own and haven't been explicitly authorized to test. Every example in this topic targets hashes generated in your own lab, deliberately vulnerable lab VMs, or hash dumps pulled during a scoped, authorized engagement — never a real account belonging to someone else.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Password attacks are one big guess-and-compare loop — online guessing against a live login versus offline cracking of a stolen hash — and their whole difficulty hinges on hashing choices, salting, and the quality of your wordlists, rules, and masks.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Hashing is one-way, encryption is reversible — passwords are stored as salted hashes, never decrypted, so every attack here guesses candidates and compares hashes rather than reversing anything.</li>
+    <li>A salt is random per-password data (not secret) that makes identical passwords hash differently and defeats rainbow tables; a pepper is a single secret value kept outside the database, applied to every password.</li>
+    <li>Identify the hash first with <code>hashid</code> (the maintained replacement for <code>hash-identifier</code>) — it prints the candidate algorithm plus the exact hashcat mode and John format to use next.</li>
+    <li>Online attacks (<code>hydra</code>, <code>medusa</code>, <code>ncrack</code>, <code>patator</code>) hit a live endpoint — bounded by account lockout and rate-limiting, loud in the target's logs, and risk locking the very account being tested.</li>
+    <li>Offline attacks (<code>john</code> on CPU, GPU-accelerated <code>hashcat</code>) hit a stolen hash — no lockout, no detectability, limited only by hardware and the quality of wordlist/rules/mask.</li>
+    <li>hashcat's five core attack modes: 0 straight/dictionary, 1 combinator, 3 mask/brute-force, 6 hybrid wordlist+mask, 7 hybrid mask+wordlist; <code>-m</code> picks the hash type, <code>-a</code> picks the attack mode.</li>
+    <li>Masks build candidates position-by-position from charsets (<code>?l</code> lower, <code>?u</code> upper, <code>?d</code> digit, <code>?s</code> special, <code>?a</code> all) — a policy-aware mask is far smaller than a generic same-length brute force.</li>
+    <li>Fast general-purpose digests (MD5, SHA-1, SHA-256/512, NTLM) are bad for passwords because GPUs compute billions per second; slow, memory-hard hashes (Argon2id, bcrypt, scrypt, PBKDF2) are what correct storage looks like.</li>
+    <li>Wordlists and mutation rules do the real work: <code>rockyou.txt</code> and SecLists supply real candidates, <code>crunch</code> generates charset-based lists, <code>cewl</code> scrapes a target's own site, and rules model human habits (capitalize, append digits, leetspeak).</li>
+    <li>Spraying (one common password across many usernames) and stuffing (replaying breach credential pairs) are online credential-reuse attacks, not cracking — both evade per-account lockout because each account sees only one or a few attempts.</li>
+    <li>Layered defenses neutralize the whole topic: memory-hard hashing, MFA, length-over-complexity policy with breach-corpus screening, and lockout/rate-limiting (ideally with backoff/CAPTCHA to avoid a lockout-based denial of service).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Believing cracking "decrypts" the hash, or that rainbow tables still threaten modern systems. Nothing is ever reversed — candidates are hashed and compared — and salting collapses the precompute-once economics that made rainbow tables worthwhile, so correctly salted, slow hashes are not meaningfully vulnerable to them.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Online attacks guess against a live login and are throttled by lockout; offline attacks crack a stolen hash with no rate limit at all — that split drives every tool and pacing choice."</div>
+  <div class="revision-say">"I identify the hash with hashid first so I point hashcat or John at the correct mode, then run dictionary-plus-rules before ever reaching for a mask or pure brute force."</div>
+  <div class="revision-say">"Salting defeats rainbow tables because it forces a separate precomputed table per salt, which kills the precompute-once-reuse-forever economics the whole technique depends on."</div>
 </div>
-<p><strong>Password attacks</strong> are the family of techniques for recovering or guessing a valid credential. They split along one fundamental axis: <strong>online</strong> attacks guess repeatedly against a live authentication endpoint (rate-limited, loud, and risks locking out the very account you're testing), while <strong>offline</strong> attacks crack a stolen password <em>hash</em> with no rate limit at all — the only limit is your hardware and how well-chosen your wordlist, rules, and masks are.</p>
-<ul>
-  <li><strong>Hashing is one-way; encryption is reversible.</strong> Passwords are (or should be) stored as a salted hash, never encrypted — there's no legitimate reason a server should ever be able to recover your plaintext password. Salting defeats precomputed <strong>rainbow tables</strong> and hides which users share a password.</li>
-  <li><strong>Identify the hash before attacking it.</strong> <code>hashid</code> (its modern, maintained replacement for the deprecated <code>hash-identifier</code>) fingerprints a hash string and suggests candidate algorithms plus the matching <code>hashcat</code> mode and John format — the mandatory first step before either cracker can be pointed at it correctly.</li>
-  <li><strong>Online guessing</strong> (<code>hydra</code>, <code>medusa</code>, <code>ncrack</code>, <code>patator</code>) attacks a live service directly and is throttled by network latency and, critically, by account-lockout policy — a handful of failed attempts can lock the account you're testing, so online attacks are run carefully, slowly, and only against explicitly in-scope accounts.</li>
-  <li><strong>Offline cracking</strong> (<code>john</code>, and especially GPU-accelerated <code>hashcat</code>) attacks a stolen hash with no lockout risk at all. <code>hashcat</code>'s five core attack modes — <strong>0 straight/dictionary, 1 combinator, 3 mask/brute-force, 6 hybrid wordlist+mask, 7 hybrid mask+wordlist</strong> — cover almost everything from "try this leaked wordlist" to "I know the company's password pattern, brute-force the rest."</li>
-  <li><strong>Wordlists and mutation rules do the real work.</strong> <code>rockyou.txt</code> and SecLists supply raw candidate passwords; <code>crunch</code> generates exhaustive charset-based lists; <code>cewl</code> scrapes a target's own website for site-specific jargon; hashcat/john <strong>rules</strong> mutate each word (capitalize, append digits, leetspeak) to model real human habits.</li>
-  <li><strong>Spraying and stuffing are credential-reuse attacks, not cracking</strong> — conceptually simple (try one common password across many accounts, or replay creds leaked from an unrelated breach), extremely effective against real organizations, and covered here conceptually with their lockout and legal implications, not as a live-fire walkthrough.</li>
-  <li><strong>None of this matters if the defenses are done right</strong>: slow, memory-hard hashing (bcrypt/argon2/scrypt), MFA, sane password policy, and lockout/rate-limiting turn every technique in this topic from "trivial" into "impractical" — covered in Defenses &amp; Legal below.</li>
-</ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Hashing vs. encryption: why passwords are never "decrypted"</h3>
 <p><strong>Encryption</strong> is reversible by design — encrypt with a key, decrypt with the (same or paired) key, get the original plaintext back. <strong>Hashing</strong> is deliberately one-way: a hash function takes an input of any length and produces a fixed-length digest, and there is no key or operation that turns the digest back into the input. A well-designed authentication system never stores a password anywhere in a form that could be decrypted — it stores a hash, and login works by hashing whatever the user just typed and comparing the two hashes. If a database of hashes leaks, the attacker doesn't "decrypt" anything; they <strong>guess</strong> candidate passwords, hash each guess the same way the server would, and check for a match. Every technique in this topic — online and offline alike — is a variation on that same guess-and-compare loop; the only thing that changes is where the comparison happens (a live login endpoint vs. a stolen hash) and how the guesses are generated.</p>
 <p>Common hash algorithms fall into two very different buckets in this context:</p>
@@ -54,10 +64,10 @@ window.PREP_SITE.registerTopic({
     <tr><td><strong>Representative tools</strong></td><td><code>hydra</code>, <code>medusa</code>, <code>ncrack</code>, <code>patator</code></td><td><code>john</code>, <code>hashcat</code></td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The pipeline: identify → choose a strategy → attack → (if offline) accelerate with rules and masks</h3>
 <pre><code class="language-text">Got a credential surface
         │
@@ -89,10 +99,10 @@ window.PREP_SITE.registerTopic({
   </tbody>
 </table>
 <p>Both are covered in Mechanics purely conceptually — the caveats (lockout-threshold awareness, and that this is squarely unauthorized access against any account you weren't explicitly told to test) apply just as strongly as they do to the more mechanical brute-force tools.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Tools & Techniques', html: `
+{ id: "mechanics", title: "⚙️ Tools & Techniques", collapsible: true, html: `
 <h3>Step 1 — Identify the hash: <code>hashid</code> (and the deprecated <code>hash-identifier</code>)</h3>
 <p>Before cracking anything, confirm what it actually is — a hash pulled from a CTF, a leaked database, or an authorized engagement's dump rarely comes labeled. <code>hashid</code> is the current, actively maintained tool for this (it supersedes the older <code>hash-identifier</code>, which is still present on many Kali installs but no longer updated); it fingerprints a hash string by length and character set and lists candidate algorithms, and — critically — can print the exact <code>hashcat</code> mode number and John format name to plug straight into the next step.</p>
 <pre><code class="language-bash"># Identify a single hash, with candidate hashcat mode(s) and John format shown:
@@ -229,10 +239,10 @@ gunzip /usr/share/wordlists/rockyou.txt.gz</code></pre>
   <li><strong>Credential stuffing</strong> — take username+password pairs verbatim from an unrelated, already-public breach dump and try them against a different target, betting on password reuse across services. It requires no guessing at all — every attempt uses a password already known to be real for that username somewhere — which is exactly why it's so effective against organizations whose users reuse passwords, and exactly why it's normally tested (when authorized at all) using a small, agreed sample rather than an entire breach corpus.</li>
 </ul>
 <p>Both techniques are online, both are throttled by the same lockout math covered above for hydra/medusa/ncrack/patator, and both are unauthorized-access crimes the moment they're run against any account outside an explicit, signed scope — see Defenses &amp; Legal below.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Identify an unknown hash, then crack it with a dictionary + rules</h3>
 <pre><code class="language-bash"># 1. Identify what the hash actually is, and get hashcat's mode number
 #    plus John's format name for it in one step:
@@ -286,10 +296,11 @@ john --show combined.txt</code></pre>
 # thread count, and -f to stop the moment a valid credential is found:
 hydra -l svc-test-account -P common-200.txt -t 2 -f ssh://&lt;target&gt;</code></pre>
 <p>The choices here are deliberate: a single account named explicitly in the Rules of Engagement (never a swept username list against a production system without separate authorization for that), a short curated list rather than a multi-million-entry dictionary, low parallelism, and an immediate stop on success — all specifically to respect whatever lockout threshold the target enforces and stay inside scope.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Defenses & Legal', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <div class="callout danger">
   <div class="callout-title">⚠️ Authorization is the line — not skill, not intent, not "it was just a test account"</div>
   <p>Everything in this topic — identifying hashes, cracking them offline, brute-forcing a login online, spraying a common password across usernames, replaying stuffed credentials — is unauthorized access the moment it targets an account, service, or hash dump outside an explicit, written, in-scope authorization, exactly as covered in Foundations, Ethics &amp; Legal. "I only tried one password" or "the account was disabled anyway" is not a legal defense. Every command in this topic should only ever be run against your own lab-generated hashes, a deliberately vulnerable lab/CTF target, or an asset and account list explicitly named in a signed engagement's scope.</p>
@@ -318,10 +329,10 @@ hydra -l svc-test-account -P common-200.txt -t 2 -f ssh://&lt;target&gt;</code><
 
 <h3>Lockout, rate-limiting, and their own trade-off</h3>
 <p>Account lockout and request rate-limiting are what make online attacks (hydra/medusa/ncrack/patator, spraying, stuffing) impractical at scale — the entire "lockout awareness" caveat throughout this topic exists because these controls work. But lockout has a real trade-off worth knowing: an attacker who knows a target locks accounts after N failed attempts can deliberately trigger lockouts as a denial-of-service against legitimate users. Mature implementations mitigate this with exponential backoff and CAPTCHA challenges instead of (or in addition to) hard lockouts, IP/device-based rate limiting rather than pure per-account counting, and alerting/monitoring on unusual failed-login patterns (a burst of failures across many different usernames from one source is the signature of spraying; the same valid-looking credential pair tried from many different sources in a short window is the signature of stuffing) so a security team can respond before either succeeds at scale.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'cheat-sheet', title: '📋 Cheat Sheet', html: `
+{ id: "cheat-sheet", title: "📋 Cheat Sheet", collapsible: true, html: `
 <table>
   <thead><tr><th>Tool</th><th>Purpose</th><th>Usage</th></tr></thead>
   <tbody>
@@ -341,10 +352,10 @@ hydra -l svc-test-account -P common-200.txt -t 2 -f ssh://&lt;target&gt;</code><
     <tr><td>Ophcrack</td><td>GUI rainbow-table cracker specifically for Windows LM/NTLM</td><td>Load precomputed tables, import hashes, crack</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What's the difference between hashing and encryption, and why does it matter for password storage?</div>
 <div class="qa-a">
@@ -386,49 +397,14 @@ hydra -l svc-test-account -P common-200.txt -t 2 -f ssh://&lt;target&gt;</code><
 <p>Layered defenses, not any single control: storing passwords with a slow, memory-hard hash (Argon2id preferred, bcrypt as a widely-supported fallback, scrypt as an alternative, PBKDF2 where FIPS-140 is required) makes offline cracking expensive even after a full database leak; MFA means a correctly cracked or guessed password alone still isn't enough to log in, which also neutralizes spraying and stuffing even though no cracking was involved there at all; sane password policy (favoring length and breach-corpus screening over forced complexity and rotation) removes the predictable patterns that mask/hybrid attacks and dictionaries are built to catch; and lockout/rate-limiting (ideally with exponential backoff and CAPTCHA rather than a hard lockout alone, to avoid enabling a lockout-based denial-of-service) makes online guessing at scale impractical. None of it substitutes for the others — a single missing layer is often exactly the gap a real attacker finds.</p>
 </div>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Password attacks are one big guess-and-compare loop — online guessing against a live login versus offline cracking of a stolen hash — and their whole difficulty hinges on hashing choices, salting, and the quality of your wordlists, rules, and masks.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Hashing is one-way, encryption is reversible — passwords are stored as salted hashes, never decrypted, so every attack here guesses candidates and compares hashes rather than reversing anything.</li>
-    <li>A salt is random per-password data (not secret) that makes identical passwords hash differently and defeats rainbow tables; a pepper is a single secret value kept outside the database, applied to every password.</li>
-    <li>Identify the hash first with <code>hashid</code> (the maintained replacement for <code>hash-identifier</code>) — it prints the candidate algorithm plus the exact hashcat mode and John format to use next.</li>
-    <li>Online attacks (<code>hydra</code>, <code>medusa</code>, <code>ncrack</code>, <code>patator</code>) hit a live endpoint — bounded by account lockout and rate-limiting, loud in the target's logs, and risk locking the very account being tested.</li>
-    <li>Offline attacks (<code>john</code> on CPU, GPU-accelerated <code>hashcat</code>) hit a stolen hash — no lockout, no detectability, limited only by hardware and the quality of wordlist/rules/mask.</li>
-    <li>hashcat's five core attack modes: 0 straight/dictionary, 1 combinator, 3 mask/brute-force, 6 hybrid wordlist+mask, 7 hybrid mask+wordlist; <code>-m</code> picks the hash type, <code>-a</code> picks the attack mode.</li>
-    <li>Masks build candidates position-by-position from charsets (<code>?l</code> lower, <code>?u</code> upper, <code>?d</code> digit, <code>?s</code> special, <code>?a</code> all) — a policy-aware mask is far smaller than a generic same-length brute force.</li>
-    <li>Fast general-purpose digests (MD5, SHA-1, SHA-256/512, NTLM) are bad for passwords because GPUs compute billions per second; slow, memory-hard hashes (Argon2id, bcrypt, scrypt, PBKDF2) are what correct storage looks like.</li>
-    <li>Wordlists and mutation rules do the real work: <code>rockyou.txt</code> and SecLists supply real candidates, <code>crunch</code> generates charset-based lists, <code>cewl</code> scrapes a target's own site, and rules model human habits (capitalize, append digits, leetspeak).</li>
-    <li>Spraying (one common password across many usernames) and stuffing (replaying breach credential pairs) are online credential-reuse attacks, not cracking — both evade per-account lockout because each account sees only one or a few attempts.</li>
-    <li>Layered defenses neutralize the whole topic: memory-hard hashing, MFA, length-over-complexity policy with breach-corpus screening, and lockout/rate-limiting (ideally with backoff/CAPTCHA to avoid a lockout-based denial of service).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Believing cracking "decrypts" the hash, or that rainbow tables still threaten modern systems. Nothing is ever reversed — candidates are hashed and compared — and salting collapses the precompute-once economics that made rainbow tables worthwhile, so correctly salted, slow hashes are not meaningfully vulnerable to them.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Online attacks guess against a live login and are throttled by lockout; offline attacks crack a stolen hash with no rate limit at all — that split drives every tool and pacing choice."</div>
-  <div class="revision-say">"I identify the hash with hashid first so I point hashcat or John at the correct mode, then run dictionary-plus-rules before ever reaching for a mask or pure brute force."</div>
-  <div class="revision-say">"Salting defeats rainbow tables because it forces a separate precomputed table per salt, which kills the precompute-once-reuse-forever economics the whole technique depends on."</div>
+<div class="qa-block">
+  <div class="qa-question">Q7. How does a pepper differ from a salt?</div>
+  <div class="qa-answer">
+    <p>A <strong>salt</strong> is random data generated per password and stored alongside the hash; it doesn't need to be secret. The server computes <code>hash(salt + password)</code>, so identical passwords produce different hashes and rainbow tables become useless. A <strong>pepper</strong> is a single secret value that is not stored in the database at all (it lives in application config or a secrets manager) and is added to every password before hashing. It adds defense in depth against a database-only leak, since the dump alone isn't enough to test guesses, but unlike a salt it isn't unique per user.</p>
+  </div>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why a correctly stored password is never "decrypted," and what a cracker actually does instead?</li>
-    <li>Can you explain how salting defeats rainbow tables, and how a pepper differs from a salt?</li>
-    <li>Can you name hashcat's five core attack modes (0/1/3/6/7) and when you'd choose each?</li>
-    <li>Can you contrast online versus offline attacks in terms of speed limit, lockout risk, and detectability?</li>
-    <li>Can you distinguish password spraying from credential stuffing and explain why both evade per-account lockout?</li>
-    <li>Can you list the layered defenses — memory-hard hashing, MFA, length-first policy with breach screening, rate-limiting — that make these attacks impractical?</li>
-  </ul>
-</div>
-`}
-
-]});
+  ]
+});

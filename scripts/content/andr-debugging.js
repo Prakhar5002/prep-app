@@ -1,30 +1,46 @@
 window.PREP_SITE.registerTopic({
-  id: 'andr-debugging',
-  module: 'Android Native (Deep)',
-  title: 'Debugging Native Android Errors',
-  estimatedReadTime: '26 min',
-  tags: ['debugging', 'logcat', 'stacktrace', 'crash', 'classcastexception', 'unsatisfiedlinkerror', 'noclassdeffounderror', 'anr', 'oom', 'r8', 'proguard', 'manifest-merger', 'gradle', 'duplicate-class', 'install-failed', '16kb-page-size', 'soloader', 'hermes', 'mapping-txt', 'retrace', 'adb', 'dumpsys', 'bugreport', 'crashlytics', 'sentry', 'expo', 'react-native', 'android'],
+  id: "andr-debugging",
+  module: "Android Native (Deep)",
+  title: "Debugging Native Android Errors",
+  estimatedReadTime: "26 min",
+  tags: ["debugging","logcat","stacktrace","crash","classcastexception","unsatisfiedlinkerror","noclassdeffounderror","anr","oom","r8","proguard","manifest-merger","gradle","duplicate-class","install-failed","16kb-page-size","soloader","hermes","mapping-txt","retrace","adb","dumpsys","bugreport","crashlytics","sentry","expo","react-native","android"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Native Android failures in a React Native app come in three flavors, and the first job is always to tell them apart:</p>
-<ul>
-  <li><strong>Build-time</strong> — Gradle, R8, codegen, or the manifest merger fails before an APK exists. You see it in the terminal / CI logs, never on a device.</li>
-  <li><strong>Install-time</strong> — the APK builds but <code>adb install</code> / Play refuses it (<code>INSTALL_FAILED_*</code>, signature mismatch, storage, page-size alignment).</li>
-  <li><strong>Runtime</strong> — the app launches or runs and then throws a native <code>FATAL EXCEPTION</code> (a Java/Kotlin stack trace in logcat) or hits an ANR / native SIGSEGV.</li>
-</ul>
-<p>The universal method: capture the <strong>full logcat</strong>, find the <code>FATAL EXCEPTION</code> line, read the <code>Caused by:</code> chain <strong>bottom-up</strong> to the root cause, locate the <strong>first frame in your package</strong>, map the exception type to a known category, apply the fix, then do a <strong>clean rebuild</strong> to confirm.</p>
-<p>Most RN-specific native crashes reduce to a handful of exception types — <code>ClassCastException</code>, <code>UnsatisfiedLinkError</code>, <code>NoClassDefFoundError</code>, R8-stripped classes, duplicate classes, manifest merger conflicts — plus ANR, OOM, install failures, and (newly) 16 KB page-size incompatibility on Android 15.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>A stack trace is read <strong>bottom-up</strong>: the deepest <code>Caused by:</code> is the real cause, and the first frame in <em>your</em> package tells you where to look. Classify the failure as build / install / runtime first, then match the exception type to a category — don't guess a fix before you've read the root cause.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Classify the failure as <strong>build / install / runtime</strong> first, then read the <code>Caused by:</code> chain <strong>bottom-up</strong> to the root cause and the first frame in <em>your</em> package, map the exception type to a known category, fix it, and <strong>clean rebuild</strong> to confirm.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three failure classes:</strong> build-time (Gradle/R8/codegen/manifest, seen in the terminal — <code>Execution failed for task</code>), install-time (<code>INSTALL_FAILED_*</code> from <code>adb install</code>/Play), runtime (<code>FATAL EXCEPTION</code> in logcat, or a native SIGSEGV tombstone).</li>
+    <li><strong>Read a stack trace bottom-up:</strong> the deepest <code>Caused by:</code> is the root cause; inside a block the top <code>at</code> is where it threw; skip <code>com.facebook.react.*</code>/<code>android.*</code> and find the first frame in your package or a named library. Note the <strong>thread name</strong> (main = UI).</li>
+    <li><strong>Capture cleanly:</strong> <code>adb logcat -c</code> then reproduce; <code>adb logcat -b crash -d</code>, <code>--pid=$(adb shell pidof -s pkg)</code>, <code>*:E</code>. Build detail: <code>./gradlew task --stacktrace --info</code>, <code>:app:dependencies</code>, <code>./gradlew clean</code>.</li>
+    <li><strong><code>ClassCastException</code>:</strong> object cast to wrong type; classic old-arch <code>getConstants()</code> mis-cast. Real case: jail-monkey 3.0.0 <code>rootedDetectionMethods()</code> → launch crash on old arch; fix = patch/drop the constant.</li>
+    <li><strong><code>UnsatisfiedLinkError</code> / couldn't find libX.so:</strong> ABI mismatch (arm64 vs x86 emulator), missing/stale <code>.so</code>, Hermes toggle without rebuild, SoLoader init. Check <code>abiFilters</code>/<code>splits</code>, clean rebuild.</li>
+    <li><strong><code>NoClassDefFoundError</code>/<code>ClassNotFoundException</code>:</strong> R8 stripped a reflection-referenced class (release-only) → add <code>-keep</code> in <code>proguard-rules.pro</code>; or multidex below minSdk 21.</li>
+    <li><strong><code>Duplicate class</code>:</strong> version conflict; read <code>:app:dependencies</code>, then <code>resolutionStrategy.force</code> or <code>exclude</code> the transitive.</li>
+    <li><strong>Manifest merger failed:</strong> conflicting <code>android:exported</code>/<code>allowBackup</code>/permissions; use <code>tools:replace</code> / <code>tools:node="remove"</code>; <code>exported</code> must be explicit on Android 12+. Read <code>manifest-merger-*-report.txt</code>.</li>
+    <li><strong>Gradle <code>Execution failed for task</code>:</strong> the task name is the clue (<code>minifyReleaseWithR8</code>, <code>processDebugManifest</code>); <code>--stacktrace</code>/<code>--info</code>; watch JDK 17 / AGP / Gradle version match; clean caches.</li>
+    <li><strong>OOM:</strong> build-time → <code>org.gradle.jvmargs=-Xmx4096m</code>; runtime → bitmaps/leak, resize + Fresco/Glide, <code>largeHeap</code> only as a smell-stopgap.</li>
+    <li><strong>ANR:</strong> main thread blocked ~5s; pull <code>/data/anr/traces.txt</code>, <code>dumpsys activity</code>; move heavy/sync work off the UI thread.</li>
+    <li><strong><code>INSTALL_FAILED_*</code>:</strong> UPDATE_INCOMPATIBLE (signature mismatch → uninstall), VERSION_DOWNGRADE (bump versionCode), INSUFFICIENT_STORAGE, NO_MATCHING_ABIS.</li>
+    <li><strong>16 KB page size (Android 15/Play):</strong> old 4 KB-aligned prebuilt <code>.so</code> won't load / gets rejected; fix = toolchain upgrade (NDK r27+/AGP/RN). Real case: RN 0.76 prebuilts couldn't align → upgraded to Expo 53 / RN 0.79.</li>
+    <li><strong>Obfuscated release crashes:</strong> R8 <code>mapping.txt</code> in <code>build/outputs/mapping/release/</code>; <code>retrace</code> or auto-deobfuscate via Crashlytics/Sentry; archive mapping per versionCode.</li>
+    <li><strong>Tools:</strong> logcat filtering, Android Studio debugger + Kotlin breakpoints, <code>adb shell dumpsys</code>, <code>adb bugreport</code>, <code>ndk-stack</code> for native SIGSEGV, Hermes debugging, React Native DevTools (Flipper deprecated), Crashlytics/Sentry with native symbols + mapping upload.</li>
+    <li><strong>Expo:</strong> <code>expo-doctor</code>, EAS Build logs, <code>npx expo prebuild --clean</code> to reset native state (wipes hand edits — use config plugins / <code>expo-build-properties</code>), gradle cache clears, symbolicate EAS release crashes with uploaded symbols/mapping.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Fixating on the top line of the stack trace</strong> — it's usually a generic <code>RuntimeException</code>/<code>Handler</code> from RN's module system, not your bug. The real cause is the <strong>last</strong> <code>Caused by:</code>, and the actionable frame is the first one in your package or a named library. Second trap: chasing a <strong>release-only</strong> crash in debug — R8 is off there, so the bug vanishes; reproduce with a release build and add a keep rule.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I classify it first — build, install, or runtime — because the tools and fix location are completely different. Then for a runtime crash I read the <code>Caused by:</code> chain bottom-up and find the first frame in my own package."</div>
+  <div class="revision-say">"Release-only crashes are almost always R8 stripping a reflection-referenced class — I add a <code>-keep</code> rule and I always archive <code>mapping.txt</code> so production stacks deobfuscate."</div>
+  <div class="revision-say">"The jail-monkey launch crash was a <code>ClassCastException</code> in the old-arch <code>getConstants()</code> — I patched out the bad constant. And the 16 KB page-size issue isn't a flag, it's a toolchain upgrade — we moved sw-ticketing to Expo 53 / RN 0.79."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why native errors feel harder than JS errors</h3>
 <p>In JS, a red screen / Metro overlay gives you a symbolicated stack trace pointing straight at your source line. Native Android failures are different: they surface as Java/Kotlin exceptions in <strong>logcat</strong>, as Gradle task failures in the <strong>build log</strong>, or as install refusals from the package manager. The JS stack trace does not reach them, and Metro cannot symbolicate them. You have to go one layer down — to the tools the Android platform itself uses.</p>
 
@@ -49,10 +65,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why a disciplined method beats intuition</h3>
 <p>Native errors are noisy — a single crash can print 200 lines. Without a method you fixate on the top frame (usually framework code, not your bug) or on a scary-looking but irrelevant warning. The bottom-up <code>Caused by:</code> read plus the build/install/runtime triage is what turns a wall of red text into a one-line category and a known fix.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>How to read a Java/Kotlin stack trace</h3>
 <p>A native crash in logcat has a fixed shape. The exception <em>type</em> and message are at the top; the <code>at</code> frames below it are the call stack (most recent call first, i.e. top = where it threw); and one or more <code>Caused by:</code> blocks chain the wrapped root cause underneath. You read the <strong>chain</strong> bottom-up but each individual block top-down.</p>
 <div class="diagram">
@@ -115,10 +131,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"The top line of the stack trace is my bug." Usually it is not — the top of the outer exception is a generic <code>RuntimeException</code> from RN's module system or a <code>Handler</code>. The actual cause is in the deepest <code>Caused by:</code>, and the actionable frame is the first one in your package or a named library. Always scroll to the bottom of the chain first.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Step 0 — Capture the evidence cleanly</h3>
 <p>Never debug from a screenshot of a truncated toast. Get the full log:</p>
 <pre><code class="language-bash"># clear the buffer, reproduce the crash, then read
@@ -277,10 +293,10 @@ retrace mapping.txt obfuscated-stacktrace.txt
 # (retrace ships with the Android SDK / R8; Play &amp; Crashlytics &amp; Sentry
 #  can ingest mapping.txt and deobfuscate automatically)</code></pre>
 <p>Always archive <code>mapping.txt</code> per release and upload it to your crash reporter, or production stacks are meaningless.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Reading a real launch-crash trace end to end</h3>
 <pre><code class="language-text">FATAL EXCEPTION: main
 Process: com.smartworks.mobile, PID: 9931
@@ -348,10 +364,11 @@ llvm-readelf -l base/lib/arm64-v8a/libhermes.so | grep LOAD
 npx expo prebuild --clean       # regenerate android/ &amp; ios/ from config
 cd android &amp;&amp; ./gradlew clean
 npx expo run:android            # rebuild the dev client</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. The crash is in a background thread, not <code>main</code></h3>
 <p>The <code>FATAL EXCEPTION:</code> line names the thread. If it's not <code>main</code>, a background executor (OkHttp dispatcher, a coroutine, a native module's queue) threw. The fix location differs — look at what runs on that thread, not your UI code.</p>
 
@@ -397,10 +414,9 @@ npx expo run:android            # rebuild the dev client</code></pre>
 
 <h3>15. Obfuscated line numbers off by a bit</h3>
 <p>Even with <code>mapping.txt</code>, if the archived mapping doesn't match the exact build that crashed, names deobfuscate but line numbers can be wrong. Archive the mapping per <em>build</em>, keyed by versionCode.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — reading the top frame instead of the root cause</h3>
 <p>Fixating on the outer <code>RuntimeException</code> / <code>Handler</code> frames. The bug is in the last <code>Caused by:</code>. Always scroll to the bottom of the chain first.</p>
 
@@ -445,10 +461,10 @@ npx expo run:android            # rebuild the dev client</code></pre>
 
 <h3>Anti-pattern 15 — treating the 16 KB issue as a config toggle</h3>
 <p>You can't flip a flag to align an old prebuilt <code>.so</code>. It's a toolchain upgrade (NDK/AGP/RN). Plan the version bump, don't hunt for a magic gradle property.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Walk me through how you read a native Android crash.</div>
   <div class="qa-answer">
@@ -567,55 +583,14 @@ npx expo run:android            # rebuild the dev client</code></pre>
     <li>You understand the 16 KB page-size issue as a toolchain upgrade, and know the Expo prebuild wipe gotcha.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Classify the failure as <strong>build / install / runtime</strong> first, then read the <code>Caused by:</code> chain <strong>bottom-up</strong> to the root cause and the first frame in <em>your</em> package, map the exception type to a known category, fix it, and <strong>clean rebuild</strong> to confirm.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Three failure classes:</strong> build-time (Gradle/R8/codegen/manifest, seen in the terminal — <code>Execution failed for task</code>), install-time (<code>INSTALL_FAILED_*</code> from <code>adb install</code>/Play), runtime (<code>FATAL EXCEPTION</code> in logcat, or a native SIGSEGV tombstone).</li>
-    <li><strong>Read a stack trace bottom-up:</strong> the deepest <code>Caused by:</code> is the root cause; inside a block the top <code>at</code> is where it threw; skip <code>com.facebook.react.*</code>/<code>android.*</code> and find the first frame in your package or a named library. Note the <strong>thread name</strong> (main = UI).</li>
-    <li><strong>Capture cleanly:</strong> <code>adb logcat -c</code> then reproduce; <code>adb logcat -b crash -d</code>, <code>--pid=$(adb shell pidof -s pkg)</code>, <code>*:E</code>. Build detail: <code>./gradlew task --stacktrace --info</code>, <code>:app:dependencies</code>, <code>./gradlew clean</code>.</li>
-    <li><strong><code>ClassCastException</code>:</strong> object cast to wrong type; classic old-arch <code>getConstants()</code> mis-cast. Real case: jail-monkey 3.0.0 <code>rootedDetectionMethods()</code> → launch crash on old arch; fix = patch/drop the constant.</li>
-    <li><strong><code>UnsatisfiedLinkError</code> / couldn't find libX.so:</strong> ABI mismatch (arm64 vs x86 emulator), missing/stale <code>.so</code>, Hermes toggle without rebuild, SoLoader init. Check <code>abiFilters</code>/<code>splits</code>, clean rebuild.</li>
-    <li><strong><code>NoClassDefFoundError</code>/<code>ClassNotFoundException</code>:</strong> R8 stripped a reflection-referenced class (release-only) → add <code>-keep</code> in <code>proguard-rules.pro</code>; or multidex below minSdk 21.</li>
-    <li><strong><code>Duplicate class</code>:</strong> version conflict; read <code>:app:dependencies</code>, then <code>resolutionStrategy.force</code> or <code>exclude</code> the transitive.</li>
-    <li><strong>Manifest merger failed:</strong> conflicting <code>android:exported</code>/<code>allowBackup</code>/permissions; use <code>tools:replace</code> / <code>tools:node="remove"</code>; <code>exported</code> must be explicit on Android 12+. Read <code>manifest-merger-*-report.txt</code>.</li>
-    <li><strong>Gradle <code>Execution failed for task</code>:</strong> the task name is the clue (<code>minifyReleaseWithR8</code>, <code>processDebugManifest</code>); <code>--stacktrace</code>/<code>--info</code>; watch JDK 17 / AGP / Gradle version match; clean caches.</li>
-    <li><strong>OOM:</strong> build-time → <code>org.gradle.jvmargs=-Xmx4096m</code>; runtime → bitmaps/leak, resize + Fresco/Glide, <code>largeHeap</code> only as a smell-stopgap.</li>
-    <li><strong>ANR:</strong> main thread blocked ~5s; pull <code>/data/anr/traces.txt</code>, <code>dumpsys activity</code>; move heavy/sync work off the UI thread.</li>
-    <li><strong><code>INSTALL_FAILED_*</code>:</strong> UPDATE_INCOMPATIBLE (signature mismatch → uninstall), VERSION_DOWNGRADE (bump versionCode), INSUFFICIENT_STORAGE, NO_MATCHING_ABIS.</li>
-    <li><strong>16 KB page size (Android 15/Play):</strong> old 4 KB-aligned prebuilt <code>.so</code> won't load / gets rejected; fix = toolchain upgrade (NDK r27+/AGP/RN). Real case: RN 0.76 prebuilts couldn't align → upgraded to Expo 53 / RN 0.79.</li>
-    <li><strong>Obfuscated release crashes:</strong> R8 <code>mapping.txt</code> in <code>build/outputs/mapping/release/</code>; <code>retrace</code> or auto-deobfuscate via Crashlytics/Sentry; archive mapping per versionCode.</li>
-    <li><strong>Tools:</strong> logcat filtering, Android Studio debugger + Kotlin breakpoints, <code>adb shell dumpsys</code>, <code>adb bugreport</code>, <code>ndk-stack</code> for native SIGSEGV, Hermes debugging, React Native DevTools (Flipper deprecated), Crashlytics/Sentry with native symbols + mapping upload.</li>
-    <li><strong>Expo:</strong> <code>expo-doctor</code>, EAS Build logs, <code>npx expo prebuild --clean</code> to reset native state (wipes hand edits — use config plugins / <code>expo-build-properties</code>), gradle cache clears, symbolicate EAS release crashes with uploaded symbols/mapping.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Fixating on the top line of the stack trace</strong> — it's usually a generic <code>RuntimeException</code>/<code>Handler</code> from RN's module system, not your bug. The real cause is the <strong>last</strong> <code>Caused by:</code>, and the actionable frame is the first one in your package or a named library. Second trap: chasing a <strong>release-only</strong> crash in debug — R8 is off there, so the bug vanishes; reproduce with a release build and add a keep rule.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I classify it first — build, install, or runtime — because the tools and fix location are completely different. Then for a runtime crash I read the <code>Caused by:</code> chain bottom-up and find the first frame in my own package."</div>
-  <div class="revision-say">"Release-only crashes are almost always R8 stripping a reflection-referenced class — I add a <code>-keep</code> rule and I always archive <code>mapping.txt</code> so production stacks deobfuscate."</div>
-  <div class="revision-say">"The jail-monkey launch crash was a <code>ClassCastException</code> in the old-arch <code>getConstants()</code> — I patched out the bad constant. And the 16 KB page-size issue isn't a flag, it's a toolchain upgrade — we moved sw-ticketing to Expo 53 / RN 0.79."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. In an Expo prebuild / EAS project, how do you reset native state and investigate a native build failure?</div>
+  <div class="qa-answer">
+    <p>Start with <code>npx expo-doctor</code>, which flags version and config mismatches. Then <code>npx expo prebuild --clean</code> regenerates <code>android/</code> and <code>ios/</code> from config (it also wipes any hand edits, so durable fixes must live in config plugins or <code>expo-build-properties</code>), followed by <code>cd android &amp;&amp; ./gradlew clean</code> and <code>npx expo run:android</code> to rebuild the dev client. For cloud builds, read the EAS Build logs the same way you would a local Gradle failure: find the failing task. For release crashes from EAS builds, symbolicate with the uploaded symbols and <code>mapping.txt</code>.</p>
+  </div>
 </div>
-`},
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you read a logcat <code>FATAL EXCEPTION</code> block — thread name, <code>Caused by:</code> chain bottom-up, and your-package vs framework frames?</li>
-    <li>Can you instantly classify a failure as build-time, install-time, or runtime and name where each surfaces?</li>
-    <li>Can you match <code>ClassCastException</code>, <code>UnsatisfiedLinkError</code>, <code>NoClassDefFoundError</code>, <code>Duplicate class</code>, and a manifest merger failure each to a cause and a fix?</li>
-    <li>Can you explain why a release build crashes when debug doesn't, and how <code>mapping.txt</code> + <code>retrace</code> recover the real names?</li>
-    <li>Can you debug an ANR from <code>traces.txt</code> and distinguish build-heap OOM from runtime-bitmap OOM?</li>
-    <li>Can you explain the 16 KB page-size incompatibility and why it forced an RN/Expo upgrade rather than a config change?</li>
-    <li>Can you reset native state and read build logs in an Expo prebuild / EAS project?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

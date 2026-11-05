@@ -1,37 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'sd-framework',
-  module: 'Frontend System Design',
-  title: '10-Step Framework',
-  estimatedReadTime: '35 min',
-  tags: ['system-design', 'framework', 'interview', 'architecture', 'requirements', 'tradeoffs', 'rubric'],
+  id: "sd-framework",
+  module: "Frontend System Design",
+  title: "10-Step Framework",
+  estimatedReadTime: "35 min",
+  tags: ["system-design","framework","interview","architecture","requirements","tradeoffs","rubric"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>A frontend system-design interview asks you to design a non-trivial UI product end-to-end in 45-60 minutes — YouTube, Facebook News Feed, Google Docs, a real-time chat, Gmail. The interviewer grades not the "right answer" (there isn't one) but your <strong>process</strong>: how you clarify, decompose, make tradeoffs, and reason about scale, UX, and constraints.</p>
-
-<p>The <strong>10-Step Framework</strong> gives you a deterministic structure to cover everything interviewers look for without panicking:</p>
-<ol>
-  <li><strong>Clarify requirements</strong> — functional, non-functional, out-of-scope.</li>
-  <li><strong>Estimate scale</strong> — users, data, events, bandwidth.</li>
-  <li><strong>High-level architecture</strong> — boxes and arrows sketch.</li>
-  <li><strong>Data model</strong> — entities, relationships, client-side shape.</li>
-  <li><strong>API design</strong> — REST / GraphQL / WebSocket contracts.</li>
-  <li><strong>Component design</strong> — break the UI into components, data flow.</li>
-  <li><strong>State management</strong> — local, server, cache, URL.</li>
-  <li><strong>Performance</strong> — rendering, networking, bundle, CWV.</li>
-  <li><strong>Scalability & edge cases</strong> — offline, a11y, i18n, error handling, real-time.</li>
-  <li><strong>Tradeoffs & deep dive</strong> — the interviewer picks a sub-system; you justify choices.</li>
-</ol>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Ten steps in ~45 minutes = ~4 minutes per step on average, but biased toward 1-2 (clarify + estimate) and 10 (deep dive) since those are where scores are made. Go broad-then-deep: get a complete sketch by minute 25, then let the interviewer's follow-ups drive the detail.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A frontend system-design interview grades your <strong>process, not a memorized right answer</strong> — so run the 10 steps broad-then-deep: clarify, estimate, decompose, and name tradeoffs out loud.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The 10 steps:</strong> clarify requirements → estimate scale → high-level architecture → data model → API design → component design → state management → performance → scalability &amp; edge cases → tradeoffs &amp; deep dive.</li>
+    <li>~45 min budget (interviews run 45-60 min) = <strong>~4 min per step on average</strong>, biased toward steps 1-2 and 10 where scores are made; go <strong>broad then deep</strong> — a complete skeleton by ~minute 25, then let the interviewer's follow-ups drive detail; save 2-3 min to wrap up.</li>
+    <li><strong>Clarify in 3 buckets:</strong> functional (what the user can do), non-functional (perf, scale, a11y, offline, security), out-of-scope (explicit exclusions). Confirm scope back before designing.</li>
+    <li><strong>Estimates need not be accurate — just plausible and decision-driving.</strong> DAU, peak concurrent, data per session, avg object size tell you whether to virtualize, paginate, SSR, or edge-cache.</li>
+    <li>Frontend scale ≠ backend: bottlenecks are the <strong>main thread, DOM size, bundle, network</strong>; perf is <strong>LCP / INP / CLS</strong>; the uniquely-FE concerns are a11y, i18n/RTL, and rendering strategy.</li>
+    <li><strong>Draw boxes + arrows</strong> — the diagram is a shared artifact; memorize the [Browser] → [CDN] / [Realtime server] / [API gateway] shape that fits ~80% of prompts.</li>
+    <li><strong>Tradeoff ledger:</strong> for each choice name both sides and pick one with justification — naming alternatives shows you considered them, picking shows conviction.</li>
+    <li><strong>Non-functional scores points and most candidates forget it:</strong> offline (service worker + queue), a11y (ARIA live, keyboard, focus), i18n (RTL, <code>Intl</code>), error handling (boundaries, backoff).</li>
+    <li><strong>Real-time selection rubric:</strong> polling (low QPS, simplest) → long polling → SSE (one-way push) → WebSocket (bidirectional, low latency).</li>
+    <li><strong>Rendering strategy by product:</strong> SSG/ISR for static/CMS, SSR for personalized + SEO, CSR for behind-auth tools, RSC + streaming to cut the client bundle.</li>
+    <li><strong>Normalized client cache:</strong> entities by id (lookup tables) + views as arrays of ids; one update touches one place.</li>
+    <li><strong>Adapt under pushback</strong> rather than defending; a wrong scale or feature assumption gets an explicit pivot, not a defense.</li>
+    <li><strong>The deep dive is interviewer-driven</strong>, not an essay: answer with three options, tradeoffs, your pick, and the follow-up risks.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Blowing the time budget on early steps — 20 minutes on requirements or a perfect data model, then no components, state, perf, or edge cases. The fix: time-box each step, get a complete skeleton across every layer by ~minute 25, and fast-forward the moment you're running long rather than perfecting one section.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The interviewer grades my process, not a memorized right answer — so I clarify, estimate, decompose, and name tradeoffs out loud."</div>
+  <div class="revision-say">"I clarify in three buckets — functional, non-functional, and out-of-scope — and confirm the scope before I design anything."</div>
+  <div class="revision-say">"I go broad then deep: a complete skeleton across every layer by about minute 25, then I let the interviewer steer the deep dive."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What the interview is really testing</h3>
 <p>Frontend system design is not "name some libraries." Interviewers want to see:</p>
 <ol>
@@ -70,10 +76,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why estimates matter even though numbers aren't asked</h3>
 <p>"1 billion users" and "10 thousand users" design to very different architectures. Writing down quick numbers — DAU, concurrent users, messages per second, avg object size, bandwidth per session — guides downstream decisions: do we need virtualization? pagination? SSR for crawlers? Edge caching? The numbers don't have to be accurate; they have to be plausible and drive decisions.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "broad then deep" timeline</h3>
 <div class="diagram">
 <pre>
@@ -121,10 +127,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"I need to know the one right architecture for YouTube." There is no one right answer. The interviewer is grading your process, not your memorized design. A junior who recites "the YouTube architecture" without reasoning fares worse than a senior who confidently wrong-guesses a detail but shows clean decomposition and tradeoffs.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Step 1 — Clarify Requirements (~5 min)</h3>
 <p>Split clarifying into three buckets:</p>
 <ul>
@@ -275,10 +281,10 @@ WS   /feed/subscribe             → emits { type: 'new_tweet', tweet, author }<
   <li><strong>Running out of time on early steps.</strong> Don't spend 20 minutes on requirements. Budget.</li>
   <li><strong>Not covering non-functional</strong> (a11y, offline, error handling). These score points and most candidates forget.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — full framework applied to "Design Google Docs"</h3>
 <p>Compact walkthrough; real interview expands each section.</p>
 
@@ -388,10 +394,11 @@ POST /doc/{id}/snapshot      (periodic rollup of ops)</code></pre>
      │
      └─HTTP──►[API gateway]─►[Services]─►[DB]</code></pre>
 <p>Memorize this shape — with small label tweaks it covers 80% of FE system design prompts.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. "Design X" where X is enormous</h3>
 <p>"Design Facebook." Scope it yourself in clarify: "I'll focus on the News Feed viewing experience; other surfaces out of scope." An interviewer who wanted more will push back — that's fine. Don't try to design all of Facebook.</p>
 
@@ -463,10 +470,9 @@ POST /doc/{id}/snapshot      (periodic rollup of ops)</code></pre>
 
 <h3>20. Missing the "what would you improve next"</h3>
 <p>Wrap up in the last 2 minutes: "If I had another 30 minutes, I'd deepen the offline sync, do a proper security review, and sketch a CI perf budget. My biggest open question is whether the realtime channel scales past 10M concurrent — that's where I'd focus next." Shows awareness of what's incomplete.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — jumping straight into React components</h3>
 <p>"Well I'd use a FeedCard component with props for..." Stop. You haven't defined the feed yet. Clarify → estimate → architecture → then components.</p>
 
@@ -511,10 +517,10 @@ POST /doc/{id}/snapshot      (periodic rollup of ops)</code></pre>
 
 <h3>Anti-pattern 15 — defensive posture on pushback</h3>
 <p>Interviewer pushes a decision; candidate doubles down without reconsidering. Listen, acknowledge, adjust. Flexibility is a strong signal.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How do you approach a frontend system design question?</div>
   <div class="qa-answer">
@@ -736,52 +742,14 @@ feedTweetIds: [id, id, id, ...]</code></pre>
     <li>You wrap up with explicit open questions and next-steps.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A frontend system-design interview grades your <strong>process, not a memorized right answer</strong> — so run the 10 steps broad-then-deep: clarify, estimate, decompose, and name tradeoffs out loud.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>The 10 steps:</strong> clarify requirements → estimate scale → high-level architecture → data model → API design → component design → state management → performance → scalability &amp; edge cases → tradeoffs &amp; deep dive.</li>
-    <li>~45 min budget, biased toward steps 1-2 and 10; go <strong>broad then deep</strong> — a complete skeleton by ~minute 25, then let the interviewer's follow-ups drive detail; save 2-3 min to wrap up.</li>
-    <li><strong>Clarify in 3 buckets:</strong> functional (what the user can do), non-functional (perf, scale, a11y, offline, security), out-of-scope (explicit exclusions). Confirm scope back before designing.</li>
-    <li><strong>Estimates need not be accurate — just plausible and decision-driving.</strong> DAU, peak concurrent, data per session, avg object size tell you whether to virtualize, paginate, SSR, or edge-cache.</li>
-    <li>Frontend scale ≠ backend: bottlenecks are the <strong>main thread, DOM size, bundle, network</strong>; perf is <strong>LCP / INP / CLS</strong>; the uniquely-FE concerns are a11y, i18n/RTL, and rendering strategy.</li>
-    <li><strong>Draw boxes + arrows</strong> — the diagram is a shared artifact; memorize the [Browser] → [CDN] / [Realtime server] / [API gateway] shape that fits ~80% of prompts.</li>
-    <li><strong>Tradeoff ledger:</strong> for each choice name both sides and pick one with justification — naming alternatives shows you considered them, picking shows conviction.</li>
-    <li><strong>Non-functional scores points and most candidates forget it:</strong> offline (service worker + queue), a11y (ARIA live, keyboard, focus), i18n (RTL, <code>Intl</code>), error handling (boundaries, backoff).</li>
-    <li><strong>Real-time selection rubric:</strong> polling (low QPS, simplest) → long polling → SSE (one-way push) → WebSocket (bidirectional, low latency).</li>
-    <li><strong>Rendering strategy by product:</strong> SSG/ISR for static/CMS, SSR for personalized + SEO, CSR for behind-auth tools, RSC + streaming to cut the client bundle.</li>
-    <li><strong>Normalized client cache:</strong> entities by id (lookup tables) + views as arrays of ids; one update touches one place.</li>
-    <li><strong>Adapt under pushback</strong> rather than defending; a wrong scale or feature assumption gets an explicit pivot, not a defense.</li>
-    <li><strong>The deep dive is interviewer-driven</strong>, not an essay: answer with three options, tradeoffs, your pick, and the follow-up risks.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Blowing the time budget on early steps — 20 minutes on requirements or a perfect data model, then no components, state, perf, or edge cases. The fix: time-box each step, get a complete skeleton across every layer by ~minute 25, and fast-forward the moment you're running long rather than perfecting one section.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"The interviewer grades my process, not a memorized right answer — so I clarify, estimate, decompose, and name tradeoffs out loud."</div>
-  <div class="revision-say">"I clarify in three buckets — functional, non-functional, and out-of-scope — and confirm the scope before I design anything."</div>
-  <div class="revision-say">"I go broad then deep: a complete skeleton across every layer by about minute 25, then I let the interviewer steer the deep dive."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Sketch the high-level architecture you'd draw for a typical frontend design prompt.</div>
+  <div class="qa-answer">
+    <p>Spend about five minutes on 5-8 labelled boxes and arrows, without getting lost in backend detail: the browser loads HTML/JS/CSS and media from an edge <strong>CDN</strong>; it opens a <strong>WebSocket</strong> to a realtime server (backed by something like Kafka and a DB) for pushes; and it makes HTTP calls to an <strong>API gateway</strong> in front of the services and DB. With small label tweaks, <code>[Browser] → [CDN] / [Realtime server] / [API gateway]</code> covers about 80% of FE prompts. On the client side, pair it with a normalized cache: entities stored by id (<code>tweetsById</code>, <code>usersById</code>) and views as ordered arrays of ids (<code>feed.tweetIds</code>), so one update (a like, an edited name) touches one place and every view stays consistent. The API can return denormalized entities; normalize them on the client.</p>
+  </div>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name all 10 steps in order and roughly budget their time across a 45-minute interview?</li>
-    <li>Can you split a vague "Design X" prompt into functional, non-functional, and out-of-scope buckets and confirm scope before designing?</li>
-    <li>Can you write back-of-envelope estimates (DAU, peak concurrent, data per session, avg object size) and explain which design decision each one drives?</li>
-    <li>Can you sketch the [Browser] → [CDN] / [Realtime server] / [API gateway] architecture and justify a normalized client cache keyed by entity id?</li>
-    <li>Can you pick between polling, long polling, SSE, and WebSocket — and between CSR, SSR, SSG, and RSC — tying each choice to a requirement?</li>
-    <li>Can you cover the non-functional edge cases (offline, a11y, i18n/RTL, error handling) and state a tradeoff with both sides for every significant choice?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

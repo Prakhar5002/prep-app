@@ -1,33 +1,45 @@
 window.PREP_SITE.registerTopic({
-  id: 'bsd-cases',
-  module: 'backend',
-  title: 'Backend SD Cases',
-  estimatedReadTime: '60 min',
-  tags: ['system-design', 'cases', 'twitter', 'url-shortener', 'rate-limiter', 'chat', 'uber', 'feed', 'payments'],
+  id: "bsd-cases",
+  module: "backend",
+  title: "Backend SD Cases",
+  estimatedReadTime: "60 min",
+  tags: ["system-design","cases","twitter","url-shortener","rate-limiter","chat","uber","feed","payments"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Backend system design case studies.</strong> Eight worked examples following the framework from <code>bsd-framework</code> — clarify → estimate → high-level → deep dives → scale → wrap. Don't memorize answers; internalize the patterns and how each case forces certain tradeoffs.</p>
-<ul>
-  <li><strong>URL shortener (bit.ly)</strong> — read-heavy; cache-dominated; ID generation tradeoffs.</li>
-  <li><strong>Rate limiter</strong> — algorithm choice; distributed state via Redis Lua; fail-open vs fail-closed.</li>
-  <li><strong>Twitter feed</strong> — fan-out push vs pull; hot-key (celebrity) problem; hybrid approach.</li>
-  <li><strong>Chat (WhatsApp / Slack)</strong> — message ordering; multi-device sync; presence; offline queueing.</li>
-  <li><strong>Uber dispatch</strong> — geospatial indexing; dispatch matching; surge pricing; driver state.</li>
-  <li><strong>Notification system</strong> — multi-channel fan-out; idempotency; per-user quiet hours; throttling.</li>
-  <li><strong>Distributed counter</strong> — hot-key contention; sharded counters; eventual aggregation.</li>
-  <li><strong>Payment system</strong> — idempotency; double-entry ledger; saga across services; reconciliation.</li>
-</ul>
-<p><strong>Mantra:</strong> "Walk the framework. Pin tradeoffs. Solve the hot key. Plan the failure case. Always wrap up with what's deferred."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Every backend case is <strong>the same six-step walk</strong> — clarify, estimate, high-level, deep dive, scale, wrap — where you win by pattern-matching the tradeoffs and, in each one, solving the hot key and planning the failure case.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Eight cases:</strong> URL shortener, rate limiter, Twitter feed, chat, Uber dispatch, notification system, distributed counter, payment system.</li>
+    <li>Don't memorize answers — <strong>pattern-match</strong> the tradeoffs each case forces.</li>
+    <li><strong>URL shortener:</strong> read-heavy, CDN + cache dominated; random 7-char base62 + collision check via <code>INSERT ... ON CONFLICT DO NOTHING RETURNING</code>; click counter = Redis INCR + periodic batch flush.</li>
+    <li><strong>Rate limiter:</strong> token bucket via an atomic Redis Lua script; state sharded by user_id; fail-open for analytics, fail-closed for auth.</li>
+    <li><strong>Twitter feed:</strong> hybrid fan-out — push to follower feed caches for &lt; 10K followers, pull at read time for celebrities (&ge; 10K), merge; feed = Redis sorted set capped ~1000; stores sharded by user_id.</li>
+    <li><strong>Chat:</strong> per-chat Kafka partition + server monotonic sequence for ordering; dedupe by message_id (idempotent); offline queue + replay since last seq; ~100M concurrent WS ÷ 50K per server ≈ 2000 connection servers.</li>
+    <li><strong>Uber dispatch:</strong> geo index (Redis Geo or H3) sharded by city; greedy dispatch offers nearest then expands radius; driver marked offline on a 30s TTL.</li>
+    <li><strong>Notification system:</strong> Kafka fan-out to per-channel workers; idempotency on (notification_id, channel); timezone-aware quiet hours; per-channel token bucket for external API limits; DLQ per channel.</li>
+    <li><strong>Distributed counter:</strong> shard a hot counter into N keys (random increment, SUM on read) for N× write throughput; periodic flush to DB as source of truth; CRDT counters for multi-region.</li>
+    <li><strong>Payment:</strong> idempotency key (unique constraint, return stored response on replay); double-entry ledger (entries per transaction sum to 0, append-only); saga + compensations across services; nightly reconciliation vs provider.</li>
+    <li><strong>Find the hot key in every problem</strong> (celebrity tweet, popular-post likes, large chat group, viral link, broadcast campaign, event hotspot, top merchant) and name its mitigation.</li>
+    <li><strong>Name the failure mode</strong> per component: DB → replica + auto-failover; cache → fall through to DB; queue → backpressure/load-shed; external API → circuit breaker; region → multi-region; WS → reconnect + replay.</li>
+    <li><strong>Reframings:</strong> Pinterest/Facebook feed = Twitter; Yelp/Tinder = Uber geo; Slack = chat; Stripe = payment; TinyURL = URL shortener; trends = counter + ranking.</li>
+    <li><strong>Mantra:</strong> "Walk the framework. Pin tradeoffs. Solve the hot key. Plan the failure case. Always wrap up with what's deferred."</li>
+    <li><strong>Wrap-up</strong> every case with three lists: <strong>strong</strong> (what the design gets right), <strong>deferred</strong> (e.g. ranking, spam, ads), <strong>next</strong> (what you'd build after).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is designing only for the average user and missing the <strong>hot key</strong> — the celebrity tweet, popular-post likes, large chat group, viral link, or broadcast campaign that saturates one shard. Fix: in every problem, name the skewed entity and its mitigation (shard the counter, pull instead of push for celebs, sub-partition the group, or let the CDN absorb the viral link).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I recognize the pattern first — Pinterest is the feed case, Tinder is the geo/dispatch case, Stripe is the payment case — then apply the technique."</div>
+  <div class="revision-say">"In every case I solve the hot key and plan the failure case, because that's what separates a working design from a hand-wave."</div>
+  <div class="revision-say">"At-least-once delivery plus idempotent consumers is my pragmatic 'exactly once' — I use it for payments, notifications, and any queue."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why case studies matter</h3>
 <p>You can read the framework in <code>bsd-framework</code> 10 times and still freeze in an interview. Cases give the muscle memory: "this prompt looks like the URL shortener problem — read-heavy, cache-dominated, ID generation matters."</p>
 
@@ -46,12 +58,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Don't memorize — pattern-match</h3>
 <p>Each case shows specific tradeoffs. The interview prompt may be slightly different ("design Pinterest feed" vs Twitter), but the underlying tradeoffs (fan-out, hot keys, ranking) are the same. Recognize the pattern; apply the technique.</p>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Cases 1-2',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Cases 1-2", collapsible: true, html: `
 <h2>Case 1: URL shortener (bit.ly)</h2>
 
 <h3>1. Clarify</h3>
@@ -203,12 +213,10 @@ return { allowed, tokens }
   <li><strong>Deferred:</strong> burst credit pools; integration with billing for overage.</li>
   <li><strong>Next:</strong> chaos test fail-open vs fail-closed paths; benchmark under load.</li>
 </ul>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Cases 3-4',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Cases 3-4", collapsible: true, html: `
 <h2>Case 3: Twitter feed</h2>
 
 <h3>1. Clarify</h3>
@@ -367,12 +375,10 @@ Push: FCM/APNs for offline users
   <li><strong>Deferred:</strong> E2E encryption (Signal protocol); media; voice/video.</li>
   <li><strong>Next:</strong> hot-group partitioning; cross-region consistency; specific dispatch optimizations.</li>
 </ul>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Cases 5-6',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h2>Case 5: Uber dispatch</h2>
 
 <h3>1. Clarify</h3>
@@ -533,12 +539,11 @@ External APIs:
   <li><strong>Deferred:</strong> personalization / ranking (which to send when many queued); A/B testing infra.</li>
   <li><strong>Next:</strong> ML for send-time optimization; cost-aware channel selection.</li>
 </ul>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Cases 7-8',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h2>Case 7: Distributed counter</h2>
 
 <h3>1. Clarify</h3>
@@ -722,12 +727,9 @@ If step 4 fails:
   <li><strong>Deferred:</strong> fraud detection (separate ML system); subscription billing logic; international currency rules.</li>
   <li><strong>Next:</strong> 3DS / SCA flow for European compliance; recurring billing engine; webhook delivery to merchants.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Common Pitfalls',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common mistakes across all cases</h3>
 <ol>
   <li><strong>Skipping clarification</strong> — building the wrong system.</li>
@@ -778,12 +780,10 @@ If step 4 fails:
   <li>Writes: idempotent? Sharded? Async?</li>
   <li>Asymmetry usually exists — exploit it (read replicas; CQRS).</li>
 </ul>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Wrap-up',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>How to use these cases</h3>
 <ol>
   <li>Read each case once for the technique (sharding, fan-out, idempotency, etc.).</li>
@@ -856,57 +856,44 @@ If step 4 fails:
   <li><strong>SD Cases</strong> (this topic) — 8 worked examples covering core patterns.</li>
 </ul>
 <p>9 topics. Together: enough backend literacy to pass FAANG senior+ system design rounds; collaborate effectively with backend teams; design + own a BFF or service end-to-end.</p>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Every backend case is <strong>the same six-step walk</strong> — clarify, estimate, high-level, deep dive, scale, wrap — where you win by pattern-matching the tradeoffs and, in each one, solving the hot key and planning the failure case.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Eight cases:</strong> URL shortener, rate limiter, Twitter feed, chat, Uber dispatch, notification system, distributed counter, payment system.</li>
-    <li>Don't memorize answers — <strong>pattern-match</strong> the tradeoffs each case forces.</li>
-    <li><strong>URL shortener:</strong> read-heavy, CDN + cache dominated; random 7-char base62 + collision check via <code>INSERT ... ON CONFLICT DO NOTHING RETURNING</code>; click counter = Redis INCR + periodic batch flush.</li>
-    <li><strong>Rate limiter:</strong> token bucket via an atomic Redis Lua script; state sharded by user_id; fail-open for analytics, fail-closed for auth.</li>
-    <li><strong>Twitter feed:</strong> hybrid fan-out — push to follower feed caches for &lt; 10K followers, pull at read time for celebrities (&ge; 10K), merge; feed = Redis sorted set capped ~1000; stores sharded by user_id.</li>
-    <li><strong>Chat:</strong> per-chat Kafka partition + server monotonic sequence for ordering; dedupe by message_id (idempotent); offline queue + replay since last seq; ~100M concurrent WS ÷ 50K per server ≈ 2000 connection servers.</li>
-    <li><strong>Uber dispatch:</strong> geo index (Redis Geo or H3) sharded by city; greedy dispatch offers nearest then expands radius; driver marked offline on a 30s TTL.</li>
-    <li><strong>Notification system:</strong> Kafka fan-out to per-channel workers; idempotency on (notification_id, channel); timezone-aware quiet hours; per-channel token bucket for external API limits; DLQ per channel.</li>
-    <li><strong>Distributed counter:</strong> shard a hot counter into N keys (random increment, SUM on read) for N× write throughput; periodic flush to DB as source of truth; CRDT counters for multi-region.</li>
-    <li><strong>Payment:</strong> idempotency key (unique constraint, return stored response on replay); double-entry ledger (entries per transaction sum to 0, append-only); saga + compensations across services; nightly reconciliation vs provider.</li>
-    <li><strong>Find the hot key in every problem</strong> (celebrity tweet, popular-post likes, large chat group, viral link, broadcast campaign, event hotspot, top merchant) and name its mitigation.</li>
-    <li><strong>Name the failure mode</strong> per component: DB → replica + auto-failover; cache → fall through to DB; queue → backpressure/load-shed; external API → circuit breaker; region → multi-region; WS → reconnect + replay.</li>
-    <li><strong>Reframings:</strong> Pinterest/Facebook feed = Twitter; Yelp/Tinder = Uber geo; Slack = chat; Stripe = payment; TinyURL = URL shortener; trends = counter + ranking.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">The #1 mistake is designing only for the average user and missing the <strong>hot key</strong> — the celebrity tweet, popular-post likes, large chat group, viral link, or broadcast campaign that saturates one shard. Fix: in every problem, name the skewed entity and its mitigation (shard the counter, pull instead of push for celebs, sub-partition the group, or let the CDN absorb the viral link).</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I recognize the pattern first — Pinterest is the feed case, Tinder is the geo/dispatch case, Stripe is the payment case — then apply the technique."</div>
-  <div class="revision-say">"In every case I solve the hot key and plan the failure case, because that's what separates a working design from a hand-wave."</div>
-  <div class="revision-say">"At-least-once delivery plus idempotent consumers is my pragmatic 'exactly once' — I use it for payments, notifications, and any queue."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Walk me through how you'd structure any backend system design answer.</div>
+  <div class="qa-answer">
+    <p>I use the same six steps every time: <strong>clarify</strong> (what's in scope and out), <strong>estimate</strong> (numbers aloud: QPS, storage, read/write ratio), <strong>high-level</strong> (sketch plus the key flow), <strong>deep dive</strong> (the one or two hardest parts), <strong>scale + reliability</strong> (bottlenecks, hot keys, failure modes and mitigations) and <strong>wrap-up</strong> (strong / deferred / next). Skipping clarification builds the wrong system, and skipping estimation leaves the design ungrounded in scale; those are the first two of the most common mistakes. The back-of-envelope numbers are what justify choices later, e.g. 1M geo lookups/sec in Uber dispatch or 1M increments/sec on a hot counter.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you walk any prompt through the six steps — clarify, estimate, high-level, deep dive, scale, wrap — without skipping clarification or back-of-envelope numbers?</li>
-    <li>Can you name the hot key in each of the eight cases (celebrity tweet, popular-post likes, large chat group, viral link, broadcast campaign, event hotspot, top merchant) and its mitigation?</li>
-    <li>Can you justify hybrid fan-out for a Twitter-style feed — push under 10K followers, pull for celebrities at read time, then merge?</li>
-    <li>Can you explain how at-least-once delivery plus idempotent consumers (dedupe by message_id / notification_id, idempotency key) gives you pragmatic exactly-once for chat, notifications, and payments?</li>
-    <li>Can you state the failure mode and mitigation for each component — DB primary, cache, queue, external API, region, and WebSocket?</li>
-    <li>Can you shard a hot counter into N keys (random increment, SUM on read) and explain why a double-entry ledger needs a single-key exact path instead?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. What is the hot key in each of the classic cases, and how do you mitigate it?</div>
+  <div class="qa-answer">
+    <p>Twitter: the <strong>celebrity tweet</strong>, so use pull-based fan-out for celebrity follows. Counter: <strong>popular-post likes</strong>, so use a sharded counter. Chat: a <strong>large group</strong>, so sub-partition by member range. URL shortener: a <strong>viral link</strong>, which the CDN cache absorbs. Notifications: a <strong>broadcast campaign</strong>, handled with per-channel rate limiting and pre-flight prep. Uber: an <strong>airport or event hotspot</strong>, so sub-shard within the city. Payments: a <strong>top merchant</strong>, so shard the ledger by merchant_id. Designing only for the average user and missing the hot key is the most common way these designs fail.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q3. For a Twitter-style feed, would you fan out on write or on read?</div>
+  <div class="qa-answer">
+    <p>Hybrid. Push (fan-out on write) gives O(1) feed reads but is very expensive for a user with millions of followers; pull (fan-out on read) makes writes cheap but reads expensive. So for authors with <strong>under 10K followers</strong> the fan-out service pushes the tweet ID into each follower's feed cache (a Redis sorted set scored by timestamp, capped around 1000 entries); for <strong>celebrities</strong> it does nothing. At read time I take the user's cached feed, fetch recent tweets from the celebrities they follow, merge and sort by timestamp, return the top N, and hydrate IDs from the tweet store. If the cache is down, the degraded mode is a pull-only feed.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How do you get effectively exactly-once behaviour for chat, notifications and payments?</div>
+  <div class="qa-answer">
+    <p>I accept <strong>at-least-once delivery</strong> and make every consumer <strong>idempotent</strong>, which is my pragmatic "exactly once". Chat: messages flow through Kafka and the client dedupes by <code>message_id</code>. Notifications: workers keep a dedup table keyed on <code>(notification_id, channel)</code> with a 7-day TTL, so a retried send is skipped. Payments: the caller sends an <code>Idempotency-Key</code> header; the server inserts it into an idempotency table with a unique constraint and, on a duplicate, returns the stored response if the request hash matches or 422 if it differs, with a 24-48h TTL. Ignoring idempotency is a classic mistake because retries then cause duplicates.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. What is the failure mode of each major component, and how do you mitigate it?</div>
+  <div class="qa-answer">
+    <p><strong>DB primary</strong> crashes: replica plus auto-failover, RTO around 30s. <strong>Cache</strong> down: fall through to the DB and degrade gracefully, since the DB is the source of truth. <strong>Queue</strong> backed up: backpressure, load shedding and an alert. <strong>External API</strong> slow or down: circuit breaker plus fallback. <strong>Region</strong> outage: multi-region, active-passive at minimum. <strong>WebSocket</strong> dropped: reconnect and replay from the last sequence number. A saturated worker pool gets a bounded queue and 503 with Retry-After.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. How do you handle a hot counter, and why wouldn't you use the same approach for money?</div>
+  <div class="qa-answer">
+    <p>A single Redis key saturates one single-threaded node (around 100K ops/sec), so I split the logical counter into N physical keys: each increment picks a random shard, and a read SUMs all shards. Ten shards give about 10× write throughput, a background job flushes the total to Postgres every minute, and popular counters can get more shards. The cost is that reads are only eventually consistent, since a sum can race with increments, which is fine for likes. Money needs exact accounting, so the counter case uses a single key with optimistic locking and retry, and the payment system uses an append-only double-entry ledger where each transaction's entries sum to 0 and an account's balance is the sum of its entries.</p>
+  </div>
+</div>
+` },
+
   ]
 });

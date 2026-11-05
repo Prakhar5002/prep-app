@@ -1,32 +1,44 @@
 window.PREP_SITE.registerTopic({
-  id: 'beh-star',
-  module: 'behavioral',
-  title: 'STAR Framework',
-  estimatedReadTime: '35 min',
-  tags: ['behavioral', 'star', 'star-l', 'interview', 'communication', 'storytelling', 'amazon-lp', 'faang'],
+  id: "beh-star",
+  module: "behavioral",
+  title: "STAR Framework",
+  estimatedReadTime: "35 min",
+  tags: ["behavioral","star","star-l","interview","communication","storytelling","amazon-lp","faang"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>STAR</strong> is a four-part scaffold that turns a vague work memory into a crisp, gradeable answer to a behavioral question. <strong>S</strong>ituation → <strong>T</strong>ask → <strong>A</strong>ction → <strong>R</strong>esult. Most FAANG-style interviewers grade on this structure (sometimes implicitly, sometimes literally with a rubric).</p>
-<ul>
-  <li><strong>S — Situation:</strong> 1–2 sentences of context. Who, what, when. The interviewer needs enough to understand the stakes; nothing more.</li>
-  <li><strong>T — Task:</strong> 1 sentence on what was specifically yours to do. Distinguishes "I" from "we." Common bug: candidates merge T into S.</li>
-  <li><strong>A — Action:</strong> 60–70% of the answer. What <em>you</em> did, with technical specificity, decision rationale, and tradeoff awareness. The interviewer is grading you here.</li>
-  <li><strong>R — Result:</strong> 1–2 sentences. Quantified outcome ("reduced p95 from 1.4s to 800ms; rolled back to 0% crash within 6 hours of detection") plus one sentence of reflection ("what I'd do differently").</li>
-  <li><strong>Optional L — Learnings:</strong> Amazon variant adds an explicit lesson; many interviewers love it because it shows growth.</li>
-  <li><strong>Total target:</strong> 2–3 minutes spoken. Under 90s = thin. Over 4 min = rambling.</li>
-  <li><strong>The "I vs we" rule:</strong> if you're describing a 5-person initiative, your STAR is about the slice you owned. Use "I" for actions; "we" only for context.</li>
-</ul>
-<p><strong>Mantra:</strong> "S brief, T sharp, A long and specific, R quantified. Always 'I,' rarely 'we.'"</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">STAR turns a vague work memory into a gradeable story &mdash; keep <strong>S brief, T sharp, A long and specific in "I," and R quantified</strong> (add L for FAANG).</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>STAR = Situation, Task, Action, Result</strong> — a scaffold that turns a vague work memory into a crisp, gradeable answer. Most FAANG-style interviewers grade on this structure, sometimes with a literal rubric. Add <strong>L (Learnings)</strong>, the Amazon variant; STAR-L is the safe default and you're never penalized for the extra L.</li>
+    <li><strong>S — brief:</strong> 1&ndash;2 sentences of context (who/what/when, the stakes). Cap it at ~30 seconds; a 90-second setup is the #1 bug.</li>
+    <li><strong>T — sharp:</strong> one sentence on the slice <em>you</em> owned. This is where you separate "I" from "we"; don't merge it into S.</li>
+    <li><strong>A — long and specific:</strong> 60&ndash;70% of the answer. What <em>you</em> did, with decisions, rationale, and tradeoffs. This is what's being graded.</li>
+    <li><strong>R — quantified:</strong> 1&ndash;2 sentences with a real number (or a relative change like "halved") plus one line of reflection.</li>
+    <li>Spoken-time ratio for a 3-min answer: <strong>S+T ~30s, A ~110s, R+L ~40s</strong> (roughly 70/20/10). Target 2&ndash;3 min: under 90s is thin, over 4 min rambles.</li>
+    <li><strong>Mantra:</strong> "S brief, T sharp, A long and specific, R quantified. Always I, rarely we."</li>
+    <li><strong>Speak in "I," not "we."</strong> Use "we" only for context; aim for ~5&times; more "I" than "we" in the Action section.</li>
+    <li><strong>Specific or it didn't happen:</strong> name the numbers, tools, roles, and decisions ("p95 from 1.4s to 800ms," not "made it faster").</li>
+    <li>Use <strong>judgment verbs</strong> &mdash; diagnosed, instrumented, drove, owned, negotiated, scoped &mdash; not weak ones like helped, worked on, was involved in.</li>
+    <li>Make Action a <strong>tree of decisions</strong>: state the options you considered and why you chose one. The "considered alternatives" beat lifts perceived seniority.</li>
+    <li>Answer the question's <strong>intent (the competency probed)</strong>, not just its words &mdash; and always volunteer a learning even if not asked.</li>
+    <li>Pick a <strong>real failure</strong>, not a humblebrag ("I worked too hard" fails). Own the bad call and tie the lesson to a habit change.</li>
+    <li>You need <strong>5&ndash;8 well-crafted stories</strong>, each tagged to multiple competencies &mdash; not 30. Treat STAR as a flexible scaffold, not a script; let the interviewer interrupt and steer.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is burning 90 seconds on Situation and then narrating the whole thing in "we" &mdash; so the interviewer never learns what <em>you</em> did. Fix: cap S+T at ~30 seconds, then spend 60&ndash;70% of the answer on your Actions in "I," built as a tree of decisions with the tradeoffs you weighed.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"S: At [company] I was on a 4-person team rebuilding checkout, two months from launch on a flat perf budget. T: I owned the mobile side and was worried a new client would blow our cold-start budget."</div>
+  <div class="revision-say">"Let me give you the result and the lesson: we launched on time and kept cold-start under target; what I'd do differently is bring the measurement to the disagreement within 24&ndash;48 hours instead of debating opinions."</div>
+  <div class="revision-say">"I considered three options &mdash; A, B, and C &mdash; and chose B because [reason tied to the constraint]. Here's specifically what I did next."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is STAR?</h3>
 <p>STAR is an acronym from competency-based interviewing — a hiring methodology popularized by HR research in the 1980s. The premise: past behavior is the best predictor of future behavior, so structured behavioral questions ("tell me about a time you...") force candidates to recall <em>specific</em> incidents rather than abstract opinions.</p>
 
@@ -89,12 +101,10 @@ window.PREP_SITE.registerTopic({
   <li>The whole story is <strong>2–3 minutes</strong>; you can stretch or compress on demand.</li>
   <li>You can <strong>map</strong> the same incident to multiple competencies (a single story may show ownership AND conflict resolution AND data-driven thinking).</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "competency lens"</h3>
 <p>Behavioral questions are diagnostic probes for specific competencies. The interviewer doesn't actually want to know about that one time you fixed a bug — they want to assess whether you have a trait. Recognize the lens behind the question:</p>
 <table>
@@ -170,12 +180,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>The "5 stories cover everything" insight</h3>
 <p>Most candidates think they need 30 stories. In practice, you need 5–8 well-crafted ones, each tagged with multiple competencies. A great <em>"led migration to GraphQL"</em> story can answer questions about ownership, technical decisions, conflict, and data-driven judgment.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>The full STAR-L template</h3>
 <pre><code class="language-text">[S — Situation, 15-30s]
 "At [company], I was on a team of [N people] building [system / product].
@@ -276,12 +284,10 @@ We agreed on the REST approach for checkout, with an explicit 'revisit GraphQL p
   <li>What did you learn?</li>
   <li>How did this change your approach?</li>
 </ol>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Disagreed with a senior engineer (good answer)</h3>
 <p><strong>Question:</strong> "Tell me about a time you disagreed with a more senior person."</p>
 <pre><code class="language-text">[S] "I was a mid-level mobile engineer; the staff engineer on my team proposed migrating our React Native bridge to use the new architecture all in one quarter."
@@ -382,12 +388,11 @@ I switched to (c). FastImage + a smarter prefetch strategy gave us bounded memor
   <li><em>"How do you balance speed vs quality?"</em> — emphasize that you didn't ship the first fix; you measured, found a regression, picked the better one.</li>
 </ul>
 <p>Same incident; different beats highlighted depending on the question.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>"My only big project was a team effort"</h3>
 <p>Almost everyone's work is collaborative. The interviewer knows. Your job is to <em>extract</em> your slice. "Of the six people, I owned the API design and the load-test setup." If your slice was small, you can still talk about how you contributed thinking, raised concerns, or unblocked others.</p>
 
@@ -466,12 +471,9 @@ I switched to (c). FastImage + a smarter prefetch strategy gave us bounded memor
 
 <h3>Cultural / language differences</h3>
 <p>Some cultures (esp. East Asian) emphasize "we" over "I" by default. US-style behavioral grading is "I"-heavy. Practice the swap explicitly. Don't apologize for cultural difference; just adjust the framing.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: 90 seconds of Situation</h3>
 <p>Setting up the company, the team, the architecture, the tooling, the prior project... and the interviewer is waiting for you to actually answer the question. Cap S at 30 seconds.</p>
 
@@ -531,12 +533,10 @@ I switched to (c). FastImage + a smarter prefetch strategy gave us bounded memor
 
 <h3>Anti-pattern 10: Refusing to be interrupted</h3>
 <p>The interviewer says "got it, let me ask you about—" and you keep talking through them. Stop. Listen. Their interruption is a signal about what they actually care about; don't override it.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>What's actually probed</th></tr></thead>
@@ -627,58 +627,44 @@ I switched to (c). FastImage + a smarter prefetch strategy gave us bounded memor
   <li>"I'd map stories onto Amazon's 16 LPs / Google's 'Googleyness' rubric / Meta's values explicitly to spot gaps."</li>
   <li>"I'd prepare 2 backup stories per major competency for late-loop loops where the obvious story has already been used."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">STAR turns a vague work memory into a gradeable story &mdash; keep <strong>S brief, T sharp, A long and specific in "I," and R quantified</strong> (add L for FAANG).</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>STAR = Situation, Task, Action, Result</strong> — a scaffold that turns a vague work memory into a crisp, gradeable answer. Add <strong>L (Learnings)</strong> for FAANG; STAR-L is the safe default and you're never penalized for the extra L.</li>
-    <li><strong>S — brief:</strong> 1&ndash;2 sentences of context (who/what/when, the stakes). Cap it at ~30 seconds; a 90-second setup is the #1 bug.</li>
-    <li><strong>T — sharp:</strong> one sentence on the slice <em>you</em> owned. This is where you separate "I" from "we"; don't merge it into S.</li>
-    <li><strong>A — long and specific:</strong> 60&ndash;70% of the answer. What <em>you</em> did, with decisions, rationale, and tradeoffs. This is what's being graded.</li>
-    <li><strong>R — quantified:</strong> 1&ndash;2 sentences with a real number (or a relative change like "halved") plus one line of reflection.</li>
-    <li>Spoken-time ratio for a 3-min answer: <strong>S+T ~30s, A ~110s, R+L ~40s</strong> (roughly 70/20/10). Target 2&ndash;3 min: under 90s is thin, over 4 min rambles.</li>
-    <li><strong>Speak in "I," not "we."</strong> Use "we" only for context; aim for ~5&times; more "I" than "we" in the Action section.</li>
-    <li><strong>Specific or it didn't happen:</strong> name the numbers, tools, roles, and decisions ("p95 from 1.4s to 800ms," not "made it faster").</li>
-    <li>Use <strong>judgment verbs</strong> &mdash; diagnosed, instrumented, drove, owned, negotiated, scoped &mdash; not weak ones like helped, worked on, was involved in.</li>
-    <li>Make Action a <strong>tree of decisions</strong>: state the options you considered and why you chose one. The "considered alternatives" beat lifts perceived seniority.</li>
-    <li>Answer the question's <strong>intent (the competency probed)</strong>, not just its words &mdash; and always volunteer a learning even if not asked.</li>
-    <li>Pick a <strong>real failure</strong>, not a humblebrag ("I worked too hard" fails). Own the bad call and tie the lesson to a habit change.</li>
-    <li>You need <strong>5&ndash;8 well-crafted stories</strong>, each tagged to multiple competencies &mdash; not 30. Treat STAR as a flexible scaffold, not a script; let the interviewer interrupt and steer.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">The #1 mistake is burning 90 seconds on Situation and then narrating the whole thing in "we" &mdash; so the interviewer never learns what <em>you</em> did. Fix: cap S+T at ~30 seconds, then spend 60&ndash;70% of the answer on your Actions in "I," built as a tree of decisions with the tradeoffs you weighed.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"S: At [company] I was on a 4-person team rebuilding checkout, two months from launch on a flat perf budget. T: I owned the mobile side and was worried a new client would blow our cold-start budget."</div>
-  <div class="revision-say">"Let me give you the result and the lesson: we launched on time and kept cold-start under target; what I'd do differently is bring the measurement to the disagreement within 24&ndash;48 hours instead of debating opinions."</div>
-  <div class="revision-say">"I considered three options &mdash; A, B, and C &mdash; and chose B because [reason tied to the constraint]. Here's specifically what I did next."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. How do you budget your time across Situation, Task, Action and Result?</div>
+  <div class="qa-answer">
+    <p>For a 3-minute answer, use roughly a 70/20/10 split: Situation + Task together take about 30 seconds (15&ndash;20%), the Action about 110 seconds (60&ndash;70%), and Result + Learning about 40 seconds. S is 1&ndash;2 sentences of who, what, when and the stakes; T is one sentence on the slice you owned. The most common bug is a 90-second setup, which leaves no time for the Action, the part actually being graded. Target 2&ndash;3 minutes overall (under 90s is thin, over 4 minutes rambles), and time yourself out loud at least three times per story, because the ratio is hard to feel without practice.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you tell a STAR story where S+T stays under ~30 seconds and the Action section is 60&ndash;70% of the answer?</li>
-    <li>Can you articulate the difference between "I" and "we" in your story, keeping actions in "I" and only context in "we"?</li>
-    <li>Can you tell a real-failure story (not a humblebrag) that owns a bad call and ties the lesson to a habit change?</li>
-    <li>Can you land a quantified Result &mdash; a real number or a relative change like "halved" &mdash; plus one line of reflection?</li>
-    <li>Can you make your Action a tree of decisions, naming the alternatives you considered and why you chose one?</li>
-    <li>Can you map one story to multiple competencies and have 3&ndash;5 follow-up answers ready for each?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. How do you handle "I" versus "we" in a STAR story?</div>
+  <div class="qa-answer">
+    <p>Every time you say "we", the interviewer wonders what <em>you</em> did. Use "we" only for context: setting the situation ("We were a team of 6 building..."), acknowledging the team ("We shipped..."). Use "I" for the decisions you made, the specific actions you took and the conversations you had ("I proposed...", "I drafted the design doc...", "I sat down with X and..."). If the initiative was a five-person effort, the story is about the slice you owned, which the Task sentence should state. Aim for about 5&times; more "I" than "we" in the Action section.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. How do you answer "Tell me about a failure"?</div>
+  <div class="qa-answer">
+    <p>Pick a real failure: a bad call, a missed signal, or a technical decision that aged poorly. Humblebrags like "I worked too hard" or "I cared too much about quality" are not failures, and interviewers see through them. Name the specific wrong decision, how you discovered it, its cost and how you recovered, then a lasting lesson tied to a habit or process change, ideally with evidence you've applied it. In the topic's flag-service example, the candidate underestimated a 6-week build, then added a "cost of ownership" section to every infra proposal and has since chosen "buy" on 2 of 4. Real failures paired with self-awareness score much higher than fake ones.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. What makes a strong Result section?</div>
+  <div class="qa-answer">
+    <p>One or two sentences with a quantified outcome, e.g. "p95 from 1.4s to 800ms", plus one sentence of reflection on what you'd do differently. "It went well", "the team was happy" and "the product launched" are all weak. If you can't share or don't remember exact figures, use a relative change ("roughly halved", "hundreds of milliseconds", "single-digit percent"), or say honestly that you don't recall the exact number. Never fabricate.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. How do you make the Action section show judgment rather than just reporting what happened?</div>
+  <div class="qa-answer">
+    <p>Tell it as a tree of decisions with a short justification at each node: "I had three options, A, B and C. I weighed criteria X, Y and Z. I chose A because [reason tied to the constraint]. To execute it I did 1, 2, 3. At week 4 I noticed [something unexpected] and pivoted to A' because [reason]." Be specific: "I picked the gradual migration over big-bang because we had 200k DAU on the old version", not "I picked option A". Most candidates skip the "considered alternatives" beat; adding it shows judgment rather than hindsight and lifts perceived seniority.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. How many stories do you need, and how do you prepare them for follow-ups?</div>
+  <div class="qa-answer">
+    <p>You need 5&ndash;8 well-crafted stories, not 30, each tagged with 3&ndash;4 competencies. One "led migration to GraphQL" story can answer questions on ownership, technical decisions, conflict and data-driven judgment; just don't force a story onto a competency it doesn't genuinely fit. Interviewers will probe, so prepare 3&ndash;5 follow-up answers per story: why you chose X over Y, what the alternatives were, how the team reacted, the hardest part, what you'd do differently, how you measured success, and what you learned. Practise mapping one story to three different prompts and answering each follow-up in under 60 seconds.</p>
+  </div>
+</div>
+` },
+
   ]
 });

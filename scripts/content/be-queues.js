@@ -1,32 +1,39 @@
 window.PREP_SITE.registerTopic({
-  id: 'be-queues',
-  module: 'backend',
-  title: 'Queues & Streaming',
-  estimatedReadTime: '50 min',
-  tags: ['queues', 'kafka', 'rabbitmq', 'sqs', 'redis-streams', 'pubsub', 'idempotency', 'dead-letter', 'event-driven'],
+  id: "be-queues",
+  module: "backend",
+  title: "Queues & Streaming",
+  estimatedReadTime: "50 min",
+  tags: ["queues","kafka","rabbitmq","sqs","redis-streams","pubsub","idempotency","dead-letter","event-driven"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Queues + streaming</strong> turn synchronous request/response into asynchronous work. They're how you decouple producers from consumers, smooth traffic spikes, retry transient failures, and build event-driven systems. The wrong primitive is the difference between "messages always delivered" and "lost a million orders during a deploy."</p>
-<ul>
-  <li><strong>Three families:</strong> message queues (RabbitMQ / SQS) — work distribution; streams (Kafka / Redis Streams) — durable event log with replay; pub/sub (Redis Pub/Sub / NATS) — fire-and-forget broadcast.</li>
-  <li><strong>Delivery semantics:</strong> at-most-once (fast, lossy), at-least-once (default, may dupe), exactly-once (rare, expensive). Most systems are at-least-once + idempotent consumers.</li>
-  <li><strong>Idempotent consumers</strong> are non-negotiable — design every handler to be safe to run twice.</li>
-  <li><strong>Dead-letter queue (DLQ)</strong> for poison messages — after N failures, move out of main queue, alert.</li>
-  <li><strong>Backpressure:</strong> bounded queue size; reject / spill / shed when full. Unbounded queues are how systems collapse.</li>
-  <li><strong>Ordering:</strong> partition by key (Kafka) or single-consumer (RabbitMQ) for per-key ordered delivery.</li>
-  <li><strong>Use a queue when:</strong> work is async-tolerable, retry-friendly, throughput-decoupled. Don't queue user-facing reads.</li>
-</ul>
-<p><strong>Mantra:</strong> "Idempotent consumers. Dead-letter for poison. Bounded queues for backpressure. Partition by key for order. At-least-once + dedupe is the pragmatic default."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Queues turn <strong>synchronous request/response into asynchronous work</strong> — decoupling producers from consumers, smoothing spikes, retrying transient failures, and enabling event-driven systems.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three families:</strong> message queues (RabbitMQ/SQS) — work distribution; streams (Kafka/Redis Streams) — durable append-only log with replay; pub/sub (Redis Pub/Sub / NATS) — fire-and-forget broadcast.</li>
+    <li><strong>Delivery semantics:</strong> at-most-once (fast, lossy), at-least-once (default, may duplicate), exactly-once (rare, expensive). Most systems are <strong>at-least-once + idempotent consumers</strong>.</li>
+    <li><strong>Idempotent consumers are non-negotiable</strong> — put an idempotency key on every message and design every handler to be safe to run twice.</li>
+    <li><strong>Dead-letter queue (DLQ)</strong> for poison messages — after N failures, move the message out of the main queue and alert, so one bad message doesn't block everything.</li>
+    <li><strong>Backpressure via bounded queues</strong> — reject / spill / shed when full; unbounded queues are how systems OOM and collapse.</li>
+    <li><strong>Ordering:</strong> partition by key (Kafka) or single-consumer (RabbitMQ) for per-key ordered delivery.</li>
+    <li><strong>Outbox pattern</strong> for DB + queue atomicity: write business data and an outbox row in one transaction; a relay publishes it — every committed write produces a message.</li>
+    <li><strong>Visibility timeout / lease</strong> so a crashed consumer's message gets retried; track <strong>queue depth, consumer lag, processing time, error rate</strong>.</li>
+    <li>Use a queue when work is <strong>async-tolerable, retry-friendly, and throughput-decoupled</strong>; version your message <strong>schema</strong> (Avro/Protobuf/JSON Schema) for backwards-compat. <strong>Don't queue user-facing reads.</strong></li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The three failure modes that lose data or wedge the system: <strong>no idempotency</strong> (an at-least-once retry double-charges the customer), <strong>unbounded queues</strong> (a producer outpaces the consumer, the queue grows, and the system OOMs), and <strong>no DLQ</strong> (a single poison message blocks the whole queue so nothing gets processed). Also lost ordering: a comment-on-deleted-post arriving before the delete.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"My pragmatic default is at-least-once delivery with idempotent consumers — I assume every message can arrive twice and design the handler to be safe."</div>
+  <div class="revision-say">"Every queue gets a DLQ for poison messages and a bounded size for backpressure — an unbounded queue is just a deferred OOM."</div>
+  <div class="revision-say">"When ordering matters I partition by key so all events for one entity land on one consumer in order, and I don't put user-facing reads behind a queue."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The three queueing primitives</h3>
 <table>
   <thead><tr><th>Primitive</th><th>Shape</th><th>Use for</th></tr></thead>
@@ -98,12 +105,10 @@ window.PREP_SITE.registerTopic({
   <li>Schema-less JSON; producer changes shape; consumers break silently.</li>
   <li>No metrics; consumer fell behind 6 hours ago; you find out from users.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Delivery semantics</h3>
 <table>
   <thead><tr><th>Guarantee</th><th>Means</th><th>How achieved</th></tr></thead>
@@ -254,12 +259,10 @@ SELECT * FROM outbox ORDER BY created_at LIMIT 100 FOR UPDATE SKIP LOCKED;
     <tr><td>Throughput</td><td>Messages/sec produced + consumed</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>BullMQ — Redis-backed job queue</h3>
 <pre><code class="language-typescript">import { Queue, Worker, QueueEvents } from 'bullmq';
 import IORedis from 'ioredis';
@@ -576,12 +579,10 @@ CREATE INDEX ON scheduled_jobs (run_at);
 SELECT * FROM scheduled_jobs WHERE run_at &lt;= NOW() FOR UPDATE SKIP LOCKED LIMIT 100;
 // Process; delete.
 </code></pre>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Decouple email-send from signup</h3>
 <pre><code class="language-typescript">// Without queue: signup waits for email send (slow + brittle)
 async function signup(req, res) {
@@ -781,12 +782,11 @@ worker.on('failed', (job, err) =&gt; {
 </code></pre>
 
 <p>Schema registry rejects v2 if it breaks compat (e.g., removing a required field). Old consumers see "USD" default; new consumers read currency.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Visibility timeout misconfigured</h3>
 <ul>
   <li>Too short: consumer takes 60s; visibility = 30s; broker re-delivers; duplicate processing.</li>
@@ -895,12 +895,9 @@ worker.on('failed', (job, err) =&gt; {
   <li>Push notification triggers from queue events: SNS → SQS → push service.</li>
   <li>Background processing on mobile (in-app queues for offline mutations) — same patterns: idempotency keys, retry with backoff, dead-letter UX (show user "couldn't send; tap to retry").</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common queue mistakes</h3>
 <ol>
   <li><strong>Non-idempotent consumers.</strong> At-least-once + bad code = duplicates.</li>
@@ -1063,12 +1060,10 @@ await db.transaction(async (tx) =&gt; {
 
 <h3>Anti-pattern: DLQ as graveyard</h3>
 <p>Messages land in DLQ; nobody looks; orders silently fail. Always alert on DLQ growth; weekly review + replay or close.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common queue / streaming interview prompts</h3>
 <ol>
   <li>Compare RabbitMQ / Kafka / SQS / Redis Streams.</li>
@@ -1197,53 +1192,44 @@ await db.transaction(async (tx) =&gt; {
   <li>"Build a webhook delivery system end-to-end with retries + DLQ + dashboard."</li>
   <li>"Audit a real codebase's queue usage; find missing idempotency / DLQs."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Queues turn <strong>synchronous request/response into asynchronous work</strong> — decoupling producers from consumers, smoothing spikes, retrying transient failures, and enabling event-driven systems.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Three families:</strong> message queues (RabbitMQ/SQS) — work distribution; streams (Kafka/Redis Streams) — durable append-only log with replay; pub/sub (Redis Pub/Sub / NATS) — fire-and-forget broadcast.</li>
-    <li><strong>Delivery semantics:</strong> at-most-once (fast, lossy), at-least-once (default, may duplicate), exactly-once (rare, expensive). Most systems are <strong>at-least-once + idempotent consumers</strong>.</li>
-    <li><strong>Idempotent consumers are non-negotiable</strong> — put an idempotency key on every message and design every handler to be safe to run twice.</li>
-    <li><strong>Dead-letter queue (DLQ)</strong> for poison messages — after N failures, move the message out of the main queue and alert, so one bad message doesn't block everything.</li>
-    <li><strong>Backpressure via bounded queues</strong> — reject / spill / shed when full; unbounded queues are how systems OOM and collapse.</li>
-    <li><strong>Ordering:</strong> partition by key (Kafka) or single-consumer (RabbitMQ) for per-key ordered delivery.</li>
-    <li><strong>Visibility timeout / lease</strong> so a crashed consumer's message gets retried; track <strong>queue depth, consumer lag, processing time, error rate</strong>.</li>
-    <li>Use a queue when work is <strong>async-tolerable, retry-friendly, and throughput-decoupled</strong>; version your message <strong>schema</strong> (Avro/Protobuf/JSON Schema) for backwards-compat. <strong>Don't queue user-facing reads.</strong></li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">The three failure modes that lose data or wedge the system: <strong>no idempotency</strong> (an at-least-once retry double-charges the customer), <strong>unbounded queues</strong> (a producer outpaces the consumer, the queue grows, and the system OOMs), and <strong>no DLQ</strong> (a single poison message blocks the whole queue so nothing gets processed). Also lost ordering: a comment-on-deleted-post arriving before the delete.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"My pragmatic default is at-least-once delivery with idempotent consumers — I assume every message can arrive twice and design the handler to be safe."</div>
-  <div class="revision-say">"Every queue gets a DLQ for poison messages and a bounded size for backpressure — an unbounded queue is just a deferred OOM."</div>
-  <div class="revision-say">"When ordering matters I partition by key so all events for one entity land on one consumer in order, and I don't put user-facing reads behind a queue."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. What are the three families of queueing primitives, and when does each fit?</div>
+  <div class="qa-answer">
+    <p>A <strong>message queue</strong> (RabbitMQ, SQS) is FIFO-ish with one consumer per message and an ack on success — for work distribution like sending email, resizing images or charging cards. A <strong>stream / log</strong> (Kafka, Redis Streams) is a durable append-only log that multiple consumers read independently and can replay from an offset — for event sourcing, analytics and fan-out to many subscribers. <strong>Pub/sub</strong> without persistence (Redis Pub/Sub, NATS) is fire-and-forget broadcast to whoever is subscribed right now — for cache invalidation, presence and ephemeral fan-out, where losing a message is acceptable.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you distinguish the three families — message queue, stream/log, pub/sub — and when each fits?</li>
-    <li>Can you explain the three delivery semantics and why at-least-once + idempotent is the pragmatic default?</li>
-    <li>Can you explain what makes a consumer idempotent and how an idempotency key is used?</li>
-    <li>Can you explain what a DLQ is for and what happens to a poison message without one?</li>
-    <li>Can you explain backpressure and why unbounded queues collapse a system?</li>
-    <li>Can you explain how to preserve per-key ordering, and when <em>not</em> to use a queue?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. What are the three delivery semantics, and why is at-least-once plus idempotency the pragmatic default?</div>
+  <div class="qa-answer">
+    <p><strong>At-most-once</strong> delivers 0 or 1 times (fire-and-forget, no ack) — fast but lossy. <strong>At-least-once</strong> delivers one or more times (ack-based with retries) — no loss, but duplicates are possible; it's the default for most systems. <strong>Exactly-once</strong> is rare and expensive: even Kafka's exactly-once holds only within Kafka and can't guarantee that downstream side effects like DB writes or API calls happen once. So in practice "exactly-once" means at-least-once delivery plus an idempotent consumer — you accept duplicates and make them harmless.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. What makes a consumer idempotent, and how is an idempotency key used?</div>
+  <div class="qa-answer">
+    <p>An idempotent consumer produces the same result whether a message is processed once or several times. With an <strong>idempotency key</strong>, each message carries a unique id; the consumer checks a processed-messages table, skips if the id is already there, and otherwise does the work and inserts the id <strong>in the same DB transaction</strong>, so a crash can't leave the work done but unrecorded. Two other flavours: natural idempotency (<code>SET status = 'paid'</code> is idempotent, incrementing a counter isn't) and conditional updates (<code>UPDATE … WHERE status != 'paid'</code> no-ops on replay). For external calls, pass the key through — Stripe's charge creation accepts one — so a retry can't double-charge.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. What is a dead-letter queue for, and what happens to a poison message without one?</div>
+  <div class="qa-answer">
+    <p>A poison message is one that fails every time (bad payload, a bug). Without a DLQ it is redelivered forever and can block the queue so nothing else gets processed. With a DLQ, after N failed attempts (for example SQS <code>maxReceiveCount</code>) the broker moves it to a separate queue such as <code>order-created-dlq</code>, the main queue keeps flowing, and ops get an alert. You investigate, fix the bug or filter the message, then replay it from the DLQ back to the main queue. Track the DLQ rate as an error metric.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. What is backpressure, and why do unbounded queues collapse a system?</div>
+  <div class="qa-answer">
+    <p>Backpressure is how a system pushes back when consumers can't keep up. With an unbounded queue, a producer that outpaces the consumer just keeps adding: the queue grows until memory runs out, the process OOMs and the whole system dies — the problem is only deferred. Bounded queues force a choice: <strong>reject</strong> when full (the producer gets an error and retries with backoff), <strong>block</strong> the producer (risk of deadlock if the producer is also a consumer), <strong>drop the oldest</strong> (fine for best-effort logs and metrics), or <strong>spill</strong> to disk or a cheaper tier to process later. Watch queue depth and consumer lag — a rising trend means consumers are too slow.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. How do you preserve per-key ordering, and when should you not use a queue at all?</div>
+  <div class="qa-answer">
+    <p>Partition by key: hash the key (say <code>user_id</code>) to a partition and have one consumer per partition, so order is preserved per key while different keys run in parallel — Kafka partitions, SQS FIFO with <code>MessageGroupId</code>, or a RabbitMQ consistent-hash exchange. A single-consumer FIFO queue gives strict global order but limits throughput to one consumer; with no ordering, consumers must handle out-of-order messages. Don't use a queue for a user-facing read that needs an immediate response, when synchronous request/response is enough, for a sub-second job you can just await, or for permanent failures like 4xx, which should fail fast at request time.</p>
+  </div>
+</div>
+` },
+
   ]
 });

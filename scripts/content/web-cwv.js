@@ -1,33 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'web-cwv',
-  module: 'web',
-  title: 'Core Web Vitals',
-  estimatedReadTime: '40 min',
-  tags: ['core-web-vitals', 'cwv', 'lcp', 'inp', 'cls', 'fcp', 'ttfb', 'web-vitals', 'performance'],
+  id: "web-cwv",
+  module: "web",
+  title: "Core Web Vitals",
+  estimatedReadTime: "40 min",
+  tags: ["core-web-vitals","cwv","lcp","inp","cls","fcp","ttfb","web-vitals","performance"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Core Web Vitals (CWV)</strong> are Google's standardized metrics for user-perceived web performance. They power Search ranking signals and are the closest thing to an industry-wide rubric for "how fast and stable does this page feel?" The current trio: <strong>LCP</strong> (loading), <strong>INP</strong> (interactivity, replaced FID in March 2024), <strong>CLS</strong> (visual stability).</p>
-<ul>
-  <li><strong>LCP — Largest Contentful Paint:</strong> time from navigation to the largest element painted above-the-fold. Target: <strong>≤ 2.5s</strong>.</li>
-  <li><strong>INP — Interaction to Next Paint:</strong> the worst-case latency from user input to next paint, measured across the page lifetime. Target: <strong>≤ 200ms</strong>.</li>
-  <li><strong>CLS — Cumulative Layout Shift:</strong> sum of unexpected layout shift scores throughout the page lifetime. Target: <strong>≤ 0.1</strong>.</li>
-  <li><strong>Other vitals:</strong> FCP, TTFB, TTI, TBT — supporting metrics, not Core but tracked.</li>
-  <li><strong>Why they matter:</strong> Google Search ranks them; user behavior correlates strongly (slow pages = bounce); business metrics (conversion, revenue) follow.</li>
-  <li><strong>Two data sources:</strong> <em>Lab</em> (Lighthouse, simulated) and <em>Field</em> (real users via CrUX or web-vitals lib). Field is what counts for ranking.</li>
-  <li><strong>Common wins:</strong> preload LCP image; defer non-critical JS; reserve image dimensions; debounce expensive handlers; replace blocking requests with async.</li>
-  <li><strong>Mobile reality:</strong> Mobile network + CPU is the bottleneck. Always optimize for the median Android user.</li>
-</ul>
-<p><strong>Mantra:</strong> "LCP for loading, INP for responsiveness, CLS for stability. Measure with web-vitals lib in the field. Real users on real devices."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Three Core Web Vitals — LCP (loading ≤ 2.5s), INP (interactivity ≤ 200ms), CLS (stability ≤ 0.1) — graded at the 75th percentile of real Chrome users, not your dev machine.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>LCP — Largest Contentful Paint:</strong> time to the largest above-the-fold element painting. Target ≤ 2.5s. Biggest win is usually preloading the LCP image with <code>fetchpriority="high"</code> and never lazy-loading it.</li>
+    <li><strong>INP — Interaction to Next Paint:</strong> the <em>worst-case</em> input-to-paint latency across the whole page life (it replaced FID in March 2024, which only measured the first interaction). Target ≤ 200ms. Fix by breaking up long tasks, debouncing handlers, and offloading heavy compute to a Web Worker.</li>
+    <li><strong>CLS — Cumulative Layout Shift:</strong> a unitless sum of unexpected shifts (impact × distance fraction) over the page life. Target ≤ 0.1. Fix by setting image dimensions / <code>aspect-ratio</code>, reserving space for ads and iframes, and using <code>font-display: optional</code>.</li>
+    <li><strong>Lab vs field are different data:</strong> lab (Lighthouse, simulated) catches regressions in CI; <strong>field (CrUX, the web-vitals library) is what Google actually ranks on</strong>.</li>
+    <li><strong>Ranking uses the p75 across real Chrome users</strong> — if 25% have a bad experience your CWV is poor even when the median is green; optimize the slow tail.</li>
+    <li>Measure in production with the <code>web-vitals</code> library and its <code>/attribution</code> build to pinpoint which element or task caused the score; report via <code>navigator.sendBeacon</code>.</li>
+    <li><strong>Why they matter:</strong> they are Google Search ranking signals, slow pages correlate with bounce, and conversion and revenue follow.</li>
+    <li>Supporting metrics (not Core): FCP, TTFB, TTI, TBT. If TTFB &gt; 800ms, no front-end tweak fixes LCP — fix the server / CDN first.</li>
+    <li>Match the fix to the metric's sub-parts: LCP = TTFB + load delay + load time + render delay; INP = input delay + processing + presentation; a good FCP with a poor LCP means you painted a placeholder fast but the real content slow.</li>
+    <li>Test on the median throttled Android device — CrUX is Chrome-only, so iOS Safari users never appear in your ranking signal.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Lazy-loading the LCP (hero) image with <code>loading="lazy"</code></strong> — it delays the very element the metric measures, tanking LCP. Fix: load it eagerly with <code>fetchpriority="high"</code> and a <code>&lt;link rel="preload" as="image"&gt;</code>. Sibling traps: putting the hero in a CSS <code>background-image</code> (discovered late, can't be prioritized easily), and optimizing only the Lighthouse lab score while field p75 stays poor.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"LCP for loading, INP for responsiveness, CLS for stability — and Google grades them at the 75th percentile of real Chrome users, so I optimize the slow tail, not the median."</div>
+  <div class="revision-say">"Lab data catches regressions before deploy, but field data from the web-vitals library is what counts for ranking — I ship both, with the attribution build to find the actual cause."</div>
+  <div class="revision-say">"INP replaced FID because FID only measured the first interaction; INP catches the worst one across the whole page life, which is far closer to what users actually feel."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The history of Core Web Vitals</h3>
 <table>
   <thead><tr><th>Year</th><th>Event</th></tr></thead>
@@ -97,12 +104,10 @@ window.PREP_SITE.registerTopic({
   <li>You test on the median Android user, not your dev MacBook.</li>
   <li>You distinguish "load" performance (LCP, FCP, TTFB) from "post-load" (INP, CLS).</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>LCP — Largest Contentful Paint</h3>
 <p>Time from navigation to the moment the largest visible content element above the fold paints. Eligible elements:</p>
 <ul>
@@ -211,12 +216,10 @@ onCLS(send);
 
 <h3>Mobile vs desktop</h3>
 <p>Google ranks mobile separately from desktop. Mobile thresholds are the same numbers, but achieving them on a 4G connection + median Android phone is harder. Test there.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Optimizing LCP</h3>
 
 <h4>1. Preload the LCP resource</h4>
@@ -431,12 +434,10 @@ new PerformanceObserver((list) =&gt; {
   }
 }).observe({ type: 'layout-shift', buffered: true });
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Fix LCP via preload</h3>
 <pre><code class="language-html">&lt;!-- Before — LCP ~ 4.2s --&gt;
 &lt;link rel="stylesheet" href="/main.css" /&gt;
@@ -619,12 +620,11 @@ body {
   }
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>SPA navigations and CWV</h3>
 <p>SPA navigations don't trigger a new page load; LCP / FCP / TTFB are not re-measured. INP / CLS continue accumulating. For SPA, treat navigations as their own metric (e.g., custom "soft navigation" tracking).</p>
 
@@ -695,12 +695,9 @@ onLCP((metric) =&gt; {
 
 <h3>Visibility changes</h3>
 <p>If the user backgrounds the tab and returns, INP and CLS continue accumulating. Some pages "snapshot" CWV on visibility change; web-vitals library handles this.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Lazy-loading the LCP image</h3>
 <pre><code class="language-html">&lt;!-- BAD — defers LCP --&gt;
 &lt;img src="/hero.webp" loading="lazy" /&gt;
@@ -772,12 +769,10 @@ onLCP((metric) =&gt; {
 
 <h3>Anti-pattern 10: Not regressing-test new features</h3>
 <p>A new feature that adds 200KB JS may not break Lighthouse but can tank field LCP. Track CWV per feature flag rollout.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -868,51 +863,26 @@ onLCP((metric) =&gt; {
   <li>"I'd add bfcache eligibility checks to our deployment pipeline."</li>
   <li>"I'd partner with backend on TTFB targets — under 800ms is the entry-level requirement."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Three Core Web Vitals — LCP (loading ≤ 2.5s), INP (interactivity ≤ 200ms), CLS (stability ≤ 0.1) — graded at the 75th percentile of real Chrome users, not your dev machine.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>LCP — Largest Contentful Paint:</strong> time to the largest above-the-fold element painting. Target ≤ 2.5s. Biggest win is usually preloading the LCP image with <code>fetchpriority="high"</code> and never lazy-loading it.</li>
-    <li><strong>INP — Interaction to Next Paint:</strong> the <em>worst-case</em> input-to-paint latency across the whole page life (it replaced FID in March 2024, which only measured the first interaction). Target ≤ 200ms. Fix by breaking up long tasks, debouncing handlers, and offloading heavy compute to a Web Worker.</li>
-    <li><strong>CLS — Cumulative Layout Shift:</strong> a unitless sum of unexpected shifts (impact × distance fraction) over the page life. Target ≤ 0.1. Fix by setting image dimensions / <code>aspect-ratio</code>, reserving space for ads and iframes, and using <code>font-display: optional</code>.</li>
-    <li><strong>Lab vs field are different data:</strong> lab (Lighthouse, simulated) catches regressions in CI; <strong>field (CrUX, the web-vitals library) is what Google actually ranks on</strong>.</li>
-    <li><strong>Ranking uses the p75 across real Chrome users</strong> — if 25% have a bad experience your CWV is poor even when the median is green; optimize the slow tail.</li>
-    <li>Measure in production with the <code>web-vitals</code> library and its <code>/attribution</code> build to pinpoint which element or task caused the score; report via <code>navigator.sendBeacon</code>.</li>
-    <li>Supporting metrics (not Core): FCP, TTFB, TTI, TBT. If TTFB &gt; 800ms, no front-end tweak fixes LCP — fix the server / CDN first.</li>
-    <li>Match the fix to the metric's sub-parts: LCP = TTFB + load delay + load time + render delay; INP = input delay + processing + presentation; a good FCP with a poor LCP means you painted a placeholder fast but the real content slow.</li>
-    <li>Test on the median throttled Android device — CrUX is Chrome-only, so iOS Safari users never appear in your ranking signal.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Lazy-loading the LCP (hero) image with <code>loading="lazy"</code></strong> — it delays the very element the metric measures, tanking LCP. Fix: load it eagerly with <code>fetchpriority="high"</code> and a <code>&lt;link rel="preload" as="image"&gt;</code>. Sibling traps: putting the hero in a CSS <code>background-image</code> (discovered late, can't be prioritized easily), and optimizing only the Lighthouse lab score while field p75 stays poor.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"LCP for loading, INP for responsiveness, CLS for stability — and Google grades them at the 75th percentile of real Chrome users, so I optimize the slow tail, not the median."</div>
-  <div class="revision-say">"Lab data catches regressions before deploy, but field data from the web-vitals library is what counts for ranking — I ship both, with the attribution build to find the actual cause."</div>
-  <div class="revision-say">"INP replaced FID because FID only measured the first interaction; INP catches the worst one across the whole page life, which is far closer to what users actually feel."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the three Core Web Vitals, their p75 "good" thresholds, and what each measures?</li>
-    <li>Can you explain why INP replaced FID?</li>
-    <li>Can you name the single highest-impact fix for LCP, for INP, and for CLS?</li>
-    <li>Can you distinguish field/RUM data from lab data and say when each one misleads?</li>
-    <li>Can you explain why you test on a median Android device, not your dev laptop?</li>
-    <li>Can you separate load metrics (LCP, FCP, TTFB) from post-load metrics (INP, CLS)?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. How do field (RUM) data and lab data differ, and when does each mislead?</div>
+  <div class="qa-answer">
+    <p>Lab data (Lighthouse) is reproducible and catches regressions in CI, but it is one simulated cohort, by default a Moto G4 on simulated 4G, while real users range from iPhone 15 on 5G to budget Android on 3G; optimising only the Lighthouse score can leave field p75 poor. Lab TBT is also only a load-time proxy, while INP is measured per interaction across the page life. Field data (CrUX, the <code>web-vitals</code> library) is what Google ranks on, but it has blind spots: CrUX is Chrome-only, so iOS Safari users never appear, and bfcache navigations with near-zero LCP and TTFB can flatter aggregate scores. Ship both, with the attribution build to find the cause.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q2. Why test performance on a median Android device rather than your dev laptop?</div>
+  <div class="qa-answer">
+    <p>Mobile network and CPU are the bottleneck, and Google ranks mobile separately from desktop with the same thresholds, which are much harder to hit on a 4G connection and a median Android phone. Ranking uses the p75 across real Chrome users, so the slow tail decides your score, and a fast dev MacBook hides it. Test on a real low-end, throttled Android device so you see what that 25% experiences.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Which metrics measure load performance and which measure post-load experience?</div>
+  <div class="qa-answer">
+    <p>Load metrics: TTFB (server response, good at 800ms or less), FCP (first text or image painted, good at 1.8s or less) and LCP (largest above-the-fold element, good at 2.5s or less); LCP decomposes into TTFB + resource load delay + load time + render delay. Post-load metrics cover the whole page lifetime: INP (worst input-to-next-paint latency, 200ms or less) and CLS (sum of unexpected shifts, 0.1 or less, e.g. a newsletter banner popping in after interaction). Keeping them separate points to the right fix: server, CDN and preloading for load; long tasks, handlers and reserved space for post-load. A good FCP with a poor LCP means a placeholder painted fast but the real content was slow.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

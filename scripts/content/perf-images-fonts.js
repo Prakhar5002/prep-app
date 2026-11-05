@@ -1,37 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'perf-images-fonts',
-  module: 'Frontend Performance',
-  title: 'Images & Fonts',
-  estimatedReadTime: '28 min',
-  tags: ['performance', 'images', 'fonts', 'webp', 'avif', 'srcset', 'lazy-loading', 'font-display', 'subsetting'],
+  id: "perf-images-fonts",
+  module: "Frontend Performance",
+  title: "Images & Fonts",
+  estimatedReadTime: "28 min",
+  tags: ["performance","images","fonts","webp","avif","srcset","lazy-loading","font-display","subsetting"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Images and fonts dominate the bytes a page loads — easily 70-90% on a typical site. Optimizing them is the single highest-leverage perf work after server response time.</p>
-<ul>
-  <li><strong>Image formats</strong>: AVIF (best compression) → WebP (broad support) → JPEG (universal). Use <code>&lt;picture&gt;</code> with type fallbacks, or a CDN with content negotiation.</li>
-  <li><strong>Responsive images</strong>: <code>srcset</code> + <code>sizes</code> serve the right resolution per viewport. Don't ship desktop pixels to mobile.</li>
-  <li><strong>Lazy loading</strong>: <code>loading="lazy"</code> for below-the-fold; <code>fetchpriority="high"</code> for the LCP image.</li>
-  <li><strong>Dimensions</strong>: always specify <code>width</code>/<code>height</code> (or <code>aspect-ratio</code>) — prevents CLS.</li>
-  <li><strong>Decoding</strong>: <code>decoding="async"</code> to avoid blocking main thread on first render.</li>
-  <li><strong>Placeholders</strong>: blurhash / thumbhash / LQIP for instant feedback while the real image loads.</li>
-  <li><strong>Font formats</strong>: WOFF2 only — best compression and broad support.</li>
-  <li><strong>Font display</strong>: <code>font-display: swap</code> (FOUT) or <code>optional</code> (no swap, instant fallback).</li>
-  <li><strong>Font preloading</strong>: <code>&lt;link rel="preload" as="font" crossorigin&gt;</code> to start fetching early.</li>
-  <li><strong>Font subsetting</strong>: ship only the characters you need (Latin-1 + ext for English; subset CJK aggressively).</li>
-  <li><strong>Variable fonts</strong>: one file for many weights/widths — saves bytes vs separate files.</li>
-  <li><strong>Self-host</strong>: avoid third-party DNS / TLS overhead on critical fonts.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>For images: serve the right format, the right size, at the right priority — <code>&lt;picture&gt;</code> + <code>srcset</code> + <code>fetchpriority</code> + <code>loading</code>. For fonts: WOFF2, subsetted, preloaded, with <code>font-display: swap</code>. Most CWV wins live here.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Serve the right format, the right size, at the right priority</strong> — for images that's <code>&lt;picture&gt;</code> + <code>srcset</code> + <code>fetchpriority</code> + <code>loading</code>; for fonts it's WOFF2, subsetted, preloaded, with <code>font-display: swap</code>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Images + fonts are 70-90% of page bytes</strong> — the highest-leverage perf work after server response time.</li>
+    <li><strong>Format pyramid:</strong> AVIF (smallest) → WebP (broad support) → JPEG/PNG (universal). Use <code>&lt;picture&gt;</code> with <code>type</code> fallbacks (or a CDN with content negotiation) so the browser picks the first it supports.</li>
+    <li><strong>Responsive images:</strong> <code>srcset</code> (candidate widths) + <code>sizes</code> (display slot) let the browser pick the smallest sharp variant per viewport × DPR — don't ship desktop pixels to mobile.</li>
+    <li><strong>Always specify dimensions</strong> (<code>width</code>/<code>height</code> or <code>aspect-ratio</code>) — an image with no intrinsic size reflows the page when it loads (CLS).</li>
+    <li><strong>Priority splits by position:</strong> the LCP hero is eager (default) + <code>fetchpriority="high"</code> + preloaded; below-the-fold is <code>loading="lazy"</code> + <code>fetchpriority="low"</code>; add <code>decoding="async"</code> to avoid blocking on decode.</li>
+    <li>Placeholders (LQIP / blurhash / thumbhash) give instant feedback and reserve space while the real image loads.</li>
+    <li><strong>Fonts:</strong> WOFF2 only; the naive Google-Font-via-CDN path costs DNS + TLS + CSS + font download (200-800ms) before text renders right, causing FOUT or FOIT.</li>
+    <li><strong><code>font-display</code>:</strong> <code>swap</code> = fallback then swap (accept FOUT, the default choice); <code>optional</code> = fallback for the session if not loaded fast (best LCP, no swap reflow); avoid <code>block</code>/<code>auto</code>.</li>
+    <li><strong>Preload critical fonts</strong> with <code>&lt;link rel="preload" as="font" crossorigin&gt;</code> — <code>crossorigin</code> is required even same-origin (fonts use anonymous CORS).</li>
+    <li><strong>Subset</strong> (Latin-1 + ext for English) turns a ~400-800KB file into ~50-80KB; <strong>variable fonts</strong> serve many weights from one file; <strong>self-host</strong> to skip third-party connection overhead; match fallback metrics (<code>size-adjust</code>, <code>ascent-override</code>) to minimize swap CLS.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Lazy-loading the LCP hero image.</strong> "Lazy-load everything" feels right, but <code>loading="lazy"</code> on the above-the-fold hero defers its fetch and directly hurts LCP. <code>loading="lazy"</code> is for below-the-fold only — the hero should be eager (default) and explicitly marked <code>fetchpriority="high"</code>, ideally preloaded. Companion trap: shipping AVIF without a <code>&lt;picture&gt;</code> WebP/JPEG fallback (broken image on older Safari), and preloading a font without <code>crossorigin</code> (double-fetched, preload ignored).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"For images: <code>&lt;picture&gt;</code> with AVIF/WebP/JPEG, <code>srcset</code> + <code>sizes</code> for responsive sizing, dimensions to prevent CLS, and <code>fetchpriority=&quot;high&quot;</code> + preload on the LCP hero — lazy only below the fold."</div>
+  <div class="revision-say">"For fonts: self-host WOFF2, subset to the characters I use, preload with crossorigin, and <code>font-display: swap</code> — or <code>optional</code> when the font is dominating LCP."</div>
+  <div class="revision-say">"To kill swap-induced CLS I match fallback metrics with size-adjust and ascent-override, and I reach for variable or system fonts to cut bytes."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why images dominate page weight</h3>
 <p>The HTTP Archive's State of the Web reports image bytes as 50-70% of total page weight median across the top 1M sites. A hero image at full desktop resolution served unmodified to a 4G mobile user can single-handedly blow your LCP budget. Optimization plays:</p>
 <ul>
@@ -76,10 +79,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why subsetting matters</h3>
 <p>A full Inter font file (all weights + styles + scripts) is ~400-800KB. Most apps need Latin only. Subsetted to Latin-1 + Latin Extended → ~50-80KB. CJK fonts can be 3-10MB unsubsetted; meaningful subsetting requires per-page character analysis.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "image budget" picture</h3>
 <div class="diagram">
 <pre>
@@ -161,10 +164,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"Lazy load everything." Lazy-loading the LCP image hurts. <code>loading="lazy"</code> is for below-the-fold only. Above-the-fold should be eager (default), and the LCP candidate explicitly marked <code>fetchpriority="high"</code>.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Picture element with format fallbacks</h3>
 <pre><code class="language-html">&lt;picture&gt;
   &lt;source type="image/avif" srcset="/hero.avif" /&gt;
@@ -294,10 +297,10 @@ document.fonts.add(f);</code></pre>
 <pre><code class="language-css">font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
   Roboto, 'Helvetica Neue', Arial, sans-serif;
 /* No download. Always available. Modern OS fonts are excellent. */</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — full hero pattern</h3>
 <pre><code class="language-html">&lt;link rel="preload" as="image" href="/hero.avif" type="image/avif" fetchpriority="high" /&gt;
 
@@ -483,10 +486,11 @@ import HeroWebp from '/hero.jpg?format=webp&amp;w=800;1600&amp;as=srcset';
   &lt;source srcSet={HeroWebp} type="image/webp" /&gt;
   &lt;img src="/hero.jpg" /&gt;
 &lt;/picture&gt;</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. AVIF support gaps</h3>
 <p>AVIF has good but not universal support. Older Safari (≤16.0) and old Chrome on Linux have gaps. Always include WebP and JPEG fallbacks via <code>&lt;picture&gt;</code>.</p>
 
@@ -550,10 +554,9 @@ import HeroWebp from '/hero.jpg?format=webp&amp;w=800;1600&amp;as=srcset';
 
 <h3>20. Animated GIFs</h3>
 <p>Inefficient. Convert to MP4 / WebM / animated WebP. <code>&lt;video autoplay loop muted playsinline&gt;</code> with MP4 is typically 5-20× smaller than the GIF, plus better controls.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — lazy-loading the LCP</h3>
 <p><code>loading="lazy"</code> on the hero defers fetch → LCP suffers. Eager + <code>fetchpriority="high"</code> on the hero only.</p>
 
@@ -599,10 +602,10 @@ import HeroWebp from '/hero.jpg?format=webp&amp;w=800;1600&amp;as=srcset';
 
 <h3>Anti-pattern 15 — inline SVG everywhere</h3>
 <p>Bloats HTML with the same icon paths repeated. Use a sprite or <code>&lt;use xlink:href&gt;</code>.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How do you optimize images on the web?</div>
   <div class="qa-answer">
@@ -792,47 +795,35 @@ npx glyphhanger --whitelist=US_ASCII,latin,latin-ext --formats=woff2 fonts/Inter
     <li>You consider variable fonts and system fonts as alternatives.</li>
   </ul>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Serve the right format, the right size, at the right priority</strong> — for images that's <code>&lt;picture&gt;</code> + <code>srcset</code> + <code>fetchpriority</code> + <code>loading</code>; for fonts it's WOFF2, subsetted, preloaded, with <code>font-display: swap</code>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Images + fonts are 70-90% of page bytes</strong> — the highest-leverage perf work after server response time.</li>
-    <li><strong>Format pyramid:</strong> AVIF (smallest) → WebP (broad support) → JPEG/PNG (universal). Use <code>&lt;picture&gt;</code> with <code>type</code> fallbacks (or a CDN with content negotiation) so the browser picks the first it supports.</li>
-    <li><strong>Responsive images:</strong> <code>srcset</code> (candidate widths) + <code>sizes</code> (display slot) let the browser pick the smallest sharp variant per viewport × DPR — don't ship desktop pixels to mobile.</li>
-    <li><strong>Always specify dimensions</strong> (<code>width</code>/<code>height</code> or <code>aspect-ratio</code>) — an image with no intrinsic size reflows the page when it loads (CLS).</li>
-    <li><strong>Priority splits by position:</strong> the LCP hero is eager (default) + <code>fetchpriority="high"</code> + preloaded; below-the-fold is <code>loading="lazy"</code> + <code>fetchpriority="low"</code>; add <code>decoding="async"</code> to avoid blocking on decode.</li>
-    <li>Placeholders (LQIP / blurhash / thumbhash) give instant feedback and reserve space while the real image loads.</li>
-    <li><strong>Fonts:</strong> WOFF2 only; the naive Google-Font-via-CDN path costs DNS + TLS + CSS + font download (200-800ms) before text renders right, causing FOUT or FOIT.</li>
-    <li><strong><code>font-display</code>:</strong> <code>swap</code> = fallback then swap (accept FOUT, the default choice); <code>optional</code> = fallback for the session if not loaded fast (best LCP, no swap reflow); avoid <code>block</code>/<code>auto</code>.</li>
-    <li><strong>Preload critical fonts</strong> with <code>&lt;link rel="preload" as="font" crossorigin&gt;</code> — <code>crossorigin</code> is required even same-origin (fonts use anonymous CORS).</li>
-    <li><strong>Subset</strong> (Latin-1 + ext for English) turns a ~400-800KB file into ~50-80KB; <strong>variable fonts</strong> serve many weights from one file; <strong>self-host</strong> to skip third-party connection overhead; match fallback metrics (<code>size-adjust</code>, <code>ascent-override</code>) to minimize swap CLS.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Lazy-loading the LCP hero image.</strong> "Lazy-load everything" feels right, but <code>loading="lazy"</code> on the above-the-fold hero defers its fetch and directly hurts LCP. <code>loading="lazy"</code> is for below-the-fold only — the hero should be eager (default) and explicitly marked <code>fetchpriority="high"</code>, ideally preloaded. Companion trap: shipping AVIF without a <code>&lt;picture&gt;</code> WebP/JPEG fallback (broken image on older Safari), and preloading a font without <code>crossorigin</code> (double-fetched, preload ignored).</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"For images: <code>&lt;picture&gt;</code> with AVIF/WebP/JPEG, <code>srcset</code> + <code>sizes</code> for responsive sizing, dimensions to prevent CLS, and <code>fetchpriority=&quot;high&quot;</code> + preload on the LCP hero — lazy only below the fold."</div>
-  <div class="revision-say">"For fonts: self-host WOFF2, subset to the characters I use, preload with crossorigin, and <code>font-display: swap</code> — or <code>optional</code> when the font is dominating LCP."</div>
-  <div class="revision-say">"To kill swap-induced CLS I match fallback metrics with size-adjust and ascent-override, and I reach for variable or system fonts to cut bytes."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. What's the difference between FOUT and FOIT, and how does font-display control them?</div>
+  <div class="qa-answer">
+    <p>A web font costs DNS, TLS, CSS and font download, 200-800ms on a third-party CDN, before text renders correctly. Until then the browser either shows the fallback font and swaps later, <strong>FOUT</strong> (flash of unstyled text, with a visible reflow), or shows blank text until the font arrives, <strong>FOIT</strong> (flash of invisible text). <code>font-display</code> picks the behaviour: <code>block</code> is invisible up to 3s then swaps (FOIT); <code>swap</code> shows the fallback immediately (FOUT); <code>fallback</code> is a brief invisible period, then fallback, swapping only if loaded within 3s; <code>optional</code> is brief invisible, then keeps the fallback for the session if not loaded fast (no swap, no CLS); <code>auto</code> is the browser default, often block-like. Default to <code>swap</code>, use <code>optional</code> when font load dominates LCP.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain FOUT versus FOIT and what each <code>font-display</code> value does?</li>
-    <li>Can you kill swap-induced CLS with <code>size-adjust</code> and <code>ascent-override</code> on a fallback font?</li>
-    <li>Can you use <code>srcset</code>/<code>sizes</code> and <code>picture</code> to serve the right image per viewport and DPR?</li>
-    <li>Can you choose between AVIF, WebP, and a fallback format?</li>
-    <li>Can you say when a variable font or a system-font stack is the right call?</li>
-    <li>Can you preload a critical font and explain the CORS gotcha?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. font-display: swap causes layout shift when the web font arrives. How do you stop it?</div>
+  <div class="qa-answer">
+    <p>The shift happens because the fallback and the web font have different metrics. Define a fallback <code>@font-face</code> on a local font, adjusted to match the web font with <code>size-adjust</code>, <code>ascent-override</code>, <code>descent-override</code> and <code>line-gap-override</code>, and put it right after the web font in the stack. With matched line height and widths, the swap is nearly invisible.</p>
+<pre><code class="language-css">@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial');
+  size-adjust: 107.40%;
+  ascent-override: 90.20%;
+  descent-override: 22.48%;
+  line-gap-override: 0%;
+}
+body { font-family: 'Inter', 'Inter Fallback', sans-serif; }</code></pre>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q18. How do you preload a critical font, and what's the CORS gotcha?</div>
+  <div class="qa-answer">
+    <p>Use <code>&lt;link rel="preload" as="font" type="font/woff2" crossorigin&gt;</code> pointing at the self-hosted, subsetted WOFF2. The gotcha: <code>crossorigin</code> is required even for same-origin fonts, because font requests use anonymous CORS by default. Without it the preload doesn't match the real request, so it goes unused and the browser fetches the font again. Also match the preload URL exactly: Chrome warns if a preloaded font isn't used within about 3s, usually from a URL typo or a media-query-mismatched <code>@font-face</code>.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

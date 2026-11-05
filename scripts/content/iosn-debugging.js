@@ -1,25 +1,46 @@
 window.PREP_SITE.registerTopic({
-  id: 'iosn-debugging',
-  module: 'iOS Native (Deep)',
-  title: 'Debugging Native iOS Errors',
-  estimatedReadTime: '26 min',
-  tags: ['debugging', 'crash-log', 'symbolication', 'dsym', 'atos', 'symbolicatecrash', 'sigabrt', 'exc-bad-access', 'sigsegv', 'exc-breakpoint', 'sigtrap', 'nszombie', 'lldb', 'instruments', 'cocoapods-errors', 'code-signing-errors', 'provisioning-profile', 'dyld', 'undefined-symbol', 'excluded-archs', 'privacy-manifest', 'ats', 'hermes', 'source-maps', 'expo', 'eas-build', 'sentry', 'crashlytics', 'ios', 'react-native'],
+  id: "iosn-debugging",
+  module: "iOS Native (Deep)",
+  title: "Debugging Native iOS Errors",
+  estimatedReadTime: "26 min",
+  tags: ["debugging","crash-log","symbolication","dsym","atos","symbolicatecrash","sigabrt","exc-bad-access","sigsegv","exc-breakpoint","sigtrap","nszombie","lldb","instruments","cocoapods-errors","code-signing-errors","provisioning-profile","dyld","undefined-symbol","excluded-archs","privacy-manifest","ats","hermes","source-maps","expo","eas-build","sentry","crashlytics","ios","react-native"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Debugging a native iOS crash in a React Native app is a repeatable pipeline, not a guess. You (1) <strong>get the crash report</strong>, (2) <strong>symbolicate it</strong> so addresses become file+line, (3) read the <strong>Exception Type / Exception Codes / Termination Reason</strong> to classify it, (4) map that class to a root cause, and (5) isolate and fix.</p>
-<p>The five signals you will see over and over: <code>SIGABRT</code> (an uncaught Objective-C exception — usually "unrecognized selector", a broken Auto Layout constraint, or a missing Info.plist permission string), <code>EXC_BAD_ACCESS / SIGSEGV</code> (touching freed or bad memory — a dangling pointer / over-release), <code>EXC_BREAKPOINT / SIGTRAP</code> (a Swift <code>fatalError</code>, force-unwrap of nil, or failed precondition), <code>dyld: Library not loaded</code> (a framework/dylib that did not link or is missing at launch), and the whole family of <strong>build-time</strong> failures (CocoaPods, "Undefined symbol", code signing).</p>
-<p>Half of "native iOS bugs" in an RN app are not in your Swift/ObjC at all — they are toolchain state: a stale <code>Podfile.lock</code>, a dirty <code>DerivedData</code>, a mis-aligned pod, or an expired provisioning profile. Learn to read the report first so you know which half you are in.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Never debug a release stack full of hex addresses — <strong>symbolicate first</strong> (dSYM + <code>atos</code>), then read <strong>Exception Type</strong> to classify: SIGABRT = uncaught NSException, EXC_BAD_ACCESS = bad memory, EXC_BREAKPOINT = Swift trap, dyld = link/launch. Classify, then fix.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Debugging native iOS is a pipeline: <strong>get the report → symbolicate (dSYM + atos, source map for Hermes) → read Exception Type to classify → walk down to your first frame → isolate and fix</strong> — and half of "crashes" are toolchain state (pods, DerivedData, signing), not your code.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Crash-report anatomy:</strong> Exception Type (what signal killed it), Exception Codes (address/detail), Termination Reason (who/why), Triggered-by-Thread, the crashed-thread backtrace, and — for SIGABRT — the <strong>Last Exception Backtrace</strong> (where the NSException was thrown). <code>Binary Images</code> lists UUIDs for symbolication.</li>
+    <li><strong>Read a backtrace:</strong> frame 0 is usually a system function (objc_msgSend/abort) — walk DOWN to the first frame you own; that line is the lead.</li>
+    <li><strong>Where crashes appear:</strong> Xcode console, Devices &amp; Simulators device logs, Organizer → Crashes, Console.app <code>log stream</code>, on-device Analytics Data (<code>.ips</code>), App Store Connect/TestFlight, Crashlytics/Sentry.</li>
+    <li><strong>Symbolication:</strong> release strips symbols into a <code>.dSYM</code>; map addresses back with <code>atos -o dSYM -arch arm64 -l LOAD ADDR</code>, or <code>symbolicatecrash</code>/Xcode for a whole report. dSYM UUID must match the binary (<code>dwarfdump --uuid</code>). Upload dSYMs to App Store Connect / Crashlytics / Sentry. The JS half uses the <strong>Hermes source map</strong> via <code>metro-symbolicate</code>, not a dSYM.</li>
+    <li><strong>SIGABRT</strong> = uncaught NSException: unrecognized selector, NSRange/invalid-argument, Auto Layout constraint exception, KVO imbalance, or a missing <code>NS*UsageDescription</code> at runtime. Read Last Exception Backtrace; set an All-Exceptions breakpoint.</li>
+    <li><strong>EXC_BAD_ACCESS / SIGSEGV</strong> = freed/dangling/over-released memory (use-after-free). Enable <strong>Zombie Objects</strong>, Address Sanitizer, Malloc Scribble.</li>
+    <li><strong>EXC_BREAKPOINT / SIGTRAP</strong> = Swift trap: nil force-unwrap, <code>fatalError</code>/precondition, <code>try!</code>/<code>as!</code> failure (Hermes aborts too).</li>
+    <li><strong>Launch-time SIGABRT / dyld</strong> = "Library not loaded … image not found" (framework not embedded/linked), missing/renamed resource, bad Info.plist, a pod/Swift-runtime not linked, or an OS-version break.</li>
+    <li><strong>CocoaPods:</strong> "Unable to find a specification" → <code>pod repo update</code>; CDN transport error → retry/switch source; version conflict → relax a pin; <code>[CP] Check Pods Manifest.lock</code> fails / "sandbox not in sync" → <code>pod install</code>; corrupt state → <code>pod deintegrate</code> + delete Pods/Podfile.lock/DerivedData + reinstall.</li>
+    <li><strong>Build errors:</strong> "framework not found", "Undefined symbol" (link the lib, add <code>-ObjC</code>, open <code>.xcworkspace</code>), "duplicate symbol", header-search-path, <code>EXCLUDED_ARCHS</code>/arm64-simulator, Swift-version mismatch, C++-standard mismatch.</li>
+    <li><strong>Code signing:</strong> "No profiles found" / "requires a provisioning profile" (auto-signing + Team), entitlement mismatch (regenerate profile with the capability), expired profile/revoked cert (regenerate, delete stale <code>.mobileprovision</code>).</li>
+    <li><strong>Rejections that look like crashes:</strong> missing privacy usage strings, ATS violations, missing <code>PrivacyInfo.xcprivacy</code> privacy manifest.</li>
+    <li><strong>Hex hints:</strong> <code>0x8badf00d</code> = watchdog kill (too long on main thread — profile launch), <code>0xdead10cc</code> = held a lock while suspended.</li>
+    <li><strong>Tools:</strong> lldb (<code>bt</code>, <code>bt all</code>, <code>po</code>, <code>image lookup</code>), Instruments (Leaks/Allocations), Console.app <code>log stream</code>, Xcode Debug Navigator, the <strong>exception breakpoint</strong>; RN DevTools / Flipper for the JS side.</li>
+    <li><strong>Worked example:</strong> sw-mobile (Expo 53 / RN 0.79, old arch) launch crash on iOS 26 needed <strong>four coupled patches</strong> — Podfile + AppDelegate.h + AppDelegate.mm + a <code>noop-file.swift</code> — applied together; new OS breaking launch usually spans several native files at once.</li>
+    <li><strong>Expo/EAS:</strong> EAS build logs, <code>npx expo prebuild --clean</code> resets <code>ios/</code> (so encode native fixes as config plugins), <code>npx expo-doctor</code> flags version mismatches, and the Sentry Expo plugin uploads dSYMs + Hermes source maps per build.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Debugging an unsymbolicated release stack and blaming the top system frame.</strong> Hex addresses + <code>objc_msgSend</code>/<code>abort</code> at frame 0 tell you nothing. Fix: symbolicate with the matching dSYM (UUID must match) first, read the Last Exception Backtrace for SIGABRT, then walk DOWN to the first frame you own. And remember many "crashes" are really toolchain state (stale <code>Podfile.lock</code>, dirty DerivedData, an expired profile) or a store-policy rejection (missing privacy string / ATS / privacy manifest), not a bug in your Swift/ObjC.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"First I symbolicate — native frames with the matching dSYM, JS with the Hermes source map — then I read Exception Type to classify: SIGABRT is an uncaught NSException, EXC_BAD_ACCESS is bad memory, EXC_BREAKPOINT is a Swift trap, dyld is a link/launch problem. Then I walk down to my first frame."</div>
+  <div class="revision-say">"For SIGABRT I read the Last Exception Backtrace and set an all-exceptions breakpoint so Xcode stops at the throw; for EXC_BAD_ACCESS I turn on Zombie Objects and Address Sanitizer to catch the use-after-free."</div>
+  <div class="revision-say">"When a new iOS broke sw-mobile's launch, the fix wasn't one line — it spanned the Podfile, AppDelegate.h, AppDelegate.mm and an empty Swift shim together; in Expo I encode that as a config plugin so prebuild doesn't wipe it."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "a native iOS error" actually is</h3>
 <p>A native iOS failure is any error that occurs below the JavaScript layer — in Objective-C, Swift, C++, the RN native runtime, a linked SDK, or the OS itself. When it happens the process either (a) fails to build, (b) fails to launch, or (c) is killed at runtime by a Unix signal (SIGABRT, SIGSEGV, SIGTRAP…) or a watchdog. Unlike a JS error, a native crash does NOT produce a red-box or a JS stack trace — it terminates the whole app and (in release) leaves only a low-level <strong>crash report</strong> full of memory addresses.</p>
 
@@ -51,10 +72,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>Launch-time</strong> — the binary exists but dies in the first moments. <code>dyld: Library not loaded</code>, a missing resource, a bad Info.plist, an OS-version incompatibility. Backtrace usually points at <code>dyld</code> / <code>start</code> / <code>UIApplicationMain</code>.</li>
   <li><strong>Runtime</strong> — it launched and ran, then crashed on some action. SIGABRT / EXC_BAD_ACCESS / EXC_BREAKPOINT with a backtrace into your (or a pod's) code.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The crash-report anatomy (what each block means)</h3>
 <div class="diagram">
 <pre>
@@ -127,10 +148,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"The crash is in <code>objc_msgSend</code> / <code>abort</code> / <code>__pthread_kill</code>, so the bug is in the OS." No — those are just where the process was executed when the fatal signal fired. The bug lives in the first frame <em>you</em> own (your app or a pod), further down the stack. Symbolicate, then walk down.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Symbolication — turning addresses into file + line</h3>
 <p>A <strong>Debug</strong> build keeps symbols inline, so Xcode/lldb show file+line automatically. A <strong>Release</strong> build strips symbols into a separate <strong>dSYM</strong> ("debug symbols") bundle — so a raw release crash report shows only hex addresses + a load address. <em>Symbolication</em> is the act of mapping those addresses back to functions and lines using the dSYM whose UUID matches the crashing binary.</p>
 
@@ -294,10 +315,10 @@ pod install</code></pre>
   <div class="callout-title">🧩 Expo note — these native files are generated</div>
   <p>In an Expo prebuild project, <code>ios/</code> (Podfile, AppDelegate.h/.mm) is produced by Continuous Native Generation. Hand-editing them to fix a launch crash works until the next <code>npx expo prebuild --clean</code> wipes <code>ios/</code>. The durable fix is a <strong>config plugin</strong> (or an <code>expo-build-properties</code> setting for Podfile-level values) so the patch is re-applied on every prebuild. Also run <code>npx expo-doctor</code> — it flags version mismatches that cause exactly these OS-launch breakages, and prefer bumping the Expo SDK where the fix has already been merged upstream.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — symbolicate one address with atos</h3>
 <pre><code class="language-bash"># Report says: 4  MyApp  0x0000000104a3f2ac 0x104a30000 + 62124
 #              (binary)  (runtime addr)     (load addr)
@@ -387,10 +408,11 @@ Termination Reason: Namespace ASSERTIOND, Code 0x8badf00d
 Diagnosis: the app spent too long on the main thread at launch and the
 watchdog killed it. Move heavy work (DB open, sync network, big JSON
 parse) off the main thread / defer past didFinishLaunching.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Symbolication silently fails on a UUID mismatch</h3>
 <p>If the dSYM's UUID does not match the crashing binary's UUID, tools produce a report that still shows hex (or wrong lines) with no error. Always verify with <code>dwarfdump --uuid</code> on both. Keep the dSYM from the <em>exact</em> archive you shipped — a rebuild changes the UUID.</p>
 
@@ -438,10 +460,9 @@ parse) off the main thread / defer past didFinishLaunching.</code></pre>
 
 <h3>16. Different crash on CI than locally</h3>
 <p>CI uses a fixed Xcode/SDK/pod versions; your machine may drift. "Works on my machine" build errors are often a Ruby/CocoaPods/Xcode version gap. Pin versions (<code>.ruby-version</code>, <code>Gemfile</code> with a locked CocoaPods, an Xcode version selector) so CI and local match.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — debugging an unsymbolicated release stack</h3>
 <p>Staring at hex addresses and guessing. Symbolicate first (dSYM + <code>atos</code>/Organizer); the file+line usually makes the bug obvious.</p>
 
@@ -486,10 +507,10 @@ parse) off the main thread / defer past didFinishLaunching.</code></pre>
 
 <h3>Anti-pattern 15 — assuming Debug behavior equals Release</h3>
 <p>Shipping without ever running a Release/Archive build. Optimizer + stripped asserts surface release-only crashes you never saw in Debug.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Walk me through debugging a production iOS crash in an RN app.</div>
   <div class="qa-answer">
@@ -608,55 +629,14 @@ parse) off the main thread / defer past didFinishLaunching.</code></pre>
     <li>You upload dSYMs AND Hermes source maps for production symbolication, and handle the Expo/EAS specifics.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Debugging native iOS is a pipeline: <strong>get the report → symbolicate (dSYM + atos, source map for Hermes) → read Exception Type to classify → walk down to your first frame → isolate and fix</strong> — and half of "crashes" are toolchain state (pods, DerivedData, signing), not your code.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Crash-report anatomy:</strong> Exception Type (what signal killed it), Exception Codes (address/detail), Termination Reason (who/why), Triggered-by-Thread, the crashed-thread backtrace, and — for SIGABRT — the <strong>Last Exception Backtrace</strong> (where the NSException was thrown). <code>Binary Images</code> lists UUIDs for symbolication.</li>
-    <li><strong>Read a backtrace:</strong> frame 0 is usually a system function (objc_msgSend/abort) — walk DOWN to the first frame you own; that line is the lead.</li>
-    <li><strong>Where crashes appear:</strong> Xcode console, Devices &amp; Simulators device logs, Organizer → Crashes, Console.app <code>log stream</code>, on-device Analytics Data (<code>.ips</code>), App Store Connect/TestFlight, Crashlytics/Sentry.</li>
-    <li><strong>Symbolication:</strong> release strips symbols into a <code>.dSYM</code>; map addresses back with <code>atos -o dSYM -arch arm64 -l LOAD ADDR</code>, or <code>symbolicatecrash</code>/Xcode for a whole report. dSYM UUID must match the binary (<code>dwarfdump --uuid</code>). Upload dSYMs to App Store Connect / Crashlytics / Sentry. The JS half uses the <strong>Hermes source map</strong> via <code>metro-symbolicate</code>, not a dSYM.</li>
-    <li><strong>SIGABRT</strong> = uncaught NSException: unrecognized selector, NSRange/invalid-argument, Auto Layout constraint exception, KVO imbalance, or a missing <code>NS*UsageDescription</code> at runtime. Read Last Exception Backtrace; set an All-Exceptions breakpoint.</li>
-    <li><strong>EXC_BAD_ACCESS / SIGSEGV</strong> = freed/dangling/over-released memory (use-after-free). Enable <strong>Zombie Objects</strong>, Address Sanitizer, Malloc Scribble.</li>
-    <li><strong>EXC_BREAKPOINT / SIGTRAP</strong> = Swift trap: nil force-unwrap, <code>fatalError</code>/precondition, <code>try!</code>/<code>as!</code> failure (Hermes aborts too).</li>
-    <li><strong>Launch-time SIGABRT / dyld</strong> = "Library not loaded … image not found" (framework not embedded/linked), missing/renamed resource, bad Info.plist, a pod/Swift-runtime not linked, or an OS-version break.</li>
-    <li><strong>CocoaPods:</strong> "Unable to find a specification" → <code>pod repo update</code>; CDN transport error → retry/switch source; version conflict → relax a pin; <code>[CP] Check Pods Manifest.lock</code> fails / "sandbox not in sync" → <code>pod install</code>; corrupt state → <code>pod deintegrate</code> + delete Pods/Podfile.lock/DerivedData + reinstall.</li>
-    <li><strong>Build errors:</strong> "framework not found", "Undefined symbol" (link the lib, add <code>-ObjC</code>, open <code>.xcworkspace</code>), "duplicate symbol", header-search-path, <code>EXCLUDED_ARCHS</code>/arm64-simulator, Swift-version mismatch, C++-standard mismatch.</li>
-    <li><strong>Code signing:</strong> "No profiles found" / "requires a provisioning profile" (auto-signing + Team), entitlement mismatch (regenerate profile with the capability), expired profile/revoked cert (regenerate, delete stale <code>.mobileprovision</code>).</li>
-    <li><strong>Rejections that look like crashes:</strong> missing privacy usage strings, ATS violations, missing <code>PrivacyInfo.xcprivacy</code> privacy manifest.</li>
-    <li><strong>Hex hints:</strong> <code>0x8badf00d</code> = watchdog kill (too long on main thread — profile launch), <code>0xdead10cc</code> = held a lock while suspended.</li>
-    <li><strong>Tools:</strong> lldb (<code>bt</code>, <code>bt all</code>, <code>po</code>, <code>image lookup</code>), Instruments (Leaks/Allocations), Console.app <code>log stream</code>, Xcode Debug Navigator, the <strong>exception breakpoint</strong>; RN DevTools / Flipper for the JS side.</li>
-    <li><strong>Worked example:</strong> sw-mobile (Expo 53 / RN 0.79, old arch) launch crash on iOS 26 needed <strong>four coupled patches</strong> — Podfile + AppDelegate.h + AppDelegate.mm + a <code>noop-file.swift</code> — applied together; new OS breaking launch usually spans several native files at once.</li>
-    <li><strong>Expo/EAS:</strong> EAS build logs, <code>npx expo prebuild --clean</code> resets <code>ios/</code> (so encode native fixes as config plugins), <code>npx expo-doctor</code> flags version mismatches, and the Sentry Expo plugin uploads dSYMs + Hermes source maps per build.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Debugging an unsymbolicated release stack and blaming the top system frame.</strong> Hex addresses + <code>objc_msgSend</code>/<code>abort</code> at frame 0 tell you nothing. Fix: symbolicate with the matching dSYM (UUID must match) first, read the Last Exception Backtrace for SIGABRT, then walk DOWN to the first frame you own. And remember many "crashes" are really toolchain state (stale <code>Podfile.lock</code>, dirty DerivedData, an expired profile) or a store-policy rejection (missing privacy string / ATS / privacy manifest), not a bug in your Swift/ObjC.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"First I symbolicate — native frames with the matching dSYM, JS with the Hermes source map — then I read Exception Type to classify: SIGABRT is an uncaught NSException, EXC_BAD_ACCESS is bad memory, EXC_BREAKPOINT is a Swift trap, dyld is a link/launch problem. Then I walk down to my first frame."</div>
-  <div class="revision-say">"For SIGABRT I read the Last Exception Backtrace and set an all-exceptions breakpoint so Xcode stops at the throw; for EXC_BAD_ACCESS I turn on Zombie Objects and Address Sanitizer to catch the use-after-free."</div>
-  <div class="revision-say">"When a new iOS broke sw-mobile's launch, the fix wasn't one line — it spanned the Podfile, AppDelegate.h, AppDelegate.mm and an empty Swift shim together; in Expo I encode that as a config plugin so prebuild doesn't wipe it."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Walk me through the blocks of an iOS crash report and what each one tells you.</div>
+  <div class="qa-answer">
+    <p>The header (Incident Identifier, Hardware Model, OS Version, Process) gives the environment. <strong>Exception Type</strong> (e.g. <code>EXC_CRASH (SIGABRT)</code>) is what killed the app and is how you classify it. <strong>Exception Codes</strong> carry the address or detail (e.g. <code>KERN_INVALID_ADDRESS</code> plus the faulting address, or leetspeak like <code>0x8badf00d</code>). <strong>Termination Reason</strong> says who killed it and why, and <strong>Triggered by Thread</strong> says which thread's backtrace to read; it may not be the main thread shown first. For SIGABRT, the <strong>Last Exception Backtrace</strong> shows where the NSException was thrown and is truer than the thread backtrace. The crashed-thread backtrace is the call stack at death: frame 0 is usually a system function, so walk down to the first frame you own. Finally, <strong>Binary Images</strong> lists each image's UUID and load address, which you need to symbolicate with the matching dSYM.</p>
+  </div>
 </div>
-`},
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name each block of an iOS crash report (Exception Type, Exception Codes, Termination Reason, Last Exception Backtrace) and say what it tells you?</li>
-    <li>Can you symbolicate a release crash with <code>atos</code> and explain why the dSYM UUID must match — plus how the Hermes source map handles the JS half?</li>
-    <li>Can you map SIGABRT, EXC_BAD_ACCESS, EXC_BREAKPOINT, and a dyld error each to a root-cause category and a first fix?</li>
-    <li>Can you diagnose the CocoaPods "sandbox not in sync" / <code>[CP] Check Pods Manifest.lock</code> failure and list the deintegrate+reinstall reset?</li>
-    <li>Can you list the common code-signing errors and their fixes, and the store rejections (privacy strings, ATS, privacy manifest) that masquerade as crashes?</li>
-    <li>Can you recognize <code>0x8badf00d</code> and <code>0xdead10cc</code> and say why they are not pointer bugs?</li>
-    <li>Can you walk through the sw-mobile iOS 26 launch-crash fix and explain why a new-OS launch break tends to span several native files at once?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

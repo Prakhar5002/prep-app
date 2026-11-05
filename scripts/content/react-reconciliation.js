@@ -1,31 +1,45 @@
 window.PREP_SITE.registerTopic({
-  id: 'react-reconciliation',
-  module: 'React Deep',
-  title: 'Reconciliation & Fiber',
-  estimatedReadTime: '35 min',
-  tags: ['react', 'reconciliation', 'fiber', 'virtual-dom', 'rendering', 'diffing', 'keys', 'commit-phase'],
+  id: "react-reconciliation",
+  module: "React Deep",
+  title: "Reconciliation & Fiber",
+  estimatedReadTime: "35 min",
+  tags: ["react","reconciliation","fiber","virtual-dom","rendering","diffing","keys","commit-phase"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>When React re-renders, it doesn't replace the DOM. It builds a new <strong>tree of element descriptors</strong> (React Elements), compares it to the previous tree, and produces a list of <em>minimal DOM operations</em> to apply. That process is called <strong>reconciliation</strong>.</p>
-<ul>
-  <li><strong>React Elements</strong> are plain objects (<code>{ type, props, key, ref }</code>) returned by components and JSX. They are cheap to create and throw away.</li>
-  <li><strong>Fiber</strong> is React's internal representation — a linked-list tree of work units, one node per Element. Each Fiber has pointers to parent / child / sibling and fields for hooks, effects, state, and scheduling metadata.</li>
-  <li>Rendering happens in two phases: <strong>Render</strong> (build the new fiber tree, can be paused/cancelled, pure) and <strong>Commit</strong> (apply DOM mutations and effects, synchronous, one-shot).</li>
-  <li>The <strong>diffing algorithm</strong> is O(n) by making two assumptions: (1) elements of different types produce different trees; (2) sibling elements are matched by <code>key</code>, with stable identity across renders.</li>
-  <li><strong>Keys</strong> matter most for lists. Wrong keys cause reused state on the wrong item, or wasted re-creation.</li>
-  <li>Fiber (React 16+) enables <strong>concurrent features</strong>: rendering can be sliced across frames, low-priority work can yield to high-priority updates, and error boundaries can contain failures.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>React Elements are the diff target; Fiber is the scheduler's work unit. Same type + same key = same fiber, state preserved. Different type OR different key = destroy and re-create.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Elements are immutable descriptors diffed each render; Fiber is the work unit — <strong>same type + same key = same fiber (state preserved); different type or key = destroy + re-create</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>React Elements are immutable descriptors</strong> (<code>{ type, props, key, ref }</code>) created fresh each render by JSX, cheap to create and throw away; <strong>Fiber is the internal work unit</strong> that spans renders and carries hooks, flags, and lanes.</li>
+    <li><strong>Reconciliation</strong> = diff the new Element tree against the current one and emit the <em>minimal</em> DOM ops; DOM nodes are reused wherever identity is "the same," preserving focus/scroll/input state.</li>
+    <li>The diff is <strong>O(n)</strong> via two heuristics: (1) a different <em>type</em> at a position destroys and rebuilds the whole subtree; (2) siblings are matched by <code>key</code> (fallback: position).</li>
+    <li><strong>Same type + same key = same fiber, state preserved. Different type OR different key = destroy + re-create</strong> (state lost, effects re-run).</li>
+    <li><strong>Two phases:</strong> Render (pure, interruptible, no DOM writes) and Commit (synchronous, atomic, applies DOM mutations + effects).</li>
+    <li>Never <code>setState</code> or mutate the DOM during render — it causes "Too many re-renders." That work belongs in effects or event handlers.</li>
+    <li><strong>Double buffering:</strong> a <em>current</em> tree and a <em>work-in-progress</em> tree linked via <code>alternate</code>; commit swaps the pointer atomically so the user never sees an intermediate state.</li>
+    <li><strong>Keys are a diffing hint scoped to siblings</strong>, not a global id. <code>key={index}</code> is wrong for reorderable / insert-in-middle lists — state migrates to the wrong item; fine only for append-only/static lists.</li>
+    <li>Changing a component's <code>key</code> <strong>forces a remount</strong> — the built-in escape hatch to reset a subtree's state (<code>&lt;EditForm key={recordId} /&gt;</code>).</li>
+    <li><strong>Commit subphases:</strong> before-mutation (<code>getSnapshotBeforeUpdate</code>) → mutation (DOM + refs) → layout (<code>useLayoutEffect</code>, cDM/cDU) → browser paint → passive (<code>useEffect</code>, async).</li>
+    <li><strong>Lanes</strong> are a 31-bit priority bitmask (React 17); <code>setState</code> assigns a lane, the scheduler renders the highest-priority lane, and high-priority work can preempt a low-priority render.</li>
+    <li><strong>Batching is automatic in React 18 everywhere</strong> — event handlers, promises, <code>setTimeout</code>, native events. <code>flushSync</code> opts out for a mid-sequence render.</li>
+    <li>Re-render triggers: <code>setState</code>/<code>useReducer</code>, a parent re-rendering, a context value change, or <code>forceUpdate</code>. <code>React.memo</code> shallow-compares props, but a <strong>context change bypasses memo</strong>.</li>
+    <li>Fiber (React 16+) is a linked-list tree with <strong>parent / child / sibling pointers</strong>; it <strong>iterates the list rather than recursing</strong> — constant JS stack depth regardless of tree depth — which is what unlocks time-slicing, Suspense, and error boundaries.</li>
+    <li><strong>Commit is synchronous</strong>, so <code>startTransition</code> only helps the <em>render</em> phase — it won't speed up a heavy commit (big DOM/layout).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong><code>key={index}</code> on a reorderable / insert-in-middle list</strong> — on reorder, state and DOM migrate to the wrong item. Use a stable id. (The flip side is useful: change a component's <code>key</code> to <em>intentionally</em> remount and reset a subtree's state.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"React Elements are the diff target; Fiber is the scheduler's work unit that spans renders."</div>
+  <div class="revision-say">"Same type and same key means the same fiber with preserved state — a different type or key destroys and re-creates it."</div>
+  <div class="revision-say">"Render is pure and interruptible, commit is synchronous and atomic — that's why <code>setState</code> belongs in effects or handlers, never during render."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What reconciliation actually is</h3>
 <p>React's job is to keep the DOM in sync with a descriptor of what the UI should look like. Each render, your components return <strong>React Elements</strong> — plain immutable objects describing the tree. React compares the new tree to the previous one (the <em>work-in-progress fiber tree</em> vs the <em>current</em> one) and computes the minimum set of DOM mutations to turn current into new. That comparison is reconciliation.</p>
 
@@ -74,10 +88,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why keys matter</h3>
 <p>Diffing child lists is the hardest case. Without keys, React matches siblings by <em>position</em>. Insert an item at index 0 and every subsequent item is mismatched — React thinks item 1 is now item 2, tries to update it in place, and drags state along with it (e.g., input values). With keys, React matches by identity, so inserting at the top just creates one new fiber and shifts the rest. Keys are a <em>hint to the diffing algorithm</em>, not a React-internal ID.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "two-pass tree walker" picture</h3>
 <div class="diagram">
 <pre>
@@ -139,10 +153,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"Re-rendering means React re-creates DOM nodes." No. Re-rendering means React calls your function again and diffs the result. DOM nodes are reused wherever possible. If children produce the exact same Element structure, React applies zero DOM mutations.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Stages of a single render</h3>
 <ol>
   <li><strong>Scheduler schedules work</strong> on a lane. Lanes encode priority: SyncLane, InputContinuousLane, DefaultLane, TransitionLane, IdleLane.</li>
@@ -229,10 +243,10 @@ window.PREP_SITE.registerTopic({
   <li>Browser paint (if allowed).</li>
   <li><strong>Passive</strong> — <code>useEffect</code> runs after paint, asynchronously.</li>
 </ol>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Element vs Fiber</h3>
 <pre><code class="language-js">// JSX
 const el = &lt;Button color="red"&gt;Hi&lt;/Button&gt;;
@@ -375,10 +389,11 @@ function Deep() {
 }
 // Every useContext(T) subscriber re-renders on value change.
 // That includes distant components; consider splitting contexts by update cadence.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Hidden remount via different parent type</h3>
 <pre><code class="language-js">{open ? &lt;Wrap1&gt;&lt;Child/&gt;&lt;/Wrap1&gt; : &lt;Wrap2&gt;&lt;Child/&gt;&lt;/Wrap2&gt;}</code></pre>
 <p><code>Child</code> looks like it's stable, but its parent type differs in the two branches, so React treats the subtree as different. Child's fiber is destroyed and re-created — state reset. Fix: unify the wrapper and change its props, or pass the child prop through.</p>
@@ -472,10 +487,9 @@ setN(0); // no re-render — Object.is(oldState, newState) equal</code></pre>
 
 <h3>20. Large trees and deep recursion</h3>
 <p>Fiber's linked-list structure means React doesn't recurse in JS; it iterates. Stack depth is constant regardless of tree depth. Pre-Fiber React could blow the stack with deeply nested components; Fiber can't.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — using index as key for reorderable lists</h3>
 <pre><code class="language-js">// BAD
 todos.map((t, i) =&gt; &lt;Todo key={i} todo={t}/&gt;);</code></pre>
@@ -558,10 +572,10 @@ return &lt;button onClick={() =&gt; countRef.current++}&gt;{countRef.current}&lt
   setSize(rect); // synchronous re-render before paint
 }, [deps]);</code></pre>
 <p>OK for rare measurement cases, but this forces an extra render synchronously. For animations and perf-critical paths, batch or switch to ResizeObserver.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What is React's reconciliation algorithm?</div>
   <div class="qa-answer">
@@ -717,53 +731,20 @@ return &lt;button onClick={() =&gt; countRef.current++}&gt;{countRef.current}&lt
     <li>You can name lanes and explain how <code>startTransition</code> uses them.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Elements are immutable descriptors diffed each render; Fiber is the work unit — <strong>same type + same key = same fiber (state preserved); different type or key = destroy + re-create</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>React Elements are immutable descriptors</strong> (<code>{ type, props, key, ref }</code>) created fresh each render; <strong>Fiber is the internal work unit</strong> that spans renders and carries hooks, flags, and lanes.</li>
-    <li><strong>Reconciliation</strong> = diff the new Element tree against the current one and emit the <em>minimal</em> DOM ops; DOM nodes are reused wherever identity is "the same," preserving focus/scroll/input state.</li>
-    <li>The diff is <strong>O(n)</strong> via two heuristics: (1) a different <em>type</em> at a position destroys and rebuilds the whole subtree; (2) siblings are matched by <code>key</code> (fallback: position).</li>
-    <li><strong>Same type + same key = same fiber, state preserved. Different type OR different key = destroy + re-create</strong> (state lost, effects re-run).</li>
-    <li><strong>Two phases:</strong> Render (pure, interruptible, no DOM writes) and Commit (synchronous, atomic, applies DOM mutations + effects).</li>
-    <li>Never <code>setState</code> or mutate the DOM during render — it causes "Too many re-renders." That work belongs in effects or event handlers.</li>
-    <li><strong>Double buffering:</strong> a <em>current</em> tree and a <em>work-in-progress</em> tree linked via <code>alternate</code>; commit swaps the pointer atomically so the user never sees an intermediate state.</li>
-    <li><strong>Keys are a diffing hint scoped to siblings</strong>, not a global id. <code>key={index}</code> is wrong for reorderable / insert-in-middle lists — state migrates to the wrong item; fine only for append-only/static lists.</li>
-    <li>Changing a component's <code>key</code> <strong>forces a remount</strong> — the built-in escape hatch to reset a subtree's state (<code>&lt;EditForm key={recordId} /&gt;</code>).</li>
-    <li><strong>Commit subphases:</strong> before-mutation (<code>getSnapshotBeforeUpdate</code>) → mutation (DOM + refs) → layout (<code>useLayoutEffect</code>, cDM/cDU) → browser paint → passive (<code>useEffect</code>, async).</li>
-    <li><strong>Lanes</strong> are a 31-bit priority bitmask (React 17); <code>setState</code> assigns a lane, the scheduler renders the highest-priority lane, and high-priority work can preempt a low-priority render.</li>
-    <li><strong>Batching is automatic in React 18 everywhere</strong> — event handlers, promises, <code>setTimeout</code>, native events. <code>flushSync</code> opts out for a mid-sequence render.</li>
-    <li>Re-render triggers: <code>setState</code>/<code>useReducer</code>, a parent re-rendering, a context value change, or <code>forceUpdate</code>. <code>React.memo</code> shallow-compares props, but a <strong>context change bypasses memo</strong>.</li>
-    <li>Fiber <strong>iterates a linked list rather than recursing</strong> — constant JS stack depth regardless of tree depth — which is what unlocks time-slicing, Suspense, and error boundaries.</li>
-    <li><strong>Commit is synchronous</strong>, so <code>startTransition</code> only helps the <em>render</em> phase — it won't speed up a heavy commit (big DOM/layout).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong><code>key={index}</code> on a reorderable / insert-in-middle list</strong> — on reorder, state and DOM migrate to the wrong item. Use a stable id. (The flip side is useful: change a component's <code>key</code> to <em>intentionally</em> remount and reset a subtree's state.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"React Elements are the diff target; Fiber is the scheduler's work unit that spans renders."</div>
-  <div class="revision-say">"Same type and same key means the same fiber with preserved state — a different type or key destroys and re-creates it."</div>
-  <div class="revision-say">"Render is pure and interruptible, commit is synchronous and atomic — that's why <code>setState</code> belongs in effects or handlers, never during render."</div>
+<div class="qa-block">
+  <div class="qa-question">Q18. What's the difference between a React Element and a Fiber, and why does React need both?</div>
+  <div class="qa-answer">
+    <p>A React Element is an immutable plain object, <code>{ type, props, key, ref }</code>, created by JSX / <code>React.createElement</code>; it lives for one render, and there are many of them, one per node per render. A Fiber is React's internal, mutable work unit: one per mounted node, recycled across renders, carrying the element info plus parent/child/sibling links, hook state, effect flags and lanes. React needs both because they do different jobs: Elements are the cheap, throwaway <em>diff target</em> that make a cancelled render safe to discard, while Fibers are the persistent home of state and the scheduler's unit of work. Same type + same key at a position means the new Element is applied to the existing Fiber, so its state survives.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the difference between a React Element and a Fiber, and why both exist?</li>
-    <li>Can you state the two rules that decide whether a fiber is reused or destroyed — same type and same <code>key</code>?</li>
-    <li>Can you explain why using the array index as a <code>key</code> corrupts state in a reorderable or filterable list?</li>
-    <li>Can you describe the render phase (pure, interruptible) versus the commit phase (synchronous, atomic)?</li>
-    <li>Can you explain why calling <code>setState</code> during render is a bug, and where it belongs instead?</li>
-    <li>Can you walk through how reconciliation diffs children when an element's type changes?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q19. Why is calling setState during render a bug, and where does it belong instead?</div>
+  <div class="qa-answer">
+    <p>The render phase must be pure: React may call your component, throw the result away, and call it again. An unconditional <code>setN(n + 1)</code> in the body schedules another render, which sets state again, so React detects the infinite loop and throws "Too many re-renders"; even a conditional version (<code>if (x &gt; y) setY(x)</code>) causes extra renders and inconsistent reads. State updates belong in event handlers or effects. If the value can be computed from props, don't store it at all: derive it during render (with <code>useMemo</code> if expensive), or reset a subtree's state by changing its <code>key</code>.</p>
+  </div>
 </div>
-`}
+` },
 
-]
+  ]
 });

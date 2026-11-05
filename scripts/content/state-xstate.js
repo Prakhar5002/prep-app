@@ -1,33 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'state-xstate',
-  module: 'state-deep',
-  title: 'XState (State Machines)',
-  estimatedReadTime: '40 min',
-  tags: ['xstate', 'state-machines', 'finite-state-machine', 'fsm', 'statecharts', 'actors', 'react'],
+  id: "state-xstate",
+  module: "state-deep",
+  title: "XState (State Machines)",
+  estimatedReadTime: "40 min",
+  tags: ["xstate","state-machines","finite-state-machine","fsm","statecharts","actors","react"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>XState</strong> is a JavaScript library for building <em>finite state machines</em> and <em>statecharts</em>. It's the right answer when your state has <strong>discrete modes</strong> with <strong>specific transitions</strong> — not just data, but a model of behavior. Think: form wizards, video player UIs, payment flows, retry-with-backoff, multi-step authentication.</p>
-<ul>
-  <li><strong>State machine = states + events + transitions.</strong> Each state defines which events it accepts and where they lead.</li>
-  <li><strong>Statecharts = state machines + hierarchy + parallel regions + history.</strong> Harel's 1987 extension; XState implements this.</li>
-  <li><strong>Why XState vs reducers?</strong> Reducers don't model the <em>shape</em> of behavior — every action runs from any state. Machines forbid invalid transitions at the type level.</li>
-  <li><strong>"Make impossible states impossible."</strong> The phrase that sells statecharts. A "loading + error + success" combination shouldn't be representable.</li>
-  <li><strong>Visualizable.</strong> XState's Visualizer renders your machine as a diagram; PMs and designers can review behavior.</li>
-  <li><strong>Actors</strong> (XState v5+): each machine instance is an actor; actors compose to model entire systems.</li>
-  <li><strong>When NOT to use:</strong> simple CRUD UIs, settings pages, lists. Overkill for state without distinct modes.</li>
-  <li><strong>Learning curve</strong> is real. The mental model is foreign to most React devs; budget 2-3 days to be productive.</li>
-</ul>
-<p><strong>Mantra:</strong> "Discrete modes + specific transitions = state machine. Make illegal states unrepresentable. Visualize before coding."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">XState models <strong>behavior, not data</strong> — reach for it when state has <strong>discrete modes with specific allowed transitions</strong>, and use it to <strong>make impossible states impossible</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A finite state machine = states + events + transitions</strong>, with exactly one state active at a time; each state defines which events it accepts and where they lead.</li>
+    <li><strong>Statecharts (Harel 1987) extend FSMs with</strong> hierarchy (substates), parallel regions, history states, guards, and actions. XState implements statecharts.</li>
+    <li><strong>The selling point: "make impossible states impossible."</strong> N booleans give 2^N combinations, most invalid ("loading + error + success"); enumerating real modes (<code>idle | loading | success | error</code>) forbids the illegal ones.</li>
+    <li><strong>States vs context:</strong> states are the <em>finite</em> set of named modes; context is the <em>unbounded</em> data carried alongside (form values, retry count). Update context only via <code>assign()</code> — never mutate it directly.</li>
+    <li><strong>Actions are synchronous side effects</strong> (entry/exit/transition); async work goes in <code>invoke</code> (services), whose lifetime is tied to the state — leaving the state cancels the in-flight work.</li>
+    <li><strong>Guards are pure predicates</strong> that gate transitions; use them instead of if-else inside actions. On a multi-guard event, the first matching transition wins.</li>
+    <li><strong><code>after</code> = delayed transitions tied to state lifetime</strong> — auto-cancelled when the state exits, unlike a raw <code>setTimeout</code> you'd have to clear by hand.</li>
+    <li><strong>Actors (v5):</strong> each machine instance is an actor that receives events and can spawn children; spawned actors must be stopped or they leak.</li>
+    <li><strong>In React use <code>useMachine</code>/<code>useActor</code></strong> and always read state with <code>state.matches('x')</code>, never <code>state.value === 'x'</code> (hierarchical/parallel values are objects, not strings).</li>
+    <li><strong>Visualize first:</strong> draw the chart in Stately Studio before coding — if you can't draw it, you don't understand it, and PMs/designers can review the diagram.</li>
+    <li><strong>Don't use XState for</strong> simple CRUD, lists, settings, single-flag toggles, or plain request lifecycles (React Query already handles those) — the learning curve only pays off for genuinely complex behavioral state.</li>
+    <li><strong>The learning curve is real:</strong> the mental model is foreign to most React devs; budget 2-3 days to be productive.</li>
+    <li><strong>Mantra:</strong> "Discrete modes + specific transitions = state machine. Make illegal states unrepresentable. Visualize before coding."</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Modeling data as states</strong> — a separate state for every counter value or wizard step-index (<code>zero</code>, <code>one</code>, <code>two</code>…), producing state explosion. If two "states" differ only in their data, they're one state with different <em>context</em>. States are for distinct <em>behaviors</em>, not distinct values. (Runner-up: putting an async <code>fetch</code> inside an action — actions are sync; use <code>invoke</code>.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I reach for a state machine when state has discrete modes with specific allowed transitions — it makes impossible states like 'loading and error at once' unrepresentable."</div>
+  <div class="revision-say">"States are the finite set of behaviors; context is the unbounded data. If two states differ only in data, they should be one state with different context."</div>
+  <div class="revision-say">"Actions are synchronous; async work goes in invoke, tied to the state's lifetime so it cancels automatically when the state exits — that's why it beats a switch reducer with manual flags."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a finite state machine?</h3>
 <p>A computational model with a finite set of states. Exactly one state is active at a time. Events trigger transitions to other states. Some events are accepted only in certain states; others are ignored or forbidden.</p>
 
@@ -95,12 +105,10 @@ state: 'idle' | 'loading' | 'success' | 'error'
   <li>You know the distinction between data (context) and state (mode).</li>
   <li>For React: you use <code>useMachine</code> or <code>useActor</code> hooks; you don't manually orchestrate.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The 4 building blocks</h3>
 <table>
   <thead><tr><th>Block</th><th>Role</th></tr></thead>
@@ -207,12 +215,10 @@ const toggleMachine = createMachine({
 
 <h3>The "draw it first" rule</h3>
 <p>Before coding, draw the diagram (paper or Stately Studio). Statecharts read better as diagrams than as code; if you can't draw it, you don't understand it.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Installation</h3>
 <pre><code class="language-bash">yarn add xstate @xstate/react
 </code></pre>
@@ -476,12 +482,10 @@ test('login flow', () =&gt; {
 
 // Or use @xstate/test for model-based testing — auto-generates test cases from the chart.
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Form wizard (3-step signup)</h3>
 <pre><code class="language-ts">const wizardMachine = createMachine({
   id: 'wizard',
@@ -795,12 +799,11 @@ test('login flow', () =&gt; {
   }
 });
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>States vs context confusion</h3>
 <p>Beginners try to model "current page index" as a state ("step1," "step2," "step3"). Pages that mostly differ in data are usually one state with context. States are for distinct <em>behaviors</em>, not distinct data.</p>
 
@@ -898,12 +901,9 @@ if (state.matches('success')) {
 
 <h3>State explosion</h3>
 <p>If your chart has 50 states and 200 transitions, the diagram is unreadable. Decompose into multiple machines / actors. The complexity is real; statecharts visualize it but don't reduce it.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Modeling data as states</h3>
 <pre><code class="language-ts">// BAD — every counter value is a state
 states: {
@@ -1007,12 +1007,10 @@ actions: { stopRef: stopChild('ref') }
 
 <h3>Anti-pattern 10: Not learning the visualizer</h3>
 <p>Stately Studio (the editor) is a powerful authoring tool. Skipping it means you debug XState by reading the chart in code — much slower.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -1102,53 +1100,17 @@ actions: { stopRef: stopChild('ref') }
   <li>"I'd add tooling to auto-export machine diagrams into our design docs."</li>
   <li>"I'd persist key actors to disk so we can resume long-running flows after app restart."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">XState models <strong>behavior, not data</strong> — reach for it when state has <strong>discrete modes with specific allowed transitions</strong>, and use it to <strong>make impossible states impossible</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>A finite state machine = states + events + transitions</strong>, with exactly one state active at a time; each state defines which events it accepts and where they lead.</li>
-    <li><strong>Statecharts (Harel 1987) extend FSMs with</strong> hierarchy (substates), parallel regions, history states, guards, and actions. XState implements statecharts.</li>
-    <li><strong>The selling point: "make impossible states impossible."</strong> N booleans give 2^N combinations, most invalid ("loading + error + success"); enumerating real modes (<code>idle | loading | success | error</code>) forbids the illegal ones.</li>
-    <li><strong>States vs context:</strong> states are the <em>finite</em> set of named modes; context is the <em>unbounded</em> data carried alongside (form values, retry count). Update context only via <code>assign()</code> — never mutate it directly.</li>
-    <li><strong>Actions are synchronous side effects</strong> (entry/exit/transition); async work goes in <code>invoke</code> (services), whose lifetime is tied to the state — leaving the state cancels the in-flight work.</li>
-    <li><strong>Guards are pure predicates</strong> that gate transitions; use them instead of if-else inside actions. On a multi-guard event, the first matching transition wins.</li>
-    <li><strong><code>after</code> = delayed transitions tied to state lifetime</strong> — auto-cancelled when the state exits, unlike a raw <code>setTimeout</code> you'd have to clear by hand.</li>
-    <li><strong>Actors (v5):</strong> each machine instance is an actor that receives events and can spawn children; spawned actors must be stopped or they leak.</li>
-    <li><strong>In React use <code>useMachine</code>/<code>useActor</code></strong> and always read state with <code>state.matches('x')</code>, never <code>state.value === 'x'</code> (hierarchical/parallel values are objects, not strings).</li>
-    <li><strong>Visualize first:</strong> draw the chart in Stately Studio before coding — if you can't draw it, you don't understand it, and PMs/designers can review the diagram.</li>
-    <li><strong>Don't use XState for</strong> simple CRUD, lists, settings, single-flag toggles, or plain request lifecycles (React Query already handles those) — the learning curve only pays off for genuinely complex behavioral state.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Modeling data as states</strong> — a separate state for every counter value or wizard step-index (<code>zero</code>, <code>one</code>, <code>two</code>…), producing state explosion. If two "states" differ only in their data, they're one state with different <em>context</em>. States are for distinct <em>behaviors</em>, not distinct values. (Runner-up: putting an async <code>fetch</code> inside an action — actions are sync; use <code>invoke</code>.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I reach for a state machine when state has discrete modes with specific allowed transitions — it makes impossible states like 'loading and error at once' unrepresentable."</div>
-  <div class="revision-say">"States are the finite set of behaviors; context is the unbounded data. If two states differ only in data, they should be one state with different context."</div>
-  <div class="revision-say">"Actions are synchronous; async work goes in invoke, tied to the state's lifetime so it cancels automatically when the state exits — that's why it beats a switch reducer with manual flags."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why XState models behavior, not data, and when discrete modes justify it?</li>
-    <li>Can you explain how a machine makes impossible states (loading and error at once) unrepresentable?</li>
-    <li>Can you distinguish states (finite behaviors) from context (unbounded data)?</li>
-    <li>Can you spot "modeling data as states" causing state explosion, and collapse it into context?</li>
-    <li>Can you explain why async work goes in <code>invoke</code>, not an action, and how it auto-cancels on state exit?</li>
-    <li>Can you argue why a machine beats a switch reducer with manual flags?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. How do you spot "modeling data as states", and how do you fix the state explosion it causes?</div>
+  <div class="qa-answer">
+    <p>The smell is a state for every value: a counter modeled as <code>zero</code>, <code>one</code>, <code>two</code>… or a wizard with one state per step index. If two "states" differ only in their data, they are one state with different context. Collapse them into a single state and keep the value in context, updated only through <code>assign()</code>. States are for distinct behaviors, not distinct values.</p>
+<pre><code class="language-ts">// GOOD: one state, count in context
+context: { count: 0 },
+states: { active: {} }</code></pre>
+  </div>
 </div>
-`}
+` },
 
   ]
 });

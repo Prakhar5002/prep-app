@@ -1,32 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-bit',
-  module: 'dsa',
-  title: 'Bit Manipulation',
-  estimatedReadTime: '40 min',
-  tags: ['bits', 'bitwise', 'xor', 'masking', 'population-count', 'subset-iteration', 'bit-tricks'],
+  id: "dsa-bit",
+  module: "dsa",
+  title: "Bit Manipulation",
+  estimatedReadTime: "40 min",
+  tags: ["bits","bitwise","xor","masking","population-count","subset-iteration","bit-tricks"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Bit manipulation</strong> uses bitwise operators (<code>&amp;</code>, <code>|</code>, <code>^</code>, <code>~</code>, <code>&lt;&lt;</code>, <code>&gt;&gt;</code>, <code>&gt;&gt;&gt;</code>) to operate on integers at the bit level. It's the right answer for problems involving sets of small N (subset bitmasks), XOR-based parity tricks, single-pass O(1) optimizations, and low-level encodings. Most "is this a power of 2?" / "find the unique element" / "iterate all subsets" problems collapse to a few bit operations.</p>
-<ul>
-  <li><strong>The 6 essential operators:</strong> AND (<code>&amp;</code>), OR (<code>|</code>), XOR (<code>^</code>), NOT (<code>~</code>), left shift (<code>&lt;&lt;</code>), right shift (<code>&gt;&gt;</code>, signed) and unsigned right shift (<code>&gt;&gt;&gt;</code>).</li>
-  <li><strong>JS specifics:</strong> bitwise ops coerce to 32-bit signed integers. Numbers above 2³¹ truncate. For 64-bit, use BigInt.</li>
-  <li><strong>Patterns:</strong> set / clear / toggle / test bit; isolate lowest set bit; count set bits (popcount); check power of 2; XOR all elements.</li>
-  <li><strong>Subset bitmasks:</strong> for N ≤ 20, represent any subset of N items as an N-bit integer. Iterate all 2^N subsets.</li>
-  <li><strong>XOR identities:</strong> <code>a ^ a = 0</code>, <code>a ^ 0 = a</code>, commutative + associative — basis for "find unique" and "swap without temp."</li>
-  <li><strong>Bit-trick interview classics:</strong> Single Number, Counting Bits, Maximum XOR, Power of Two, Sum of Two Integers without +, Subsets via bitmask.</li>
-  <li><strong>Real-world:</strong> color packing (RGB565), permission flags, feature toggles, hash bloom filters, GPU compute, network packet headers.</li>
-</ul>
-<p><strong>Mantra:</strong> "AND to test/clear, OR to set, XOR to toggle/find-unique, shift to scale by 2. Subset of 20 items = 20-bit integer."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Bit manipulation operates on integers <strong>bit by bit</strong>; master a handful of operators plus the XOR identities and whole problem classes — find-the-unique, power-of-two, subset enumeration — <strong>collapse to a few O(1)-per-element tricks</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Six operators:</strong> AND <code>&amp;</code> (test/clear), OR <code>|</code> (set), XOR <code>^</code> (toggle/find-unique), NOT <code>~</code>, and shifts <code>&lt;&lt;</code> / <code>&gt;&gt;</code> (signed) / <code>&gt;&gt;&gt;</code> (unsigned, JS-only).</li>
+    <li><strong>Single-bit recipes:</strong> get <code>(n &gt;&gt; i) &amp; 1</code>, set <code>n |= (1 &lt;&lt; i)</code>, clear <code>n &amp;= ~(1 &lt;&lt; i)</code>, toggle <code>n ^= (1 &lt;&lt; i)</code>.</li>
+    <li><strong>The two magic tricks:</strong> <code>n &amp; (n - 1)</code> clears the lowest set bit (Brian Kernighan popcount, and power-of-two check when the result is 0); <code>n &amp; -n</code> isolates the lowest set bit.</li>
+    <li><strong>XOR identities</strong> — <code>a ^ a = 0</code>, <code>a ^ 0 = a</code>, commutative + associative — power Single Number (XOR everything, pairs cancel), Missing Number, and swap-without-temp.</li>
+    <li><strong>Subset bitmask for small N (≤ 20):</strong> represent any subset of N items as an N-bit integer and iterate <code>mask</code> from 0 to <code>2^N - 1</code>; iterate submasks with <code>sub = (sub - 1) &amp; mask</code>.</li>
+    <li><strong>Bitmask DP</strong> (TSP, smallest sufficient team): state = which subset is visited/covered; 2^N states must fit in memory — comfortable at N=20 (~1M), borderline at 25, too big at 30.</li>
+    <li><strong>JS specifics:</strong> bitwise operators coerce to <strong>32-bit signed</strong> integers (<code>1 &lt;&lt; 31</code> is negative, <code>0xFFFFFFFF | 0</code> is -1); use <strong>BigInt</strong> for more than 32 bits (no <code>&gt;&gt;&gt;</code> on BigInt).</li>
+    <li><strong>Where it pays off:</strong> interview classics Single Number, Counting Bits, Maximum XOR, Power of Two, Sum of Two Integers, Subsets via bitmask; real-world permission flags, feature toggles, color packing (RGB565), bloom filters, packet headers.</li>
+    <li><strong>Mantra:</strong> "AND to test/clear, OR to set, XOR to toggle/find-unique, shift to scale by 2. Subset of 20 items = 20-bit integer."</li>
+    <li>XOR is addition-without-carry (<code>^</code> is the sum bit, <code>&amp;</code> shifted left is the carry) — the basis of Sum of Two Integers without <code>+</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Power-of-two check without the <code>n &gt; 0</code> guard, and shift counts wrapping mod 32.</strong> <code>(n &amp; (n - 1)) === 0</code> is also true for <code>n = 0</code>, so it wrongly reports 0 as a power of two — always write <code>n &gt; 0 &amp;&amp; (n &amp; (n - 1)) === 0</code>. Likewise <code>1 &lt;&lt; 32</code> is 1 (not the next bit) because JS masks the shift count to 5 bits, and building a mask of more than 31 bits overflows the 32-bit signed range — reach for BigInt. Also parenthesize: <code>n &amp; 1 == 1</code> parses as <code>n &amp; (1 == 1)</code> since <code>==</code> binds tighter than <code>&amp;</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"For find-the-unique I'd XOR every element — pairs cancel to zero and the lone element remains, O(n) time and O(1) space."</div>
+  <div class="revision-say">"<code>n &amp; (n - 1)</code> clears the lowest set bit, so it gives me both an O(set-bits) popcount and a clean power-of-two check — with an <code>n &gt; 0</code> guard."</div>
+  <div class="revision-say">"For subsets of up to about 20 items I'll represent each subset as a bitmask and iterate 0 to 2^N, and I'd note JS coerces bitwise ops to 32-bit signed, so I'd switch to BigInt beyond that."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why bit manipulation matters</h3>
 <p>Modern computers are bit machines. Many algorithms have bit-level shortcuts that are 10-100× faster than equivalent arithmetic. Even if you don't write low-level code, certain interview problems are easier with bits, and certain perf-critical product code (image processing, hashing, compression) lives in bits.</p>
 
@@ -71,12 +79,10 @@ window.PREP_SITE.registerTopic({
   <li>You understand JS's 32-bit coercion and switch to BigInt when needed.</li>
   <li>You can trace bit operations by hand.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The fundamental bit operations</h3>
 <table>
   <thead><tr><th>Operation</th><th>Recipe</th></tr></thead>
@@ -189,12 +195,10 @@ const newFlags = flags | SET;
 
 <h3>Bit-counting with Brian Kernighan's algorithm</h3>
 <p>The trick <code>n &amp; (n - 1)</code> clears exactly the lowest set bit. Iterating until 0 takes exactly popcount(n) iterations — far better than scanning all 32 bits.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Single Number — find the one without a pair</h3>
 <pre><code class="language-js">function singleNumber(nums) {
   let result = 0;
@@ -425,12 +429,10 @@ perms ^= EXECUTE;
 }
 // Total: 3^N over all masks of N bits — useful in subset DP
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Single Number (LeetCode 136)</h3>
 <p>XOR all elements; pairs cancel.</p>
 
@@ -573,12 +575,11 @@ function showSetBits(n) {
 }
 // 13 (0b1101) → 0, 2, 3
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>JS 32-bit signed coercion</h3>
 <pre><code class="language-js">1 &lt;&lt; 31;   // -2147483648 (negative!)
 2147483648 | 0;   // -2147483648 (negative!)
@@ -654,12 +655,9 @@ bin(13);   // "00000000000000000000000000001101"
 
 <h3>Mobile JS engines (Hermes / JSC)</h3>
 <p>All major mobile JS engines implement bitwise the same as V8 (32-bit signed). BigInt support varies; check Hermes version.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: 32-bit overflow surprise</h3>
 <pre><code class="language-js">// BAD — for n &gt; 32 bits
 let mask = 0;
@@ -767,12 +765,10 @@ const safe = (r &amp; 0xFF) &lt;&lt; 16;
 
 <h3>Anti-pattern 10: Premature bit packing</h3>
 <p>Packing fields into bits saves memory. For 1000 records, the savings are negligible; readability suffers. Use bit-packing for hot data structures (graphics, network) where memory or cache locality matters.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 14 problems worth memorizing patterns for</h3>
 <table>
   <thead><tr><th>Problem</th><th>Pattern</th></tr></thead>
@@ -889,49 +885,41 @@ const safe = (r &amp; 0xFF) &lt;&lt; 16;
   <li><strong>Trie</strong> (prefix queries), <strong>Backtracking</strong>, <strong>DP</strong>, <strong>Greedy</strong>, <strong>Binary Search</strong>, <strong>Bit Manipulation</strong> (this topic).</li>
 </ul>
 <p>16 topics total. Together they cover ~95% of FAANG-style interview questions. Recognize the pattern → reach for the right tool → execute cleanly.</p>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Bit manipulation operates on integers <strong>bit by bit</strong>; master a handful of operators plus the XOR identities and whole problem classes — find-the-unique, power-of-two, subset enumeration — <strong>collapse to a few O(1)-per-element tricks</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Six operators:</strong> AND <code>&amp;</code> (test/clear), OR <code>|</code> (set), XOR <code>^</code> (toggle/find-unique), NOT <code>~</code>, and shifts <code>&lt;&lt;</code> / <code>&gt;&gt;</code> (signed) / <code>&gt;&gt;&gt;</code> (unsigned, JS-only).</li>
-    <li><strong>Single-bit recipes:</strong> get <code>(n &gt;&gt; i) &amp; 1</code>, set <code>n |= (1 &lt;&lt; i)</code>, clear <code>n &amp;= ~(1 &lt;&lt; i)</code>, toggle <code>n ^= (1 &lt;&lt; i)</code>.</li>
-    <li><strong>The two magic tricks:</strong> <code>n &amp; (n - 1)</code> clears the lowest set bit (Brian Kernighan popcount, and power-of-two check when the result is 0); <code>n &amp; -n</code> isolates the lowest set bit.</li>
-    <li><strong>XOR identities</strong> — <code>a ^ a = 0</code>, <code>a ^ 0 = a</code>, commutative + associative — power Single Number (XOR everything, pairs cancel), Missing Number, and swap-without-temp.</li>
-    <li><strong>Subset bitmask for small N (≤ 20):</strong> represent any subset of N items as an N-bit integer and iterate <code>mask</code> from 0 to <code>2^N - 1</code>; iterate submasks with <code>sub = (sub - 1) &amp; mask</code>.</li>
-    <li><strong>Bitmask DP</strong> (TSP, smallest sufficient team): state = which subset is visited/covered; 2^N states must fit in memory — comfortable at N=20 (~1M), borderline at 25, too big at 30.</li>
-    <li><strong>JS specifics:</strong> bitwise operators coerce to <strong>32-bit signed</strong> integers (<code>1 &lt;&lt; 31</code> is negative, <code>0xFFFFFFFF | 0</code> is -1); use <strong>BigInt</strong> for more than 32 bits (no <code>&gt;&gt;&gt;</code> on BigInt).</li>
-    <li>XOR is addition-without-carry (<code>^</code> is the sum bit, <code>&amp;</code> shifted left is the carry) — the basis of Sum of Two Integers without <code>+</code>.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Power-of-two check without the <code>n &gt; 0</code> guard, and shift counts wrapping mod 32.</strong> <code>(n &amp; (n - 1)) === 0</code> is also true for <code>n = 0</code>, so it wrongly reports 0 as a power of two — always write <code>n &gt; 0 &amp;&amp; (n &amp; (n - 1)) === 0</code>. Likewise <code>1 &lt;&lt; 32</code> is 1 (not the next bit) because JS masks the shift count to 5 bits, and building a mask of more than 31 bits overflows the 32-bit signed range — reach for BigInt. Also parenthesize: <code>n &amp; 1 == 1</code> parses as <code>n &amp; (1 == 1)</code> since <code>==</code> binds tighter than <code>&amp;</code>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"For find-the-unique I'd XOR every element — pairs cancel to zero and the lone element remains, O(n) time and O(1) space."</div>
-  <div class="revision-say">"<code>n &amp; (n - 1)</code> clears the lowest set bit, so it gives me both an O(set-bits) popcount and a clean power-of-two check — with an <code>n &gt; 0</code> guard."</div>
-  <div class="revision-say">"For subsets of up to about 20 items I'll represent each subset as a bitmask and iterate 0 to 2^N, and I'd note JS coerces bitwise ops to 32-bit signed, so I'd switch to BigInt beyond that."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you list AND, OR, XOR, and the shifts and what each is used for?</li>
-    <li>Can you use XOR to find the single non-duplicated number?</li>
-    <li>Can you set, clear, and toggle a specific bit from memory?</li>
-    <li>Can you use a bitmask to represent subsets and iterate 0 to 2^N?</li>
-    <li>Can you name the JS 32-bit-signed coercion trap for bitwise ops?</li>
-    <li>Can you name 2 problems bit manipulation solves?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. List the bitwise operators and what each is used for.</div>
+  <div class="qa-answer">
+    <p>AND <code>&amp;</code> tests or clears bits (keeps a bit only where both are 1); OR <code>|</code> sets bits; XOR <code>^</code> toggles bits and finds the unique element, because equal bits cancel; NOT <code>~</code> flips every bit and is used to build clear-masks like <code>~(1 &lt;&lt; i)</code>. Left shift <code>&lt;&lt;</code> multiplies by 2 and builds masks; <code>&gt;&gt;</code> is the signed right shift (sign-extends, so <code>-5 &gt;&gt; 1</code> is -3); <code>&gt;&gt;&gt;</code> is the JS-only unsigned right shift (<code>-5 &gt;&gt;&gt; 1</code> is 2147483645), and <code>n &gt;&gt;&gt; 0</code> reads a value as unsigned.</p>
+  </div>
 </div>
-`}
-]
+<div class="qa-block">
+  <div class="qa-question">Q2. How do you use XOR to find the single non-duplicated number?</div>
+  <div class="qa-answer">
+    <p>XOR every element into an accumulator that starts at 0. Since <code>a ^ a = 0</code>, <code>a ^ 0 = a</code>, and XOR is commutative and associative, every pair cancels regardless of order and only the lone element remains. That's O(n) time and O(1) space, beating sorting or a hash set.</p>
+    <pre><code class="language-js">let result = 0;
+for (const n of nums) result ^= n;
+return result;</code></pre>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. How do you get, set, clear, and toggle bit i?</div>
+  <div class="qa-answer">
+    <p>Get: <code>(n &gt;&gt; i) &amp; 1</code>. Set: <code>n |= (1 &lt;&lt; i)</code>. Clear: <code>n &amp;= ~(1 &lt;&lt; i)</code>. Toggle: <code>n ^= (1 &lt;&lt; i)</code>. Two related tricks: <code>n &amp; (n - 1)</code> clears the lowest set bit, and <code>n &amp; -n</code> isolates it. Always parenthesize, because <code>==</code> binds tighter than <code>&amp;</code>.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How do you use a bitmask to represent and enumerate subsets?</div>
+  <div class="qa-answer">
+    <p>For N items (practical up to about 20), each integer <code>mask</code> from 0 to <code>2^N - 1</code> is one subset: bit i is set when item i is included. Loop <code>for (let mask = 0; mask &lt; (1 &lt;&lt; n); mask++)</code> and, inside, push <code>nums[i]</code> whenever <code>mask &amp; (1 &lt;&lt; i)</code> is non-zero — 2^N subsets, O(N · 2^N) total. To walk only the submasks of a given mask, iterate <code>sub = (sub - 1) &amp; mask</code>. The same encoding is the state in bitmask DP (TSP), where 2^N states must fit in memory: about 1M at N = 20.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. What is the JavaScript 32-bit signed coercion trap with bitwise operators?</div>
+  <div class="qa-answer">
+    <p>Every JS bitwise operator converts its operands to 32-bit signed integers, so numbers above 2^31 are truncated: <code>1 &lt;&lt; 31</code> is -2147483648, <code>0xFFFFFFFF | 0</code> is -1, and NaN or Infinity become 0. Shift counts are masked to 5 bits, so <code>1 &lt;&lt; 32</code> is 1. Use <code>&gt;&gt;&gt; 0</code> to view a result as unsigned, and switch to BigInt (<code>1n &lt;&lt; 50n</code>) for more than 32 bits — BigInt has no <code>&gt;&gt;&gt;</code> and can't be mixed with Number in one expression.</p>
+  </div>
+</div>
+` },
+
+  ]
 });

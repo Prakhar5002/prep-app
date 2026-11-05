@@ -1,31 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'perf-memory',
-  module: 'Frontend Performance',
-  title: 'Memory Leaks',
-  estimatedReadTime: '28 min',
-  tags: ['performance', 'memory', 'leak', 'devtools', 'heap-snapshot', 'detached-dom', 'listeners', 'closures'],
+  id: "perf-memory",
+  module: "Frontend Performance",
+  title: "Memory Leaks",
+  estimatedReadTime: "28 min",
+  tags: ["performance","memory","leak","devtools","heap-snapshot","detached-dom","listeners","closures"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>A <strong>memory leak</strong> is when an object stays reachable after you're done with it, so the GC cannot reclaim it. Leaks accumulate during a session: scrolling slows, animations stutter, the tab eventually freezes or is killed by the browser. Mobile and SPA users feel them most — long sessions across many route changes.</p>
-<ul>
-  <li><strong>Reachability is the rule</strong>: GC reclaims objects unreachable from any root (globals, call stack, DOM tree, timers, listeners). Anything still referenced is alive — even if your code is "done with it."</li>
-  <li><strong>Five classic web leak sources</strong>: detached DOM held in JS, unremoved event listeners, uncleared timers/intervals, undisconnected observers (Intersection / Resize / Mutation), closures over big data.</li>
-  <li><strong>Detection</strong>: Chrome DevTools Memory tab — heap snapshots, comparison view, allocation profiles. Look for retainer chains and "Detached" tree filter.</li>
-  <li><strong>Production signals</strong>: <code>performance.memory</code> (Chrome only), <code>PerformanceObserver('measure-memory')</code>, RUM tracking; sustained growth across navigations = leak.</li>
-  <li><strong>Mitigations</strong>: cleanup in <code>useEffect</code>, AbortController for requests, <code>WeakMap</code>/<code>WeakRef</code> for caches, virtualization for long lists, single-source-of-truth state.</li>
-  <li><strong>Don't confuse leak with bloat</strong>: leak = monotonic growth; bloat = high but stable usage. Different fixes.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Leaks are forgotten references, not "objects you no longer need." Any reference still in the graph keeps the object alive. Find the retainer; cut the reference; verify with another snapshot.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Leaks are forgotten references, not "objects you no longer need"</strong> — anything still reachable from a root keeps the object alive, so find the retainer, cut the reference, and verify with another snapshot.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Reachability is the rule.</strong> The GC reclaims only what's unreachable from a root (window, call stack, DOM tree, timers, listeners, observers, pending promises). Still referenced = alive, even if you're "done" with it.</li>
+    <li><strong>Five canonical web leaks:</strong> detached DOM held in JS, event listeners never removed, timers/intervals never cleared, observers (Intersection/Resize/Mutation) never disconnected, and closures capturing big state in long-lived functions.</li>
+    <li><strong>Leak ≠ bloat.</strong> Leak = monotonic growth from a forgotten reference (crashes after long use); bloat = high-but-stable usage from over-caching (slow, doesn't crash). Different fixes: cut the retainer vs bound the caches.</li>
+    <li><strong>DevTools workflow:</strong> force GC (trash icon) → baseline snapshot → repeat the suspect action 5-10x → force GC → second snapshot → Comparison view sorted by Δ → expand the growing type → walk the retainer chain to the holder.</li>
+    <li><strong>Filter "Detached"</strong> in the class box to find detached DOM subtrees, then read the Retainers panel — usually an array, a Map, an event-bus subscription, or a closure.</li>
+    <li><strong>Shallow vs retained size:</strong> shallow = the object's own bytes; retained = shallow + everything it exclusively keeps alive. Sort by retained to find the heaviest leak anchors (a 200-byte object can retain 40MB).</li>
+    <li><strong>React cleanup:</strong> return a cleanup from <code>useEffect</code> — <code>clearInterval</code>, <code>removeEventListener</code>, <code>observer.disconnect()</code>, <code>AbortController.abort()</code> — it runs on unmount and before each re-run.</li>
+    <li><strong>WeakMap / WeakRef</strong> hold keys/targets weakly so entries auto-clear when the key is otherwise unreachable — good for metadata keyed by DOM nodes; timing of <code>FinalizationRegistry</code> is non-deterministic, so never rely on it for correctness.</li>
+    <li>Bound module-scope caches (LRU / TTL), virtualize long lists, and store a <strong>named</strong> bound handler so <code>removeEventListener</code> can use the same reference.</li>
+    <li><code>performance.memory</code> is Chrome-only and quantized; <code>performance.measureUserAgentSpecificMemory()</code> is more accurate but rate-limited — sample sparingly to RUM and watch for growth across navigations. Automate detection with fuite/memlab in CI.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>"The GC will eventually clean it up."</strong> A tracing GC only reclaims <em>unreachable</em> objects — if your code still holds any reference (a cache entry, an uncleared interval, an un-removed listener, a closed-over array), its hands are tied and the fix is in your code, not the GC. Concrete version: adding a listener or <code>setInterval</code> on mount without removing it on unmount pins the callback's closure (and the whole component) forever — and an <strong>anonymous</strong> listener can't be removed at all, so store a named reference. Always verify the fix by force-GC + a second snapshot showing the count no longer grows.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A JS memory leak is a logical leak — an object still reachable from a root after you're done with it, so the GC can't reclaim it. The fix is to drop the lingering reference."</div>
+  <div class="revision-say">"The usual suspects are detached DOM, un-removed listeners, uncleared timers, undisconnected observers, and closures over big state — I clean all of them up in the useEffect return."</div>
+  <div class="revision-say">"To find one I force GC, snapshot, repeat the action, force GC, snapshot again, and diff — then sort by retained size and walk the retainer chain to whatever's holding the reference."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "leak" means in JavaScript</h3>
 <p>Unlike C / C++, you don't <code>malloc</code> / <code>free</code>. The garbage collector reclaims objects unreachable from a set of roots. A "leak" in JS is therefore a logical leak — the GC can't reclaim what it can still reach. Common roots in browsers:</p>
 <ul>
@@ -70,10 +79,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why "performance.memory" is unreliable for production</h3>
 <p>Chrome exposes <code>performance.memory</code> (jsHeapSizeLimit, totalJSHeapSize, usedJSHeapSize) but: only Chrome, deliberately quantized for security (so timing attacks can't leak data), often updates lazily. Useful as a smoke signal in dev / a/b experiments but not for precise tracking. The newer <code>performance.measureUserAgentSpecificMemory()</code> is more accurate but rate-limited and origin-locked.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "graph of references" picture</h3>
 <div class="diagram">
 <pre>
@@ -156,10 +165,10 @@ Retained size: shallow + everything this object EXCLUSIVELY keeps alive
   <div class="callout-title">Common misconception</div>
   <p>"GC will eventually clean it up." Tracing GC only reclaims unreachable objects. If your code still has any reference, the GC's hands are tied. The fix is in your code, not in the GC.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Chrome DevTools Memory tab — three tools</h3>
 <ol>
   <li><strong>Heap snapshot</strong> — point-in-time graph of all live JS objects. Use for diff detection.</li>
@@ -293,10 +302,10 @@ detach();</code></pre>
   onClick() {}
 }
 // If you bind inline (el.addEventListener('click', this.onClick.bind(this))) you can't remove it later — different ref each time.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — detached DOM cache</h3>
 <pre><code class="language-js">// BAD
 const cache = [];
@@ -476,10 +485,11 @@ module.exports = {
   },
 };
 // fuite reports: "+ 25 detached HTMLDivElements per iteration"</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. GC isn't synchronous</h3>
 <p>After dropping a reference, the object isn't immediately freed. Force GC in DevTools (trash icon) before snapshotting; otherwise temporary growth looks like a leak.</p>
 
@@ -541,10 +551,9 @@ window.addEventListener('focus', () =&gt; analytics.ping());
 
 <h3>20. Memory in dev mode is not production memory</h3>
 <p>Dev bundles include sourcemaps + warnings + StrictMode + Profiler hooks. Real production size is usually 30-50% smaller. Profile in production builds for representative numbers.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — global subscriptions that components register</h3>
 <pre><code class="language-js">function Comp() {
   document.addEventListener('keydown', onKey); // never removed
@@ -610,10 +619,10 @@ function log(x) { logs.push(x); }   // forever-growing</code></pre>
 
 <h3>Anti-pattern 15 — console.log in production</h3>
 <p>If DevTools is open, logged objects are retained. Even closed, the string serialization costs CPU. Strip via build transform.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What is a memory leak in JavaScript?</div>
   <div class="qa-answer">
@@ -786,47 +795,20 @@ function log(x) { logs.push(x); }   // forever-growing</code></pre>
     <li>You set up automated leak detection (fuite / memlab) in CI.</li>
   </ul>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Leaks are forgotten references, not "objects you no longer need"</strong> — anything still reachable from a root keeps the object alive, so find the retainer, cut the reference, and verify with another snapshot.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Reachability is the rule.</strong> The GC reclaims only what's unreachable from a root (window, call stack, DOM tree, timers, listeners, observers, pending promises). Still referenced = alive, even if you're "done" with it.</li>
-    <li><strong>Five canonical web leaks:</strong> detached DOM held in JS, event listeners never removed, timers/intervals never cleared, observers (Intersection/Resize/Mutation) never disconnected, and closures capturing big state in long-lived functions.</li>
-    <li><strong>Leak ≠ bloat.</strong> Leak = monotonic growth from a forgotten reference (crashes after long use); bloat = high-but-stable usage from over-caching (slow, doesn't crash). Different fixes: cut the retainer vs bound the caches.</li>
-    <li><strong>DevTools workflow:</strong> force GC (trash icon) → baseline snapshot → repeat the suspect action 5-10x → force GC → second snapshot → Comparison view sorted by Δ → expand the growing type → walk the retainer chain to the holder.</li>
-    <li><strong>Filter "Detached"</strong> in the class box to find detached DOM subtrees, then read the Retainers panel — usually an array, a Map, an event-bus subscription, or a closure.</li>
-    <li><strong>Shallow vs retained size:</strong> shallow = the object's own bytes; retained = shallow + everything it exclusively keeps alive. Sort by retained to find the heaviest leak anchors (a 200-byte object can retain 40MB).</li>
-    <li><strong>React cleanup:</strong> return a cleanup from <code>useEffect</code> — <code>clearInterval</code>, <code>removeEventListener</code>, <code>observer.disconnect()</code>, <code>AbortController.abort()</code> — it runs on unmount and before each re-run.</li>
-    <li><strong>WeakMap / WeakRef</strong> hold keys/targets weakly so entries auto-clear when the key is otherwise unreachable — good for metadata keyed by DOM nodes; timing of <code>FinalizationRegistry</code> is non-deterministic, so never rely on it for correctness.</li>
-    <li>Bound module-scope caches (LRU / TTL), virtualize long lists, and store a <strong>named</strong> bound handler so <code>removeEventListener</code> can use the same reference.</li>
-    <li><code>performance.memory</code> is Chrome-only and quantized; <code>performance.measureUserAgentSpecificMemory()</code> is more accurate but rate-limited — sample sparingly to RUM and watch for growth across navigations. Automate detection with fuite/memlab in CI.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>"The GC will eventually clean it up."</strong> A tracing GC only reclaims <em>unreachable</em> objects — if your code still holds any reference (a cache entry, an uncleared interval, an un-removed listener, a closed-over array), its hands are tied and the fix is in your code, not the GC. Concrete version: adding a listener or <code>setInterval</code> on mount without removing it on unmount pins the callback's closure (and the whole component) forever — and an <strong>anonymous</strong> listener can't be removed at all, so store a named reference. Always verify the fix by force-GC + a second snapshot showing the count no longer grows.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A JS memory leak is a logical leak — an object still reachable from a root after you're done with it, so the GC can't reclaim it. The fix is to drop the lingering reference."</div>
-  <div class="revision-say">"The usual suspects are detached DOM, un-removed listeners, uncleared timers, undisconnected observers, and closures over big state — I clean all of them up in the useEffect return."</div>
-  <div class="revision-say">"To find one I force GC, snapshot, repeat the action, force GC, snapshot again, and diff — then sort by retained size and walk the retainer chain to whatever's holding the reference."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. What are the GC roots in a browser that keep objects alive?</div>
+  <div class="qa-answer">
+    <p>The GC reclaims only objects unreachable from a root, so a JS leak is a logical leak: something still reaches the object. Common roots: <code>window</code> / <code>globalThis</code> and everything hanging off it (modules, libraries, vars); the current call stack (locals, parameters, captured closures); pending callbacks in the microtask and macrotask queues; the DOM tree attached to <code>document</code>; active timers, which pin their callback closures; registered event listeners; active observers (Intersection, Resize, Mutation, PerformanceObserver), which pin both callback and targets; pending promises, which pin their <code>.then</code> reactions; and open WebSocket, EventSource and fetch streams.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the GC roots that keep objects alive?</li>
-    <li>Can you list the usual leak sources — listeners, timers, observers, closures, detached DOM?</li>
-    <li>Can you run the force-GC, snapshot, repeat, snapshot, diff workflow to find a leak?</li>
-    <li>Can you walk a retainer chain back to whatever is holding a reference?</li>
-    <li>Can you tell a real leak apart from GC delay?</li>
-    <li>Can you explain how a closure can pin a detached DOM subtree?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. How can a closure keep a detached DOM subtree alive?</div>
+  <div class="qa-answer">
+    <p>A closure keeps its outer scope alive for as long as the function itself is reachable. If a long-lived function, such as a registered event listener, an uncleared <code>setInterval</code> callback, or an observer callback, captures a variable that references a DOM node, then removing that node from the document does not free it: the root pins the callback, the callback pins its scope, and the scope pins the node plus its whole subtree, children and listeners included. In a heap snapshot it shows up under the "Detached" filter with a closure in its retainer chain. Fix: remove the listener, clear the timer or disconnect the observer in cleanup, and capture only what you need, for example a primitive instead of the whole object.</p>
+  </div>
 </div>
-`}
+` },
 
-]
+  ]
 });

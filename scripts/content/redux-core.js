@@ -1,26 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'redux-core',
-  module: 'redux',
-  title: 'Why Redux & Core Concepts',
-  estimatedReadTime: '25 min',
-  tags: ['redux', 'state-management', 'fundamentals', 'store', 'reducers'],
+  id: "redux-core",
+  module: "redux",
+  title: "Why Redux & Core Concepts",
+  estimatedReadTime: "25 min",
+  tags: ["redux","state-management","fundamentals","store","reducers"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>Redux</strong> is a small library for holding all of an app's shared state in <strong>one place</strong> (the store), where the only way to change it is by describing "what happened" (an <strong>action</strong>) and running that through a <strong>pure function</strong> (a reducer) that computes the new state.</p>
-<ul>
-  <li><strong>The loop:</strong> a component calls <code>dispatch(action)</code> → the reducer computes <code>newState</code> from <code>(state, action)</code> → the store saves it → every subscribed component re-reads and re-renders.</li>
-  <li><strong>Why it exists:</strong> once state needs to be shared by components that aren't close neighbors, passing it down as props ("prop-drilling") gets painful and updates get hard to trace. Redux gives that shared state one predictable home.</li>
-  <li><strong>You might not need it.</strong> Local component state (<code>useState</code>) still wins for anything one component (or its direct children) own. React <code>Context</code> is often enough for state a handful of components share. Redux earns its keep when state is large, shared across many unrelated features, or you need strict traceability (e.g. undo/redo, time-travel debugging).</li>
-  <li><strong>This topic hand-rolls Redux</strong> — writing <code>createStore</code>, action objects, and switch-statement reducers by hand — purely so you can <em>see</em> the mechanism. Nobody ships hand-written Redux in 2026.</li>
-  <li><strong>What you'll actually use:</strong> <a href="#/topic/redux-toolkit">Redux Toolkit (RTK)</a>, next topic in this module, which generates all of this boilerplate for you. Learn the primitives here first — RTK will make a lot more sense once you've seen what it's automating away.</li>
-</ul>
-<p>Already know the basics and just want a fast reference? See the condensed <a href="#/topic/state-redux">Redux / RTK / RTK Query</a> deep-dive.</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Redux keeps all shared state in <strong>one store</strong> that changes only when you <strong>dispatch an action</strong> (a plain object describing what happened) through a <strong>pure reducer</strong> that returns a brand-new state — one-way, synchronous, and traceable.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Four pieces, one loop:</strong> a component calls <code>dispatch(action)</code> → the store runs the <strong>reducer</strong> <code>(state, action) =&gt; newState</code> → the store saves the new state → every subscriber re-reads and re-renders.</li>
+    <li><strong>Store</strong> = single source of truth (one per app); <strong>action</strong> = a plain object describing what happened, just data (<code>{ type, payload }</code>); <strong>reducer</strong> = the pure function that computes the next state; <strong>dispatch</strong> = the only door in.</li>
+    <li><strong>The problem it solves:</strong> sharing state across components that aren't close relatives without <strong>prop-drilling</strong>, and making every change <strong>traceable</strong> to one action instead of scattered mutations.</li>
+    <li><strong>Reducers must never mutate</strong> — always build and return a new object/array. Same reference before and after means "did state change?" (reference equality) sees nothing, so <code>useSelector</code> skips re-renders and DevTools records no history.</li>
+    <li><strong>Reducers must be pure</strong> — no <code>fetch</code>, no <code>Date.now()</code>, no <code>Math.random()</code>. Same <code>(state, action)</code> always yields the same result; that determinism is what makes time-travel debugging and replay possible.</li>
+    <li><strong>The whole store is ~15 lines:</strong> a closed-over <code>state</code> variable, a <code>dispatch</code> that reassigns it via the reducer, and a list of <code>subscribe</code> callbacks. No magic.</li>
+    <li><strong>React wiring (react-redux):</strong> <code>Provider</code> once near the root, then any component reads with <code>useSelector</code> and sends actions with <code>useDispatch</code> — no props threaded through.</li>
+    <li><strong>Keep state (and actions) JSON-serializable</strong> — no Date/Map/class-instances/Promises/functions — or DevTools and persistence break. Store a Date as an ISO string.</li>
+    <li><strong>Don't store derived data</strong> (e.g. <code>totalPrice</code> from <code>items</code>) — recompute it with a selector on read, or you'll forget to keep it in sync somewhere.</li>
+    <li><strong>You often don't need Redux:</strong> <code>useState</code> for local, Context for a few stable shared values, React Query for server data — Redux (via RTK) earns its cost only for large, cross-feature client state needing auditability/undo.</li>
+    <li><strong>Nobody ships hand-written Redux in 2026</strong> — this hand-rolled version exists to reveal the mechanism; real apps use Redux Toolkit, which generates the boilerplate.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Mutating state inside a reducer</strong> — <code>state.count++; return state;</code> looks like it works (the number goes up) but returns the <em>same</em> object reference. Anything comparing <code>oldState === newState</code> — which is exactly how <code>useSelector</code> decides to re-render and how DevTools records history — concludes nothing changed, so components silently stop updating. Always return a new object.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Redux puts shared state in one store and the only way to change it is dispatching an action through a pure reducer that returns new state — so every change is one-way and traceable to a specific action."</div>
+  <div class="revision-say">"Reducers must be pure and never mutate — returning a new object is what lets useSelector skip re-renders by reference and lets DevTools time-travel."</div>
+  <div class="revision-say">"I don't reach for Redux by default — local state, Context, and React Query cover most cases; Redux via RTK is for large cross-feature client state that needs predictability and auditability."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The problem Redux solves</h3>
 <p>Say you're building a small e-commerce app. A <code>Header</code> shows the cart item count. A <code>ProductCard</code>, many levels away in the tree, has the "Add to cart" button. A <code>CartPage</code>, somewhere else entirely, needs the full cart list. All three need the <em>same</em> cart state, but none of them is an ancestor of the others.</p>
 <p>With only component state, you'd have to lift the cart state up to the nearest common ancestor — often close to the app root — and then pass it down through every layer of components in between, even ones that don't care about it. That's <strong>prop-drilling</strong>: state and the setters for it get threaded through five or six components that only exist to pass them along.</p>
@@ -51,10 +66,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">🧠 One-liner</div>
   <p>Reach for local state first, Context second, and Redux (via RTK) only when shared client state has genuinely outgrown both.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Four pieces, one loop</h3>
 <ul>
   <li><strong>Store</strong> — the single source of truth. One JavaScript object holding your entire app's shared state. There is exactly one store per app.</li>
@@ -93,10 +108,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">🔥 Key insight</div>
   <p>Redux state changes are always <strong>synchronous, one-way, and traceable</strong>: action in → reducer runs → new state out → subscribers notified. There's no path for state to change any other way.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Hand-rolling <code>createStore</code></h3>
 <p>To make the mechanism concrete, here's the entire engine behind Redux's store — about 15 lines. It's simplified (real Redux adds edge-case handling), but this is genuinely the core of it:</p>
 <pre><code class="language-js">function createStore(reducer) {
@@ -179,10 +194,10 @@ function Counter() {
   );
 }</code></pre>
 <p><code>Provider</code> wraps once, near the app root. Any component anywhere underneath — no matter how deeply nested — can call <code>useSelector</code> to read state and <code>useDispatch</code> to send actions, with zero props threaded through the components in between. That's the prop-drilling problem, solved.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Counter (actions, reducer, component)</h3>
 <pre><code class="language-js">// actions
 const increment = () => ({ type: 'counter/incremented' });
@@ -274,10 +289,11 @@ function todosReducer(state = [], action) {
 
 <h3>RTK removes this boilerplate</h3>
 <p>Both examples above required: hand-written action creators, a <code>switch</code> statement, and careful manual spreading to avoid mutation. <strong>Redux Toolkit (RTK)</strong> — the next topic in this module — generates the action creators for you and lets you write reducers with mutating-looking syntax (it makes that safe under the hood via Immer). The mental model you just learned (store, action, reducer, dispatch) doesn't change; RTK just removes the ceremony around it.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Mutating state inside a reducer</h3>
 <pre><code class="language-js">// ❌ BUG — mutates the existing state object instead of returning a new one
 function badReducer(state = { count: 0 }, action) {
@@ -300,10 +316,10 @@ function badReducer(state = { count: 0 }, action) {
 
 <h3>Over-using Redux for local UI state</h3>
 <p>Whether a dropdown is open, what's currently typed into a search box, whether a modal is visible — this is state that only one component (and maybe its direct children) cares about. Routing it through the global store means every keystroke or toggle dispatches an action, runs a reducer, and notifies subscribers app-wide, for state nobody else needed. Keep it in <code>useState</code>. A good rule of thumb: if you can't name another, unrelated component that needs to read this value, it probably doesn't belong in Redux.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What problem does Redux solve?</div>
 <div class="qa-a">
@@ -345,47 +361,20 @@ function badReducer(state = { count: 0 }, action) {
 <p>Returning a new object (rather than mutating) means the old and new state are two distinct references. That reference difference is exactly what React-Redux's <code>useSelector</code> uses to decide "should this component re-render," and what Redux DevTools uses to record a distinct entry in its history for time-travel debugging. Mutating in place collapses old and new state into the same reference, silently breaking both.</p>
 </div>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Redux keeps all shared state in <strong>one store</strong> that changes only when you <strong>dispatch an action</strong> (a plain object describing what happened) through a <strong>pure reducer</strong> that returns a brand-new state — one-way, synchronous, and traceable.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Four pieces, one loop:</strong> a component calls <code>dispatch(action)</code> → the store runs the <strong>reducer</strong> <code>(state, action) =&gt; newState</code> → the store saves the new state → every subscriber re-reads and re-renders.</li>
-    <li><strong>Store</strong> = single source of truth (one per app); <strong>action</strong> = a plain object describing what happened, just data (<code>{ type, payload }</code>); <strong>reducer</strong> = the pure function that computes the next state; <strong>dispatch</strong> = the only door in.</li>
-    <li><strong>The problem it solves:</strong> sharing state across components that aren't close relatives without <strong>prop-drilling</strong>, and making every change <strong>traceable</strong> to one action instead of scattered mutations.</li>
-    <li><strong>Reducers must never mutate</strong> — always build and return a new object/array. Same reference before and after means "did state change?" (reference equality) sees nothing, so <code>useSelector</code> skips re-renders and DevTools records no history.</li>
-    <li><strong>Reducers must be pure</strong> — no <code>fetch</code>, no <code>Date.now()</code>, no <code>Math.random()</code>. Same <code>(state, action)</code> always yields the same result; that determinism is what makes time-travel debugging and replay possible.</li>
-    <li><strong>The whole store is ~15 lines:</strong> a closed-over <code>state</code> variable, a <code>dispatch</code> that reassigns it via the reducer, and a list of <code>subscribe</code> callbacks. No magic.</li>
-    <li><strong>React wiring (react-redux):</strong> <code>Provider</code> once near the root, then any component reads with <code>useSelector</code> and sends actions with <code>useDispatch</code> — no props threaded through.</li>
-    <li><strong>Keep state (and actions) JSON-serializable</strong> — no Date/Map/class-instances/Promises/functions — or DevTools and persistence break. Store a Date as an ISO string.</li>
-    <li><strong>Don't store derived data</strong> (e.g. <code>totalPrice</code> from <code>items</code>) — recompute it with a selector on read, or you'll forget to keep it in sync somewhere.</li>
-    <li><strong>You often don't need Redux:</strong> <code>useState</code> for local, Context for a few stable shared values, React Query for server data — Redux (via RTK) earns its cost only for large, cross-feature client state needing auditability/undo.</li>
-    <li><strong>Nobody ships hand-written Redux in 2026</strong> — this hand-rolled version exists to reveal the mechanism; real apps use Redux Toolkit, which generates the boilerplate.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Mutating state inside a reducer</strong> — <code>state.count++; return state;</code> looks like it works (the number goes up) but returns the <em>same</em> object reference. Anything comparing <code>oldState === newState</code> — which is exactly how <code>useSelector</code> decides to re-render and how DevTools records history — concludes nothing changed, so components silently stop updating. Always return a new object.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Redux puts shared state in one store and the only way to change it is dispatching an action through a pure reducer that returns new state — so every change is one-way and traceable to a specific action."</div>
-  <div class="revision-say">"Reducers must be pure and never mutate — returning a new object is what lets useSelector skip re-renders by reference and lets DevTools time-travel."</div>
-  <div class="revision-say">"I don't reach for Redux by default — local state, Context, and React Query cover most cases; Redux via RTK is for large cross-feature client state that needs predictability and auditability."</div>
+<div class="qa-block">
+  <div class="qa-question">Q7. Trace a single state change through Redux, from the click to the re-render.</div>
+  <div class="qa-answer">
+    <p>A component calls <code>dispatch(action)</code>, where the action is a plain object such as <code>{ type: 'cart/itemAdded', payload }</code> describing what happened. The store runs the pure reducer <code>(state, action) =&gt; newState</code>, which returns a brand-new state object. The store saves that new state and notifies every subscriber; components reading through <code>useSelector</code> re-read their slice and re-render if the reference changed. The flow is one-way and synchronous, so every change is traceable to one action.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you trace a change through dispatch → action → pure reducer → new state?</li>
-    <li>Can you explain why a reducer must return a new object and never mutate?</li>
-    <li>Can you explain how mutating and returning the same reference silently stops <code>useSelector</code> re-renders and breaks DevTools?</li>
-    <li>Can you say why you would <em>not</em> reach for Redux by default?</li>
-    <li>Can you name what covers most cases instead (local state, Context, React Query)?</li>
-    <li>Can you describe the kind of state Redux via RTK is actually for?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q8. Why wouldn't you reach for Redux by default, and what covers most cases instead?</div>
+  <div class="qa-answer">
+    <p>Redux adds actions, reducers and a store, which is cost you only want to pay when the state needs it. Most state is covered by simpler tools: <code>useState</code> for anything one component or its direct children own, React Context for a few stable shared values such as theme, current user or locale, and React Query for data fetched from a server. Redux, via RTK, earns its cost for large client state shared across many unrelated features that needs predictability, auditability, or undo/time-travel.</p>
+  </div>
 </div>
-`}
+` },
 
-]});
+  ]
+});

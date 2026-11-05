@@ -41,6 +41,9 @@
     return moduleTitleCache[modId] || modId || '';
   }
 
+  // Section/heading titles in content carry a leading emoji (🧠 ⚙️ 🎤 …); the UI shows them plain.
+  const plainTitle = (t) => String(t || '').replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, '').trim();
+
   // ==========================================================
   // THEME (default: light)
   // ==========================================================
@@ -93,7 +96,7 @@
       'js': 'JS', 'dsa': 'DS', 'react': 'Re', 'web': 'W', 'rn': 'RN',
       'typescript': 'TS', 'mobile-production': 'MP', 'offline': 'Of',
       'graphql': 'GQ', 'build': 'B', 'workplace': 'Wp', 'git': 'Gt',
-      'ai': 'AI', 'backend': 'Be'
+      'ai': 'AI', 'backend': 'Be', 'cloud': 'AW', 'lld': 'LD', 'backend-stack': 'BS', 'flutter': 'Fl'
     };
     const letterFor = (m) => moduleLetters[m.id] || m.title.slice(0, 2);
 
@@ -139,96 +142,168 @@
   }
 
   // ==========================================================
-  // SIDEBAR
+  // SIDEBAR (v4, react.dev-style) — plain tier headings, modules as plain
+  // expandable rows, topics as indented links, one highlight for "you are here".
   // ==========================================================
+  const SB_GROUP_LABEL = { core: 'Core', support: 'Supporting', mobile: 'Mobile', later: 'Later' };
+  const sbExpanded = new Set(); // modules the reader opened by hand (this session)
+  const CHEV = '<svg class="rd-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+  const TICK = '<svg class="rd-tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-label="studied"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  // Sidebar module presentation: short name, one-line caption, line icon (24×24, stroke).
+  const ICON = {
+    sparkles: '<path d="M12 3l1.8 4.6L18.5 9.4l-4.7 1.8L12 16l-1.8-4.8L5.5 9.4l4.7-1.8z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>',
+    server: '<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>',
+    layers: '<path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/>',
+    plug: '<path d="M9 2v5M15 2v5"/><path d="M6 7h12v4a6 6 0 0 1-12 0z"/><path d="M12 17v5"/>',
+    cloud: '<path d="M17.5 19H7a5 5 0 1 1 1.1-9.9A6 6 0 0 1 19.6 11 4 4 0 0 1 17.5 19z"/>',
+    boxes: '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><path d="M17 13v8M13 17h8"/>',
+    tree: '<circle cx="12" cy="5" r="2.2"/><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="19" r="2.2"/><path d="M12 7.2v4.3M12 11.5 6.8 17M12 11.5l5.2 5.5"/>',
+    braces: '<path d="M8 3H7a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2 2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h1M16 3h1a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2 2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-1"/>',
+    type: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 9h6M10 9v8M14.5 16.2c.4.5 1.1.8 1.9.8 1.1 0 1.9-.6 1.9-1.5 0-2-3.7-1.2-3.7-3.2 0-.9.8-1.5 1.8-1.5.7 0 1.3.3 1.7.7"/>',
+    atom: '<circle cx="12" cy="12" r="1.6"/><ellipse cx="12" cy="12" rx="10" ry="4.2"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(120 12 12)"/>',
+    layout: '<rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9h18M9 9v12"/>',
+    chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/>',
+    flask: '<path d="M9 3h6M10 3v6.5L4.6 18.2A1.8 1.8 0 0 0 6.1 21h11.8a1.8 1.8 0 0 0 1.5-2.8L14 9.5V3"/><path d="M7.5 15h9"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
+    keyboard: '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
+    gauge: '<path d="M12 14l4-4"/><path d="M3.5 18a10 10 0 1 1 17 0"/>',
+    bug: '<rect x="8" y="6" width="8" height="14" rx="4"/><path d="M9.5 6.5 8 4M14.5 6.5 16 4M4 11h4M16 11h4M4 17h4M16 17h4M12 10v10"/>',
+    branch: '<circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="8" r="2"/><path d="M6 7v10M18 10c0 5-6 3-11.3 7.4"/>',
+    terminal: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/>',
+    wrench: '<path d="M14.7 6.3a4 4 0 0 0 5 5L21 13a6 6 0 0 1-7.8 1.6L6 21.8 2.2 18l7.2-7.2A6 6 0 0 1 11 3z"/>',
+    workflow: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><path d="M6.5 10v4a3 3 0 0 0 3 3H14"/>',
+    cycle: '<path d="M20 12a8 8 0 0 1-14.3 4.9M4 12A8 8 0 0 1 18.3 7.1"/><path d="M18.5 3v4.2h-4.2M5.5 21v-4.2h4.2"/>',
+    graph: '<circle cx="12" cy="4.5" r="2"/><circle cx="4.5" cy="17" r="2"/><circle cx="19.5" cy="17" r="2"/><path d="M12 6.5 5.5 15.3M12 6.5l6.5 8.8M6.5 17h11"/>',
+    briefcase: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>',
+    phone: '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+    sliders: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+    cpu: '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M10 10h4v4h-4zM9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+    tablet: '<rect x="4" y="2.5" width="16" height="19" rx="2.5"/><path d="M11 18.5h2"/><path d="M12.5 7.5c.6-.7 1.5-1 2-1 .1.8-.2 1.5-.7 2"/>',
+    feather: '<path d="M20.2 12.2a6 6 0 0 0-8.5-8.5L5 10.5V19h8.5z"/><path d="M16 8 2 22M17.5 15H9"/>',
+    rocket: '<path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2z"/>',
+    pointer: '<path d="M9 11V4.5a1.5 1.5 0 0 1 3 0V10M12 9.5a1.5 1.5 0 0 1 3 0V11M15 10.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1.2a6 6 0 0 1-4.3-1.8L4 16.6a1.6 1.6 0 0 1 2.2-2.3L9 16.5"/>',
+    wave: '<path d="M2 12c2.5-6 5-6 7.5 0s5 6 7.5 0 3.5-4 5-2"/>',
+    wifioff: '<path d="M2 2l20 20M8.5 16.4a5 5 0 0 1 7 0M5 12.9a10 10 0 0 1 5.2-2.7M19 12.9a10 10 0 0 0-2.1-1.6M2 8.8a15 15 0 0 1 4.2-2.6M22 8.8A15 15 0 0 0 11 4.6M12 20h.01"/>',
+    shield: '<path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/>',
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.5A6.5 6.5 0 0 1 21.5 20"/>',
+    book: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5zM4 21.5A2.5 2.5 0 0 1 6.5 19H20"/>'
+  };
+  const MODULE_META = {
+    'ai':            { icon: 'sparkles', name: 'AI / LLM Engineering', sub: 'RAG · agents · evals · voice' },
+    'backend':       { icon: 'server',   name: 'Backend Core', sub: 'DBs · caching · queues · HLD' },
+    'backend-stack': { icon: 'layers',   name: 'Backend Stack', sub: 'Express · NestJS · SQL · Kafka' },
+    'api-design':    { icon: 'plug',     name: 'API Design', sub: 'REST · WebSockets · WebRTC' },
+    'cloud':         { icon: 'cloud',    name: 'Cloud & DevOps', sub: 'AWS · Firebase · CI/CD' },
+    'lld':           { icon: 'boxes',    name: 'Low-Level Design', sub: 'Patterns · class-design cases' },
+    'dsa':           { icon: 'tree',     name: 'DSA', sub: 'Patterns · trees · graphs · DP' },
+    'js':            { icon: 'braces',   name: 'JavaScript', sub: 'Closures · event loop · async' },
+    'typescript':    { icon: 'type',     name: 'TypeScript', sub: 'Generics · type-level tricks' },
+    'react':         { icon: 'atom',     name: 'React', sub: 'Fiber · hooks · Next.js' },
+    'system-design': { icon: 'layout',   name: 'FE System Design', sub: 'Framework · case studies' },
+    'behavioral':    { icon: 'chat',     name: 'Behavioral', sub: 'STAR · story bank · values' },
+    'testing':       { icon: 'flask',    name: 'Testing', sub: 'Jest · E2E · API tests' },
+    'web':           { icon: 'globe',    name: 'Web Platform', sub: 'Rendering · network · security' },
+    'design':        { icon: 'compass',  name: 'Design Principles', sub: 'SOLID, one by one' },
+    'machine-coding':{ icon: 'keyboard', name: 'Machine Coding', sub: 'Components · patterns' },
+    'performance':   { icon: 'gauge',    name: 'Performance', sub: 'Web vitals · bundles · memory' },
+    'debugging':     { icon: 'bug',      name: 'Debugging', sub: 'DevTools · leaks · mobile' },
+    'git':           { icon: 'branch',   name: 'Git', sub: 'Branching · rebase · recovery' },
+    'linux':         { icon: 'terminal', name: 'Linux', sub: 'Shell · processes · networking' },
+    'build':         { icon: 'wrench',   name: 'Build Tooling', sub: 'Bundlers · Babel · monorepos' },
+    'state-deep':    { icon: 'workflow', name: 'State Management', sub: 'Redux · Zustand · XState' },
+    'redux':         { icon: 'cycle',    name: 'Redux', sub: 'RTK · RTK Query · middleware' },
+    'graphql':       { icon: 'graph',    name: 'GraphQL', sub: 'Schema · clients · caching' },
+    'career':        { icon: 'briefcase',name: 'Career', sub: 'Resume · negotiation' },
+    'rn':            { icon: 'phone',    name: 'React Native', sub: 'Architecture · perf · release' },
+    'rncfg':         { icon: 'sliders',  name: 'RN Project & Config', sub: 'Metro · Babel · env builds' },
+    'andr':          { icon: 'cpu',      name: 'Android Native', sub: 'Gradle · manifest · debugging' },
+    'iosn':          { icon: 'tablet',   name: 'iOS Native', sub: 'Xcode · CocoaPods · signing' },
+    'flutter':       { icon: 'feather',  name: 'Flutter', sub: 'Dart · widgets · state' },
+    'mobile-prod':   { icon: 'rocket',   name: 'Mobile Production', sub: 'Crashes · analytics · push' },
+    'mobile-ux':     { icon: 'pointer',  name: 'Mobile UX', sub: 'HIG · Material · gestures' },
+    'animation':     { icon: 'wave',     name: 'Animation', sub: 'CSS · WAAPI · Reanimated' },
+    'offline':       { icon: 'wifioff',  name: 'Offline & PWA', sub: 'Service workers · IndexedDB' },
+    'eh':            { icon: 'shield',   name: 'Ethical Hacking', sub: 'Recon · exploitation · AD' },
+    'workplace':     { icon: 'users',    name: 'Workplace', sub: 'Promo · managing up · conflict' }
+  };
+  function moduleIcon(m) {
+    const meta = MODULE_META[m.id] || {};
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[meta.icon] || ICON.book}</svg>`;
+  }
+
+  function moduleOfTopic(topicId) {
+    return window.PREP_SITE.registry.modules.find(m => m.topics.some(t => t.id === topicId)) || null;
+  }
+  function onTopicRoute() { return parseRoute().name === 'topic'; }
+
   function renderSidebar() {
     const nav = $('#sidebarNav');
-    const registry = window.PREP_SITE.registry;
-    const topicsById = window.PREP_SITE.topicsById;
+    if (!nav) return;
+    const reg = window.PREP_SITE.registry, byId = window.PREP_SITE.topicsById;
+    const activeId = onTopicRoute() ? state.currentTopicId : null;
+    const curMod = activeId ? moduleOfTopic(activeId) : null;
 
-    nav.innerHTML = registry.modules.map(mod => {
-      const topicsHtml = mod.topics.map(t => {
-        const topic = topicsById[t.id];
-        const isReady = !!topic;
-        const isStudied = state.studied.has(t.id);
-        return `
-          <a href="#/topic/${t.id}"
-             class="nav-topic ${isStudied ? 'studied' : ''}"
-             data-topic-id="${t.id}">
-            <svg class="nav-topic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            <span class="nav-topic-title">${escapeHtml(t.title)}</span>
-            ${!isReady ? '<span class="nav-topic-tag coming">soon</span>' : ''}
-          </a>
-        `;
-      }).join('');
-
-      const isCollapsed = state.collapsedModules.has(mod.id);
-      return `
-        <div class="nav-module ${isCollapsed ? 'collapsed' : ''}" data-module-id="${mod.id}">
-          <div class="nav-module-header">
-            <span>${escapeHtml(mod.title)}</span>
-            <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </div>
-          <div class="nav-topics">${topicsHtml}</div>
-        </div>
-      `;
-    }).join('');
-
-    // Module collapse handlers
-    $$('.nav-module-header', nav).forEach(header => {
-      header.addEventListener('click', () => {
-        const moduleEl = header.parentElement;
-        const modId = moduleEl.dataset.moduleId;
-        moduleEl.classList.toggle('collapsed');
-        if (moduleEl.classList.contains('collapsed')) state.collapsedModules.add(modId);
-        else state.collapsedModules.delete(modId);
-        store.set('collapsedModules', Array.from(state.collapsedModules));
-      });
+    let html = '', lastG = null;
+    reg.modules.forEach(m => {
+      if (m.group !== lastG) {
+        html += `<h3 class="rd-grp">${escapeHtml(SB_GROUP_LABEL[m.group] || m.group || '')}</h3>`;
+        lastG = m.group;
+      }
+      const isCur = curMod && curMod.id === m.id;
+      const open = isCur || sbExpanded.has(m.id);
+      html += `
+        <div class="rd-mod${open ? ' open' : ''}" data-module-id="${m.id}">
+          <button type="button" class="rd-item rd-modbtn tone-${m.group || 'core'}${isCur ? ' is-parent' : ''}" aria-expanded="${open}" title="${escapeHtml(m.title)}">
+            <span class="rd-icon">${moduleIcon(m)}</span>
+            <span class="rd-modtext">
+              <span class="rd-modname">${escapeHtml((MODULE_META[m.id] || {}).name || m.title)}</span>
+              ${(MODULE_META[m.id] || {}).sub ? `<span class="rd-modsub">${escapeHtml(MODULE_META[m.id].sub)}</span>` : ''}
+            </span>${CHEV}
+          </button>
+          ${open ? `<div class="rd-children">${m.topics.map(t => {
+            const active = t.id === activeId, studied = state.studied.has(t.id);
+            return `<a href="#/topic/${t.id}" class="rd-item rd-child nav-topic${active ? ' active' : ''}${studied ? ' studied' : ''}" data-topic-id="${t.id}"${active ? ' aria-current="page"' : ''}>
+                <span class="rd-label">${escapeHtml(t.title)}</span>${studied ? TICK : ''}${byId[t.id] ? '' : '<span class="nav-topic-tag coming">soon</span>'}
+              </a>`;
+          }).join('')}</div>` : ''}
+        </div>`;
     });
+    nav.innerHTML = html;
 
-    // Close sidebar on mobile when a topic is picked
-    $$('.nav-topic', nav).forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth < 900) closeSidebar();
-      });
-    });
-
+    $$('.rd-modbtn', nav).forEach(b => b.addEventListener('click', () => {
+      const id = b.parentElement.dataset.moduleId;
+      if (curMod && curMod.id === id) return; // the module you're reading in stays open
+      if (sbExpanded.has(id)) sbExpanded.delete(id); else sbExpanded.add(id);
+      renderSidebar();
+    }));
+    $$('.rd-child', nav).forEach(link => link.addEventListener('click', () => {
+      if (window.innerWidth < 900) closeSidebar();
+    }));
     updateProgress();
   }
 
+  // Follow the reader: re-render so the current module is open and the topic highlighted.
   function updateActiveNav(topicId) {
-    $$('.nav-topic[data-topic-id]').forEach(link => {
-      link.classList.toggle('active', link.dataset.topicId === topicId);
-    });
-    const practiceLink = $('#navPracticeLink');
-    if (practiceLink) practiceLink.classList.remove('active');
-    const planLink = $('#navPlanLink');
-    if (planLink) planLink.classList.remove('active');
+    renderSidebar();
+    setSpecialNavActive(null);
+    const active = $('#sidebarNav .rd-child.active');
+    if (active) active.scrollIntoView({ block: 'nearest' });
     updateRailActive();
     updateBottomNavState();
   }
 
-  // Mark the JS Practice sidebar link active and clear topic links (mirrors updateActiveNav)
-  function setPracticeNavActive() {
-    $$('.nav-topic[data-topic-id]').forEach(link => link.classList.remove('active'));
-    const planLink = $('#navPlanLink');
-    if (planLink) planLink.classList.remove('active');
-    const practiceLink = $('#navPracticeLink');
-    if (practiceLink) practiceLink.classList.add('active');
+  // Highlight one of the top links (Study Plan / Quick Revision / JS Practice) — or none.
+  function setSpecialNavActive(id) {
+    ['#navPracticeLink', '#navPlanLink', '#navReviseLink'].forEach(sel => {
+      const l = $(sel); if (l) l.classList.toggle('active', sel === id);
+    });
+    if (id) $$('#sidebarNav .rd-child.active').forEach(l => { l.classList.remove('active'); l.removeAttribute('aria-current'); });
   }
-
-  // Mark the Study Plan sidebar link active and clear the others
-  function setPlanNavActive() {
-    $$('.nav-topic[data-topic-id]').forEach(link => link.classList.remove('active'));
-    const practiceLink = $('#navPracticeLink');
-    if (practiceLink) practiceLink.classList.remove('active');
-    const planLink = $('#navPlanLink');
-    if (planLink) planLink.classList.add('active');
-  }
+  function setPracticeNavActive() { setSpecialNavActive('#navPracticeLink'); }
+  function setReviseNavActive() { setSpecialNavActive('#navReviseLink'); }
+  function setPlanNavActive() { setSpecialNavActive('#navPlanLink'); }
 
   function updateProgress() {
     const total = Object.keys(window.PREP_SITE.topicsById).length;
@@ -265,6 +340,7 @@
     if (!hash || hash === '/' || hash === '') return { name: 'home' };
     if (hash === '/practice' || hash === '/practice/') return { name: 'practice' };
     if (hash === '/plan' || hash === '/plan/') return { name: 'plan' };
+    if (hash === '/revise' || hash === '/revise/') return { name: 'revise' };
     const topicMatch = hash.match(/^\/topic\/([\w-]+)(?:#(.+))?$/);
     if (topicMatch) return { name: 'topic', topicId: topicMatch[1], anchor: topicMatch[2] };
     return { name: 'home' };
@@ -282,6 +358,11 @@
       renderPlan($('#content'));
       setPlanNavActive();
     }
+    else if (r.name === 'revise') {
+      renderRevise($('#content'));
+      setReviseNavActive();
+    }
+    if (r.name !== 'revise') { const rl = $('#navReviseLink'); if (rl) rl.classList.remove('active'); }
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
@@ -386,13 +467,17 @@
       }).join('');
 
     // ----- module cards -----
+    let prevHomeGroup = null;
     const moduleCards = reg.modules.map(mod => {
+      const groupHead = (mod.group && mod.group !== prevHomeGroup)
+        ? `<div class="home-group-label">${escapeHtml(mod.groupLabel || mod.group)}</div>` : '';
+      prevHomeGroup = mod.group;
       const ready = mod.topics.filter(t => topicsById[t.id]).length;
       const studied = mod.topics.filter(t => state.studied.has(t.id)).length;
       const pct = mod.topics.length ? (studied / mod.topics.length) * 100 : 0;
       const firstReady = mod.topics.find(t => topicsById[t.id]) || mod.topics[0];
       const href = firstReady ? `#/topic/${firstReady.id}` : '#/';
-      return `
+      return groupHead + `
         <a href="${href}" class="home-card">
           <div class="home-card-title">${escapeHtml(mod.title)}</div>
           <div class="home-card-meta">${ready} / ${mod.topics.length} topics · ${studied} studied</div>
@@ -440,7 +525,7 @@
         <section class="section ${collapsible ? 'collapsible' : ''}" id="sec-${sec.id}">
           <div class="section-header">
             <h2 id="${sec.id}">
-              ${sec.title}
+              ${plainTitle(sec.title)}
               <a href="#/topic/${topicId}#${sec.id}" class="anchor-link" aria-label="Link to section">#</a>
             </h2>
             ${collapsible ? '<svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>' : ''}
@@ -471,13 +556,15 @@
       </div>
     `;
 
-    const tagsHtml = (topic.tags || []).map(t => `<span class="topic-tag">${escapeHtml(t)}</span>`).join('');
+    const tagsHtml = (topic.tags || []).slice(0, 6).map(t => `<span class="topic-tag">#${escapeHtml(t)}</span>`).join('');
+    const tMod = moduleOfTopic(topicId);
+    const tTier = tMod ? ({ core: 'Core', support: 'Supporting', mobile: 'Mobile', later: 'Later' }[tMod.group] || '') : '';
 
     content.innerHTML = `
-      <div class="topic-meta">
-        <span class="topic-meta-module">${escapeHtml(moduleTitle(topic.module))}</span>
-        <span class="topic-meta-sep">·</span>
-        <span class="topic-meta-time">${escapeHtml(topic.estimatedReadTime || '')}</span>
+      <div class="topic-meta topic-crumbs">
+        ${tTier ? `<span class="crumb-tier">${escapeHtml(tTier)}</span><span class="crumb-sep" aria-hidden="true">/</span>` : ''}
+        <span class="crumb-mod">${escapeHtml(tMod ? tMod.title : moduleTitle(topic.module))}</span>
+        ${topic.estimatedReadTime ? `<span class="crumb-time">${escapeHtml(topic.estimatedReadTime)} read</span>` : ''}
       </div>
       <h1 class="topic-title">${escapeHtml(topic.title)}</h1>
       <div class="topic-tags">${tagsHtml}</div>
@@ -560,7 +647,7 @@
   }
   function userRef() { return (_authUser && _fbDb) ? _fbDb.collection('users').doc(_authUser.uid) : null; }
   function localData() {
-    return { studied: Array.from(state.studied), planDone: store.get('prep-plan-done', []) || [], updatedAt: Date.now() };
+    return { studied: Array.from(state.studied), planDone: store.get('prep-plan-done', []) || [], revised: store.get('prep-revised', []) || [], updatedAt: Date.now() };
   }
   function pushUserData() {
     if (_applyingRemote) return;
@@ -572,6 +659,7 @@
     renderSidebar(); updateProgress();
     const r = parseRoute();
     if (r.name === 'plan') renderPlan($('#content'));
+    else if (r.name === 'revise') renderRevise($('#content'));
     else if (r.name === 'topic' && state.currentTopicId) {
       const pt = $('#progressToggle'); if (pt) pt.classList.toggle('active', state.studied.has(state.currentTopicId));
       $$('.nav-topic[data-topic-id]').forEach(l => l.classList.toggle('studied', state.studied.has(l.dataset.topicId)));
@@ -582,6 +670,7 @@
     _applyingRemote = true;
     if (Array.isArray(data.studied)) { state.studied = new Set(data.studied); store.set('studied', data.studied); }
     if (Array.isArray(data.planDone)) { store.set('prep-plan-done', data.planDone); }
+    if (Array.isArray(data.revised)) { store.set('prep-revised', data.revised); }
     reRenderForSync();
     _applyingRemote = false;
   }
@@ -594,9 +683,11 @@
       // Merge local + remote once at login so nothing is lost.
       const mStudied = new Set([].concat(remote.studied || [], Array.from(state.studied)));
       const mPlan = new Set([].concat(remote.planDone || [], store.get('prep-plan-done', []) || []));
+      const mRevised = new Set([].concat(remote.revised || [], store.get('prep-revised', []) || []));
+      store.set('prep-revised', Array.from(mRevised));
       state.studied = mStudied; store.set('studied', Array.from(mStudied));
       store.set('prep-plan-done', Array.from(mPlan));
-      ref.set({ studied: Array.from(mStudied), planDone: Array.from(mPlan), updatedAt: Date.now() }, { merge: true }).catch(function () {});
+      ref.set({ studied: Array.from(mStudied), planDone: Array.from(mPlan), revised: Array.from(mRevised), updatedAt: Date.now() }, { merge: true }).catch(function () {});
       reRenderForSync();
       if (_userUnsub) { _userUnsub(); }
       _userUnsub = ref.onSnapshot(function (s) {
@@ -872,6 +963,140 @@
   }
 
   // ==========================================================
+  // QUICK REVISION (#/revise) — only the ⚡ Revision card of each topic,
+  // in sidebar order, filterable by tier / module, with a synced "revised" tick
+  // and a collapsed questions-only self-test drawn from the topic's Interview Q&A.
+  // ==========================================================
+  function renderRevise(container) {
+    const reg = window.PREP_SITE.registry;
+    const byId = window.PREP_SITE.topicsById;
+    const KEY = 'prep-revised';
+    const FKEY = 'revise-filter';
+    if (typeof teardownSectionProgress === 'function') teardownSectionProgress();
+
+    const groups = [];
+    reg.modules.forEach(m => {
+      if (m.group && !groups.some(g => g.id === m.group)) groups.push({ id: m.group, label: m.groupLabel || m.group });
+    });
+    groups.push({ id: 'all', label: 'Everything' });
+
+    const findSec = (topic, ids) => (topic.sections || []).find(s => ids.includes(s.id));
+    const questionsOf = (topic) => {
+      const tpl = document.createElement('template');
+      const qa = findSec(topic, ['interview-qa', 'interview-patterns', 'interview']);
+      if (qa) {
+        tpl.innerHTML = qa.html;
+        const qs = $$('.qa-question, .qa-q', tpl.content)
+          .map(el => el.textContent.replace(/^\s*Q\d+[.:)]\s*/, '').trim())
+          .filter(q => q && !/^(expected answer|acceptable answer|solution|answer)$/i.test(q));
+        if (qs.length) return qs.map(escapeHtml);
+      }
+      const cl = findSec(topic, ['checklist']);
+      if (cl) { tpl.innerHTML = cl.html; return $$('li', tpl.content).map(li => li.innerHTML); }
+      return [];
+    };
+
+    function draw() {
+      const f = Object.assign({ group: 'core', modules: [], hideDone: false }, store.get(FKEY, {}) || {});
+      if (!groups.some(g => g.id === f.group)) f.group = 'core';
+      const revised = new Set(store.get(KEY, []) || []);
+      const inGroup = reg.modules.filter(m => f.group === 'all' || m.group === f.group);
+      const picked = (f.modules || []).filter(id => inGroup.some(m => m.id === id));
+      const mods = picked.length ? inGroup.filter(m => picked.includes(m.id)) : inGroup;
+
+      let total = 0, done = 0;
+      const blocks = mods.map(mod => {
+        const items = mod.topics.map(t => byId[t.id]).filter(t => t && findSec(t, ['revision']));
+        total += items.length;
+        const modDone = items.filter(t => revised.has(t.id)).length;
+        done += modDone;
+        const shown = f.hideDone ? items.filter(t => !revised.has(t.id)) : items;
+        if (!shown.length) return '';
+        const cards = shown.map(t => {
+          const isDone = revised.has(t.id);
+          const qs = questionsOf(t);
+          const test = qs.length ? `
+            <details class="revise-test">
+              <summary>✅ Self-test · ${qs.length} question${qs.length > 1 ? 's' : ''}</summary>
+              <ol>${qs.map(q => `<li>${q}</li>`).join('')}</ol>
+            </details>` : '';
+          return `
+            <article class="revise-item${isDone ? ' is-done' : ''}" id="rv-${t.id}">
+              <div class="revise-head">
+                <h3 class="revise-title"><a href="#/topic/${t.id}">${escapeHtml(t.title)}</a></h3>
+                <label class="revise-tick"><input type="checkbox" data-id="${t.id}"${isDone ? ' checked' : ''}><span>Revised</span></label>
+              </div>
+              ${findSec(t, ['revision']).html}
+              ${test}
+              <a class="revise-open" href="#/topic/${t.id}">Open full topic →</a>
+            </article>`;
+        }).join('');
+        return `<section class="revise-mod"><h2 class="revise-mod-title">${escapeHtml(mod.title)} <span>${modDone} / ${items.length}</span></h2>${cards}</section>`;
+      }).join('');
+
+      const pct = total ? Math.round(done / total * 100) : 0;
+      const groupChips = groups.map(g =>
+        `<button type="button" class="revise-chip${g.id === f.group ? ' is-on' : ''}" data-group="${g.id}">${escapeHtml(g.label)}</button>`).join('');
+      const modChips = inGroup.map(m =>
+        `<button type="button" class="revise-chip small${picked.includes(m.id) ? ' is-on' : ''}" data-mod="${m.id}">${escapeHtml(m.title)}</button>`).join('');
+
+      container.innerHTML = `
+        <div class="revise">
+          <div class="topic-meta"><span class="topic-meta-module">⚡ Revision cards only · ${total} topics in view</span></div>
+          <h1 class="topic-title">Quick Revision</h1>
+          <p class="plan-lede">Only the <strong>⚡ Revision</strong> card of each topic, in study order: one line, key points, the common trap, and what to say. Tick <strong>Revised</strong> as you go, and use <strong>Open full topic</strong> when a point doesn't land.</p>
+          <div class="plan-board">
+            <div class="plan-prog-head"><span class="lab">Revised</span><span class="pct">${done} / ${total} · ${pct}%</span></div>
+            <div class="plan-track"><div class="plan-fill" style="width:${pct}%"></div></div>
+            <div class="revise-filters">
+              <div class="revise-chips">${groupChips}</div>
+              <div class="revise-chips">${modChips}</div>
+              <label class="revise-hide"><input type="checkbox" id="reviseHideDone"${f.hideDone ? ' checked' : ''}> Hide revised</label>
+            </div>
+          </div>
+          ${blocks || '<p class="plan-lede">Everything in this view is revised. Untick <strong>Hide revised</strong> to see the cards again.</p>'}
+        </div>`;
+
+      $$('.revise-chip[data-group]', container).forEach(b => b.addEventListener('click', () => {
+        store.set(FKEY, Object.assign(f, { group: b.dataset.group, modules: [] })); draw(); window.scrollTo({ top: 0 });
+      }));
+      $$('.revise-chip[data-mod]', container).forEach(b => b.addEventListener('click', () => {
+        const id = b.dataset.mod;
+        const next = picked.includes(id) ? picked.filter(x => x !== id) : picked.concat(id);
+        store.set(FKEY, Object.assign(f, { modules: next })); draw();
+      }));
+      const hide = $('#reviseHideDone', container);
+      if (hide) hide.addEventListener('change', () => { store.set(FKEY, Object.assign(f, { hideDone: hide.checked })); draw(); });
+      $$('.revise-tick input', container).forEach(cb => cb.addEventListener('change', () => {
+        const set = new Set(store.get(KEY, []) || []);
+        if (cb.checked) set.add(cb.dataset.id); else set.delete(cb.dataset.id);
+        store.set(KEY, Array.from(set));
+        pushUserData();
+        if (f.hideDone) { draw(); return; }
+        cb.closest('.revise-item').classList.toggle('is-done', cb.checked);
+        const all = $$('.revise-tick input', container);
+        const n = all.filter(x => x.checked).length;
+        const p = all.length ? Math.round(n / all.length * 100) : 0;
+        const pctEl = $('.plan-prog-head .pct', container); if (pctEl) pctEl.textContent = n + ' / ' + all.length + ' · ' + p + '%';
+        const fill = $('.plan-fill', container); if (fill) fill.style.width = p + '%';
+        const sec = cb.closest('.revise-mod');
+        if (sec) {
+          const boxes = $$('.revise-tick input', sec);
+          const span = $('.revise-mod-title span', sec);
+          if (span) span.textContent = boxes.filter(x => x.checked).length + ' / ' + boxes.length;
+        }
+      }));
+
+      const toc = document.getElementById('tocList');
+      if (toc) toc.innerHTML = '';
+      if (window.Prism) window.Prism.highlightAll(container);
+    }
+
+    draw();
+    document.title = 'Quick Revision · Docs';
+  }
+
+  // ==========================================================
   // TABLE OF CONTENTS (right rail)
   // ==========================================================
   function buildTOC() {
@@ -879,7 +1104,7 @@
     const headings = $$('.content h2[id], .content h3[id]');
     list.innerHTML = headings.map(h => {
       const indent = h.tagName === 'H3' ? 'style="padding-left:12px"' : '';
-      return `<li ${indent}><a href="#/topic/${state.currentTopicId}#${h.id}">${escapeHtml(h.textContent.replace('#', '').trim())}</a></li>`;
+      return `<li ${indent}><a href="#/topic/${state.currentTopicId}#${h.id}">${escapeHtml(plainTitle(h.textContent.replace('#', '')))}</a></li>`;
     }).join('');
     // Spy on scroll
     if (headings.length) initTOCSpy(headings);
@@ -1197,7 +1422,7 @@
       const k = e.key;
       const lower = k.toLowerCase();
 
-      // "g" prefix → go-to navigation (g g = top, g h = home, g p = practice, g s = study plan)
+      // "g" prefix → go-to navigation (g g = top, g h = home, g p = practice, g s = study plan, g r = quick revision)
       if (gPending && (Date.now() - gPending < 800)) {
         gPending = 0;
         let handled = true;
@@ -1205,6 +1430,7 @@
         else if (lower === 'h') location.hash = '#/';
         else if (lower === 'p') location.hash = '#/practice';
         else if (lower === 's') location.hash = '#/plan';
+        else if (lower === 'r') location.hash = '#/revise';
         else handled = false;
         if (handled) { e.preventDefault(); return; }
         // otherwise fall through and treat this key as a normal shortcut
@@ -1282,7 +1508,7 @@
 
     const sections = topic.sections;
     dotsWrap.innerHTML = sections.map((s, i) =>
-      `<span class="section-progress-dot" data-i="${i}" data-id="sec-${s.id}" title="${escapeHtml(s.title)}"></span>`
+      `<span class="section-progress-dot" data-i="${i}" data-id="sec-${s.id}" title="${escapeHtml(plainTitle(s.title))}"></span>`
     ).join('');
 
     // Click dot -> scroll to section
@@ -1303,7 +1529,7 @@
     function setActive(i) {
       if (i < 0 || i >= sections.length) return;
       activeIdx = i;
-      label.textContent = sections[i].title;
+      label.textContent = plainTitle(sections[i].title);
       count.textContent = (i + 1) + ' / ' + sections.length;
       $$('.section-progress-dot', dotsWrap).forEach((d, di) => {
         d.classList.toggle('current', di === i);

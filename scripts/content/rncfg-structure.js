@@ -1,29 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'rncfg-structure',
-  module: 'RN Project & Config (Deep)',
-  title: 'Project Structure & Entry Point',
-  estimatedReadTime: '22 min',
-  tags: ['react-native', 'project-structure', 'entry-point', 'appregistry', 'index-js', 'app-tsx', 'folder-conventions', 'path-aliases', 'module-resolver', 'monorepo', 'metro', 'watchfolders', 'barrel-files', 'feature-folders', 'expo', 'expo-router', 'registerrootcomponent', 'assets'],
+  id: "rncfg-structure",
+  module: "RN Project & Config (Deep)",
+  title: "Project Structure & Entry Point",
+  estimatedReadTime: "22 min",
+  tags: ["react-native","project-structure","entry-point","appregistry","index-js","app-tsx","folder-conventions","path-aliases","module-resolver","monorepo","metro","watchfolders","barrel-files","feature-folders","expo","expo-router","registerrootcomponent","assets"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>A React Native (0.7x) app is a <strong>normal Node/TypeScript project</strong> with two extra native folders. At the JS/TS layer, three files do the booting:</p>
-<ul>
-  <li><code>index.js</code> — the entry file. It calls <code>AppRegistry.registerComponent(appName, () =&gt; App)</code>, handing Metro the root component.</li>
-  <li><code>App.tsx</code> — the <strong>root React component</strong>: your providers, navigation container, and first screens live under here.</li>
-  <li><code>package.json</code> / <code>app.json</code> — the <code>appName</code> registered in <code>index.js</code> MUST match the native side (Android <code>MainActivity.getMainComponentName()</code>, iOS <code>moduleName</code> in AppDelegate / RCTRootView) and the <code>"name"</code> in <code>app.json</code>.</li>
-</ul>
-<p>Everything else you write lives under <code>src/</code>, laid out either <strong>layer-based</strong> (<code>components/</code>, <code>screens/</code>, <code>hooks/</code>, <code>services/</code>, <code>store/</code>, <code>utils/</code>) or <strong>feature-based</strong> (a folder per feature). Nice-to-haves: path aliases (<code>@/</code> via <code>tsconfig.json</code> paths + <code>babel-plugin-module-resolver</code>), barrel <code>index.ts</code> files, and — in a monorepo — <code>apps/</code> + <code>packages/</code> with Metro <code>watchFolders</code>.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>The boot chain is <strong>index.js → AppRegistry.registerComponent(appName, () =&gt; App) → App.tsx → navigation → screens</strong>, and the single string <code>appName</code> is the contract that must be identical in <code>index.js</code>, the native host, and <code>app.json</code> "name" — mismatch it and you get a blank/red screen at launch.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A RN app boots <strong>index.js → AppRegistry.registerComponent(appName, () =&gt; App) → App.tsx → navigation → screens</strong>; <code>index.js</code> (not <code>App.tsx</code>) is the entry point, and the <code>appName</code> string must match in index.js, the native host, and app.json.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Entry point is <code>index.js</code></strong>, found via package.json <code>"main"</code>. It runs at bundle load and calls <code>AppRegistry.registerComponent(appName, () =&gt; App)</code> — a string key bound to a lazy component provider.</li>
+    <li><strong><code>App.tsx</code> is the root component</strong>, not the entry: it holds global providers (store, query client, theme, safe-area) + the <code>NavigationContainer</code> and root navigator. Keep screens and logic OUT of it to avoid whole-tree re-renders.</li>
+    <li><strong>The appName contract:</strong> app.json <code>"name"</code> = key in <code>registerComponent</code> = Android <code>MainActivity.getMainComponentName()</code> = iOS <code>moduleName</code>. Mismatch → red box "Application X has not been registered."</li>
+    <li><strong>Metro starts from <code>"main"</code></strong> (bare: <code>index.js</code>; Expo: <code>expo/AppEntry.js</code> or <code>expo-router/entry</code>); older RN honored a <code>"react-native"</code> field; <code>--entry-file</code> overrides when bundling by hand.</li>
+    <li><strong>src/ layouts:</strong> layer-based (<code>components/ screens/ navigation/ hooks/ services|api/ store/ utils/ types/ theme/ constants/ assets/</code>) for small/medium apps; feature-based (<code>features/&lt;name&gt;</code> colocating everything) for large multi-team apps; hybrid is common.</li>
+    <li><strong>Presentational vs container/screen:</strong> presentational = props-only reusable UI (lives in <code>components/</code>); container/screen = wires data + navigation (lives in <code>screens/</code>). Don't fetch data inside a "reusable" component.</li>
+    <li><strong>Path aliases need TWO configs:</strong> <code>tsconfig.json</code> <code>paths</code> (editor + type-check) AND <code>babel-plugin-module-resolver</code> (runtime bundle) — plus Jest <code>moduleNameMapper</code>. tsconfig-only = green editor but runtime "Unable to resolve module."</li>
+    <li><strong>Barrel files (<code>index.ts</code> re-exports):</strong> tidy imports but Metro has weak tree-shaking (bundle bloat + slow cold start) and barrels cause circular deps (<code>undefined</code> at import). Use small per-folder barrels; never one giant <code>src/index.ts</code>.</li>
+    <li><strong>Assets:</strong> local <code>require()</code> must be a static literal (Metro hashes at build time — no computed paths); remote images use <code>{ uri }</code>. Fonts: bare RN via <code>react-native.config.js</code> assets + <code>react-native-asset</code>; Expo via <code>expo-font</code> <code>useFonts()</code>.</li>
+    <li><strong>Monorepo:</strong> <code>apps/</code> + <code>packages/</code> with workspaces; Metro needs <code>watchFolders</code> (workspace root) + <code>resolver.nodeModulesPaths</code>; dedupe React or "Invalid hook call."</li>
+    <li><strong>Expo reality:</strong> <code>registerRootComponent(App)</code> replaces hand-written <code>index.js</code> and sets the root key for you; Expo Router = file-based routing under <code>app/</code> with no <code>App.tsx</code>; with CNG the <code>android/</code>/<code>ios/</code> folders are generated (hand-edits wiped by <code>expo prebuild --clean</code> — use config plugins / <code>app.json</code> / <code>expo-build-properties</code>).</li>
+    <li><strong>Root config files to name:</strong> package.json, app.json/app.config.js, metro.config.js, babel.config.js, tsconfig.json, .eslintrc, .prettierrc, .watchmanconfig, react-native.config.js, .gitignore, Gemfile, .nvmrc, node_modules/, android/, ios/.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Saying "App.tsx is the entry point" — it isn't.</strong> <code>index.js</code> is the entry: Metro runs it, and its <code>AppRegistry.registerComponent(appName, () =&gt; App)</code> call is what binds the root component to the string the native host requests. <code>App.tsx</code> only renders after the native side mounts the registered component. (Second trap: adding an alias to <code>tsconfig.json</code> only — you also need <code>babel-plugin-module-resolver</code> or it crashes at runtime.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The boot chain is index.js → AppRegistry.registerComponent(appName, () =&gt; App) → App.tsx → NavigationContainer → screens. index.js is the entry point; App.tsx is just the first component it registers, and the appName string has to match the native host and app.json."</div>
+  <div class="revision-say">"I organize small apps layer-based — components, screens, navigation, hooks, services, store — and switch to feature folders as domains grow so each feature colocates its UI, data, and state and can be deleted as a unit."</div>
+  <div class="revision-say">"Path aliases like @/ need both tsconfig paths for the type-checker and babel-plugin-module-resolver for the runtime bundle; miss the Babel side and the editor is happy but the app throws 'Unable to resolve module' at launch."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "project structure" actually means here</h3>
 <p>A React Native project is a Node package (it has <code>package.json</code>, <code>node_modules/</code>) whose UI is authored in React but whose runtime is native. So the repo has three logical zones:</p>
 <ul>
@@ -56,10 +69,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why path aliases exist</h3>
 <p>Deep relative imports like <code>import Button from '../../../../components/Button'</code> are fragile — moving a file breaks every <code>../</code>. Aliases (<code>@/components/Button</code>) give stable, root-anchored paths. Because RN transpiles with Babel, aliases need configuring in <strong>two</strong> places: <code>tsconfig.json</code> paths (so TypeScript and your editor resolve them) AND <code>babel-plugin-module-resolver</code> (so the actual runtime bundle resolves them). One without the other means either red squiggles or a runtime "module not found."</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The root file map at a glance</h3>
 <div class="diagram">
 <pre>
@@ -152,10 +165,10 @@ src/
   <div class="callout-title">Common misconception</div>
   <p>"<code>App.tsx</code> is the entry point." No — <code>index.js</code> is. <code>App.tsx</code> is just the first component that <code>index.js</code> registers. Metro starts bundling from the <code>"main"</code> field in <code>package.json</code> (usually <code>index.js</code>), runs it top-to-bottom, and that execution is what calls <code>AppRegistry.registerComponent</code>. <code>App.tsx</code> never runs until the native host requests the registered component.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Step 1 — package.json "main" tells Metro where to start</h3>
 <p>Metro reads the <code>"main"</code> field to find the entry file. In a bare RN app it is usually <code>index.js</code>; in Expo it points at Expo's own entry.</p>
 <pre><code class="language-json">// package.json (bare RN)
@@ -311,10 +324,10 @@ config.resolver.nodeModulesPaths = [
 ];
 module.exports = config;</code></pre>
 <p>Structure changes in a monorepo because Metro defaults to watching only the app folder. Shared code lives outside that folder, so you add it to <code>watchFolders</code> and teach the resolver where hoisted <code>node_modules</code> live. Without this you get "Unable to resolve module" for your own workspace packages.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — minimal bare-RN index.js + App.tsx</h3>
 <pre><code class="language-js">// index.js
 import { AppRegistry } from 'react-native';
@@ -437,10 +450,11 @@ import { formatCurrency } from '@myorg/core'; // packages/core
 ├── android/  ios/             // GENERATED by expo prebuild (don't hand-edit)
 └── metro.config.js babel.config.js tsconfig.json
 // old (Paper) architecture, Hermes engine, primary test device Android</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. "Application X has not been registered"</h3>
 <p>The classic launch red box. The key in <code>AppRegistry.registerComponent</code> doesn't match the native <code>getMainComponentName()</code> / iOS <code>moduleName</code>. Fix the string so all three (plus <code>app.json</code> "name") are identical.</p>
 
@@ -485,10 +499,9 @@ import { formatCurrency } from '@myorg/core'; // packages/core
 
 <h3>15. Provider order in App.tsx</h3>
 <p>Order matters: a provider that reads another's context must sit inside it (e.g. a theme provider that reads auth state must be under the auth provider). Wrong nesting throws "could not find context" or gives stale values.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — putting screens and logic in App.tsx</h3>
 <p>A fat <code>App.tsx</code> with screens, effects, and state means every provider update re-renders the whole tree. Keep <code>App.tsx</code> to providers + the root navigator only.</p>
 
@@ -533,10 +546,10 @@ import { formatCurrency } from '@myorg/core'; // packages/core
 
 <h3>Anti-pattern 15 — monorepo without watchFolders</h3>
 <p>Shared workspace packages fail to resolve because Metro watches only the app. Configure <code>watchFolders</code> + <code>nodeModulesPaths</code>, and dedupe React to avoid "Invalid hook call."</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What is the entry point of a React Native app and what does it do?</div>
   <div class="qa-answer">
@@ -671,51 +684,7 @@ import { formatCurrency } from '@myorg/core'; // packages/core
     <li>You can set up a monorepo with <code>watchFolders</code> and dedupe React.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A RN app boots <strong>index.js → AppRegistry.registerComponent(appName, () =&gt; App) → App.tsx → navigation → screens</strong>; <code>index.js</code> (not <code>App.tsx</code>) is the entry point, and the <code>appName</code> string must match in index.js, the native host, and app.json.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Entry point is <code>index.js</code></strong>, found via package.json <code>"main"</code>. It runs at bundle load and calls <code>AppRegistry.registerComponent(appName, () =&gt; App)</code> — a string key bound to a lazy component provider.</li>
-    <li><strong><code>App.tsx</code> is the root component</strong>, not the entry: it holds global providers (store, query client, theme, safe-area) + the <code>NavigationContainer</code> and root navigator. Keep screens and logic OUT of it to avoid whole-tree re-renders.</li>
-    <li><strong>The appName contract:</strong> app.json <code>"name"</code> = key in <code>registerComponent</code> = Android <code>MainActivity.getMainComponentName()</code> = iOS <code>moduleName</code>. Mismatch → red box "Application X has not been registered."</li>
-    <li><strong>Metro starts from <code>"main"</code></strong> (bare: <code>index.js</code>; Expo: <code>expo/AppEntry.js</code> or <code>expo-router/entry</code>); older RN honored a <code>"react-native"</code> field; <code>--entry-file</code> overrides when bundling by hand.</li>
-    <li><strong>src/ layouts:</strong> layer-based (<code>components/ screens/ navigation/ hooks/ services|api/ store/ utils/ types/ theme/ constants/ assets/</code>) for small/medium apps; feature-based (<code>features/&lt;name&gt;</code> colocating everything) for large multi-team apps; hybrid is common.</li>
-    <li><strong>Presentational vs container/screen:</strong> presentational = props-only reusable UI (lives in <code>components/</code>); container/screen = wires data + navigation (lives in <code>screens/</code>). Don't fetch data inside a "reusable" component.</li>
-    <li><strong>Path aliases need TWO configs:</strong> <code>tsconfig.json</code> <code>paths</code> (editor + type-check) AND <code>babel-plugin-module-resolver</code> (runtime bundle) — plus Jest <code>moduleNameMapper</code>. tsconfig-only = green editor but runtime "Unable to resolve module."</li>
-    <li><strong>Barrel files (<code>index.ts</code> re-exports):</strong> tidy imports but Metro has weak tree-shaking (bundle bloat + slow cold start) and barrels cause circular deps (<code>undefined</code> at import). Use small per-folder barrels; never one giant <code>src/index.ts</code>.</li>
-    <li><strong>Assets:</strong> local <code>require()</code> must be a static literal (Metro hashes at build time — no computed paths); remote images use <code>{ uri }</code>. Fonts: bare RN via <code>react-native.config.js</code> assets + <code>react-native-asset</code>; Expo via <code>expo-font</code> <code>useFonts()</code>.</li>
-    <li><strong>Monorepo:</strong> <code>apps/</code> + <code>packages/</code> with workspaces; Metro needs <code>watchFolders</code> (workspace root) + <code>resolver.nodeModulesPaths</code>; dedupe React or "Invalid hook call."</li>
-    <li><strong>Expo reality:</strong> <code>registerRootComponent(App)</code> replaces hand-written <code>index.js</code> and sets the root key for you; Expo Router = file-based routing under <code>app/</code> with no <code>App.tsx</code>; with CNG the <code>android/</code>/<code>ios/</code> folders are generated (hand-edits wiped by <code>expo prebuild --clean</code> — use config plugins / <code>app.json</code> / <code>expo-build-properties</code>).</li>
-    <li><strong>Root config files to name:</strong> package.json, app.json/app.config.js, metro.config.js, babel.config.js, tsconfig.json, .eslintrc, .prettierrc, .watchmanconfig, react-native.config.js, .gitignore, Gemfile, .nvmrc, node_modules/, android/, ios/.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Saying "App.tsx is the entry point" — it isn't.</strong> <code>index.js</code> is the entry: Metro runs it, and its <code>AppRegistry.registerComponent(appName, () =&gt; App)</code> call is what binds the root component to the string the native host requests. <code>App.tsx</code> only renders after the native side mounts the registered component. (Second trap: adding an alias to <code>tsconfig.json</code> only — you also need <code>babel-plugin-module-resolver</code> or it crashes at runtime.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"The boot chain is index.js → AppRegistry.registerComponent(appName, () =&gt; App) → App.tsx → NavigationContainer → screens. index.js is the entry point; App.tsx is just the first component it registers, and the appName string has to match the native host and app.json."</div>
-  <div class="revision-say">"I organize small apps layer-based — components, screens, navigation, hooks, services, store — and switch to feature folders as domains grow so each feature colocates its UI, data, and state and can be deleted as a unit."</div>
-  <div class="revision-say">"Path aliases like @/ need both tsconfig paths for the type-checker and babel-plugin-module-resolver for the runtime bundle; miss the Babel side and the editor is happy but the app throws 'Unable to resolve module' at launch."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the entry point and explain what <code>AppRegistry.registerComponent</code> does, and why it isn't <code>App.tsx</code>?</li>
-    <li>Can you trace the full boot chain from native process start to the first rendered screen?</li>
-    <li>Can you explain why the <code>appName</code> string must match across index.js, the native host, and app.json, and what breaks otherwise?</li>
-    <li>Can you compare layer-based vs feature-based folder structure and say when you'd pick each?</li>
-    <li>Can you explain why path aliases need both a tsconfig and a babel config, and where Jest fits in?</li>
-    <li>Can you list the downsides of barrel files on a Metro-bundled RN app?</li>
-    <li>Can you describe how the entry point and native folders differ in an Expo (managed / router / prebuild) app?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

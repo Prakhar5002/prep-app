@@ -1,33 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'gql-caching',
-  module: 'graphql',
-  title: 'Caching',
-  estimatedReadTime: '50 min',
-  tags: ['graphql', 'cache', 'normalization', 'apollo', 'relay', 'urql', 'graphcache', 'type-policies', 'persistence'],
+  id: "gql-caching",
+  module: "graphql",
+  title: "Caching",
+  estimatedReadTime: "50 min",
+  tags: ["graphql","cache","normalization","apollo","relay","urql","graphcache","type-policies","persistence"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>GraphQL caching</strong> at the client level is what makes a typed network library feel like a database. Get it right and your app re-uses data across screens, updates everywhere on one mutation, and survives reload + offline. Get it wrong and you ship a beautiful UI with stale data, double-renders, and "why is this empty after I refresh?" bugs that take days to find.</p>
-<ul>
-  <li><strong>Two cache models:</strong> <em>document</em> (cache the whole response, key by query+vars) and <em>normalized</em> (split response into entities, key by <code>__typename + id</code>).</li>
-  <li><strong>Apollo + Relay default to normalized.</strong> Urql's default is document; opt into <code>graphcache</code> for normalization.</li>
-  <li><strong>Cache keys:</strong> Apollo uses <code>__typename + id</code> by default; configure via <code>keyFields</code> when entities use a different identifier (slug, email, composite).</li>
-  <li><strong>Cache merges:</strong> pagination + dynamic lists need <strong>merge functions</strong> in typePolicies; without them, <code>fetchMore</code> overwrites instead of appending.</li>
-  <li><strong>Fetch policies:</strong> <code>cache-first</code> (default), <code>cache-and-network</code> (fast + fresh), <code>network-only</code>, <code>no-cache</code>, <code>cache-only</code>.</li>
-  <li><strong>Mutations update cache automatically</strong> for entities returned with <code>id + __typename</code>; lists / connections / derived fields need manual <code>cache.modify</code>.</li>
-  <li><strong>Persistence:</strong> <code>apollo3-cache-persist</code> with AsyncStorage / MMKV on RN; with size cap to avoid quota exhaustion.</li>
-  <li><strong>HTTP caching is separate.</strong> POSTs aren't cacheable by intermediaries; persisted queries enable GET → CDN cache.</li>
-</ul>
-<p><strong>Mantra:</strong> "Normalize by id. Configure typePolicies. Update cache from mutations. Persist with limits. Trust but verify in DevTools."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Normalize every entity by <code>__typename + id</code>, add merge functions for connections, update the cache from mutations instead of refetching, and persist with a size cap — then verify in DevTools.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Two cache models:</strong> document caches the whole response by query+vars (Urql default, simple, duplicates data); normalized splits into entities keyed by <code>__typename + id</code> (Apollo + Relay default, dedupes, one mutation updates everywhere).</li>
+    <li><strong>Always select <code>id</code> + <code>__typename</code></strong> — without them Apollo can't write a normalized record, so a mutation updates one screen but not another showing the same entity.</li>
+    <li><strong>Use <code>keyFields</code> in typePolicies for non-id entities</strong> (slug, email, composite); <code>keyFields: false</code> for embedded types that shouldn't be normalized.</li>
+    <li><strong>Pagination needs a merge function + <code>keyArgs</code>:</strong> <code>keyArgs: false</code> makes one logical list and the merge appends edges; without it <code>fetchMore</code> overwrites or appears to do nothing. Use <code>keyArgs: ['filter']</code> when a filter is a genuinely separate list, and replace (not append) on the first page.</li>
+    <li><strong>Mutations auto-update by id</strong> when they return the affected entity with <code>id + __typename</code>; lists, derived counts, and connections need manual <code>cache.modify</code>. Prefer <code>cache.modify</code> over <code>refetchQueries</code>.</li>
+    <li><strong>Optimistic responses need <code>__typename</code> on every entity</strong> — Apollo merges by id and auto-rolls-back on error; but writes your <code>update</code> made to <em>other</em> records don't auto-rollback, so keep <code>update</code> minimal.</li>
+    <li><strong>Fetch policies:</strong> <code>cache-first</code> (default), <code>cache-and-network</code> (stale + refresh), <code>network-only</code>, <code>no-cache</code>, <code>cache-only</code>.</li>
+    <li><strong>Delete = <code>cache.evict</code> then <code>cache.gc()</code></strong> to clean orphaned children; <code>clearStore</code> wipes without refetch, <code>resetStore</code> wipes and refetches active queries.</li>
+    <li><strong>Persist on mobile with <code>apollo3-cache-persist</code> + MMKV + <code>maxSize</code></strong>, triggered on background; reactive vars (<code>makeVar</code>) aren't persisted and reset on boot.</li>
+    <li><strong>SSR cache must be per-request</strong> — a shared server-side singleton leaks one user's data to the next; per-user pages need <code>Cache-Control: private</code> so the CDN doesn't ship personal data.</li>
+    <li><strong>HTTP caching is a separate layer:</strong> GraphQL usually goes over POST, which browsers and CDNs don't cache; persisted queries sent as GET make responses CDN-cacheable.</li>
+    <li><strong>Mantra:</strong> "Normalize by id. Configure typePolicies. Update cache from mutations. Persist with limits. Trust but verify in DevTools."</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting <code>keyArgs: false</code> (or a merge that just returns <code>incoming</code>) on a paginated connection — <code>fetchMore</code> then overwrites the list or fragments the cache per arg tuple, so infinite scroll silently breaks.</strong> Fix: set <code>keyArgs: false</code> for one logical list and write a merge that spreads <code>...existing.edges, ...incoming.edges</code>, replacing only on the first page (no <code>args.after</code>).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Apollo normalizes by <code>__typename + id</code>, so I always select id — a mutation to one record then updates every screen watching that entity, no refetch."</div>
+  <div class="revision-say">"For connections I set <code>keyArgs: false</code> and a merge that appends edges; without it <code>fetchMore</code> overwrites instead of appending."</div>
+  <div class="revision-say">"On logout I <code>clearStore</code> plus <code>persistor.purge</code>, and SSR gets a per-request cache — otherwise one user's data leaks to the next."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why client-side cache matters</h3>
 <table>
   <thead><tr><th>Without cache</th><th>With normalized cache</th></tr></thead>
@@ -80,12 +89,10 @@ window.PREP_SITE.registerTopic({
   <li>Persistence without size cap → mobile storage exhaustion.</li>
   <li>Polling used where mutation cache update would suffice.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>How Apollo's normalized cache stores data</h3>
 <p>Imagine a flat key/value store of entity records:</p>
 <pre><code class="language-text">{
@@ -292,12 +299,10 @@ await persistCache({
 </table>
 
 <p>For GraphQL, HTTP cache is mostly bypassed (POST). To enable: persisted queries → GET requests → CDN-cacheable.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Configuring InMemoryCache (Apollo)</h3>
 <pre><code class="language-typescript">import { InMemoryCache, makeVar } from '@apollo/client';
 
@@ -622,12 +627,10 @@ const persistedLink = createPersistedQueryLink({
 </code></pre>
 
 <p>First request sends the hash; if server doesn't recognize, server responds with error; client retries with full query. Server caches the (hash → query) mapping. Subsequent calls send only the hash → small payload + GET → CDN cache hit possible.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Configuring typePolicies for a real app</h3>
 <pre><code class="language-typescript">const cache = new InMemoryCache({
   typePolicies: {
@@ -923,12 +926,11 @@ export async function getServerSideProps(ctx) {
   },
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Missing <code>id</code> means missing normalization</h3>
 <ul>
   <li>If your selection set forgets <code>id</code>, Apollo can't write to a normalized record.</li>
@@ -1042,12 +1044,9 @@ typePolicies: {
   <li>Background reload may clear cache; persist explicitly on background.</li>
   <li>Multi-app-version: schema migration may require nuking persisted cache on first launch of new version.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common GraphQL caching mistakes</h3>
 <ol>
   <li><strong>No <code>id</code> selected.</strong> Cache duplicates records; mutations don't propagate.</li>
@@ -1242,12 +1241,10 @@ useQuery(GET_USER, { fetchPolicy: 'no-cache' }); // doesn't write back
 // GOOD — pick one policy per query, document it
 const useUser = (id) =&gt; useQuery(GET_USER, { variables: { id }, fetchPolicy: 'cache-and-network' });
 </code></pre>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common GraphQL caching interview prompts</h3>
 <ol>
   <li>Walk through how Apollo's normalized cache works.</li>
@@ -1373,52 +1370,26 @@ const useUser = (id) =&gt; useQuery(GET_USER, { variables: { id }, fetchPolicy: 
   <li>"Audit a real codebase's cache config — find missing keyFields / merge functions."</li>
   <li>"Build a cache-debugging dashboard that visualizes the entity store."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Normalize every entity by <code>__typename + id</code>, add merge functions for connections, update the cache from mutations instead of refetching, and persist with a size cap — then verify in DevTools.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Two cache models:</strong> document caches the whole response by query+vars (Urql default, simple, duplicates data); normalized splits into entities keyed by <code>__typename + id</code> (Apollo + Relay default, dedupes, one mutation updates everywhere).</li>
-    <li><strong>Always select <code>id</code> + <code>__typename</code></strong> — without them Apollo can't write a normalized record, so a mutation updates one screen but not another showing the same entity.</li>
-    <li><strong>Use <code>keyFields</code> in typePolicies for non-id entities</strong> (slug, email, composite); <code>keyFields: false</code> for embedded types that shouldn't be normalized.</li>
-    <li><strong>Pagination needs a merge function + <code>keyArgs</code>:</strong> <code>keyArgs: false</code> makes one logical list and the merge appends edges; without it <code>fetchMore</code> overwrites or appears to do nothing. Use <code>keyArgs: ['filter']</code> when a filter is a genuinely separate list, and replace (not append) on the first page.</li>
-    <li><strong>Mutations auto-update by id</strong> when they return the affected entity with <code>id + __typename</code>; lists, derived counts, and connections need manual <code>cache.modify</code>. Prefer <code>cache.modify</code> over <code>refetchQueries</code>.</li>
-    <li><strong>Optimistic responses need <code>__typename</code> on every entity</strong> — Apollo merges by id and auto-rolls-back on error; but writes your <code>update</code> made to <em>other</em> records don't auto-rollback, so keep <code>update</code> minimal.</li>
-    <li><strong>Fetch policies:</strong> <code>cache-first</code> (default), <code>cache-and-network</code> (stale + refresh), <code>network-only</code>, <code>no-cache</code>, <code>cache-only</code>.</li>
-    <li><strong>Delete = <code>cache.evict</code> then <code>cache.gc()</code></strong> to clean orphaned children; <code>clearStore</code> wipes without refetch, <code>resetStore</code> wipes and refetches active queries.</li>
-    <li><strong>Persist on mobile with <code>apollo3-cache-persist</code> + MMKV + <code>maxSize</code></strong>, triggered on background; reactive vars (<code>makeVar</code>) aren't persisted and reset on boot.</li>
-    <li><strong>SSR cache must be per-request</strong> — a shared server-side singleton leaks one user's data to the next; per-user pages need <code>Cache-Control: private</code> so the CDN doesn't ship personal data.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Forgetting <code>keyArgs: false</code> (or a merge that just returns <code>incoming</code>) on a paginated connection — <code>fetchMore</code> then overwrites the list or fragments the cache per arg tuple, so infinite scroll silently breaks.</strong> Fix: set <code>keyArgs: false</code> for one logical list and write a merge that spreads <code>...existing.edges, ...incoming.edges</code>, replacing only on the first page (no <code>args.after</code>).</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Apollo normalizes by <code>__typename + id</code>, so I always select id — a mutation to one record then updates every screen watching that entity, no refetch."</div>
-  <div class="revision-say">"For connections I set <code>keyArgs: false</code> and a merge that appends edges; without it <code>fetchMore</code> overwrites instead of appending."</div>
-  <div class="revision-say">"On logout I <code>clearStore</code> plus <code>persistor.purge</code>, and SSR gets a per-request cache — otherwise one user's data leaks to the next."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you contrast normalized vs document caching and say which Apollo, Relay, and Urql default to?</li>
-    <li>Can you explain how Apollo keys entities by <code>__typename</code> + <code>id</code>, and why you always select <code>id</code>?</li>
-    <li>Can you set up a connection with <code>keyArgs</code> and a merge so <code>fetchMore</code> appends instead of overwrites?</li>
-    <li>Can you explain how a mutation's return value auto-updates every screen watching that entity — no refetch?</li>
-    <li>Can you stop data leaking between users on logout and in SSR?</li>
-    <li>Can you explain why POST GraphQL isn't cacheable by intermediaries, and how persisted queries change that?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. Compare normalized and document caching. Which do Apollo, Relay and Urql default to?</div>
+  <div class="qa-answer">
+    <p>A document cache stores the whole response keyed by query + variables: simple, but the same entity is duplicated across queries and must be invalidated manually. A normalized cache splits the response into entities keyed by <code>__typename + id</code> and turns queries into references to those records, so each entity is stored once and one mutation updates every screen. Apollo and Relay default to normalized; Urql defaults to a document cache and you opt into normalization with graphcache.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q2. How does a mutation's return value update every screen watching that entity without a refetch?</div>
+  <div class="qa-answer">
+    <p>If the mutation selects the affected entity with <code>id</code> and <code>__typename</code>, Apollo writes the returned fields into the normalized record (for example <code>Post:42</code>), and every query referencing that record re-renders with the new values. No <code>refetchQueries</code> round trip is needed. This only covers entities: adding to or removing from a list, connections and derived counts still need a manual <code>cache.modify</code> (or <code>cache.evict</code> plus <code>cache.gc()</code> on delete).</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Why isn't GraphQL over POST cacheable by intermediaries, and how do persisted queries change that?</div>
+  <div class="qa-answer">
+    <p>The HTTP cache (browser, CDN) works at the network layer, keys on URL + headers, and only caches GET and HEAD. GraphQL normally sends every operation as a POST, so HTTP caching is mostly bypassed and only the application-level Apollo cache helps. Persisted queries let the client send a hash (plus variables) as a GET request instead, which makes the response cacheable by the CDN.</p>
+  </div>
+</div>
+` },
+
   ]
 });

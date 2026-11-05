@@ -1,30 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'eh-social-physical',
-  module: 'eh',
-  title: 'Social Engineering & Physical',
-  estimatedReadTime: '27 min',
-  tags: ['ethical-hacking', 'security', 'pentest', 'social-engineering', 'phishing', 'spear-phishing', 'vishing', 'pretexting', 'bec', 'physical-security', 'tailgating', 'badge-cloning'],
+  id: "eh-social-physical",
+  module: "eh",
+  title: "Social Engineering & Physical",
+  estimatedReadTime: "27 min",
+  tags: ["ethical-hacking","security","pentest","social-engineering","phishing","spear-phishing","vishing","pretexting","bec","physical-security","tailgating","badge-cloning"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<div class="callout danger">
-  <div class="callout-title">⚠️ These vectors target people and premises — the authorization bar is higher, not the same</div>
-  <p>Everything in this topic — phishing, vishing, pretexting, BEC simulation, tailgating, USB drops, badge cloning, lock-picking — is taught <strong>conceptually</strong>: the methodology and mindset a pentester uses, not a ready-to-run kit. A network pentest's written authorization covers systems; a social-engineering or physical engagement's authorization must additionally name <em>which people or premises</em> can be targeted, what's absolutely off-limits (no impersonating law enforcement or emergency responders, no physical contact or intimidation, no accessing anything beyond proving the door opened), and what to do if you're stopped — because these techniques manipulate real employees and can involve trespassing on real property. Get every one of those specifics in writing before anything here is practiced against anyone but yourself.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Social engineering and physical testing attack people and premises rather than software — manipulating trust, authority, urgency and helpfulness to bypass controls — so the authorization bar is higher and the primary fixes are training and culture, not patches.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>The human attack surface is the target, not a bug — you "patch" it with training and culture, so every technique here is paired with the defense that counters it.</li>
+    <li>Phishing is bulk email; spear-phishing is researched and targeted; vishing is voice/phone (often help desk/IT); pretexting is the invented identity underneath all of them.</li>
+    <li>BEC (Business Email Compromise) impersonates an executive/vendor to redirect a real payment — often no malware or stolen credential at all, and one of the costliest categories the FBI IC3 tracks.</li>
+    <li>Industry research (Verizon DBIR) repeatedly finds a human element in roughly six of ten breaches.</li>
+    <li>Cialdini's principles underpin most pretexts: authority, urgency/scarcity, social proof, liking/rapport, reciprocity, commitment/consistency.</li>
+    <li>Simulation tooling is conceptual: GoPhish (open-source campaign framework — templates, tracked pages, metrics) and SET/setoolkit (spear-phishing and site-cloning vectors); Proxmark3 assesses badge cloning.</li>
+    <li>Physical vectors map to defense-in-depth layers: perimeter (USB drop), building entry (tailgating), internal doors (badge cloning), specific asset (lock-picking) — each bypasses one assumption.</li>
+    <li>Badge cloning works on older 125kHz low-frequency prox cards that broadcast a static unencrypted ID; MIFARE DESFire / HID iCLASS SE use mutual authentication to resist it.</li>
+    <li>Email authentication defense: SPF (which servers may send), DKIM (cryptographic signature), DMARC (requires SPF/DKIM alignment with the From domain, policy p=none/quarantine/reject) — only enforcement at quarantine/reject actually blocks spoofing.</li>
+    <li>The key metric for awareness programs is the trend — click rate down, report rate up — reported in aggregate, never as a blame list. Mantra: you are testing a person who did nothing wrong except trust convincingly — scope who can be targeted as carefully as which server can be scanned, and turn every finding into training, never blame.</li>
+    <li>MFA limits blast radius when a credential is phished, but phishing-resistant FIDO2/WebAuthn/passkeys beat SMS or simple push, which fall to AiTM relay and MFA fatigue.</li>
+    <li>These engagements need extra authorization: a named target scope (never "all employees"), an absolute do-not-do list (no impersonating law enforcement/emergency responders, no contact/intimidation), recording/consent-law coverage, and a physically-carried get-out-of-jail-free letter.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Treating pretexting as a separate channel. It is the invented identity and story underneath the others — a phishing email, a vishing call, and a tailgating attempt all rely on a pretext; only the delivery channel differs.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Social engineering works because it exploits trust, urgency and authority — no firewall or patch stops a convincingly pretexted call, so the defense is awareness and culture, not a patch."</div>
+  <div class="revision-say">"BEC is dangerous precisely because it often needs no malware — the fix is procedural: independent callback verification and dual approval before changing payment details."</div>
+  <div class="revision-say">"DMARC only helps if it's enforced at quarantine or reject — p=none is monitoring-only and blocks nothing on its own."</div>
 </div>
-<p><strong>Social engineering</strong> is the practice of manipulating human psychology — trust, authority, urgency, fear, helpfulness — to get a person to do something that bypasses a technical control: click a link, read out a one-time code, hold a door open, plug in a USB drive. <strong>Physical social engineering</strong> applies the same manipulation in person, to defeat physical access controls instead of (or on the way to) digital ones. Both exist as a tested discipline because the strongest firewall and the most current patch schedule don't matter if someone can simply be asked, convincingly enough, to open the door.</p>
-<ul>
-  <li><strong>The human attack surface is the target, not a bug.</strong> Every employee, contractor, and receptionist is a decision-maker who can be influenced — patching this "surface" means training and culture, not a software update, which is why this topic pairs every technique with the defense that actually counters it.</li>
-  <li><strong>Email-borne social engineering</strong> — phishing (bulk), spear-phishing (targeted), and vishing (voice) — is simulated conceptually with platforms like <strong>GoPhish</strong> (open-source phishing-simulation framework: templates, tracked landing pages, campaign metrics) and <strong>SET</strong> (the Social-Engineer Toolkit, TrustedSec's <code>setoolkit</code>, covering spear-phishing and cloned-site attack vectors) — described here as methodology and what a simulated campaign measures, not as usable lure content.</li>
-  <li><strong>BEC (Business Email Compromise)</strong> skips malware entirely: an attacker impersonates an executive or vendor and simply asks finance to redirect a payment — it's consistently one of the costliest categories of cybercrime the FBI's IC3 tracks, precisely because it needs no exploit at all.</li>
-  <li><strong>Physical vectors</strong> — tailgating through a badge-controlled door, USB drops in a parking lot, cloning a weak RFID badge, picking a simple lock — test whether physical access controls hold up the same way phishing tests whether email/security awareness does. Covered at concept level only, and always under a scope that names the specific building, hours, and get-out-of-jail letter.</li>
-  <li><strong>Defenses are the majority of the value here:</strong> recurring security-awareness training with simulated phishing, SPF/DKIM/<strong>DMARC</strong> email authentication, a blameless reporting culture, layered physical access controls, and MFA (ideally phishing-resistant) as the safety net when a credential does get phished anyway — all covered in depth in Defenses &amp; Legal below.</li>
-</ul>
-<p><strong>Mantra:</strong> "You're not testing a system here — you're testing a person who did nothing wrong except trust convincingly. Scope who can be targeted as carefully as you'd scope which server can be scanned, and let every finding turn into training, never into blame."</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What social engineering testing actually is</h3>
 <p>A social-engineering assessment measures whether an organization's people, process, and culture — not its firewalls — would stop a realistic manipulation attempt. Instead of looking for a missing patch or a misconfigured server, the tester designs a believable <strong>pretext</strong> (a plausible cover story: "I'm from IT, I need you to verify your password reset," "I'm the new contractor, can you let me in, my hands are full") and measures whether that pretext, delivered through email, phone, or in person, gets the intended human reaction. <strong>Physical social engineering</strong> is the same discipline applied to buildings instead of inboxes: can a tester get past reception, through a badge reader, or into a server room using charm, confidence, and a plausible story instead of a lockpick or an exploit?</p>
 
@@ -50,10 +62,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why physical testing is a distinct sibling discipline, not an afterthought</h3>
 <p>A network can be perfectly patched and still be reachable by someone who simply walked in: plugged a laptop into an unattended network jack, cloned a badge left carelessly readable in a bag, or was let through a door by someone being polite. Physical engagements test the layer underneath all the digital ones — the assumption that "you have to actually be inside the building" is itself a security control, and like any control it can be bypassed by a convincing enough person rather than a convincing enough exploit. This is why serious red-team engagements (see Foundations &amp; Ethics) often include a physical component alongside the digital one: a "crown jewel" objective is rarely protected by only one kind of control.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>One campaign, one lifecycle</h3>
 <p>Every social-engineering vector — email, phone, or in person — follows the same underlying shape, which mirrors the general pentest lifecycle (Foundations &amp; Ethics) but is worth naming explicitly for this topic:</p>
 <pre><code class="language-text">OSINT / Recon on org &amp; targets  →  Pretext design &amp; approval  →  Delivery  →  Human action  →  Objective  →  Report &amp; train
@@ -87,10 +99,10 @@ window.PREP_SITE.registerTopic({
   </tbody>
 </table>
 <p>The pattern to notice: each layer's control is only as strong as the assumption behind it, and every physical SE technique in this topic targets exactly one such assumption — that people don't hold doors for strangers, that RFID cards can't be cheaply read at a distance, that a found USB drive won't be plugged in out of curiosity, that a simple pin-tumbler lock is actually a meaningful barrier. None of these assumptions are safe defaults, which is exactly why layered, redundant controls (covered in Defenses &amp; Legal) matter more than any single one of them.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Methodology (Conceptual)', html: `
+{ id: "mechanics", title: "⚙️ Methodology (Conceptual)", collapsible: true, html: `
 <div class="callout danger">
   <div class="callout-title">⚠️ Methodology, not a kit</div>
   <p>Everything below describes <em>what a pentester does and measures</em> during an authorized social-engineering or physical engagement — the process, the tooling's role, and the metrics that make the exercise valuable. It deliberately stops short of usable lure copy, scripts, exploit payloads, or lock-picking technique detail, because none of that is the point: the point is understanding the methodology well enough to run, scope, and defend against it.</p>
@@ -132,10 +144,10 @@ sudo setoolkit
   <li><strong>Badge cloning</strong> — many organizations still use older 125kHz low-frequency proximity cards, which broadcast an unencrypted, static ID readable at short range with inexpensive RFID hardware (a <code>Proxmark3</code>, covered in Wireless Security's RFID section) — meaning the card's ID can be captured and replayed onto a blank card. Higher-security systems (MIFARE DESFire, HID iCLASS SE, and similar) use mutual authentication and encrypted credentials specifically to resist this. An authorized physical engagement tests which category the client's actual badge system falls into.</li>
   <li><strong>Lock-picking (overview only)</strong> — testing whether a simple pin-tumbler lock (on a server room, a cabinet, a supply closet) provides real resistance versus a determined, skilled attempt, using standard manual picking tools (a tension wrench and pick set). This module treats it strictly as a named, conceptual category of physical testing — not a how-to — because possessing lock-picking tools is itself separately regulated or restricted in some jurisdictions, and carrying them on-site during an engagement requires both the written engagement authorization <em>and</em> a check of local law before the tools are ever brought along.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — A social-engineering/physical-specific scoping checklist</h3>
 <p>This extends the general pre-engagement checklist from Foundations &amp; Ethics with the items unique to testing people and premises. Every box needs to be checked before anyone but the tester is targeted:</p>
 <ul>
@@ -172,10 +184,11 @@ sudo setoolkit
   Recording/consent:    &lt;jurisdiction's consent rule confirmed; recording authorized in writing&gt;
   Escalation contact:   &lt;named emergency contact who can confirm the engagement is real&gt;</code></pre>
 <p>The finding that matters from a call like this isn't "we got a password reset" — it's whether the help desk's own verification procedure was followed under a bit of social pressure, which is exactly the kind of procedural gap security-awareness training exists to close.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Defenses & Legal', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <div class="callout danger">
   <div class="callout-title">⚠️ Extra authorization, not the same authorization</div>
   <p>Everything in Foundations &amp; Ethics about written authorization, scope, and Rules of Engagement still applies here in full — and then some. A social-engineering or physical engagement's authorization must additionally: name specifically <em>who</em> or which role can be targeted; carry an explicit do-not-do list (no impersonating law enforcement/emergency responders, no physical contact or intimidation, no following anyone, no probing beyond proving the objective); cover recording/consent law for the relevant jurisdiction; and include a current, physically-carried "get-out-of-jail-free" letter plus a named emergency contact who can confirm the engagement in real time if a tester is stopped by security staff or police. Because these techniques target real, unsuspecting people and can involve entering real property, the legal exposure (trespass, impersonation, wiretap/recording-consent violations) is broader than a pure network engagement's — when in doubt, get legal counsel to review the authorization before anyone is targeted.</p>
@@ -201,10 +214,10 @@ sudo setoolkit
 
 <h3>MFA — the safety net for when a credential gets phished anyway</h3>
 <p>Multi-factor authentication is the backstop that limits the blast radius when a phishing or vishing attempt does succeed in obtaining a password: a stolen password alone shouldn't be enough to log in. It's worth noting that not all MFA is equally resistant to being phished itself — SMS codes and simple push approvals can be relayed in real time by an attacker-in-the-middle phishing page, or worn down via "MFA fatigue" (repeatedly triggering push prompts until one is accepted by accident or frustration) — whereas phishing-resistant methods like FIDO2/WebAuthn security keys and passkeys cryptographically bind the authentication to the legitimate site's origin, so a look-alike phishing domain simply can't complete the handshake at all. Rolling out phishing-resistant MFA for high-value accounts (IT admins, finance, executives — exactly the roles this topic's pretexts target) closes the gap that basic MFA leaves open.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'cheat-sheet', title: '📋 Cheat Sheet', html: `
+{ id: "cheat-sheet", title: "📋 Cheat Sheet", collapsible: true, html: `
 <table>
   <thead><tr><th>Category</th><th>Item</th><th>What it means</th></tr></thead>
   <tbody>
@@ -234,10 +247,10 @@ sudo setoolkit
     <tr><td>Authorization must-have</td><td>Recording/consent check</td><td>One-party vs. two-party consent laws vary by jurisdiction — confirm before recording</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">Why is social engineering considered such an effective attack vector?</div>
 <div class="qa-a">
@@ -279,50 +292,20 @@ sudo setoolkit
 <p>A blameless reporting culture paired with recurring security-awareness training — because no filter or policy catches every attempt, so the last line of defense is whether an employee who suspects something actually reports it quickly, and keeps reporting things in the future. A punitive response to someone who got fooled (or who reported something that turned out to be harmless) trains people to stay quiet instead, which is the opposite of the intended effect. The right metric to track over time is click rate trending down and report rate trending up across successive training/simulation cycles, not a one-time pass/fail.</p>
 </div>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Social engineering and physical testing attack people and premises rather than software — manipulating trust, authority, urgency and helpfulness to bypass controls — so the authorization bar is higher and the primary fixes are training and culture, not patches.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>The human attack surface is the target, not a bug — you "patch" it with training and culture, so every technique here is paired with the defense that counters it.</li>
-    <li>Phishing is bulk email; spear-phishing is researched and targeted; vishing is voice/phone (often help desk/IT); pretexting is the invented identity underneath all of them.</li>
-    <li>BEC (Business Email Compromise) impersonates an executive/vendor to redirect a real payment — often no malware or stolen credential at all, and one of the costliest categories the FBI IC3 tracks.</li>
-    <li>Industry research (Verizon DBIR) repeatedly finds a human element in roughly six of ten breaches.</li>
-    <li>Cialdini's principles underpin most pretexts: authority, urgency/scarcity, social proof, liking/rapport, reciprocity, commitment/consistency.</li>
-    <li>Simulation tooling is conceptual: GoPhish (open-source campaign framework — templates, tracked pages, metrics) and SET/setoolkit (spear-phishing and site-cloning vectors); Proxmark3 assesses badge cloning.</li>
-    <li>Physical vectors map to defense-in-depth layers: perimeter (USB drop), building entry (tailgating), internal doors (badge cloning), specific asset (lock-picking) — each bypasses one assumption.</li>
-    <li>Badge cloning works on older 125kHz low-frequency prox cards that broadcast a static unencrypted ID; MIFARE DESFire / HID iCLASS SE use mutual authentication to resist it.</li>
-    <li>Email authentication defense: SPF (which servers may send), DKIM (cryptographic signature), DMARC (requires SPF/DKIM alignment with the From domain, policy p=none/quarantine/reject) — only enforcement at quarantine/reject actually blocks spoofing.</li>
-    <li>The key metric for awareness programs is the trend — click rate down, report rate up — reported in aggregate, never as a blame list.</li>
-    <li>MFA limits blast radius when a credential is phished, but phishing-resistant FIDO2/WebAuthn/passkeys beat SMS or simple push, which fall to AiTM relay and MFA fatigue.</li>
-    <li>These engagements need extra authorization: a named target scope (never "all employees"), an absolute do-not-do list (no impersonating law enforcement/emergency responders, no contact/intimidation), recording/consent-law coverage, and a physically-carried get-out-of-jail-free letter.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Treating pretexting as a separate channel. It is the invented identity and story underneath the others — a phishing email, a vishing call, and a tailgating attempt all rely on a pretext; only the delivery channel differs.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Social engineering works because it exploits trust, urgency and authority — no firewall or patch stops a convincingly pretexted call, so the defense is awareness and culture, not a patch."</div>
-  <div class="revision-say">"BEC is dangerous precisely because it often needs no malware — the fix is procedural: independent callback verification and dual approval before changing payment details."</div>
-  <div class="revision-say">"DMARC only helps if it's enforced at quarantine or reject — p=none is monitoring-only and blocks nothing on its own."</div>
+<div class="qa-block">
+  <div class="qa-question">Q7. Name Cialdini's principles of influence and give a pretext example for each.</div>
+  <div class="qa-answer">
+    <p><strong>Authority</strong>: "I'm from IT / the CEO's office", e.g. a spoofed executive email requesting an urgent wire transfer. <strong>Urgency/scarcity</strong>: "your account will be locked in 10 minutes", pressure that short-circuits verification. <strong>Social proof</strong>: "everyone on your team already did this". <strong>Liking/rapport</strong>: a warm, friendly vishing voice or a helpful-seeming stranger at a door, where refusing feels rude. <strong>Reciprocity</strong>: doing a small favor first, like holding a door, so the target feels obliged to let you through or answer "just one quick question". <strong>Commitment/consistency</strong>: once someone agrees to something small ("yes, I can help with that"), they're more likely to follow through on a larger related ask.</p>
+  </div>
 </div>
-`},
-
-// ─────────────────────────────────────────────────────────────
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you distinguish phishing, spear-phishing, vishing, and pretexting, and explain why pretexting is not really a separate channel?</li>
-    <li>Can you explain what BEC is and why it's dangerous despite often involving no malware?</li>
-    <li>Can you describe how SPF, DKIM, and DMARC work together, and why DMARC only helps at p=quarantine or p=reject?</li>
-    <li>Can you name Cialdini's principles of influence and give a pretext example for each?</li>
-    <li>Can you list the extra authorization a physical or social-engineering engagement needs beyond a normal pentest's scope?</li>
-    <li>Can you explain why phishing-resistant MFA (FIDO2/WebAuthn) beats SMS or simple push, and what a blameless reporting culture adds?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q8. Why does phishing-resistant MFA (FIDO2/WebAuthn) beat SMS codes or simple push approvals?</div>
+  <div class="qa-answer">
+    <p>MFA is the backstop that limits the blast radius when a password does get phished, but not all MFA resists phishing itself. SMS codes and simple push approvals can be relayed in real time by an attacker-in-the-middle phishing page, and push can be worn down by "MFA fatigue", where prompts are triggered repeatedly until one is accepted. FIDO2/WebAuthn security keys and passkeys cryptographically bind authentication to the legitimate site's origin, so a look-alike phishing domain simply can't complete the handshake. Roll them out first for the high-value roles pretexts target: IT admins, finance and executives.</p>
+  </div>
 </div>
-`}
+` },
 
-]});
+  ]
+});

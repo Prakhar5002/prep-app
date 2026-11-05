@@ -1,33 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'off-sw',
-  module: 'offline',
-  title: 'Service Workers Deep',
-  estimatedReadTime: '50 min',
-  tags: ['service-worker', 'offline', 'pwa', 'cache-api', 'workbox', 'fetch', 'lifecycle', 'push'],
+  id: "off-sw",
+  module: "offline",
+  title: "Service Workers Deep",
+  estimatedReadTime: "50 min",
+  tags: ["service-worker","offline","pwa","cache-api","workbox","fetch","lifecycle","push"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>A <strong>Service Worker (SW)</strong> is a JavaScript program that lives between your web app and the network. It runs in a separate worker thread, has no DOM access, and intercepts every <code>fetch</code> the page makes — letting you serve from cache, transform responses, queue requests, deliver push notifications, and run background sync. It's the engine that turns a website into an installable, offline-capable app (PWA).</p>
-<ul>
-  <li><strong>It's a separate thread, separate process, separate context.</strong> No <code>window</code>, no DOM, no synchronous storage. <code>self</code> is the global. Promises everywhere.</li>
-  <li><strong>Lifecycle:</strong> install → waiting → activate → idle → fetch/message events. New SWs sit in "waiting" until all tabs close (or you call <code>skipWaiting</code>).</li>
-  <li><strong>Caching strategies:</strong> Cache-first (assets), Network-first (API), Stale-while-revalidate (best of both), Network-only (mutations), Cache-only (offline-only).</li>
-  <li><strong>Storage:</strong> Cache API (Request → Response key/value), IndexedDB (structured data), no localStorage / sessionStorage in SW context.</li>
-  <li><strong>Scope:</strong> SW controls only pages under its scope (path-prefix); usually register at <code>/</code>.</li>
-  <li><strong>Registration is HTTPS-only</strong> (except localhost). One SW per origin (effectively).</li>
-  <li><strong>Workbox</strong> is Google's library that ships pre-built strategies, routing, precaching, and a build plugin. Default for new PWAs.</li>
-  <li><strong>Updates are sticky:</strong> a new SW deployed today doesn't activate until the user has zero open tabs of the old one. Plan upgrade UX.</li>
-</ul>
-<p><strong>Mantra:</strong> "It's a network proxy that runs in the browser. Cache deliberately, version everything, plan the update flow."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A Service Worker is a <strong>network proxy running in the browser</strong> — a separate thread with no DOM that intercepts every <code>fetch</code>, so you cache deliberately, version everything, and plan the update flow.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>It's the engine that turns a website into an installable, offline-capable PWA: it can serve from cache, transform responses, queue requests, deliver push, and run background sync.</li>
+    <li>Separate thread, process, and context: no <code>window</code>, no DOM, no synchronous storage; <code>self</code> is the global; promises everywhere.</li>
+    <li>Lifecycle: install then waiting then activate then idle then fetch/message events; a new SW sits in <strong>waiting</strong> until all old tabs close unless you call <code>skipWaiting</code> (plus <code>clients.claim()</code> to take over open pages).</li>
+    <li><strong>Updates are sticky:</strong> a SW deployed today doesn't activate until the user has zero open tabs of the old one — plan the update UX (prompt, then <code>skipWaiting</code> on user confirm, then reload).</li>
+    <li>Caching strategies: cache-first (fingerprinted assets), network-first (HTML/API), stale-while-revalidate (best of both), network-only (mutations), cache-only (offline-only).</li>
+    <li>Version cache names and delete old caches in <code>activate</code> — without versioning, SW caches become permanent garbage.</li>
+    <li>Wrap all async work in <code>event.waitUntil()</code> — the browser can kill the SW at any time between or during events.</li>
+    <li>Storage: the Cache API (a Request-to-Response store) and IndexedDB — no <code>localStorage</code>/<code>sessionStorage</code> in the SW context.</li>
+    <li>Scope is a path-prefix (register at <code>/</code> to control every page); effectively one SW per origin; registration is HTTPS-only except on localhost.</li>
+    <li>Workbox ships pre-built strategies, routing, precaching, and a build plugin — the default for new PWAs.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Updates are sticky, and cache-everything is a trap.</strong> A newly deployed SW doesn't activate until the user has zero open tabs of the old one — so you must build an update prompt. And caching HTML/API cache-first strands users on yesterday's shell forever; never cache POST responses.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A Service Worker is a network proxy in the browser — it intercepts fetch so I can serve from cache and work offline. Cache deliberately, version everything, plan the update flow."</div>
+  <div class="revision-say">"Updates are sticky: a new SW sits in 'waiting' until every old tab closes, so I ship an update-prompt UX."</div>
+  <div class="revision-say">"I don't cache HTML cache-first — that traps users on a stale shell; HTML wants network-first or stale-while-revalidate."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What a Service Worker actually is</h3>
 <p>A JS file the browser registers and runs in its own thread. After registration, the browser routes every <code>fetch</code> from any page in the SW's scope through the SW's <code>fetch</code> event handler. The SW can return a cached response, generate one synthetically, modify the request, or pass through to the network.</p>
 
@@ -78,12 +85,10 @@ window.PREP_SITE.registerTopic({
   <li>SW caches POST responses (silently breaks).</li>
   <li>Update never surfaces; users on stale code for weeks.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The lifecycle</h3>
 <pre><code class="language-text">┌──────────────┐
 │   Register   │  navigator.serviceWorker.register('/sw.js')
@@ -201,12 +206,10 @@ window.PREP_SITE.registerTopic({
   <li>When all controlled pages close (or refresh with old SW gone), new SW activates.</li>
   <li>Or: new SW calls <code>self.skipWaiting()</code> to activate immediately + <code>clients.claim()</code> to take over open pages.</li>
 </ol>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Registering a Service Worker</h3>
 <pre><code class="language-javascript">// app.js (page-side; runs in window context)
 if ('serviceWorker' in navigator) {
@@ -436,12 +439,10 @@ navigator.serviceWorker.addEventListener('message', (event) =&gt; {
   if (event.data?.type === 'UPDATED') showToast('Content refreshed');
 });
 </code></pre>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Offline-capable news app</h3>
 <pre><code class="language-javascript">// sw.js
 const CACHE_VERSION = 'v4';
@@ -655,12 +656,11 @@ self.addEventListener('notificationclick', (event) =&gt; {
   }
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>The dreaded "stuck SW"</h3>
 <ul>
   <li>Bug ships in SW; SW caches stale assets; users see broken app for weeks.</li>
@@ -767,12 +767,9 @@ self.addEventListener('install', (event) =&gt; {
   <li>Push: APNs / FCM via native modules.</li>
   <li>Offline: design data layer to queue mutations with idempotency keys.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common SW mistakes</h3>
 <ol>
   <li><strong>No cache version bump.</strong> Old assets persist forever.</li>
@@ -900,12 +897,10 @@ self.addEventListener('fetch', (event) =&gt; {
 
 <h3>Anti-pattern: tracking PII in caches</h3>
 <p>Authenticated responses cached without scope cleanup leak across users on shared devices. Use <code>Vary: Authorization</code> or skip caching authed routes entirely.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common SW interview prompts</h3>
 <ol>
   <li>Explain the Service Worker lifecycle.</li>
@@ -1031,53 +1026,32 @@ self.addEventListener('fetch', (event) =&gt; {
   <li>"Build a SW from scratch without Workbox; feel the boilerplate."</li>
   <li>"Audit a real PWA — find versioning, update, kill-switch gaps."</li>
 </ul>
-`
-    },
 
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A Service Worker is a <strong>network proxy running in the browser</strong> — a separate thread with no DOM that intercepts every <code>fetch</code>, so you cache deliberately, version everything, and plan the update flow.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Separate thread, process, and context: no <code>window</code>, no DOM, no synchronous storage; <code>self</code> is the global; promises everywhere.</li>
-    <li>Lifecycle: install then waiting then activate then idle then fetch/message events; a new SW sits in <strong>waiting</strong> until all old tabs close unless you call <code>skipWaiting</code>.</li>
-    <li>Caching strategies: cache-first (assets), network-first (API), stale-while-revalidate (best of both), network-only (mutations), cache-only (offline-only).</li>
-    <li>Storage: the Cache API (a Request-to-Response store) and IndexedDB — no <code>localStorage</code>/<code>sessionStorage</code> in the SW context.</li>
-    <li>Scope is a path-prefix (register at <code>/</code> to control every page); registration is HTTPS-only except on localhost.</li>
-    <li>Workbox ships pre-built strategies, routing, and precaching — the default for new PWAs.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Updates are sticky, and cache-everything is a trap.</strong> A newly deployed SW doesn't activate until the user has zero open tabs of the old one — so you must build an update prompt. And caching HTML/API cache-first strands users on yesterday's shell forever; never cache POST responses.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A Service Worker is a network proxy in the browser — it intercepts fetch so I can serve from cache and work offline."</div>
-  <div class="revision-say">"Updates are sticky: a new SW sits in 'waiting' until every old tab closes, so I ship an update-prompt UX."</div>
-  <div class="revision-say">"I don't cache HTML cache-first — that traps users on a stale shell; HTML wants network-first or stale-while-revalidate."</div>
+<div class="qa-block">
+  <div class="qa-question">Q1. Walk me through the Service Worker lifecycle from install to activate.</div>
+  <div class="qa-answer">
+    <p>After <code>navigator.serviceWorker.register('/sw.js')</code>, the browser downloads the script and fires <code>install</code>, where you typically precache the app shell inside <code>event.waitUntil</code>. If an older SW still controls open pages, the new one enters <strong>waiting</strong>. Once all controlled pages close (or the new SW calls <code>self.skipWaiting()</code>), it fires <code>activate</code>, where you delete old versioned caches and can call <code>clients.claim()</code> to take over open pages. From then on it sits idle and wakes for <code>fetch</code>, <code>message</code>, <code>push</code> and <code>sync</code> events. The browser checks for an updated, byte-different <code>sw.js</code> on navigation, reload, or at least every 24 hours.</p>
+  </div>
 </div>
-`
-    },
+<div class="qa-block">
+  <div class="qa-question">Q2. Why shouldn't you cache HTML with a cache-first strategy?</div>
+  <div class="qa-answer">
+    <p>With cache-first, the cached HTML shell is served forever and the network is never consulted, so users stay stuck on yesterday's UI, which may also reference old asset URLs. HTML is the entry point that decides which code runs, so freshness matters: route navigation requests (<code>request.mode === 'navigate'</code>) network-first (or stale-while-revalidate) and keep cache-first for fingerprinted assets whose content never changes.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Which storage APIs can you use inside a Service Worker, and which can't you?</div>
+  <div class="qa-answer">
+    <p>Available: the Cache API (<code>caches</code>, a Request-to-Response store) and <code>indexedDB</code> for structured data, plus <code>fetch</code>, <code>postMessage</code> to clients, WebCrypto, Streams and <code>self.registration.showNotification</code>. Not available: <code>localStorage</code> and <code>sessionStorage</code> (they're synchronous), along with <code>window</code>, <code>document</code>, the DOM, <code>alert</code>/<code>confirm</code> and synchronous XHR. So anything the SW must persist goes into Cache API or IndexedDB.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Why does <code>event.waitUntil</code> matter in a Service Worker event handler?</div>
+  <div class="qa-answer">
+    <p>The browser can kill an idle SW at any time, between events or mid-handler. <code>event.waitUntil(promise)</code> tells it to keep the SW alive until that promise settles. Without it, precaching in <code>install</code> may stop before <code>cache.addAll</code> completes, cache cleanup in <code>activate</code> may be cut off, and a <code>push</code> handler may be killed before the notification shows. Rule: every async piece of work in a SW handler goes inside <code>waitUntil</code>.</p>
+  </div>
+</div>
+` },
 
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you walk through the SW lifecycle from install to activate?</li>
-    <li>Can you match cache-first / network-first / stale-while-revalidate to the right kind of request?</li>
-    <li>Can you explain why a newly deployed SW doesn't take effect immediately?</li>
-    <li>Can you explain why HTML shouldn't be cached cache-first?</li>
-    <li>Can you say which storage APIs are and aren't available inside a SW?</li>
-    <li>Can you explain why <code>event.waitUntil</code> matters in a SW handler?</li>
-  </ul>
-</div>
-`
-    }
   ]
 });

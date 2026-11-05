@@ -1,33 +1,38 @@
 window.PREP_SITE.registerTopic({
-  id: 'be-observability',
-  module: 'backend',
-  title: 'Observability',
-  estimatedReadTime: '45 min',
-  tags: ['observability', 'logs', 'metrics', 'traces', 'opentelemetry', 'sli', 'slo', 'sla', 'alerting', 'apm'],
+  id: "be-observability",
+  module: "backend",
+  title: "Observability",
+  estimatedReadTime: "45 min",
+  tags: ["observability","logs","metrics","traces","opentelemetry","sli","slo","sla","alerting","apm"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Observability</strong> is how you debug production. The classic three pillars — <strong>logs</strong>, <strong>metrics</strong>, <strong>traces</strong> — answer different questions: "what happened to this one request" (logs + traces), "what's the system doing aggregate" (metrics), "where did this slow request spend its time" (traces). Build observability before you need it; the worst time to wire telemetry is during an outage.</p>
-<ul>
-  <li><strong>Logs:</strong> structured (JSON) per-event records. Searchable + queryable in aggregator (Datadog / Splunk / ELK).</li>
-  <li><strong>Metrics:</strong> numerical time-series — request rate, error rate, latency percentiles, saturation. Aggregated, cheap, alertable.</li>
-  <li><strong>Traces:</strong> per-request distributed timeline across services. Identifies which span is slow. OpenTelemetry is the standard.</li>
-  <li><strong>SLI / SLO / SLA:</strong> SLI = the indicator metric (99% of requests &lt; 200ms); SLO = your internal target; SLA = customer contract.</li>
-  <li><strong>Error budget:</strong> 100% - SLO target. Spend on outages or risky deploys; when burned, freeze risk.</li>
-  <li><strong>RED + USE:</strong> RED for services (Rate / Errors / Duration); USE for resources (Utilization / Saturation / Errors).</li>
-  <li><strong>Alert on symptoms,</strong> not causes. "Error rate &gt; X%" beats "CPU &gt; 90%."</li>
-  <li><strong>Correlation IDs</strong> connect logs across services + with traces. Mandatory.</li>
-</ul>
-<p><strong>Mantra:</strong> "Logs for narrative. Metrics for trends. Traces for distribution. Correlation IDs everywhere. Alert on user-facing symptoms. SLOs drive priorities."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Observability is <strong>how you debug production</strong> — logs for narrative, metrics for trends, traces for distribution, correlation IDs everywhere — and the worst time to wire telemetry is during an outage.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Logs</strong> = narrative: structured (JSON) per-event records, searchable in an aggregator — "what happened to this one request." Cheapest per event, but volume balloons; sample at high traffic.</li>
+    <li><strong>Metrics</strong> = trends: numerical time-series (rate, error rate, latency percentiles, saturation) — "what's the aggregate doing." Constant cost regardless of traffic; <strong>cardinality</strong> is the cost driver.</li>
+    <li><strong>Traces</strong> = distribution: per-request timeline across services — "where did this request spend time." OpenTelemetry is the standard; usually sampled (1-10%) at scale.</li>
+    <li>Together they compose: <strong>metric detects the spike → trace finds the slow span → log pinpoints the cause.</strong></li>
+    <li><strong>SLI / SLO / SLA:</strong> SLI is the indicator metric (e.g. P99 latency of an endpoint), SLO your internal target (99.9% of requests &lt; 200ms over 30 days), SLA the customer contract (usually weaker). <strong>Error budget = 100% − SLO</strong> (99.9% ≈ 43 min/month), spent on outages or risky deploys; when burned, freeze risk — SLOs drive priorities.</li>
+    <li>Two frameworks: <strong>RED</strong> for services (Rate / Errors / Duration), <strong>USE</strong> for resources (Utilization / Saturation / Errors).</li>
+    <li><strong>Alert on symptoms, not causes</strong> — "error rate &gt; X%" beats "CPU &gt; 90%."</li>
+    <li><strong>Correlation IDs</strong> flowing through every log and span are mandatory — they're what makes cross-service debugging possible; and report latency as <strong>percentiles (P50/P95/P99), not averages.</strong></li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Two recurring mistakes: (1) <strong>alerting on infra causes</strong> (CPU, memory) instead of user-facing symptoms — you page on benign noise and miss real problems; and (2) reporting <strong>averages instead of percentiles</strong>, which masks tail latency (an average hides the P99 that's actually hurting users). Add the silent killer: <strong>no correlation IDs</strong>, which turns cross-service debugging into hours of guesswork.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Logs, metrics, and traces answer different questions — the metric tells me something's wrong, the trace tells me where, the log tells me why."</div>
+  <div class="revision-say">"I alert on user-facing symptoms like error rate and latency, not on CPU — a cause-based alert pages on noise and misses the real thing."</div>
+  <div class="revision-say">"I track latency as P95/P99, never averages, and thread a correlation ID through every log and span so I can follow one request across services."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The three pillars</h3>
 <table>
   <thead><tr><th>Pillar</th><th>Answers</th><th>Cost / Cardinality</th></tr></thead>
@@ -75,12 +80,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>The "you can't fix what you don't measure" principle</h3>
 <p>Most production work is observability work in disguise. Reliable systems are observable systems. Without metrics, latency regressions hide for weeks. Without traces, you can't find the bottleneck. Without logs, you can't reconstruct what happened.</p>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Logs — structured + queryable</h3>
 <pre><code class="language-json">// Bad — plain string
 "User 42 placed order 99 for $250"
@@ -244,12 +247,10 @@ If error budget healthy:
 <p>The number of unique label combinations on a metric. <code>requests_total{service, endpoint, status}</code> with 10 services × 50 endpoints × 5 statuses = 2,500 series. Add <code>userId</code> label → 2,500 × 1M users → 2.5B series → metrics backend dies.</p>
 
 <p>Rule: never use unbounded labels (userId, requestId, email) on metrics. They belong on logs / traces.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Structured logging with pino</h3>
 <pre><code class="language-typescript">import pino from 'pino';
 
@@ -538,12 +539,10 @@ db_connections_active / db_connections_max
  + sum(rate(http_request_duration_seconds_bucket{le="2"}[5m])) / 2)
 / sum(rate(http_request_duration_seconds_count[5m]))
 </code></pre>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Full instrumentation of an Express service</h3>
 <pre><code class="language-typescript">// instrumentation.ts (loaded first)
 import { NodeSDK } from '@opentelemetry/sdk-node';
@@ -827,12 +826,11 @@ kubectl rollout undo deployment/orders-api
 
 If unresolved in 15 min, page #incident channel.
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Cardinality explosions</h3>
 <ul>
   <li>Adding <code>userId</code> as a metric label → millions of unique combinations → metrics backend dies.</li>
@@ -943,12 +941,9 @@ If unresolved in 15 min, page #incident channel.
   <li>PR-preview environments exist for hours; observability budget can balloon.</li>
   <li>Mitigation: tag traces / logs with environment; aggressive retention reduction in non-prod.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common observability mistakes</h3>
 <ol>
   <li><strong>Plain-string logs.</strong> Ungreppable; can't aggregate.</li>
@@ -1101,12 +1096,10 @@ export const usersLogger = root.child({ module: 'users' });
 
 <h3>Anti-pattern: dashboards that are walls of charts</h3>
 <p>Service dashboard with 50 charts; engineers can't tell at a glance "is this service healthy?" Curate ruthlessly: top 3-5 charts answer "is it healthy?" Drill-down dashboards for deep diagnosis.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common observability interview prompts</h3>
 <ol>
   <li>Walk me through observability for [service / system].</li>
@@ -1236,53 +1229,38 @@ export const usersLogger = root.child({ module: 'users' });
   <li>"Set up the full Loki + Tempo + Prometheus + Grafana stack on a side project."</li>
   <li>"Practice debugging a known-slow distributed system using only telemetry."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Observability is <strong>how you debug production</strong> — the three pillars (logs, metrics, traces) answer different questions, and the worst time to wire telemetry is during an outage.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Logs</strong> = narrative: structured (JSON) per-event records, searchable in an aggregator — "what happened to this one request." Cheapest per event, but volume balloons; sample at high traffic.</li>
-    <li><strong>Metrics</strong> = trends: numerical time-series (rate, error rate, latency percentiles, saturation) — "what's the aggregate doing." Constant cost regardless of traffic; <strong>cardinality</strong> is the cost driver.</li>
-    <li><strong>Traces</strong> = distribution: per-request timeline across services — "where did this request spend time." OpenTelemetry is the standard; usually sampled (1-10%) at scale.</li>
-    <li>Together they compose: <strong>metric detects the spike → trace finds the slow span → log pinpoints the cause.</strong></li>
-    <li><strong>SLI / SLO / SLA:</strong> SLI is the indicator metric, SLO your internal target, SLA the customer contract. <strong>Error budget = 100% − SLO</strong>, spent on outages or risky deploys; when burned, freeze risk.</li>
-    <li>Two frameworks: <strong>RED</strong> for services (Rate / Errors / Duration), <strong>USE</strong> for resources (Utilization / Saturation / Errors).</li>
-    <li><strong>Alert on symptoms, not causes</strong> — "error rate &gt; X%" beats "CPU &gt; 90%."</li>
-    <li><strong>Correlation IDs</strong> flowing through every log and span are mandatory — they're what makes cross-service debugging possible; and report latency as <strong>percentiles (P50/P95/P99), not averages.</strong></li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Two recurring mistakes: (1) <strong>alerting on infra causes</strong> (CPU, memory) instead of user-facing symptoms — you page on benign noise and miss real problems; and (2) reporting <strong>averages instead of percentiles</strong>, which masks tail latency (an average hides the P99 that's actually hurting users). Add the silent killer: <strong>no correlation IDs</strong>, which turns cross-service debugging into hours of guesswork.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Logs, metrics, and traces answer different questions — the metric tells me something's wrong, the trace tells me where, the log tells me why."</div>
-  <div class="revision-say">"I alert on user-facing symptoms like error rate and latency, not on CPU — a cause-based alert pages on noise and misses the real thing."</div>
-  <div class="revision-say">"I track latency as P95/P99, never averages, and thread a correlation ID through every log and span so I can follow one request across services."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. What are the three pillars of observability, and which question does each answer?</div>
+  <div class="qa-answer">
+    <p><strong>Logs</strong> answer "what happened to this specific request?" — structured (JSON) per-event records, searchable in an aggregator; cheapest per event, but volume balloons, so sample at high traffic. <strong>Metrics</strong> answer "what is the aggregate trend?" — numerical time-series of rates, error rates, latency percentiles and saturation; constant cost regardless of traffic, with label cardinality as the cost driver, which makes them cheap to alert on. <strong>Traces</strong> answer "where did this request spend its time across services?" — a per-request waterfall of spans, collected with OpenTelemetry and usually sampled at 1–10% at scale.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the three pillars and the distinct question each one answers?</li>
-    <li>Can you walk the debug flow — metric detects, trace locates, log explains?</li>
-    <li>Can you distinguish SLI, SLO, and SLA, and define an error budget?</li>
-    <li>Can you explain RED versus USE and what each applies to?</li>
-    <li>Can you explain why you alert on symptoms rather than causes, with an example?</li>
-    <li>Can you explain why percentiles beat averages, and why correlation IDs are mandatory?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Walk through the debug flow from metric to trace to log.</div>
+  <div class="qa-answer">
+    <p>The <strong>metric detects</strong>: "P99 latency spiked at 14:32" — something is wrong, but not what. The <strong>trace locates</strong>: the slow requests all spend 80% of their time in <code>db.users.find</code> — now you know where, but not why. The <strong>log explains</strong>: "database connection pool exhausted at 14:31:55, 50 waiters" — the exact cause. The correlation/trace ID is what lets you jump from the slow trace to the log lines for those same requests.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. Distinguish SLI, SLO and SLA, and define an error budget.</div>
+  <div class="qa-answer">
+    <p>An <strong>SLI</strong> (indicator) is the metric you measure, such as the P99 latency of <code>/api/users</code>. An <strong>SLO</strong> (objective) is your internal target for it, such as 99.9% of requests under 200ms over 30 days. An <strong>SLA</strong> (agreement) is the customer-facing contract with consequences, usually weaker than the SLO — for example 99% uptime with refunds if violated. The <strong>error budget</strong> is 100% minus the SLO: at 99.9% availability that's 0.1%, about 43 minutes a month. While the budget is healthy you ship faster and take more release risk; when it's burned you pause feature work, slow the deploy cadence and invest in reliability — making the velocity-versus-reliability trade-off explicit.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. Why alert on symptoms rather than causes? Give an example.</div>
+  <div class="qa-answer">
+    <p>Symptom alerts fire when users are actually hurting; cause alerts fire on things that may not affect users. "CPU &gt; 90%" or "disk &gt; 80%" pages someone for benign noise (a busy but healthy box) and can still miss real problems, which leads to alert fatigue. Better: "error rate &gt; 1% for 5 min", "P99 latency &gt; 500ms for 5 min", or "error budget burning at 10× the normal rate". Each alert should link to a runbook with diagnosis steps; cause metrics like CPU belong on dashboards for diagnosis, not on the pager.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. Why do percentiles beat averages, and why are correlation IDs mandatory?</div>
+  <div class="qa-answer">
+    <p>An average hides outliers: "average response time 50ms" can mean 99 fast requests and one brutally slow one, and a 50ms average can sit alongside a 5s P99 — one in a hundred users having a terrible time. Report P50 (typical), P95 (1 in 20) and P99 (1 in 100), base SLOs and alerts on percentiles, and use histograms so percentiles aggregate cleanly across instances. A correlation ID (<code>X-Request-ID</code> or W3C <code>traceparent</code>) is generated at the edge, passed on every downstream call and written into every log line and span, so you can grep one ID and reconstruct a request across services. Without it, cross-service debugging takes hours of guesswork.</p>
+  </div>
+</div>
+` },
+
   ]
 });

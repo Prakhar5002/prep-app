@@ -1,25 +1,39 @@
 window.PREP_SITE.registerTopic({
-  id: 'design-srp',
-  module: 'design',
-  title: 'S · Single Responsibility',
-  estimatedReadTime: '13 min',
-  tags: ['design', 'solid', 'oop', 'srp', 'clean-code'],
+  id: "design-srp",
+  module: "design",
+  title: "S · Single Responsibility",
+  estimatedReadTime: "13 min",
+  tags: ["design","solid","oop","srp","clean-code"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>Single Responsibility Principle (SRP)</strong>, Robert C. Martin's original phrasing: <strong>"A class should have one, and only one, reason to change."</strong> The sharper, modern framing — from Martin's own later book, <em>Clean Architecture</em> — is that a module should be <strong>responsible to one actor</strong>: one person or stakeholder group who would ask for the same kind of change.</p>
-<ul>
-  <li><strong>It is not "one method per class."</strong> That's the single most common misconception about SRP — a class can, and usually should, have several methods, as long as all of them serve the same responsibility and the same actor.</li>
-  <li><strong>"Reason to change" means axis of change, not literal edit count.</strong> A <code>UserService</code> that saves a user to a database <em>and</em> emails them <em>and</em> formats a UI row has three separate reasons to change, driven by three different groups of people — even if, today, it only exposes one public method.</li>
-  <li><strong>The smell it fixes:</strong> the "god class" — one file that a backend team, a marketing team, and a UI team all have to edit, for entirely unrelated reasons, at entirely unrelated times.</li>
-  <li><strong>The fix is almost always the same shape:</strong> extract each responsibility into its own small collaborator class, and let the original class shrink down to pure orchestration — calling those collaborators in the right order, owning none of their implementation detail itself.</li>
-</ul>
-<p><strong>Mantra:</strong> "If describing what a class does needs the word 'and,' it has more than one reason to change."</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>A class should have one, and only one, reason to change</strong> — the sharper modern framing: it should be <strong>responsible to one actor</strong> (one stakeholder group that would ask for the same kind of change).</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Underneath the "reason to change" phrasing, SRP is about <strong>cohesion</strong> (keep things that change together, together) and <strong>coupling</strong> (keep genuinely unrelated responsibilities apart).</li>
+    <li>"One reason to change" means <strong>one axis of change / one actor</strong>, not literal edit count (a <code>UserService</code> that saves to the DB <em>and</em> emails <em>and</em> formats a UI row has three reasons to change even with one public method) — Martin sharpened the ambiguous 2002 wording to "responsible to one actor" in <em>Clean Architecture</em>.</li>
+    <li><strong>SRP is NOT "one method per class."</strong> A class can have several methods and still satisfy SRP, as long as all of them serve the same responsibility and the same actor.</li>
+    <li>The smell it fixes is the <strong>god class</strong> — persistence, business rules, and presentation bundled so a backend team, a marketing team, and a UI team all edit one file for unrelated reasons.</li>
+    <li>Mixing responsibilities causes three specific damages: <strong>shotgun surgery</strong>, <strong>fragile tests</strong> (mocking an SMTP client just to test persistence), and <strong>ownership conflicts</strong> (two actors, one file).</li>
+    <li>The fast check is the <strong>one-sentence test</strong>: describe the class without the word "and." If you need "and," it has more than one reason to change.</li>
+    <li>The fix is always the same shape: <strong>extract each responsibility into its own small collaborator</strong>, and let the original class shrink to pure <strong>orchestration</strong>.</li>
+    <li>It's <strong>not about line count</strong> — a 400-line cohesive class for one actor is fine; a 40-line class doing three things for three actors is the violation.</li>
+    <li>The fix does <strong>not</strong> require interfaces or dependency injection — adding an abstraction is Dependency Inversion, a separate principle you reach for only when you actually need to swap an implementation or isolate a test.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Reading SRP as <strong>"one method per class"</strong> or "small classes are always better." Size is at most a symptom, never the rule — the rule is one <em>actor</em> / one reason to change. A tiny class serving three actors still violates SRP; a large, cohesive class serving one actor does not.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"SRP means one reason to change — in the modern framing, responsible to one actor. It does not mean one method per class."</div>
+  <div class="revision-say">"My quick test: describe the class in one sentence without 'and.' If I need 'and,' it's serving more than one actor, so I extract collaborators."</div>
+  <div class="revision-say">"The fix is to pull each responsibility into its own collaborator and let the original class shrink to pure orchestration — no interfaces needed unless I actually have to swap or test something in isolation."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Cohesion and coupling — the two ideas SRP is really about</h3>
 <p><strong>Cohesion</strong> is how tightly the things inside one module belong together — do they all serve the same purpose, change for the same reasons, get touched by the same people? <strong>Coupling</strong> is how entangled one module's internals are with another's. Underneath the "reason to change" phrasing, SRP is a statement about both: keep <em>highly cohesive</em> code together, in one class, and keep genuinely <em>unrelated</em> responsibilities apart, so a change to one doesn't ripple into — or force re-testing of — the other.</p>
 
@@ -31,10 +45,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>Ownership conflicts.</strong> If a backend team owns persistence and a growth team owns email copy, they're now both editing the same file for entirely unrelated reasons — exactly the "two actors, one class" situation the modern framing names directly.</li>
 </ul>
 <p>None of this is really about class size or line count. A 400-line class that does one cohesive thing for one actor can be perfectly fine; a 40-line class doing three unrelated things for three actors is the SRP violation.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>"One reason to change" → "one axis of change" → "one actor"</h3>
 <p>Martin's original 2002 wording — "a class should have one, and only one, reason to change" — turned out to be ambiguous in practice: two developers could disagree endlessly about what counts as "one reason." In his 2017 book <em>Clean Architecture</em>, Martin sharpened it: a module should be responsible to <strong>one, and only one, actor</strong> — where "actor" means a person or group of people who would ask for the same category of change (a business stakeholder, a DBA, a compliance team, a UI/product team). Two responsibilities count as "the same reason to change" only if the exact same actor would be the one requesting a change to either of them.</p>
 
@@ -43,10 +57,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>What SRP is not</h3>
 <p>SRP does not mean "one method per class," "small classes are always better," or "never exceed N lines." A class with five methods that all serve the exact same actor and the exact same responsibility is a perfectly good, SRP-compliant class. Size is a symptom you might sometimes notice — not the rule itself. Plenty of tiny classes still violate SRP if their few methods serve unrelated actors, and plenty of larger classes don't violate it at all.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>How to spot a violation</h3>
 <ul>
   <li><strong>The one-sentence description needs "and."</strong> The single most reliable signal — see Mental Model above.</li>
@@ -59,10 +73,10 @@ window.PREP_SITE.registerTopic({
 <h3>The fix: extract collaborators, then orchestrate</h3>
 <p>The fix is essentially always the same shape: pull each responsibility out into its own small, focused class (a <strong>collaborator</strong>), and let the original class shrink down to <strong>orchestration</strong> — calling the right collaborators, in the right order, and owning none of their implementation detail itself. The original class doesn't disappear; its job changes, from "does everything" to "coordinates the people who do."</p>
 <p>Two things this fix is <em>not</em>: it's not "split every method into its own class" (see What SRP is not, above), and it's not "add an interface and a dependency-injection setup for every collaborator." That's Dependency Inversion — a separate, later principle in this module, worth reaching for once you actually need to swap an implementation or isolate a test, not a mandatory add-on to every SRP extraction.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples (before → after)', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Before: one class, three actors</h3>
 <pre><code class="language-typescript">class UserService {
   constructor(private db: Database, private smtp: SmtpClient) {}
@@ -138,10 +152,10 @@ class UserService {
 </code></pre>
 <p>Each class now answers to exactly one actor: change the schema or the SQL, touch only <code>UserRepository</code>; change the email copy, touch only <code>WelcomeMailer</code>; change how a row renders, touch only <code>UserRowView</code>. <code>UserService</code> is now describable in one sentence without an "and" — <em>"UserService registers a new user"</em> — even though, underneath, persistence and notification both still happen; orchestrating them, not implementing them, is now its whole job.</p>
 <p>Notice what this refactor <em>didn't</em> do: it didn't introduce interfaces or a dependency-injection container for these three collaborators, and it didn't split <code>UserRepository</code> further just because it "could." That restraint is the YAGNI point from the previous topic — SRP is fully satisfied here without reaching for Dependency Inversion, which is a separate concern for a later topic in this module.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What does SRP actually mean — and what's the "one method" misconception?</div>
 <div class="qa-a">
@@ -162,46 +176,32 @@ class UserService {
 <p>Closely related, but not identical. Separation of concerns is the older, broader architectural idea: split a system into distinct sections, each addressing a separate concern (e.g. presentation, business logic, and data access as separate layers). SRP applies that same idea specifically at the level of a single class or module's reason to change and responsible actor. A useful way to hold both: SRP is separation of concerns applied one level down, at class-design granularity rather than architectural-layer granularity.</p>
 </div>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>A class should have one, and only one, reason to change</strong> — the sharper modern framing: it should be <strong>responsible to one actor</strong> (one stakeholder group that would ask for the same kind of change).</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Underneath the "reason to change" phrasing, SRP is about <strong>cohesion</strong> (keep things that change together, together) and <strong>coupling</strong> (keep genuinely unrelated responsibilities apart).</li>
-    <li>"One reason to change" means <strong>one axis of change / one actor</strong>, not literal edit count — Martin sharpened the ambiguous 2002 wording to "responsible to one actor" in <em>Clean Architecture</em>.</li>
-    <li><strong>SRP is NOT "one method per class."</strong> A class can have several methods and still satisfy SRP, as long as all of them serve the same responsibility and the same actor.</li>
-    <li>The smell it fixes is the <strong>god class</strong> — persistence, business rules, and presentation bundled so a backend team, a marketing team, and a UI team all edit one file for unrelated reasons.</li>
-    <li>Mixing responsibilities causes three specific damages: <strong>shotgun surgery</strong>, <strong>fragile tests</strong> (mocking an SMTP client just to test persistence), and <strong>ownership conflicts</strong> (two actors, one file).</li>
-    <li>The fast check is the <strong>one-sentence test</strong>: describe the class without the word "and." If you need "and," it has more than one reason to change.</li>
-    <li>The fix is always the same shape: <strong>extract each responsibility into its own small collaborator</strong>, and let the original class shrink to pure <strong>orchestration</strong>.</li>
-    <li>It's <strong>not about line count</strong> — a 400-line cohesive class for one actor is fine; a 40-line class doing three things for three actors is the violation.</li>
-    <li>The fix does <strong>not</strong> require interfaces or dependency injection — adding an abstraction is Dependency Inversion, a separate principle you reach for only when you actually need to swap an implementation or isolate a test.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Reading SRP as <strong>"one method per class"</strong> or "small classes are always better." Size is at most a symptom, never the rule — the rule is one <em>actor</em> / one reason to change. A tiny class serving three actors still violates SRP; a large, cohesive class serving one actor does not.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"SRP means one reason to change — in the modern framing, responsible to one actor. It does not mean one method per class."</div>
-  <div class="revision-say">"My quick test: describe the class in one sentence without 'and.' If I need 'and,' it's serving more than one actor, so I extract collaborators."</div>
-  <div class="revision-say">"The fix is to pull each responsibility into its own collaborator and let the original class shrink to pure orchestration — no interfaces needed unless I actually have to swap or test something in isolation."</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. State SRP in both its original and modern forms. Why did Martin sharpen the wording?</div>
+  <div class="qa-answer">
+    <p>The original 2002 wording is "a class should have one, and only one, reason to change." It proved ambiguous in practice: two developers could argue endlessly about what counts as "one reason." In <em>Clean Architecture</em> (2017) Martin sharpened it to "a module should be responsible to one, and only one, actor", meaning one person or stakeholder group that would ask for the same kind of change. Tying the reason to a real group of people makes the axis of change concrete and checkable.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you state SRP two ways — "one reason to change" and "responsible to one actor" — and say why Martin sharpened the wording?</li>
-    <li>Can you explain why SRP is <em>not</em> "one method per class," with an example that's small yet still violates it?</li>
-    <li>Can you apply the one-sentence "no 'and'" test to spot a god class in the wild?</li>
-    <li>Can you name the three concrete damages of mixing responsibilities — shotgun surgery, fragile tests, ownership conflicts?</li>
-    <li>Can you describe the standard fix — extract collaborators, shrink the original to orchestration — without reaching for interfaces or DI?</li>
-    <li>Can you explain why SRP is about actors, not line count?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q5. Why is SRP about actors rather than method count or line count? Give a small class that still violates it.</div>
+  <div class="qa-answer">
+    <p>The rule is one axis of change, so size is at most a symptom. A <code>UserService</code> with a single public method that saves a user to the database, sends a welcome email and formats their profile row has three reasons to change, driven by three different groups (backend, growth/marketing, UI), so it violates SRP despite being tiny. Conversely, a 400-line class doing one cohesive thing for one actor is fine; a 40-line class doing three unrelated things for three actors is the violation.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q6. What concrete damage does mixing responsibilities in one class cause?</div>
+  <div class="qa-answer">
+    <p>Three things. <strong>Shotgun surgery:</strong> a small change like updating the welcome email's subject line touches a class that also does persistence, so you re-read, re-test and risk code unrelated to the change. <strong>Fragile tests:</strong> a test of "does this persist a user correctly" must mock an SMTP client it doesn't care about, and changes to email logic can break persistence tests. <strong>Ownership conflicts:</strong> the backend team and the growth team both edit the same file for unrelated reasons, the "two actors, one class" situation.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q7. What is the standard fix for an SRP violation, and does it require interfaces or DI?</div>
+  <div class="qa-answer">
+    <p>Extract each responsibility into its own small collaborator, one per actor, e.g. <code>UserRepository</code> for SQL, <code>WelcomeMailer</code> for email copy and <code>UserRowView</code> for formatting. The original class shrinks to pure orchestration: it calls them in the right order and owns none of their detail, and becomes describable without "and" ("UserService registers a new user"). No interfaces or dependency injection are needed; adding an abstraction is Dependency Inversion, a separate principle you use only when you actually need to swap an implementation or isolate a test.</p>
+  </div>
+</div>
+` },
 
-]});
+  ]
+});

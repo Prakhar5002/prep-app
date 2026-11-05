@@ -1,33 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'wp-pressure',
-  module: 'workplace',
-  title: 'Pressure, Burnout & Recovery',
-  estimatedReadTime: '45 min',
-  tags: ['burnout', 'pressure', 'stress', 'on-call', 'pip', 'mental-health', 'recovery', 'imposter-syndrome'],
+  id: "wp-pressure",
+  module: "workplace",
+  title: "Pressure, Burnout & Recovery",
+  estimatedReadTime: "45 min",
+  tags: ["burnout","pressure","stress","on-call","pip","mental-health","recovery","imposter-syndrome"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Pressure is the constant in tech work — deadlines, on-call, outages, perf cycles, layoffs, ambitious roadmaps. <strong>Pressure isn't the problem; sustained-pressure-without-recovery is.</strong> Burnout isn't "I'm tired this week." It's structural — it builds for months, takes months to recover, and the longer you ignore it the worse the damage. Most engineers learn this the hard way once. Senior engineers learn to <em>recognize the signal early</em> and <em>own the recovery</em> instead of waiting for the org to fix it (it won't).</p>
-<ul>
-  <li><strong>Burnout is structural, not emotional.</strong> Long-term mismatch between demands + recovery; cynicism, exhaustion, reduced efficacy. Recovery measured in months, not weekends.</li>
-  <li><strong>Three burnout dimensions:</strong> emotional exhaustion, cynicism, reduced sense of accomplishment. (Maslach.)</li>
-  <li><strong>Early warning signs:</strong> dread starting work; small tasks feel huge; sleep / appetite drift; cynicism about colleagues + product; weekend recovery insufficient by Sunday evening.</li>
-  <li><strong>Pressure types are not equal:</strong> deadline pressure (acute, fixable); on-call pressure (cumulative); outage trauma (event-based); performance / promo pressure (long-running); layoff anxiety (structural); abusive manager (relational).</li>
-  <li><strong>Recovery is owned by you,</strong> not your manager. Time off helps; structural change is required. "Push through" makes it worse.</li>
-  <li><strong>Saying no</strong> is often the most important pressure-management skill. (See <code>wp-saying-no</code>.)</li>
-  <li><strong>Imposter syndrome</strong> compounds pressure; senior engineers don't lack it — they recognize it.</li>
-  <li><strong>Get help early.</strong> Therapist, EAP, doctor — not because something's "wrong with you," but because professionals navigate pressure faster than you alone.</li>
-</ul>
-<p><strong>Mantra:</strong> "Pressure is fine; sustained-pressure-without-recovery is not. Recognize early, own the recovery, change the structure if you need to. Burnout is not a weakness."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Pressure isn't the problem; sustained-pressure-without-recovery is</strong> — burnout is structural, so recognize the trajectory early, own the recovery, and change the structure when recovery alone won't fix it.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Burnout is structural, not emotional</strong> — a long-term mismatch between demands and recovery. It builds over months and recovers over months; a weekend doesn't fix it. Burnout is not a weakness.</li>
+    <li><strong>Three dimensions (Maslach):</strong> emotional exhaustion, cynicism/depersonalization, reduced sense of accomplishment. Two of three trending bad for 4+ weeks = warning zone.</li>
+    <li>Watch the <strong>early signals:</strong> Sunday-evening dread, small tasks feeling huge, sleep/appetite drift, cynicism about people you used to respect, weekends no longer restoring you.</li>
+    <li><strong>Pressure types differ:</strong> deadline (surge + recover), on-call (distribute, runbook, cap), outage trauma (postmortem, support, sometimes leave), promo (reframe to scope), layoff anxiety (control what you can), abusive manager/toxic team (document + exit — don't try to fix).</li>
+    <li><strong>Recovery is owned by you,</strong> not your manager — the org won't fix it for you. Real time off (phone off, delegated coverage), protected sleep, and boundaries set publicly and early.</li>
+    <li>Ask the <strong>trajectory question:</strong> not "is this week hard?" but "is my baseline shifting versus three months ago?" Two bad quarters running = structural; act.</li>
+    <li><strong>Escalate with data and options, not "I'm stressed":</strong> hours logged, sleep, specific quality drops, plus A/B/C options and a lean. Vague escalation gets "hang in there".</li>
+    <li>When recovery alone won't fix it, pull the <strong>structural levers:</strong> reduce scope, add support, change role, take real time off, or change jobs. "Push through" is rarely the answer.</li>
+    <li><strong>Saying no</strong> is often the single most important pressure-management skill — scope you never accept is pressure you never carry.</li>
+    <li><strong>Imposter syndrome is a feeling, not data</strong> — senior engineers don't lack it, they recognize it. Keep a wins file, talk about it openly, and don't let it drive you to refuse opportunities.</li>
+    <li>On a <strong>PIP:</strong> assume managed-exit is the likely case — document criteria in writing, deliver hard, quietly start a search, talk to a lawyer, and don't go through it alone.</li>
+    <li><strong>Get help early</strong> — therapist, EAP, doctor if sleep/mood drift past 8 weeks — because professionals navigate pressure faster than you alone, not because something is "wrong with you".</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>"I'll rest after this launch."</strong> Recovery gets perpetually deferred, the warning signs get normalized, and 18 months later it's a collapse and an abrupt quit. Make recovery a default (days off after every launch, real vacations) not a reward — and measure your baseline, not just this week.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Pressure isn't the problem — sustained pressure without recovery is. I distinguish an acute spike I surge through and recover from, from an unsustainable trajectory that needs a structural change."</div>
+  <div class="revision-say">"When I escalate I bring data and options, not just 'I'm stressed' — the hours, the sleep, specific quality drops, and two or three ways to reduce scope — so my manager can actually act."</div>
+  <div class="revision-say">"Part of the senior IC role is spotting an unsustainable trajectory on the team, not just for myself, and forcing the structural conversation before it costs the org in turnover."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What burnout actually is (clinical definition)</h3>
 <p>From Maslach + WHO ICD-11: burnout is an occupational phenomenon characterized by:</p>
 <ol>
@@ -94,12 +103,10 @@ window.PREP_SITE.registerTopic({
   <li>You can't remember when you last felt genuinely rested.</li>
   <li>You quit suddenly with no plan because you "couldn't take it anymore."</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The pressure-recovery balance</h3>
 <pre><code class="language-text">Healthy: Demands ≤ Resources + Recovery
 Unhealthy: Demands &gt; Resources + Recovery (chronic)
@@ -234,12 +241,10 @@ Recovery: sleep, exercise, time off, hobbies, social.</p>
   <li>Mitigation: document; transfer or exit; do not try to "win."</li>
   <li>If immediate exit isn't possible (visa, financial), focus on stabilizing while you build the exit ramp. Therapy + EAP + financial buffer.</li>
 </ul>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Quarterly self-check (15 min, alone with a notebook)</h3>
 <pre><code class="language-text">## Quarterly self-check — Q2 2026
 
@@ -419,12 +424,10 @@ I'd lean A. What can we do?"
 </table>
 
 <p>Track your day. If you keep finishing at 0 or negative, the system is broken; not your fault.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Catching burnout early (week 4 of warning signs)</h3>
 <pre><code class="language-text">Week 1: Friday, "exhausted but it's just been a tough sprint."
 Week 2: Sunday-evening dread. "I'll feel better by Monday."
@@ -671,12 +674,11 @@ sustainable pace.
 </code></pre>
 
 <p>Boundaries set publicly + early reduce friction. Set after they're crossed = harder.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Pressure that's actually about you</h3>
 <ul>
   <li>Sometimes your stress isn't proportional to the load. Anxiety, depression, life events bleeding in.</li>
@@ -787,12 +789,9 @@ sustainable pace.
   <li>Less visibility in casual interactions; perf risk + isolation.</li>
   <li>Mitigation: explicit "no late calls except scheduled" boundary; over-communicate written; cultivate local peer network.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common pressure-handling mistakes</h3>
 <ol>
   <li><strong>"I'll rest after this launch."</strong> Then the next launch starts.</li>
@@ -990,12 +989,10 @@ senior engineer; I should be able to handle this."]
 never need it. The pattern of asking for help early + recovering
 is the senior pattern — not 'pushing through.'"
 </code></pre>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Behavioral interview prompts that map here</h3>
 <ol>
   <li>"Tell me about a time you handled a high-pressure situation."</li>
@@ -1144,56 +1141,26 @@ heroic; it's hidden cost the org pays in turnover later."
   <li>"Try a CBT self-help workbook; build the cognitive tools before you need them."</li>
   <li>"Audit your last 4 quarters honestly: was each sustainable? What changed?"</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Pressure isn't the problem; sustained-pressure-without-recovery is</strong> — burnout is structural, so recognize the trajectory early, own the recovery, and change the structure when recovery alone won't fix it.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Burnout is structural, not emotional</strong> — a long-term mismatch between demands and recovery. It builds over months and recovers over months; a weekend doesn't fix it.</li>
-    <li><strong>Three dimensions (Maslach):</strong> emotional exhaustion, cynicism/depersonalization, reduced sense of accomplishment. Two of three trending bad for 4+ weeks = warning zone.</li>
-    <li>Watch the <strong>early signals:</strong> Sunday-evening dread, small tasks feeling huge, sleep/appetite drift, cynicism about people you used to respect, weekends no longer restoring you.</li>
-    <li><strong>Pressure types differ:</strong> deadline (surge + recover), on-call (distribute, runbook, cap), outage trauma (postmortem, support, sometimes leave), promo (reframe to scope), layoff anxiety (control what you can), abusive manager/toxic team (document + exit — don't try to fix).</li>
-    <li><strong>Recovery is owned by you,</strong> not your manager. Real time off (phone off, delegated coverage), protected sleep, and boundaries set publicly and early.</li>
-    <li>Ask the <strong>trajectory question:</strong> not "is this week hard?" but "is my baseline shifting versus three months ago?" Two bad quarters running = structural; act.</li>
-    <li><strong>Escalate with data and options, not "I'm stressed":</strong> hours logged, sleep, specific quality drops, plus A/B/C options and a lean. Vague escalation gets "hang in there".</li>
-    <li>When recovery alone won't fix it, pull the <strong>structural levers:</strong> reduce scope, add support, change role, take real time off, or change jobs. "Push through" is rarely the answer.</li>
-    <li><strong>Imposter syndrome is a feeling, not data</strong> — keep a wins file, talk about it openly, and don't let it drive you to refuse opportunities.</li>
-    <li>On a <strong>PIP:</strong> assume managed-exit is the likely case — document criteria in writing, deliver hard, quietly start a search, talk to a lawyer, and don't go through it alone.</li>
-    <li><strong>Get help early</strong> — therapist, EAP, doctor if sleep/mood drift past 8 weeks — because professionals navigate pressure faster than you alone, not because something is "wrong with you".</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>"I'll rest after this launch."</strong> Recovery gets perpetually deferred, the warning signs get normalized, and 18 months later it's a collapse and an abrupt quit. Make recovery a default (days off after every launch, real vacations) not a reward — and measure your baseline, not just this week.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Pressure isn't the problem — sustained pressure without recovery is. I distinguish an acute spike I surge through and recover from, from an unsustainable trajectory that needs a structural change."</div>
-  <div class="revision-say">"When I escalate I bring data and options, not just 'I'm stressed' — the hours, the sleep, specific quality drops, and two or three ways to reduce scope — so my manager can actually act."</div>
-  <div class="revision-say">"Part of the senior IC role is spotting an unsustainable trajectory on the team, not just for myself, and forcing the structural conversation before it costs the org in turnover."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Why do you call burnout structural rather than emotional? What are your own early warning signs, and how do you act on them?</div>
+  <div class="qa-answer">
+    <p>Burnout (Maslach, WHO ICD-11) is an occupational state: emotional exhaustion that sleep doesn't fix, cynicism or depersonalization, and a reduced sense of accomplishment. It comes from demands chronically exceeding resources plus recovery. It takes months to build and months to recover from, so it's about structure, not a bad week. My signals are Sunday-evening dread, small tasks feeling huge, sleep or appetite drift, cynicism about people I used to respect, and weekends that no longer restore me. I run a quarterly self-check and ask the trajectory question — is my baseline worse than three months ago? If two of the three dimensions have been trending bad for 4+ weeks, I act: protect recovery, cut scope, and raise it with my manager.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why burnout is structural, and name your own early warning signs and how you'd act on them?</li>
-    <li>Can you tell a concise STAR story about handling a high-pressure situation — the signals you noticed, what you did, and how you recovered after?</li>
-    <li>Can you explain how you'd escalate unsustainable pressure to a manager with data and options rather than "I'm stressed"?</li>
-    <li>Can you describe the difference between pushing through an acute spike and pulling back on a chronic trajectory?</li>
-    <li>Can you tell a story about noticing a teammate struggling and how you supported them?</li>
-    <li>Can you explain how you'd handle a structural problem — abusive manager, toxic team, or a PIP — that recovery alone won't fix?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. How would you escalate unsustainable pressure to your manager without it sounding like "I'm stressed"?</div>
+  <div class="qa-answer">
+    <p>I bring specifics, data and options. For example: "The current pressure is unsustainable. I've worked 60+ hours for 6 weeks, I'm not recovering on weekends, and my quality is dropping — here are 3 examples. Options: A, cut Project X this quarter; B, bring on a contract engineer for Project Y; C, ship Project Z in Q3 instead of end of Q2. I'd lean A." That gives the manager something to act on, whereas "I'm stressed" gets "hang in there." If the response is "this is the job" or "everyone's busy," that's a structural manager problem, and I'd consider a transfer or exit.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. How do you handle a structural problem that recovery alone won't fix, like an abusive manager, a toxic team, or a PIP?</div>
+  <div class="qa-answer">
+    <p>For an abusive manager or a toxic team — sustained bullying, public humiliation, retaliation aimed at you that doesn't respond to a direct conversation — you can't fix it, so don't try to "win." Document, then transfer or exit. If you can't leave immediately (visa, finances), stabilize with therapy, EAP and a financial buffer while you build the exit ramp. For a PIP, assume managed exit is the likely case even though it doesn't mean you're a bad engineer: get the expectations in writing and document weekly progress, deliver hard, start a quiet job search, and talk to a lawyer about severance and references. In every case, don't go through it alone.</p>
+  </div>
+</div>
+` },
+
   ]
 });

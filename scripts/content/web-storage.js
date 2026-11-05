@@ -1,33 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'web-storage',
-  module: 'web',
-  title: 'Storage',
-  estimatedReadTime: '40 min',
-  tags: ['storage', 'localstorage', 'sessionstorage', 'cookies', 'indexeddb', 'cachestorage', 'opaque-origin', 'web'],
+  id: "web-storage",
+  module: "web",
+  title: "Storage",
+  estimatedReadTime: "40 min",
+  tags: ["storage","localstorage","sessionstorage","cookies","indexeddb","cachestorage","opaque-origin","web"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>The web has many storage APIs, each with different trade-offs. Senior frontend engineers know which to use for which data: small UI state vs auth tokens vs offline cache vs large structured data. Picking wrong = security holes, performance issues, or quota errors.</p>
-<ul>
-  <li><strong>localStorage:</strong> ~5MB, synchronous, string-only, persists across sessions. Good for UI prefs. <em>Bad for tokens</em> (XSS-vulnerable).</li>
-  <li><strong>sessionStorage:</strong> Same API, scoped to a browser tab; cleared on tab close.</li>
-  <li><strong>Cookies:</strong> Sent with every request to the domain; size-limited (~4KB); good for auth (with HttpOnly + Secure + SameSite).</li>
-  <li><strong>IndexedDB:</strong> Asynchronous, structured (object stores + indexes), large quota (often hundreds of MB), supports binary data.</li>
-  <li><strong>Cache API:</strong> Service Worker's request/response cache; programmable HTTP cache.</li>
-  <li><strong>Origin Private File System (OPFS):</strong> File-system-like API for app-internal files; high performance.</li>
-  <li><strong>WebSQL:</strong> Deprecated; don't use.</li>
-  <li><strong>Storage quota:</strong> Enforced by browser; <code>navigator.storage.estimate()</code> tells you usage. Persistent storage avoids eviction.</li>
-</ul>
-<p><strong>Mantra:</strong> "Cookies for auth (with security flags). LocalStorage for non-sensitive prefs. IndexedDB for offline data. Cache API for service worker requests. Never store secrets in localStorage."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Match the data to the API: cookies for auth (with security flags), localStorage for small non-sensitive prefs, IndexedDB for large/offline data, Cache API for service-worker requests — and never store secrets in localStorage.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>localStorage / sessionStorage:</strong> synchronous, string-only, ~5MB per origin. localStorage persists; sessionStorage is tab-scoped and cleared on tab close. Good for non-sensitive UI prefs.</li>
+    <li><strong>Cookies</strong> are sent with every request to the domain (~4KB), so they suit auth — but only with <code>Secure</code> + <code>HttpOnly</code> + <code>SameSite</code> (and <code>__Host-</code> prefix for critical ones). Don't put UI prefs in cookies (wastes bytes on every request).</li>
+    <li><strong>IndexedDB:</strong> asynchronous, structured (object stores + indexes), large quota, holds binary/structured-cloneable data. Reach for it for anything &gt;100KB, non-string, or offline. Use a wrapper (<code>idb</code> / Dexie) — the raw API is verbose.</li>
+    <li><strong>Cache API</strong> is the service worker's programmable request/response store — independent of the HTTP cache; core strategies are cache-first (shell assets), network-first (HTML/API), and stale-while-revalidate.</li>
+    <li><strong>All storage is keyed by origin</strong> (scheme + host + port) — <code>http</code> ≠ <code>https</code>, and third-party storage is partitioned by top-level site.</li>
+    <li><strong>Cross-tab coordination:</strong> <code>StorageEvent</code> is passive (fires in OTHER tabs only, never the writer); <code>BroadcastChannel</code> is active messaging; Web Locks serialize shared writes.</li>
+    <li><strong>Quota:</strong> <code>setItem</code> throws <code>QuotaExceededError</code> past the limit — always wrap in try/catch. <code>navigator.storage.estimate()</code> reports usage; <code>navigator.storage.persist()</code> requests eviction protection for offline-first apps.</li>
+    <li>localStorage is <strong>unavailable in Web Workers and undefined during SSR</strong> — guard reads with <code>typeof window !== 'undefined'</code> or move them into <code>useEffect</code>.</li>
+    <li>Setting <code>localStorage</code> holds a string — remember to <code>JSON.stringify</code> on write and <code>JSON.parse</code> (in try/catch) on read; version your stored shape so a schema change doesn't crash old data.</li>
+    <li>OPFS is a high-performance file-like store for large binary data in workers; WebSQL is deprecated — don't use it.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Putting the auth token / JWT in <code>localStorage</code>.</strong> It's readable by any JavaScript, so a single XSS bug exfiltrates it — and client-side encryption doesn't help because the key sits right next to it. Fix: store sessions in an <code>HttpOnly</code> cookie the JS can't read (or in-memory + refresh token in a cookie). Sibling traps: reading localStorage during SSR throws (window undefined), and <code>StorageEvent</code> never fires in the tab that made the change — use <code>BroadcastChannel</code> for same-tab-triggered sync.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I pick storage by data shape and sensitivity: <code>HttpOnly</code> cookies for auth, localStorage for small non-sensitive prefs, IndexedDB for large or offline structured data, and the Cache API for service-worker offline support."</div>
+  <div class="revision-say">"Auth tokens never go in localStorage — any XSS reads it. That's an <code>HttpOnly</code> cookie, or an in-memory access token with a refresh token in a cookie."</div>
+  <div class="revision-say">"For cross-tab sync I use <code>StorageEvent</code> for passive updates or <code>BroadcastChannel</code> for active messaging — remembering the storage event fires in the other tabs, not the one that wrote."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The web storage landscape</h3>
 <table>
   <thead><tr><th>API</th><th>Sync/Async</th><th>Size</th><th>Type</th><th>Persistent</th><th>JS-readable</th></tr></thead>
@@ -79,12 +86,10 @@ window.PREP_SITE.registerTopic({
   <li>You use Cache API for service worker offline support.</li>
   <li>You request persistent storage for offline-first apps.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Origin + partition</h3>
 <p>All storage is keyed by <strong>origin</strong> (scheme + host + port). Different origins = different storage. <code>https://app.example.com</code> and <code>https://api.example.com</code> have separate localStorage / IndexedDB / cookies.</p>
 
@@ -226,12 +231,10 @@ const buf = await file.arrayBuffer();
 
 <h3>The "third-party storage partitioning" change</h3>
 <p>Modern browsers (Safari 16.1+, Firefox 103+, Chrome 116+) partition storage for third-party iframes by the top-level site. Tracking via cross-site cookies is significantly reduced.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Wrapping localStorage with type safety</h3>
 <pre><code class="language-ts">function getStored&lt;T&gt;(key: string, fallback: T): T {
   try {
@@ -458,12 +461,10 @@ await writable.close();
   }
 }
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Theme persistence</h3>
 <pre><code class="language-tsx">function useTheme() {
   const [theme, setTheme] = useLocalStorage&lt;'light' | 'dark' | 'auto'&gt;('theme', 'auto');
@@ -683,12 +684,11 @@ async function downloadAndProcess(url) {
   // ... read in chunks, process
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Private browsing / incognito</h3>
 <p>Some browsers allow localStorage in private mode but clear on tab close; some throw on setItem. Always wrap in try/catch.</p>
 
@@ -763,12 +763,9 @@ async function downloadAndProcess(url) {
 
 <h3>Storage events with different origins</h3>
 <p>Iframes from different origins each have their own storage. Postmessage between them, not via shared storage.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Auth token in localStorage</h3>
 <p>XSS reads it; attacker exfiltrates. Use HttpOnly cookies or in-memory + refresh token.</p>
 
@@ -877,12 +874,10 @@ self.addEventListener('install', (event) =&gt; {
 
 <h3>Anti-pattern 10: Encryption in localStorage</h3>
 <p>Encrypting client-side data with a key stored client-side gives almost no security; XSS reads the key. If data needs to be secret, don't store it client-side.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -976,52 +971,14 @@ self.addEventListener('install', (event) =&gt; {
   <li>"I'd write a small storage migration framework so schema changes are versioned."</li>
   <li>"I'd integrate Workbox for our service worker cache strategies — battle-tested."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Match the data to the API: cookies for auth (with security flags), localStorage for small non-sensitive prefs, IndexedDB for large/offline data, Cache API for service-worker requests — and never store secrets in localStorage.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>localStorage / sessionStorage:</strong> synchronous, string-only, ~5MB per origin. localStorage persists; sessionStorage is tab-scoped and cleared on tab close. Good for non-sensitive UI prefs.</li>
-    <li><strong>Cookies</strong> are sent with every request to the domain (~4KB), so they suit auth — but only with <code>Secure</code> + <code>HttpOnly</code> + <code>SameSite</code> (and <code>__Host-</code> prefix for critical ones). Don't put UI prefs in cookies (wastes bytes on every request).</li>
-    <li><strong>IndexedDB:</strong> asynchronous, structured (object stores + indexes), large quota, holds binary/structured-cloneable data. Reach for it for anything &gt;100KB, non-string, or offline. Use a wrapper (<code>idb</code> / Dexie) — the raw API is verbose.</li>
-    <li><strong>Cache API</strong> is the service worker's programmable request/response store — independent of the HTTP cache; core strategies are cache-first (shell assets), network-first (HTML/API), and stale-while-revalidate.</li>
-    <li><strong>All storage is keyed by origin</strong> (scheme + host + port) — <code>http</code> ≠ <code>https</code>, and third-party storage is partitioned by top-level site.</li>
-    <li><strong>Cross-tab coordination:</strong> <code>StorageEvent</code> is passive (fires in OTHER tabs only, never the writer); <code>BroadcastChannel</code> is active messaging; Web Locks serialize shared writes.</li>
-    <li><strong>Quota:</strong> <code>setItem</code> throws <code>QuotaExceededError</code> past the limit — always wrap in try/catch. <code>navigator.storage.estimate()</code> reports usage; <code>navigator.storage.persist()</code> requests eviction protection for offline-first apps.</li>
-    <li>localStorage is <strong>unavailable in Web Workers and undefined during SSR</strong> — guard reads with <code>typeof window !== 'undefined'</code> or move them into <code>useEffect</code>.</li>
-    <li>Setting <code>localStorage</code> holds a string — remember to <code>JSON.stringify</code> on write and <code>JSON.parse</code> (in try/catch) on read; version your stored shape so a schema change doesn't crash old data.</li>
-    <li>OPFS is a high-performance file-like store for large binary data in workers; WebSQL is deprecated — don't use it.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Putting the auth token / JWT in <code>localStorage</code>.</strong> It's readable by any JavaScript, so a single XSS bug exfiltrates it — and client-side encryption doesn't help because the key sits right next to it. Fix: store sessions in an <code>HttpOnly</code> cookie the JS can't read (or in-memory + refresh token in a cookie). Sibling traps: reading localStorage during SSR throws (window undefined), and <code>StorageEvent</code> never fires in the tab that made the change — use <code>BroadcastChannel</code> for same-tab-triggered sync.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I pick storage by data shape and sensitivity: <code>HttpOnly</code> cookies for auth, localStorage for small non-sensitive prefs, IndexedDB for large or offline structured data, and the Cache API for service-worker offline support."</div>
-  <div class="revision-say">"Auth tokens never go in localStorage — any XSS reads it. That's an <code>HttpOnly</code> cookie, or an in-memory access token with a refresh token in a cookie."</div>
-  <div class="revision-say">"For cross-tab sync I use <code>StorageEvent</code> for passive updates or <code>BroadcastChannel</code> for active messaging — remembering the storage event fires in the other tabs, not the one that wrote."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you pick between cookies, <code>localStorage</code>, <code>sessionStorage</code>, IndexedDB, and the Cache API for a given need?</li>
-    <li>Can you say why auth tokens should never live in <code>localStorage</code>?</li>
-    <li>Can you sync state across tabs with <code>StorageEvent</code> or <code>BroadcastChannel</code> — and know which tab the event fires in?</li>
-    <li>Can you handle a quota-exceeded error gracefully?</li>
-    <li>Can you say when you would request persistent storage for an offline-first app?</li>
-    <li>Can you explain why synchronous storage can jank the main thread?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. How do you sync state across tabs with StorageEvent or BroadcastChannel, and which tab receives the event?</div>
+  <div class="qa-answer">
+    <p><code>StorageEvent</code> is passive: listen with <code>window.addEventListener('storage', e =&gt; ...)</code> and read <code>e.key</code>, <code>e.oldValue</code> and <code>e.newValue</code>. It fires for <code>setItem</code>, <code>removeItem</code> and <code>clear</code> only in the OTHER tabs of the same origin, never in the tab that wrote, so the writer must update its own state directly. <code>BroadcastChannel</code> is active messaging: <code>new BroadcastChannel('auth').postMessage({ type: 'logout' })</code> reaches every other tab listening on that channel, which suits events like logout sync. Simultaneous writes are last-writer-wins, so coordinate shared writes with Web Locks or treat localStorage as eventually consistent.</p>
+  </div>
 </div>
-`}
+` },
 
-]
+  ]
 });

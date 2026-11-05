@@ -1,25 +1,39 @@
 window.PREP_SITE.registerTopic({
-  id: 'design-lsp',
-  module: 'design',
-  title: 'L · Liskov Substitution',
-  estimatedReadTime: '13 min',
-  tags: ['design', 'solid', 'oop', 'lsp', 'clean-code'],
+  id: "design-lsp",
+  module: "design",
+  title: "L · Liskov Substitution",
+  estimatedReadTime: "13 min",
+  tags: ["design","solid","oop","lsp","clean-code"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>Liskov Substitution Principle (LSP):</strong> if <code>S</code> is a subtype of <code>T</code>, objects of type <code>T</code> should be replaceable with objects of type <code>S</code> <strong>without altering the correctness of the program</strong>. This is <strong>Barbara Liskov's</strong> principle, not Martin's — it comes from her 1987 OOPSLA keynote <em>"Data Abstraction and Hierarchy,"</em> was formalized with Jeannette Wing in their 1994 paper on behavioral subtyping, and the "L" in SOLID is literally named after her; Robert C. Martin only collected it into the SOLID acronym.</p>
-<ul>
-  <li><strong>It's about behavior, not shape.</strong> A subtype can match the base type's method signatures perfectly and still violate LSP — LSP is a contract on <em>behavior</em>, not a check that the type system already performs for free.</li>
-  <li><strong>The contract rules — get the direction right:</strong> a subtype may <strong>weaken preconditions</strong> (ask no more of the caller than the base did — it can ask for less), must <strong>strengthen or preserve postconditions</strong> (promise no less than the base did — it can promise more), must <strong>preserve the base's invariants</strong>, and must not throw new exceptions the caller wasn't already prepared for.</li>
-  <li><strong>The smell it fixes:</strong> client code sprinkled with <code>instanceof</code> / type-guard checks to work around a subtype that "mostly" behaves like the base, except when it doesn't.</li>
-  <li><strong>Why it matters beyond LSP itself:</strong> a substitutability hole almost always gets patched with a type check in every caller — and every new subtype then requires editing all of those callers again, which is an <strong>Open/Closed Principle violation</strong> hiding behind an LSP one.</li>
-</ul>
-<p><strong>Mantra:</strong> "Ask no more, promise no less."</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">If <code>S</code> is a subtype of <code>T</code>, objects of <code>T</code> must be replaceable with objects of <code>S</code> <strong>without altering the correctness of the program</strong> — a contract on <em>behavior</em>, not shape.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>This is <strong>Barbara Liskov's</strong> principle (1987 OOPSLA keynote, formalized with Jeannette Wing in 1994) — the "L" is named after her; Martin only collected it into SOLID. Crediting Martin with LSP itself is a common mix-up.</li>
+    <li>It's about <strong>behavioral subtyping, not structural</strong>: the compiler checks signatures for free, but a subtype can be structurally perfect and behaviorally broken. LSP names exactly that gap.</li>
+    <li>The four contract rules — <strong>get the direction right</strong>: a subtype may <strong>weaken preconditions</strong> (ask no more of the caller), must <strong>strengthen or preserve postconditions</strong> (promise no less), must <strong>preserve the base's invariants</strong>, and must <strong>not throw new exceptions</strong> the caller wasn't already prepared for.</li>
+    <li>Intuition to keep the direction straight: a subtype must be <strong>at least as easy to call</strong> and <strong>at least as reliable to depend on</strong> as the base — "ask no more, promise no less."</li>
+    <li>The smell it fixes: client code sprinkled with <strong><code>instanceof</code> / type-guard checks</strong> to work around a subtype that "mostly" behaves like the base.</li>
+    <li>An LSP hole almost always becomes an <strong>OCP violation</strong>: the <code>instanceof</code> patch must be revisited and edited in every caller each time a new non-conforming subtype is added.</li>
+    <li><strong>"Is-a" is necessary but not sufficient</strong> — a square geometrically is a rectangle, but can't honor <code>Rectangle</code>'s contract (independently settable width and height), so <code>Square extends Rectangle</code> breaks a postcondition.</li>
+    <li>Same shape appears with collections: a <code>ReadOnlyList</code> can't substitute for a mutable <code>List</code> whose <code>add()</code> must work — same break as <code>Penguin.fly()</code>.</li>
+    <li>The fix is never "override to throw" or "override to no-op" (both just relocate the violation) — pull the diverging capability into its own <strong>narrower interface</strong> only the capable subtypes implement (this leans on ISP).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Assuming that <strong>matching the base's method signatures</strong>, or a true "is-a" relationship, is enough. The type checker only verifies structure; LSP is the behavioral layer on top. The other trap is getting the <strong>direction backwards</strong> — preconditions <em>loosen</em>, postconditions <em>tighten</em>; reversing either is the mistake.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"LSP is about behavior, not shape — a subtype can match every signature and still break code written against the base, because the compiler only checks structure."</div>
+  <div class="revision-say">"The rule is 'ask no more, promise no less' — weaken preconditions, strengthen or preserve postconditions, preserve invariants, throw no new exceptions."</div>
+  <div class="revision-say">"An LSP violation usually shows up as an <code>instanceof</code> check in the caller — and that patch is itself an OCP violation, because every new subtype forces another edit."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Behavioral subtyping, not structural subtyping</h3>
 <p>TypeScript (and most mainstream type systems) check <strong>structural</strong> subtyping for free: if <code>Square</code> has every method <code>Rectangle</code> has, with compatible signatures, the compiler is satisfied. LSP asks a strictly harder question that no compiler checks: does <code>Square</code> actually <em>behave</em> the way any code written against <code>Rectangle</code> is entitled to expect? A subtype can be structurally perfect and behaviorally broken — that gap is exactly what LSP names.</p>
 
@@ -33,10 +47,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>Polymorphism stops paying for itself.</strong> The entire point of a shared base type is that callers can treat every subtype uniformly. The moment a caller needs to ask "but which subtype is this, really?", polymorphism has been defeated — the abstraction is a fiction the client can no longer trust.</li>
   <li><strong>It quietly breaks OCP too.</strong> See Mechanics and Examples, below — the <code>instanceof</code> branches that patch over an LSP violation are exactly the code you must revisit, and edit, every time a new subtype is added.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>A contract between caller and callee</h3>
 <p>Borrowing Bertrand Meyer's "design by contract" framing: every method has an implicit contract with its caller, made of three parts — a <strong>precondition</strong> (what the caller must guarantee true before calling), a <strong>postcondition</strong> (what the method guarantees true after it returns), and any <strong>class invariant</strong> (what stays true about the object's state, before and after every public call). LSP is the rule that a subtype must honor the base type's contract at least as well as the base type does — it may only ever make the contract <em>easier to rely on</em>, never harder.</p>
 
@@ -52,10 +66,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>"Is-a" is necessary, not sufficient</h3>
 <p>Squares genuinely "are" rectangles, geometrically — and TypeScript will happily let <code>Square extends Rectangle</code> compile. LSP is the reminder that the geometric or linguistic "is-a" relationship doesn't automatically transfer to "is behaviorally substitutable for" — that has to be checked separately, against the base's actual contract, not against its name. See Examples, below, for exactly where this specific case breaks.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>How to spot a violation</h3>
 <ul>
   <li><strong>An override that throws where the base never did.</strong> The single most common tell — a subtype's method body is <code>throw new Error('not supported')</code> for an operation the base type's contract promises will succeed.</li>
@@ -69,10 +83,10 @@ window.PREP_SITE.registerTopic({
 <h3>The fix: model the true capability, don't force a shared base</h3>
 <p>When behavior genuinely diverges — some subtypes can do something the base promises and some can't — the fix is never "override it to throw" or "override it to silently no-op." Both of those are still LSP violations, just relocated. The real fix is to stop promising that capability at the level where not every subtype can honor it: pull the capability into its own narrower interface, and only have the subtypes that genuinely support it implement that interface. Base-type code, and every caller of it, then only ever sees operations every actual instance can honor — substitutability is restored because the contract was made honest, not because the exception was hidden better.</p>
 <p>This is also where an LSP fix quietly leans on ISP (see the previous topic in this module): segregating "the capability not everyone has" into its own small interface is precisely the "role, not thing" move ISP mechanics describes — here it's in service of keeping every remaining base-type reference truly substitutable, rather than purely avoiding forced stub methods.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples (before → after)', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>The classic violation: Rectangle / Square</h3>
 <pre><code class="language-typescript">class Rectangle {
   constructor(protected _width: number, protected _height: number) {}
@@ -176,10 +190,10 @@ launchAll([new Sparrow()]);       // fine
 // launchAll([new Penguin()]);    // compile error — Penguin isn't a FlyingBird
 </code></pre>
 <p>Every element of a <code>FlyingBird[]</code> is now genuinely substitutable — nothing in that array can violate <code>launchAll</code>'s expectations, because the type system, not a runtime check, enforces it. Adding a new flightless species requires zero changes to <code>launchAll</code>: it simply implements <code>Bird</code>, not <code>FlyingBird</code>. Fixing the LSP violation — by refusing to let <code>Bird</code> promise a capability not every bird has — restored OCP at the exact same call site the <code>instanceof</code> branch used to live in.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What does LSP actually require, and why isn't matching the base type's method signatures enough?</div>
 <div class="qa-a">
@@ -207,46 +221,26 @@ launchAll([new Sparrow()]);       // fine
 <p>Geometrically a square is a rectangle, so the inheritance looks obviously correct — but <code>Rectangle</code>'s actual contract (its <code>setWidth</code> and <code>setHeight</code> methods each promise to change only one dimension) is a contract <code>Square</code> cannot honor while also keeping its own invariant that width always equals height. The general lesson: "is-a" in the everyday, linguistic sense is necessary but not sufficient for a safe subtype relationship — what actually matters is whether the subtype can honor the base's contract, checked method by method, not whether the English sentence "a square is a rectangle" sounds true.</p>
 </div>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">If <code>S</code> is a subtype of <code>T</code>, objects of <code>T</code> must be replaceable with objects of <code>S</code> <strong>without altering the correctness of the program</strong> — a contract on <em>behavior</em>, not shape.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>This is <strong>Barbara Liskov's</strong> principle (1987 OOPSLA keynote, formalized with Jeannette Wing in 1994) — the "L" is named after her; Martin only collected it into SOLID. Crediting Martin with LSP itself is a common mix-up.</li>
-    <li>It's about <strong>behavioral subtyping, not structural</strong>: the compiler checks signatures for free, but a subtype can be structurally perfect and behaviorally broken. LSP names exactly that gap.</li>
-    <li>The four contract rules — <strong>get the direction right</strong>: a subtype may <strong>weaken preconditions</strong> (ask no more of the caller), must <strong>strengthen or preserve postconditions</strong> (promise no less), must <strong>preserve the base's invariants</strong>, and must <strong>not throw new exceptions</strong> the caller wasn't already prepared for.</li>
-    <li>Intuition to keep the direction straight: a subtype must be <strong>at least as easy to call</strong> and <strong>at least as reliable to depend on</strong> as the base — "ask no more, promise no less."</li>
-    <li>The smell it fixes: client code sprinkled with <strong><code>instanceof</code> / type-guard checks</strong> to work around a subtype that "mostly" behaves like the base.</li>
-    <li>An LSP hole almost always becomes an <strong>OCP violation</strong>: the <code>instanceof</code> patch must be revisited and edited in every caller each time a new non-conforming subtype is added.</li>
-    <li><strong>"Is-a" is necessary but not sufficient</strong> — a square geometrically is a rectangle, but can't honor <code>Rectangle</code>'s contract (independently settable width and height), so <code>Square extends Rectangle</code> breaks a postcondition.</li>
-    <li>Same shape appears with collections: a <code>ReadOnlyList</code> can't substitute for a mutable <code>List</code> whose <code>add()</code> must work — same break as <code>Penguin.fly()</code>.</li>
-    <li>The fix is never "override to throw" or "override to no-op" (both just relocate the violation) — pull the diverging capability into its own <strong>narrower interface</strong> only the capable subtypes implement (this leans on ISP).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Assuming that <strong>matching the base's method signatures</strong>, or a true "is-a" relationship, is enough. The type checker only verifies structure; LSP is the behavioral layer on top. The other trap is getting the <strong>direction backwards</strong> — preconditions <em>loosen</em>, postconditions <em>tighten</em>; reversing either is the mistake.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"LSP is about behavior, not shape — a subtype can match every signature and still break code written against the base, because the compiler only checks structure."</div>
-  <div class="revision-say">"The rule is 'ask no more, promise no less' — weaken preconditions, strengthen or preserve postconditions, preserve invariants, throw no new exceptions."</div>
-  <div class="revision-say">"An LSP violation usually shows up as an <code>instanceof</code> check in the caller — and that patch is itself an OCP violation, because every new subtype forces another edit."</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. Explain precisely why Square extends Rectangle breaks LSP in terms of postconditions.</div>
+  <div class="qa-answer">
+    <p><code>Rectangle.setWidth</code>'s postcondition promises "width becomes the given value, height is unchanged." <code>Square.setWidth</code> cannot deliver that: every call also changes height, because Square enforces an invariant of its own (width always equals height) that Rectangle's contract never required. That is a postcondition <strong>weakened</strong>, exactly the forbidden direction. Code written correctly against Rectangle's contract, such as a function that resizes and then checks the area, silently gets the wrong answer when handed a Square.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you state LSP and explain why matching method signatures is not enough to satisfy it?</li>
-    <li>Can you recite the four contract rules with the correct <em>direction</em> — preconditions loosen, postconditions tighten?</li>
-    <li>Can you explain, precisely, why <code>Square extends Rectangle</code> breaks LSP in terms of a weakened postcondition?</li>
-    <li>Can you explain why an LSP violation tends to turn into an OCP violation via <code>instanceof</code> in callers?</li>
-    <li>Can you show the fix — segregate the diverging capability into a narrower interface — and say why override-to-throw is not a fix?</li>
-    <li>Can you correctly attribute LSP to Barbara Liskov rather than Martin?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q6. How do you fix an LSP violation where only some subtypes support a capability? Why isn't overriding the method to throw a fix?</div>
+  <div class="qa-answer">
+    <p>Overriding to throw, or to silently no-op, is still an LSP violation, just relocated: the base type still promises an operation some instances cannot honor. The real fix is to stop promising that capability at a level where not every subtype can honor it. Pull it into its own narrower interface and have only the subtypes that genuinely support it implement that interface. Base-type code then only sees operations every instance can honor, so substitutability is restored because the contract is honest. This leans on ISP: segregating "the capability not everyone has" is the "role, not thing" move.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q7. Who is the Liskov Substitution Principle actually from?</div>
+  <div class="qa-answer">
+    <p>Barbara Liskov. She introduced it in her 1987 OOPSLA keynote "Data Abstraction and Hierarchy" and formalized it with Jeannette Wing in their 1994 paper "A Behavioral Notion of Subtyping"; the technical content (preconditions, postconditions, invariants) is theirs. Robert C. Martin did not invent the rule: he assembled five pre-existing design ideas into the SOLID mnemonic and named the "L" after Liskov. Crediting Martin with LSP itself is a common mix-up.</p>
+  </div>
+</div>
+` },
 
-]});
+  ]
+});

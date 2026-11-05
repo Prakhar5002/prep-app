@@ -1,33 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'mux-material',
-  module: 'mobile-ux',
-  title: 'Material Design 3',
-  estimatedReadTime: '45 min',
-  tags: ['android', 'material-design', 'material-3', 'm3', 'dynamic-color', 'monet', 'theming', 'navigation', 'react-native'],
+  id: "mux-material",
+  module: "mobile-ux",
+  title: "Material Design 3",
+  estimatedReadTime: "45 min",
+  tags: ["android","material-design","material-3","m3","dynamic-color","monet","theming","navigation","react-native"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Material Design 3 (M3, "Material You")</strong> is Google's design system shipped with Android 12 (2021) and continuously updated. Its current shipping evolution is <strong>Material 3 Expressive</strong> (announced May 2025, rolled out with Android 16 QPR1 and on Pixel from September 2025) — springier emphasized motion, a refreshed type scale, and updated components layered on top of the same M3 foundation. It's what makes an Android app feel "from this decade" rather than feeling like a port of an iOS app or stuck in 2017's M2 visuals. For a React Native engineer, M3 is the Android counterpart to iOS's HIG — different tokens, different navigation primitives, different gestures.</p>
-<ul>
-  <li><strong>Three M3 fundamentals:</strong> Dynamic color (extracted from user's wallpaper via Monet), updated typography scale, redesigned components (cards, FAB, navigation bar, top app bar).</li>
-  <li><strong>Navigation primitives:</strong> bottom navigation bar (3–5 destinations), navigation drawer (more destinations or modal nav), navigation rail (tablet/foldable), top app bar with overflow menu.</li>
-  <li><strong>The hallmark FAB:</strong> Floating Action Button — primary screen action; extended FAB for "with text" variant; small FAB for compact contexts.</li>
-  <li><strong>Material color system:</strong> 5 key colors (primary, secondary, tertiary, error, neutral) → 13 tone palettes → semantic roles (primary, on-primary, primary-container, on-primary-container).</li>
-  <li><strong>Typography scale:</strong> Display / Headline / Title / Body / Label families × Large / Medium / Small sizes.</li>
-  <li><strong>Elevation, ripples, motion:</strong> Tonal elevation (color shift) over shadows in M3; ripple touch feedback; emphasized motion easing curves.</li>
-  <li><strong>RN reality:</strong> <code>react-native-paper</code> (M3-compliant out of the box) is the default; build custom only when Paper doesn't fit. Edge-to-edge layouts + system bar handling matter on Android 14+.</li>
-  <li><strong>Predictive Back (Android 13+):</strong> a smooth animated back gesture; opt in via manifest + handle in your nav library.</li>
-</ul>
-<p><strong>Mantra:</strong> "Use Material primitives. Lean on tonal color + ripples + FAB. Honor the system back gesture. Edge-to-edge with proper insets."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Material 3 ("Material You") is Android's design contract — <strong>use Material primitives, lean on tonal color + ripples + FAB, honor the system back gesture, and go edge-to-edge with proper insets.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>M3 shipped with Android 12 (2021); its current form, Material 3 Expressive (announced May 2025, Android 16 QPR1 / Pixel from Sept 2025), adds springier emphasized motion, a refreshed type scale and updated components on the same foundation.</strong> It is the Android counterpart to iOS's HIG — different tokens, navigation primitives, and gestures; <code>react-native-paper</code> is the M3-compliant default in RN.</li>
+    <li><strong>Dynamic Color (Material You):</strong> Android 12+ extracts a 5-tone palette from the wallpaper via the Monet algorithm; apps read those tokens, with a seed-color fallback (<code>@pchmn/expo-material3-theme</code>) elsewhere.</li>
+    <li><strong>Color system:</strong> 5 key colors → 13 tones each → semantic role pairs; always pair the foreground <code>on-X</code> with its background <code>X</code> for guaranteed contrast.</li>
+    <li><strong>Tonal elevation over shadows:</strong> higher surfaces shift toward primary instead of casting shadows — essential in dark mode where shadows are invisible.</li>
+    <li><strong>The FAB is the primary screen action</strong> — standard 56dp, small 40 (compact contexts), large 96, extended with a label for emphasis. No FAB on screens with no clear primary action; a FAB everywhere dilutes its meaning.</li>
+    <li><strong>Navigation is adaptive:</strong> bottom nav (3–5 dest, &lt; 600dp) → navigation rail (600–840dp) → navigation drawer (840dp+). Bottom nav beats a hamburger drawer for few destinations.</li>
+    <li><strong>Ripple, not opacity:</strong> touch feedback radiates from the touch point via <code>android_ripple</code>; borderless only for round icon buttons, bounded for rectangular ones.</li>
+    <li><strong>Feedback hierarchy:</strong> Snackbar for transient messages (auto-dismiss, never for critical info), Bottom sheet for a transient task, Dialog for critical interruption.</li>
+    <li><strong>Edge-to-edge (Android 15 default for SDK 35+):</strong> content draws under translucent status/nav bars — inset headers and FABs with <code>useSafeAreaInsets</code> or they hide behind the bars.</li>
+    <li><strong>Predictive Back (Android 13+)</strong> animates a preview of the destination — opt in via <code>android:enableOnBackInvokedCallback="true"</code> in the manifest + react-navigation v7+; don't block the system back gesture.</li>
+    <li><strong>Touch target 48 × 48dp; 4dp grid; 16dp edge inset.</strong> Type scale is Display / Headline / Title / Body / Label × Large/Medium/Small (Roboto / Roboto Flex).</li>
+    <li><strong>Cross-platform: Material on Android, HIG on iOS</strong> — <code>Platform.select</code> for top-level primitives, share the business logic. Never ship Material on iOS.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Shipping iOS visuals on Android:</strong> a chevron back button + centered title, opacity press feedback instead of ripple, and hard-coded brand color that ignores Dynamic Color. Fix with <code>Appbar.Header</code> + <code>Appbar.BackAction</code> (left-aligned title, arrow back), <code>android_ripple</code>, and <code>theme.colors.primary</code> from an MD3 theme — plus enable edge-to-edge insets so headers/FABs don't hide behind the translucent bars.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Use Material primitives via react-native-paper, lean on tonal color plus ripples plus the FAB, honor the system back gesture, and go edge-to-edge with proper insets."</div>
+  <div class="revision-say">"Tonal elevation over shadows — surfaces shift toward primary as they lift, which gives a depth signal in dark mode where shadows would be invisible."</div>
+  <div class="revision-say">"Dynamic Color reads the wallpaper palette on Android 12+ via Monet with a seed-color fallback elsewhere; navigation is adaptive — bottom nav, then rail, then drawer at width breakpoints."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What Material Design is</h3>
 <p>A design system Google originated in 2014 as a unified language across Android, web, and Google's own apps. Iterated through Material 1 (2014) → Material 2 (2018, Google's "rebrand" with bolder typography) → <strong>Material 3</strong> (2021, "Material You" with Dynamic Color) → <strong>Material 3 Expressive</strong> (announced May 2025, shipped in Android 16 QPR1 / Pixel from September 2025 — springy emphasized motion, a new type scale, and updated components). M3 (in its Expressive form) is the current default and the only line Android 12+ system apps follow.</p>
 
@@ -107,12 +116,10 @@ window.PREP_SITE.registerTopic({
   <li>Modal that doesn't swipe-down or slide-from-bottom.</li>
   <li>Missing focus indicators (TalkBack users can't navigate).</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The Material color system (M3)</h3>
 <p>5 key colors → 13 tones each → semantic roles (24 total slots).</p>
 <table>
@@ -229,12 +236,10 @@ window.PREP_SITE.registerTopic({
   <li>Use <code>react-navigation</code> v7+ which integrates with the new back-invocation API.</li>
   <li>Override only when needed (unsaved changes); use <code>onBackPress</code> + <code>BackHandler</code>.</li>
 </ol>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>react-native-paper setup</h3>
 <pre><code class="language-typescript">// App.tsx
 import { Provider as PaperProvider, MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
@@ -462,12 +467,10 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
   &lt;Text&gt;Tap me&lt;/Text&gt;
 &lt;/Pressable&gt;
 </code></pre>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Material-feeling email inbox</h3>
 <pre><code class="language-typescript">function InboxScreen() {
   const [items, setItems] = useState&lt;Email[]&gt;([]);
@@ -679,12 +682,11 @@ function FilterSheet({ open, onClose }) {
   );
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Edge-to-edge migration (Android 15+)</h3>
 <ul>
   <li>Android 15 forces edge-to-edge by default for apps targeting SDK 35+. Status / nav bars become transparent overlays; your content draws behind them.</li>
@@ -791,12 +793,9 @@ function FilterSheet({ open, onClose }) {
   <li>Permission misuse rejections — declare and use; don't request what you don't need.</li>
   <li>Notification permission (Android 13+): must be requested at runtime.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common Material violations in RN apps</h3>
 <ol>
   <li><strong>iOS-style nav bar with chevron back.</strong> Use Material top app bar with arrow icon.</li>
@@ -899,12 +898,10 @@ useEffect(() =&gt; {
 &lt;Pressable android_ripple={{ color: 'rgba(0,0,0,0.12)', borderless: false }} style={styles.btn}&gt;...&lt;/Pressable&gt;
 </code></pre>
 <p>Borderless is for icon-only buttons where the ripple is round and breathy; not for chunky rectangular buttons.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common Material / Android-design interview prompts</h3>
 <ol>
   <li>How do you make a React Native app feel native on Android?</li>
@@ -1035,57 +1032,14 @@ useEffect(() =&gt; {
   <li>"Build a clone of one Google app's screen in RN with Paper; aim for indistinguishable."</li>
   <li>"Study the Material color utilities source to understand tone palette generation."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Material 3 ("Material You") is Android's design contract — <strong>use Material primitives, lean on tonal color + ripples + FAB, honor the system back gesture, and go edge-to-edge with proper insets.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>M3 (current form: Material 3 Expressive, 2025) is the Android counterpart to iOS's HIG</strong> — different tokens, navigation primitives, and gestures; <code>react-native-paper</code> is the M3-compliant default in RN.</li>
-    <li><strong>Dynamic Color (Material You):</strong> Android 12+ extracts a 5-tone palette from the wallpaper via the Monet algorithm; apps read those tokens, with a seed-color fallback (<code>@pchmn/expo-material3-theme</code>) elsewhere.</li>
-    <li><strong>Color system:</strong> 5 key colors → 13 tones each → semantic role pairs; always pair the foreground <code>on-X</code> with its background <code>X</code> for guaranteed contrast.</li>
-    <li><strong>Tonal elevation over shadows:</strong> higher surfaces shift toward primary instead of casting shadows — essential in dark mode where shadows are invisible.</li>
-    <li><strong>The FAB is the primary screen action</strong> — standard 56dp, small 40, large 96, extended with a label for emphasis. No FAB on screens with no clear primary action; a FAB everywhere dilutes its meaning.</li>
-    <li><strong>Navigation is adaptive:</strong> bottom nav (3–5 dest, &lt; 600dp) → navigation rail (600–840dp) → navigation drawer (840dp+). Bottom nav beats a hamburger drawer for few destinations.</li>
-    <li><strong>Ripple, not opacity:</strong> touch feedback radiates from the touch point via <code>android_ripple</code>; borderless only for round icon buttons, bounded for rectangular ones.</li>
-    <li><strong>Feedback hierarchy:</strong> Snackbar for transient messages (auto-dismiss, never for critical info), Bottom sheet for a transient task, Dialog for critical interruption.</li>
-    <li><strong>Edge-to-edge (Android 15 default for SDK 35+):</strong> content draws under translucent status/nav bars — inset headers and FABs with <code>useSafeAreaInsets</code> or they hide behind the bars.</li>
-    <li><strong>Predictive Back (Android 13+)</strong> animates a preview of the destination — opt in via <code>android:enableOnBackInvokedCallback="true"</code> in the manifest + react-navigation v7+; don't block the system back gesture.</li>
-    <li><strong>Touch target 48 × 48dp; 4dp grid; 16dp edge inset.</strong> Type scale is Display / Headline / Title / Body / Label × Large/Medium/Small (Roboto / Roboto Flex).</li>
-    <li><strong>Cross-platform: Material on Android, HIG on iOS</strong> — <code>Platform.select</code> for top-level primitives, share the business logic. Never ship Material on iOS.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Shipping iOS visuals on Android:</strong> a chevron back button + centered title, opacity press feedback instead of ripple, and hard-coded brand color that ignores Dynamic Color. Fix with <code>Appbar.Header</code> + <code>Appbar.BackAction</code> (left-aligned title, arrow back), <code>android_ripple</code>, and <code>theme.colors.primary</code> from an MD3 theme — plus enable edge-to-edge insets so headers/FABs don't hide behind the translucent bars.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Use Material primitives via react-native-paper, lean on tonal color plus ripples plus the FAB, honor the system back gesture, and go edge-to-edge with proper insets."</div>
-  <div class="revision-say">"Tonal elevation over shadows — surfaces shift toward primary as they lift, which gives a depth signal in dark mode where shadows would be invisible."</div>
-  <div class="revision-say">"Dynamic Color reads the wallpaper palette on Android 12+ via Monet with a seed-color fallback elsewhere; navigation is adaptive — bottom nav, then rail, then drawer at width breakpoints."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. How do you enable Predictive Back in a React Native app, and why shouldn't you block the system back gesture?</div>
+  <div class="qa-answer">
+    <p>On Android 13+ the system back gesture animates a preview of the destination as the user drags. Opt in by adding <code>android:enableOnBackInvokedCallback="true"</code> to the manifest's <code>&lt;application&gt;</code> tag and using react-navigation v7+, which integrates with the new back-invocation API; older versions need manual <code>OnBackInvokedDispatcher</code> wiring, and legacy <code>onBackPressed</code> overrides break it. RN's <code>BackHandler</code> still works but doesn't animate the preview. A handler that always returns <code>true</code> eats the back press and leaves users feeling trapped, so only intercept when there's real unsaved work: show a "Discard changes?" dialog and return <code>false</code> otherwise to allow the default back. Test with "Predictive back animations" enabled in developer options.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain Dynamic Color (Material You) — how Monet extracts the palette and what the fallback is?</li>
-    <li>Can you say what tonal elevation is and why it matters in dark mode versus shadows?</li>
-    <li>Can you decide bottom nav vs navigation rail vs drawer by width breakpoint, and when a FAB belongs on a screen?</li>
-    <li>Can you handle edge-to-edge on Android 15 so headers and FABs don't hide behind the translucent system bars?</li>
-    <li>Can you enable and reason about Predictive Back — the manifest opt-in and why you shouldn't block the back gesture?</li>
-    <li>Can you name the feedback hierarchy — Snackbar vs Bottom sheet vs Dialog — and the cross-platform rule of Material on Android, HIG on iOS?</li>
-  </ul>
-</div>
-`
-    }
+` },
+
   ]
 });

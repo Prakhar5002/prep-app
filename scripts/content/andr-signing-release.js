@@ -1,30 +1,44 @@
 window.PREP_SITE.registerTopic({
-  id: 'andr-signing-release',
-  module: 'Android Native (Deep)',
-  title: 'Signing, Build Types & Release',
-  estimatedReadTime: '25 min',
-  tags: ['android', 'keystore', 'signing-config', 'keytool', 'apk-signature-scheme', 'v1-jar', 'v2', 'v3', 'v4', 'r8', 'proguard', 'minify', 'shrink-resources', 'mapping-txt', 'aab', 'app-bundle', 'apk', 'bundletool', 'play-app-signing', 'upload-key', 'build-types', 'product-flavors', 'variants', 'versioncode', 'versionname', 'gradle', 'eas-build', 'expo', 'release'],
+  id: "andr-signing-release",
+  module: "Android Native (Deep)",
+  title: "Signing, Build Types & Release",
+  estimatedReadTime: "25 min",
+  tags: ["android","keystore","signing-config","keytool","apk-signature-scheme","v1-jar","v2","v3","v4","r8","proguard","minify","shrink-resources","mapping-txt","aab","app-bundle","apk","bundletool","play-app-signing","upload-key","build-types","product-flavors","variants","versioncode","versionname","gradle","eas-build","expo","release"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Shipping an Android app is four things glued together: <strong>signing</strong> (a cryptographic identity proving every update comes from you), <strong>build types</strong> (debug vs release, plus flavors), <strong>R8 shrinking/obfuscation</strong>, and the <strong>artifact format</strong> (AAB for the Play Store, APK for sideload/testing).</p>
-<ul>
-  <li>Every APK/AAB must be <strong>signed</strong>. Debug builds use an auto-generated <code>~/.android/debug.keystore</code> (public password <code>android</code>). Release builds need <em>your own</em> keystore that you guard with your life.</li>
-  <li><strong>Build types</strong> control debuggability, minification, and app-id suffixing; <strong>product flavors</strong> (dev/staging/prod) multiply with build types to produce <strong>variants</strong>.</li>
-  <li><strong>R8</strong> (the modern replacement for ProGuard) shrinks, optimizes, and obfuscates; reflection-heavy code (React Native, Gson, etc.) needs <code>-keep</code> rules, and every release must archive <code>mapping.txt</code> to deobfuscate crash stack traces.</li>
-  <li>The Play Store requires an <strong>AAB</strong> (<code>bundleRelease</code>), not an APK (<code>assembleRelease</code>). Google re-signs split APKs on the fly with the <strong>app signing key</strong>; you only hold an <strong>upload key</strong>.</li>
-  <li><code>versionCode</code> is the integer Play compares to decide "newer"; <code>versionName</code> is the human string.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>The signing key <em>is</em> your app's identity: Android will only install an update whose signature matches the installed app. Lose the key without Play App Signing and you can never update that listing again — so enroll in Play App Signing, keep an <strong>upload</strong> key you can reset, and back up the real one offline.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The signing key <strong>is</strong> the app's identity — Android only installs an update whose signature matches the installed app — so enroll in <strong>Play App Signing</strong>, keep a resettable <strong>upload key</strong>, back up the release keystore offline, ship an <strong>AAB</strong> with R8 on and <code>mapping.txt</code> archived, and bump <code>versionCode</code> every upload.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Every APK/AAB must be signed.</strong> First install records the signer cert; updates must match it or fail with <code>INSTALL_FAILED_UPDATE_INCOMPATIBLE</code>. Different key = different app.</li>
+    <li><strong>Debug keystore</strong>: auto-generated <code>~/.android/debug.keystore</code>, alias <code>androiddebugkey</code>, public password <code>android</code> — teams often commit <code>android/app/debug.keystore</code> to keep a stable SHA-1 for Maps/Firebase. <strong>Release keystore</strong>: your permanent secret identity.</li>
+    <li><strong>keytool</strong>: <code>keytool -genkeypair -keystore my.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000</code>. Keystore = container; alias = one key inside; storePassword unlocks the file, keyPassword unlocks the alias.</li>
+    <li><strong>Signature schemes</strong>: v1 (JAR, per-file, &lt;API24), v2 (API24, whole-APK block), v3 (API28, key rotation), v4 (API30, Merkle sidecar <code>.idsig</code> for incremental install). AGP picks by minSdk.</li>
+    <li><strong>signingConfigs</strong> in <code>app/build.gradle</code> → wired to <code>buildTypes.release.signingConfig</code>; secrets live in <code>~/.gradle/gradle.properties</code> or env vars, <strong>never committed</strong>.</li>
+    <li><strong>Build types</strong>: debug (debuggable, no minify) vs release (minify+shrink, release-signed); <code>applicationIdSuffix</code> lets variants coexist; custom types via <code>initWith</code>.</li>
+    <li><strong>Product flavors</strong> (dev/staging/prod) need a <code>flavorDimension</code>; <strong>variant = flavor × buildType</strong>; per-flavor values via <code>resValue</code> and <code>buildConfigField</code>.</li>
+    <li><strong>R8</strong> (replaced ProGuard, same rule syntax): one pass shrinks + optimizes + obfuscates; <code>shrinkResources</code> needs <code>minifyEnabled true</code>. RN/Gson/Retrofit/JNI need <code>-keep</code> rules or they're stripped/renamed → release-only crashes.</li>
+    <li><strong>mapping.txt</strong> (in <code>build/outputs/mapping/release/</code>) deobfuscates crash traces; archive one per <code>versionCode</code>, upload to Play/Crashlytics/Sentry.</li>
+    <li><strong>APK vs AAB</strong>: <code>assembleRelease</code> → APK; <code>bundleRelease</code> → AAB. Play requires the AAB and splits it into per-device APKs (density/ABI/language) via Dynamic Delivery. AAB isn't installable — test with <code>bundletool</code>.</li>
+    <li><strong>Play App Signing</strong>: Google holds the app signing key and re-signs; you sign with a resettable upload key. Lose the upload key → reset it; the app signing key is safe with Google.</li>
+    <li><strong>versionCode</strong> = integer Play uses to order builds (must increment); <strong>versionName</strong> = cosmetic display string.</li>
+    <li><strong>ANDROID_ID gotcha</strong>: since Android 8 it's scoped to signing key + user + device; reinstalling with a different signature changes it → kiosk server enrollments keyed on it break (FR Kiosk).</li>
+    <li><strong>Expo/EAS</strong>: <code>eas build -p android --profile production</code> makes the AAB, keystore managed in cloud (<code>eas credentials</code>); version in <code>app.json</code> (<code>android.versionCode</code>); R8 tweaks via <code>expo-build-properties</code>; hand-edits to <code>android/</code> die on <code>prebuild --clean</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Testing only the debug build.</strong> R8 shrinking/obfuscation runs only in release, so a missing <code>-keep</code> rule produces a <code>ClassNotFoundException</code>/<code>NoSuchMethodError</code> that never appears in debug. Fix: always smoke-test the real <code>release</code> variant (or an internal-track AAB), add targeted <code>-keep</code> rules for reflection/JNI/serialization targets, and archive <code>mapping.txt</code> per version — never "fix" it by disabling minify.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The signing key is the app's identity — Android only installs an update whose signature matches the installed app. So I enroll in Play App Signing, keep a resettable upload key, and back up the release keystore offline; losing it without Play App Signing means I can never update the listing again."</div>
+  <div class="revision-say">"I ship an AAB via bundleRelease — Play splits it into per-device APKs by density, ABI, and language via Dynamic Delivery. An AAB isn't installable directly, so I reproduce store builds locally with bundletool."</div>
+  <div class="revision-say">"R8 shrinks, optimizes, and obfuscates in one pass; reflection and JNI targets like RN codegen and Gson models need -keep rules or they're stripped and crash only in release. I archive mapping.txt per versionCode to deobfuscate production traces."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why signing exists at all</h3>
 <p>Android has no central gatekeeper checking the <em>authorship</em> of code — anyone can build an APK. Instead the OS uses <strong>signature-based identity continuity</strong>: the first install records the certificate that signed the APK, and every future update must be signed by the <em>same</em> key (technically the same certificate / signing lineage). This is how the system knows that "the new v2 APK is really from the same author as the installed v1" without any account or server. It also gates <strong>signature-level permissions</strong> and lets apps signed by the same key share a UID (<code>sharedUserId</code>, now deprecated).</p>
 <p>Consequence: if two builds of "the same app" are signed by different keys, Android treats them as <strong>different, incompatible apps</strong>. You cannot install one over the other — you get <code>INSTALL_FAILED_UPDATE_INCOMPATIBLE</code> and must uninstall first (losing all app data). This is the single most common "why won't it install" bug in day-to-day RN work.</p>
@@ -54,10 +68,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Where this sits relative to the New Architecture</div>
   <p>Signing, build types, R8, and the AAB pipeline are <strong>architecture-agnostic</strong> — they behave identically whether you're on the old Paper/Bridge runtime or Fabric/TurboModules. The one place the New Architecture leaks in is R8 <code>-keep</code> rules for JSI/codegen classes, covered in Mechanics.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "identity chain" picture</h3>
 <div class="diagram">
 <pre>
@@ -138,10 +152,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"The debug and release builds are the same app, so I can build release locally and install it over my debug build." No — debug is signed with the debug keystore, release with your release keystore. Different signatures → the OS refuses the update. And with an <code>applicationIdSuffix</code> like <code>.debug</code> they're literally different package names that coexist. Uninstall or match the variant.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Step 1 — Generate a release keystore with keytool</h3>
 <p><code>keytool</code> ships with the JDK. Generate an RSA key valid well past any plausible app lifetime (Play requires validity through at least 2033; 10000 days is the convention):</p>
 <pre><code class="language-bash">keytool -genkeypair -v \\
@@ -321,10 +335,10 @@ bundletool install-apks --apks=app.apks</code></pre>
   <div class="callout-title">🧩 Expo note — EAS Build manages the keystore in the cloud</div>
   <p>In Prakhar's Expo prebuild apps (<code>sw-mobile</code>, <code>sw-ticketing</code>) you usually never touch <code>signingConfigs</code> by hand. <code>eas build --platform android --profile production</code> produces the <strong>AAB</strong>, and EAS <strong>generates and stores the release keystore in the cloud</strong>. Inspect/download/rotate it with <code>eas credentials</code> (choose Android → your build profile). Set the version in <code>app.json</code> under <code>android.versionCode</code> (and <code>expo.version</code> for versionName), or let EAS auto-increment with <code>"autoIncrement": true</code> in <code>eas.json</code>. Because these are <strong>prebuild</strong> projects, hand-edits to <code>android/app/build.gradle</code> get wiped by <code>expo prebuild --clean</code> — set signing/version via <code>app.json</code> + <code>eas.json</code> and R8/ProGuard tweaks via the <code>expo-build-properties</code> config plugin (<code>enableProguardInReleaseBuilds</code>, <code>enableShrinkResourcesInReleaseBuilds</code>, <code>extraProguardRules</code>) instead. Local <code>expo run:android --variant release</code> still works for a device release build if you have the keystore configured.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Full generate → inspect → sign flow</h3>
 <pre><code class="language-bash"># 1. Generate
 keytool -genkeypair -v -keystore my-release-key.jks \\
@@ -432,10 +446,11 @@ val androidId = Settings.Secure.getString(
 // ANDROID_ID is scoped to (app signing key + user + device) since Android 8.
 // Reinstall the kiosk signed with a DIFFERENT key → ANDROID_ID changes →
 // any server-side enrollment keyed on it breaks. See Edge Cases #7.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. INSTALL_FAILED_UPDATE_INCOMPATIBLE</h3>
 <p>Installing a release build over a debug build (or a build signed by a different key) fails because signatures differ. Fix: <code>adb uninstall com.myapp</code> then reinstall, or match the variant/keystore. This is the #1 "won't install" cause.</p>
 
@@ -483,10 +498,9 @@ val androidId = Settings.Secure.getString(
 
 <h3>16. Testing production signing before release</h3>
 <p>Play App Signing means the app users receive is signed by Google's key, whose SHA-256 differs from your upload key. Register the <strong>app signing certificate</strong> fingerprint (shown in Play Console → App Signing) with Firebase/Maps/App Links — not just your upload key's — or those services break in production only.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — committing the keystore or passwords</h3>
 <p>Never put <code>my-release-key.jks</code> or its passwords in git. A leaked release key lets anyone ship a malware update signed as you. Store secrets in <code>~/.gradle/gradle.properties</code>, CI secret stores, or EAS.</p>
 
@@ -528,10 +542,10 @@ val androidId = Settings.Secure.getString(
 
 <h3>Anti-pattern 14 — validity too short</h3>
 <p>A keystore that expires (Play requires validity through 2033+) can strand your app. Generate with <code>-validity 10000</code> days.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Why must every Android APK be signed, and what happens on update if the key changes?</div>
   <div class="qa-answer">
@@ -658,53 +672,7 @@ val androidId = Settings.Secure.getString(
     <li>You never commit keystores/passwords and enroll in Play App Signing.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">The signing key <strong>is</strong> the app's identity — Android only installs an update whose signature matches the installed app — so enroll in <strong>Play App Signing</strong>, keep a resettable <strong>upload key</strong>, back up the release keystore offline, ship an <strong>AAB</strong> with R8 on and <code>mapping.txt</code> archived, and bump <code>versionCode</code> every upload.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Every APK/AAB must be signed.</strong> First install records the signer cert; updates must match it or fail with <code>INSTALL_FAILED_UPDATE_INCOMPATIBLE</code>. Different key = different app.</li>
-    <li><strong>Debug keystore</strong>: auto-generated <code>~/.android/debug.keystore</code>, alias <code>androiddebugkey</code>, public password <code>android</code> — teams often commit <code>android/app/debug.keystore</code> to keep a stable SHA-1 for Maps/Firebase. <strong>Release keystore</strong>: your permanent secret identity.</li>
-    <li><strong>keytool</strong>: <code>keytool -genkeypair -keystore my.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000</code>. Keystore = container; alias = one key inside; storePassword unlocks the file, keyPassword unlocks the alias.</li>
-    <li><strong>Signature schemes</strong>: v1 (JAR, per-file, &lt;API24), v2 (API24, whole-APK block), v3 (API28, key rotation), v4 (API30, Merkle sidecar <code>.idsig</code> for incremental install). AGP picks by minSdk.</li>
-    <li><strong>signingConfigs</strong> in <code>app/build.gradle</code> → wired to <code>buildTypes.release.signingConfig</code>; secrets live in <code>~/.gradle/gradle.properties</code> or env vars, <strong>never committed</strong>.</li>
-    <li><strong>Build types</strong>: debug (debuggable, no minify) vs release (minify+shrink, release-signed); <code>applicationIdSuffix</code> lets variants coexist; custom types via <code>initWith</code>.</li>
-    <li><strong>Product flavors</strong> (dev/staging/prod) need a <code>flavorDimension</code>; <strong>variant = flavor × buildType</strong>; per-flavor values via <code>resValue</code> and <code>buildConfigField</code>.</li>
-    <li><strong>R8</strong> (replaced ProGuard, same rule syntax): one pass shrinks + optimizes + obfuscates; <code>shrinkResources</code> needs <code>minifyEnabled true</code>. RN/Gson/Retrofit/JNI need <code>-keep</code> rules or they're stripped/renamed → release-only crashes.</li>
-    <li><strong>mapping.txt</strong> (in <code>build/outputs/mapping/release/</code>) deobfuscates crash traces; archive one per <code>versionCode</code>, upload to Play/Crashlytics/Sentry.</li>
-    <li><strong>APK vs AAB</strong>: <code>assembleRelease</code> → APK; <code>bundleRelease</code> → AAB. Play requires the AAB and splits it into per-device APKs (density/ABI/language) via Dynamic Delivery. AAB isn't installable — test with <code>bundletool</code>.</li>
-    <li><strong>Play App Signing</strong>: Google holds the app signing key and re-signs; you sign with a resettable upload key. Lose the upload key → reset it; the app signing key is safe with Google.</li>
-    <li><strong>versionCode</strong> = integer Play uses to order builds (must increment); <strong>versionName</strong> = cosmetic display string.</li>
-    <li><strong>ANDROID_ID gotcha</strong>: since Android 8 it's scoped to signing key + user + device; reinstalling with a different signature changes it → kiosk server enrollments keyed on it break (FR Kiosk).</li>
-    <li><strong>Expo/EAS</strong>: <code>eas build -p android --profile production</code> makes the AAB, keystore managed in cloud (<code>eas credentials</code>); version in <code>app.json</code> (<code>android.versionCode</code>); R8 tweaks via <code>expo-build-properties</code>; hand-edits to <code>android/</code> die on <code>prebuild --clean</code>.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Testing only the debug build.</strong> R8 shrinking/obfuscation runs only in release, so a missing <code>-keep</code> rule produces a <code>ClassNotFoundException</code>/<code>NoSuchMethodError</code> that never appears in debug. Fix: always smoke-test the real <code>release</code> variant (or an internal-track AAB), add targeted <code>-keep</code> rules for reflection/JNI/serialization targets, and archive <code>mapping.txt</code> per version — never "fix" it by disabling minify.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"The signing key is the app's identity — Android only installs an update whose signature matches the installed app. So I enroll in Play App Signing, keep a resettable upload key, and back up the release keystore offline; losing it without Play App Signing means I can never update the listing again."</div>
-  <div class="revision-say">"I ship an AAB via bundleRelease — Play splits it into per-device APKs by density, ABI, and language via Dynamic Delivery. An AAB isn't installable directly, so I reproduce store builds locally with bundletool."</div>
-  <div class="revision-say">"R8 shrinks, optimizes, and obfuscates in one pass; reflection and JNI targets like RN codegen and Gson models need -keep rules or they're stripped and crash only in release. I archive mapping.txt per versionCode to deobfuscate production traces."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why every APK must be signed and what happens on update if the signing key changes?</li>
-    <li>Can you recite the keytool command and distinguish keystore, alias, storePassword, and keyPassword?</li>
-    <li>Can you contrast the v1, v2, v3, and v4 signature schemes in one sentence each?</li>
-    <li>Can you cleanly separate build types, product flavors, and variants, and say what resValue and buildConfigField do?</li>
-    <li>Can you explain why RN/reflection code needs R8 -keep rules and why over-shrinking only crashes in release?</li>
-    <li>Can you explain what mapping.txt is, where it lives, and why it must be archived per versionCode?</li>
-    <li>Can you explain AAB vs APK, Dynamic Delivery, bundletool, and Play App Signing (upload key vs app signing key)?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

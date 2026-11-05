@@ -1,26 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'linux-processes-services',
-  module: 'linux',
-  title: 'Processes, Jobs & Services',
-  estimatedReadTime: '26 min',
-  tags: ['linux', 'processes', 'signals', 'systemd', 'cron', 'job-control'],
+  id: "linux-processes-services",
+  module: "linux",
+  title: "Processes, Jobs & Services",
+  estimatedReadTime: "26 min",
+  tags: ["linux","processes","signals","systemd","cron","job-control"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Every running program on Linux is a <strong>process</strong> — identified by a unique <strong>PID</strong> (process ID) and tracking who started it via its <strong>PPID</strong> (parent process ID). You inspect processes with <code>ps</code>/<code>top</code>/<code>htop</code>, find them by name with <code>pgrep</code>, and control them by sending <strong>signals</strong> — small numbered messages like <code>SIGTERM</code> ("please stop") or <code>SIGKILL</code> ("die now, no cleanup") — via <code>kill</code>, <code>killall</code>, or <code>pkill</code>.</p>
-<ul>
-  <li><strong>Job control</strong> lets one shell juggle multiple commands: run something in the background with <code>&amp;</code>, suspend a foreground command with <code>Ctrl-Z</code>, and manage the results with <code>jobs</code>, <code>fg</code>, and <code>bg</code>. <code>nohup</code> and <code>disown</code> both protect a background job from being killed when you log out — at different points in its lifecycle.</li>
-  <li><strong>Priority</strong> (<code>nice</code>/<code>renice</code>) hints to the kernel's scheduler how eagerly a process should compete for CPU time — lower "niceness" means higher priority.</li>
-  <li><strong>systemd</strong> is the process manager (PID 1) on essentially every modern Linux distro. It starts, stops, restarts, and supervises long-running background programs — <strong>services</strong> — via <code>systemctl</code>, and centralizes their logs so you can read them with <code>journalctl</code>.</li>
-  <li><strong>Scheduling</strong> runs commands automatically without you being logged in: <code>cron</code> (via <code>crontab -e</code>) for recurring jobs on a fixed schedule, <code>at</code> for a one-off job at a specific future time, and systemd <strong>timers</strong> as the modern, systemd-native alternative to cron.</li>
-  <li><strong>This is topic 4 of the Linux module</strong>, building on filesystem navigation, permissions, and text pipelines from earlier topics. Everything here is about what happens once a program is <em>running</em> — how to see it, talk to it, and keep it alive (or stop it) reliably.</li>
-</ul>
-<p><strong>Mantra:</strong> "Every process has a PID and a parent; signals are how you talk to it; systemd is how you keep it running without babysitting it yourself."</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Every running program is a <strong>process</strong> with a <strong>PID</strong> and a parent <strong>PPID</strong>; <strong>signals</strong> are how you talk to it, and <strong>systemd</strong> is how you keep it running without babysitting.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Inspect with <code>ps</code>/<code>top</code>/<code>htop</code>, find by name with <code>pgrep</code>; control by sending signals via <code>kill</code>/<code>killall</code>/<code>pkill</code>.</li>
+    <li><strong>SIGTERM</strong> (15, plain <code>kill</code>) = "please stop, clean up"; <strong>SIGKILL</strong> (9, <code>kill -9</code>) = "die now, no cleanup" — and SIGKILL can never be trapped, blocked, or cleaned up after.</li>
+    <li>Job control: <code>&amp;</code> backgrounds, <code>Ctrl-Z</code> suspends, <code>jobs</code>/<code>fg</code>/<code>bg</code> manage; <code>nohup</code> (at launch) and <code>disown</code> (after the fact) protect a job from SIGHUP on logout.</li>
+    <li><code>nice</code>/<code>renice</code> hint the scheduler at priority — lower niceness means higher priority.</li>
+    <li><strong>systemd</strong> is PID 1 on modern distros; <code>systemctl</code> starts/stops/restarts/enables services and <code>journalctl</code> reads their logs.</li>
+    <li>Scheduling: <code>cron</code> (<code>crontab -e</code>) for recurring jobs, <code>at</code> for a one-off future run, systemd <strong>timers</strong> as the modern alternative.</li>
+    <li><code>Ctrl-Z</code> sends SIGTSTP (catchable pause, state T); <code>fg %1</code> brings a job to the foreground, <code>bg %1</code> resumes it in the background (SIGCONT). <code>nohup</code> output goes to <code>nohup.out</code> by default.</li>
+    <li><strong>Zombie</strong> = finished but its exit status not yet reaped by the parent (state Z); <strong>orphan</strong> = still running but its parent died, so it's re-parented to PID 1.</li>
+    <li>Failed service: <code>systemctl status &lt;svc&gt;</code> for the quick summary, then <code>journalctl -u &lt;svc&gt;</code> (<code>-f</code> to follow, <code>-n 50</code> for the tail) for the full log.</li>
+    <li>Cron line = five fields (minute, hour, day-of-month, month, day-of-week) + command: <code>30 2 * * *</code> = 2:30 AM daily.</li>
+    <li>A systemd timer is a <code>.timer</code> unit (schedule, e.g. <code>OnCalendar=daily</code>) paired with a same-named <code>.service</code>; missed runs only catch up if <code>Persistent=true</code> (default false).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong><code>systemctl start</code> and <code>systemctl enable</code> are independent.</strong> <code>start</code> runs the service now (gone after a reboot); <code>enable</code> makes it start on every future boot but does <em>not</em> start it now. Use <code>systemctl enable --now</code> to do both — which is what you want almost every time.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Every process has a PID and a parent, and I control it by sending signals — SIGTERM to ask nicely, SIGKILL as the last resort."</div>
+  <div class="revision-say">"SIGKILL can't be trapped, so a database killed with it never flushes its cache — I always try SIGTERM first."</div>
+  <div class="revision-say">"enable and start are orthogonal: start is 'now', enable is 'on boot' — enable --now does both."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why this matters beyond "my terminal froze"</h3>
 <p>Every previous topic in this module was about files sitting still on disk. The moment you run a command, compile a program, or start a server, it stops being a file and becomes a <strong>process</strong> — a program actively executing, holding memory, and (usually) doing something you care about. Understanding processes is what turns "the app is stuck, I'll just close the window" into "I can see exactly what's running, why it's using 100% CPU, and how to stop it cleanly." Concretely, this knowledge shows up constantly:</p>
 <ul>
@@ -36,10 +51,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Processes vs. services — two views of the same thing</h3>
 <p>A "service" isn't a fundamentally different kind of thing from a "process" — it's a process that's expected to run continuously in the background (a web server, a database, a log shipper) rather than run once and exit (like <code>ls</code>). What's different is <em>how it's managed</em>: an ad-hoc process is whatever you happen to type into a shell and watch by hand; a service is registered with <strong>systemd</strong>, which starts it automatically at boot, restarts it if it crashes, and gives you a consistent set of commands (<code>systemctl</code>) to control it and a consistent place (<code>journalctl</code>) to read its logs — regardless of what the program itself does internally.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The process tree</h3>
 <p>Just as the filesystem is one tree rooted at <code>/</code>, running processes form one tree rooted at PID 1:</p>
 <pre><code class="language-text">PID 1  systemd                  ← started directly by the kernel at boot
@@ -80,10 +95,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>systemd as the process supervisor</h3>
 <p>Think of <strong>systemd</strong> as a manager whose job is to keep a roster of long-running programs (services) alive according to rules you declare once: start this at boot, restart it automatically if it crashes, start it only after the network is up, and so on. You interact with that manager through <code>systemctl</code> (control the roster) and read what each service has logged through <code>journalctl</code> (systemd's own centralized, structured log store — you don't need to know where a particular service happens to write its log files).</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Viewing processes: <code>ps</code>, <code>top</code>, <code>htop</code>, <code>pgrep</code></h3>
 <pre><code class="language-bash"># BSD-style syntax: every process, from every user, with a "user-oriented" column set:
 ps aux
@@ -269,10 +284,10 @@ atq
 atrm &lt;job-number&gt;</code></pre>
 <p>Cron's five fields, in order, are always minute, hour, day-of-month, month, day-of-week — a common gotcha is that day-of-month and day-of-week are both present, and when <em>both</em> are restricted (given a value other than <code>*</code>), standard Linux cron (Vixie-cron/cronie) always ORs them together, not ANDs: <code>0 0 1 * 1</code> runs at midnight on the 1st of the month <em>or</em> any Monday — not only when the 1st happens to fall on a Monday. If you only mean to restrict one of the two, leave the other as <code>*</code> to sidestep the OR behavior entirely. <code>at</code> is the tool for "run this once, at this specific future time" — the one-shot counterpart to cron's recurring schedule.</p>
 <p><strong>systemd timers</strong> are the systemd-native alternative to cron: a <code>.timer</code> unit (defining the schedule, e.g. <code>OnCalendar=daily</code>) is paired with a same-named <code>.service</code> unit (defining what actually runs), and the timer is controlled with the same <code>systemctl enable --now &lt;name&gt;.timer</code> you'd use for any other service. The trade-off versus cron: timers integrate with the rest of systemd — you get the same logging via <code>journalctl -u &lt;name&gt;.timer</code> and dependency ordering — at the cost of more verbose setup (two unit files instead of one crontab line). Catch-up for a run missed while the machine was off is <em>not</em> automatic: it only happens if the <code>.timer</code> unit sets <code>Persistent=true</code>, which defaults to <code>false</code>, and even then it fires the missed job once on the next boot rather than once per interval that was missed. For a single personal cron job, <code>crontab -e</code> is usually still the faster path; for anything shipped as part of a systemd-managed service, a timer keeps everything in one consistent system.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Find and stop a stuck process, gracefully then forcefully</h3>
 <pre><code class="language-bash">ps aux | grep node
 # alice   4821  98.0  2.1  ...   node server.js
@@ -346,10 +361,11 @@ crontab -l
 # 15 3 * * * find /tmp/app-cache -type f -mtime +7 -delete
 # (confirms it was saved)</code></pre>
 <p>Once saved, cron itself (a daemon started by systemd) runs this line every day at 3:15 regardless of whether you're logged in — the entire point of scheduling it this way instead of remembering to run it by hand.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3><code>SIGKILL</code> can never be trapped, blocked, or cleaned up after</h3>
 <p>Every other signal covered here — <code>SIGTERM</code>, <code>SIGINT</code>, <code>SIGHUP</code> — can be intercepted by a process's own code (a "signal handler") to run cleanup logic, or even ignored entirely. <code>SIGKILL</code> is special-cased by the kernel itself: it's delivered by removing the process from existence directly, bypassing the process's own code completely. This is exactly why it's the last resort, not the first: a database killed with <code>SIGTERM</code> gets a chance to flush its write cache to disk; the same database killed with <code>SIGKILL</code> does not, and may need to run crash recovery on its next start.</p>
 
@@ -371,10 +387,10 @@ crontab -l
   <li><code>systemctl enable &lt;svc&gt;</code> creates the symlinks that make the service start automatically on <strong>every future boot</strong> — but it does not start it now; right after running just <code>enable</code>, the service is still not running until the next boot (or until you also run <code>start</code>).</li>
 </ul>
 <p>They're independent in both directions: a service can be started-but-not-enabled (runs now, won't survive a reboot — common for one-off manual testing), or enabled-but-not-started (will come up on the next boot, but isn't running yet). <code>systemctl enable --now &lt;svc&gt;</code> does both at once, which is what you want the overwhelming majority of the time when setting up a real service.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'cheat-sheet', title: '📋 Cheat Sheet', html: `
+{ id: "cheat-sheet", title: "📋 Cheat Sheet", collapsible: true, html: `
 <table>
   <thead><tr><th>Command</th><th>Purpose</th><th>Key flags / notes</th></tr></thead>
   <tbody>
@@ -407,10 +423,10 @@ crontab -l
     <tr><td>systemd timers</td><td>systemd-native recurring scheduling</td><td><code>.timer</code> unit paired with a <code>.service</code> unit</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What's the difference between <code>SIGTERM</code> and <code>SIGKILL</code>, and which should you send first?</div>
 <div class="qa-a">
@@ -452,42 +468,20 @@ crontab -l
 <p><code>systemctl start &lt;svc&gt;</code> runs the service immediately, for the current uptime only — it does not persist across a reboot. <code>systemctl enable &lt;svc&gt;</code> configures the service to start automatically on every <em>future</em> boot, but by itself doesn't start it right now. They're independent: a service can be running-but-not-enabled (won't survive a reboot) or enabled-but-not-running (will come up next boot, but isn't up yet). When setting up a new service for real (not just testing), you typically want both, which is exactly what the combined shortcut <code>systemctl enable --now &lt;svc&gt;</code> does in one step.</p>
 </div>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Every running program is a <strong>process</strong> with a <strong>PID</strong> and a parent <strong>PPID</strong>; <strong>signals</strong> are how you talk to it, and <strong>systemd</strong> is how you keep it running without babysitting.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Inspect with <code>ps</code>/<code>top</code>/<code>htop</code>, find by name with <code>pgrep</code>; control by sending signals via <code>kill</code>/<code>killall</code>/<code>pkill</code>.</li>
-    <li><strong>SIGTERM</strong> = "please stop, clean up"; <strong>SIGKILL</strong> = "die now, no cleanup" — and SIGKILL can never be trapped, blocked, or cleaned up after.</li>
-    <li>Job control: <code>&amp;</code> backgrounds, <code>Ctrl-Z</code> suspends, <code>jobs</code>/<code>fg</code>/<code>bg</code> manage; <code>nohup</code> (at launch) and <code>disown</code> (after the fact) protect a job from SIGHUP on logout.</li>
-    <li><code>nice</code>/<code>renice</code> hint the scheduler at priority — lower niceness means higher priority.</li>
-    <li><strong>systemd</strong> is PID 1 on modern distros; <code>systemctl</code> starts/stops/restarts/enables services and <code>journalctl</code> reads their logs.</li>
-    <li>Scheduling: <code>cron</code> (<code>crontab -e</code>) for recurring jobs, <code>at</code> for a one-off future run, systemd <strong>timers</strong> as the modern alternative.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong><code>systemctl start</code> and <code>systemctl enable</code> are independent.</strong> <code>start</code> runs the service now (gone after a reboot); <code>enable</code> makes it start on every future boot but does <em>not</em> start it now. Use <code>systemctl enable --now</code> to do both — which is what you want almost every time.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Every process has a PID and a parent, and I control it by sending signals — SIGTERM to ask nicely, SIGKILL as the last resort."</div>
-  <div class="revision-say">"SIGKILL can't be trapped, so a database killed with it never flushes its cache — I always try SIGTERM first."</div>
-  <div class="revision-say">"enable and start are orthogonal: start is 'now', enable is 'on boot' — enable --now does both."</div>
+<div class="qa-block">
+  <div class="qa-question">Q7. How do you background, suspend, and resume a job in the shell?</div>
+  <div class="qa-answer">
+    <p>Append <code>&amp;</code> to start a command in the background. The shell prints a job number and PID and gives you the prompt back right away. Press <code>Ctrl-Z</code> to suspend the current foreground job, which sends it SIGTSTP, a catchable pause. <code>jobs</code> lists this shell's jobs and their states. <code>fg %1</code> brings job 1 back to the foreground, where it blocks the shell again. <code>bg %1</code> resumes a suspended job but keeps it running in the background by sending it SIGCONT.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the difference between SIGTERM and SIGKILL and why SIGKILL is a last resort?</li>
-    <li>Can you background, suspend, and resume a job with <code>&amp;</code>, <code>Ctrl-Z</code>, and <code>fg</code>/<code>bg</code>?</li>
-    <li>Can you explain the difference between <code>nohup</code> and <code>disown</code>?</li>
-    <li>Can you tell a zombie process from an orphan?</li>
-    <li>Can you explain how <code>systemctl enable</code> differs from <code>systemctl start</code>?</li>
-    <li>Can you pick between <code>cron</code>, <code>at</code>, and a systemd timer for a scheduled job?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q8. How do you choose between cron, at, and a systemd timer for a scheduled job?</div>
+  <div class="qa-answer">
+    <p>Use <code>at</code> for a one-off job at a specific future time, such as <code>at now + 1 hour</code>. <code>atq</code> lists queued jobs and <code>atrm</code> removes one. Use <code>cron</code> (<code>crontab -e</code>) for a recurring job on a fixed schedule; for a single personal job it's usually the fastest path. Use a systemd timer, which is a <code>.timer</code> unit paired with a same-named <code>.service</code>, when you want systemd integration: logs via <code>journalctl</code> and dependency ordering. The cost is two unit files instead of one crontab line. Missed runs only catch up if the timer sets <code>Persistent=true</code>, and even then the job runs once at next boot.</p>
+  </div>
 </div>
-`}
+` },
 
-]});
+  ]
+});

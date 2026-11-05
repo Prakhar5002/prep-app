@@ -1,32 +1,51 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-stack-queue',
-  module: 'DSA',
-  title: 'Stack & Queue',
-  estimatedReadTime: '24 min',
-  tags: ['dsa', 'stack', 'queue', 'deque', 'monotonic-stack', 'lifo', 'fifo'],
+  id: "dsa-stack-queue",
+  module: "DSA",
+  title: "Stack & Queue",
+  estimatedReadTime: "24 min",
+  tags: ["dsa","stack","queue","deque","monotonic-stack","lifo","fifo"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Stack (LIFO) and Queue (FIFO) are foundational structures. The patterns built on them — monotonic stack, BFS, balanced parens, expression eval — show up often.</p>
-<ul>
-  <li><strong>Stack</strong>: push/pop at one end. LIFO. <code>arr.push() / arr.pop()</code> in JS — O(1).</li>
-  <li><strong>Queue</strong>: enqueue at one end, dequeue at the other. FIFO. JS arrays' <code>shift()</code> is O(n) — use a custom deque or two-stack queue for O(1).</li>
-  <li><strong>Deque (double-ended queue)</strong>: O(1) push / pop at both ends. Useful for sliding window max, BFS variants.</li>
-  <li><strong>Monotonic stack</strong>: stack maintained in increasing or decreasing order. Solves "next greater / smaller element" in O(n).</li>
-  <li><strong>BFS</strong>: queue-based level-order traversal of trees / graphs.</li>
-  <li><strong>Balanced parens, expression eval, undo / redo</strong> — classic stack uses.</li>
-  <li><strong>Recursion = stack</strong>: any recursive solution can be made iterative with an explicit stack (avoid stack overflow on deep recursion).</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Stack solves "match the most recent" problems (parens, history, monotonic). Queue solves "process in order" (BFS, scheduling). When a brute force loops backward to find a match, monotonic stack often reduces it to O(n).</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Stack (LIFO) matches the most recent; queue (FIFO) processes in arrival order</strong> — and when a brute force scans backward for a match, a monotonic stack collapses it to <code>O(n)</code>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Stack = LIFO</strong> ("match the most recent"): parens/tags, undo-redo, monotonic, DFS. <strong>Queue = FIFO</strong> ("process in arrival order"): BFS, scheduling.</li>
+    <li><strong>JS stack is a plain array:</strong> <code>push</code> / <code>pop</code> / <code>arr.at(-1)</code> peek — all O(1) amortized.</li>
+    <li><strong>Never use <code>arr.shift()</code> as a dequeue</strong> — it's O(n). For an O(1) queue use a linked list, the two-stack trick, or an index-based head pointer.</li>
+    <li><strong>Two-stack queue is amortized O(1):</strong> a single transfer from the in-stack to the out-stack can be O(n), but total work over n ops is O(n).</li>
+    <li><strong>Deque = O(1) at both ends;</strong> JS has none native (<code>unshift</code>/<code>shift</code> are O(n)), so build one from a doubly linked list or two index-tracked arrays.</li>
+    <li><strong>Monotonic stack solves "next greater / smaller" in O(n)</strong> — each element is pushed and popped at most once. "Next greater" → decreasing stack; "next smaller" → increasing stack.</li>
+    <li><strong>Store indices, not values, in a monotonic stack</strong> — you need them for width/distance (histogram, daily temperatures).</li>
+    <li><strong>Recursion = stack:</strong> any recursive DFS converts to iterative with an explicit array-stack. JS has no TCO, so convert deep recursion to avoid call-stack overflow (the array-stack lives on the heap).</li>
+    <li><strong>Iterative DFS push order is right-then-left</strong> so the left child pops first (preorder), because the stack is LIFO.</li>
+    <li><strong>BFS: mark visited on ENQUEUE, not dequeue</strong> — otherwise the same node gets enqueued from multiple paths and the queue can blow up.</li>
+    <li><strong>BFS gives shortest path only on unweighted graphs</strong> (O(V+E)); weighted → Dijkstra (heap), 0-1 weights → 0-1 BFS with a deque (push front for 0, back for 1).</li>
+    <li><strong>Sliding-window max = monotonic deque of indices;</strong> the front holds the window's max — pop the front once its index has slid out of the window.</li>
+    <li><strong>Always empty-check before pop:</strong> <code>[].pop()</code> is <code>undefined</code>. Guard with <code>stack.length === 0 || stack.pop() !== expected</code>.</li>
+    <li><strong>Empty string is a valid (vacuously balanced) parens input;</strong> a leftover non-empty stack at the end means unbalanced.</li>
+    <li><strong>Min stack:</strong> use <code>≤</code> (or value+count pairs) so duplicates of the minimum are tracked correctly.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> stack/queue push/pop/enqueue O(1); monotonic stack &amp; sliding-window deque O(n) total; BFS O(V+E).</li>
+    <li><strong>Space:</strong> O(n) for the structure; BFS holds up to a full level in the queue plus an O(V) visited set.</li>
+    <li><strong>Signal → reach for it:</strong> "most recent" / nesting / balanced symbols / next-greater-or-smaller → stack (monotonic if brute force loops backward for a match) · level-order / shortest path on unweighted graph / flood fill → BFS queue · window max/min → monotonic deque · deep recursion risk → iterative explicit stack.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Using <code>arr.shift()</code> as a dequeue silently makes your "O(V+E)" BFS O(V·E)</strong> — <code>shift()</code> is O(n) because it re-indexes the whole array; use an index head pointer or two-stack queue for amortized O(1). Two other classic slips: in BFS mark visited on <em>enqueue</em> (not dequeue), or the same node gets queued from multiple paths and the queue explodes; and store <em>indices</em> (not values) in a monotonic stack so you can recover width/distance.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Stack for 'match the most recent', queue for 'process in order' — and when a brute force scans backward to find a match, a monotonic stack usually collapses it to O(n)."</div>
+  <div class="revision-say">"In JS I avoid <code>arr.shift()</code> for a queue because it's O(n); I use an index head pointer or a two-stack queue for amortized O(1)."</div>
+  <div class="revision-say">"For BFS I mark nodes visited on enqueue, not dequeue, so the same node isn't queued from multiple paths."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Stack — LIFO</h3>
 <p>Last-In-First-Out. Push adds to the top; pop removes from the top. Useful when you need to "remember the most recent" — undo/redo, function calls, balanced symbols.</p>
 <p>JS: array with <code>push</code> / <code>pop</code>. Both O(1) amortized.</p>
@@ -62,10 +81,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why deque for BFS variants</h3>
 <p>0-1 BFS: edges weighted 0 or 1. Use deque: push to front for weight-0 edges, push to back for weight-1. Equivalent to Dijkstra in O(V+E).</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "stack" picture</h3>
 <div class="diagram">
 <pre>
@@ -162,10 +181,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"Use arr.shift() for queue dequeue." JS array's shift is O(n) (every element moves down). For O(1) queue, use a linked list, the two-stack trick, or an index-based head pointer.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Stack basics (JS)</h3>
 <pre><code class="language-js">const stack = [];
 stack.push(1);
@@ -432,10 +451,10 @@ function preorder(root) {
   empty() { return this.q.length === 0; }
 }
 // Push is O(n); pop O(1) (on the front-rotated queue).</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Valid parentheses</h3>
 <pre><code class="language-js">function isValid(s) {
   const stack = [];
@@ -658,10 +677,11 @@ function preorder(root) {
     if (node.left) stack.push(node.left);   // left popped first
   }
 }</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. JS array.shift() is O(n)</h3>
 <p>Common bug for queue: <code>queue.shift()</code> takes O(n) per call. For BFS on large graphs, use index head pointer or linked list.</p>
 
@@ -721,10 +741,9 @@ function preorder(root) {
 
 <h3>20. Sliding window max — push value not index</h3>
 <p>Common bug. Push the index; access value via nums[index]. Otherwise you can't tell when an element is out of window.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — using arr.shift for queue</h3>
 <p>O(n) per dequeue. For BFS on large input, kills perf. Use linked list / two-stack / index head.</p>
 
@@ -774,10 +793,10 @@ if (stack.length === 0 || stack.pop() !== expected) return false;</code></pre>
 
 <h3>Anti-pattern 15 — over-engineering simple stack/queue</h3>
 <p>For small data, JS array works fine. Custom deque is overkill unless you measure a perf problem.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. When to use a stack?</div>
   <div class="qa-answer">
@@ -1019,58 +1038,20 @@ if (stack.length === 0 || stack.pop() !== expected) return false;</code></pre>
     <li>You handle empty stack pops gracefully.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Stack (LIFO) matches the most recent; queue (FIFO) processes in arrival order</strong> — and when a brute force scans backward for a match, a monotonic stack collapses it to <code>O(n)</code>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Stack = LIFO</strong> ("match the most recent"): parens/tags, undo-redo, monotonic, DFS. <strong>Queue = FIFO</strong> ("process in arrival order"): BFS, scheduling.</li>
-    <li><strong>JS stack is a plain array:</strong> <code>push</code> / <code>pop</code> / <code>arr.at(-1)</code> peek — all O(1) amortized.</li>
-    <li><strong>Never use <code>arr.shift()</code> as a dequeue</strong> — it's O(n). For an O(1) queue use a linked list, the two-stack trick, or an index-based head pointer.</li>
-    <li><strong>Two-stack queue is amortized O(1):</strong> a single transfer from the in-stack to the out-stack can be O(n), but total work over n ops is O(n).</li>
-    <li><strong>Deque = O(1) at both ends;</strong> JS has none native (<code>unshift</code>/<code>shift</code> are O(n)), so build one from a doubly linked list or two index-tracked arrays.</li>
-    <li><strong>Monotonic stack solves "next greater / smaller" in O(n)</strong> — each element is pushed and popped at most once. "Next greater" → decreasing stack; "next smaller" → increasing stack.</li>
-    <li><strong>Store indices, not values, in a monotonic stack</strong> — you need them for width/distance (histogram, daily temperatures).</li>
-    <li><strong>Recursion = stack:</strong> any recursive DFS converts to iterative with an explicit array-stack. JS has no TCO, so convert deep recursion to avoid call-stack overflow (the array-stack lives on the heap).</li>
-    <li><strong>Iterative DFS push order is right-then-left</strong> so the left child pops first (preorder), because the stack is LIFO.</li>
-    <li><strong>BFS: mark visited on ENQUEUE, not dequeue</strong> — otherwise the same node gets enqueued from multiple paths and the queue can blow up.</li>
-    <li><strong>BFS gives shortest path only on unweighted graphs</strong> (O(V+E)); weighted → Dijkstra (heap), 0-1 weights → 0-1 BFS with a deque (push front for 0, back for 1).</li>
-    <li><strong>Sliding-window max = monotonic deque of indices;</strong> the front holds the window's max — pop the front once its index has slid out of the window.</li>
-    <li><strong>Always empty-check before pop:</strong> <code>[].pop()</code> is <code>undefined</code>. Guard with <code>stack.length === 0 || stack.pop() !== expected</code>.</li>
-    <li><strong>Empty string is a valid (vacuously balanced) parens input;</strong> a leftover non-empty stack at the end means unbalanced.</li>
-    <li><strong>Min stack:</strong> use <code>≤</code> (or value+count pairs) so duplicates of the minimum are tracked correctly.</li>
-  </ul>
-  <h4>Complexity &amp; when to reach for it</h4>
-  <ul>
-    <li><strong>Time:</strong> stack/queue push/pop/enqueue O(1); monotonic stack &amp; sliding-window deque O(n) total; BFS O(V+E).</li>
-    <li><strong>Space:</strong> O(n) for the structure; BFS holds up to a full level in the queue plus an O(V) visited set.</li>
-    <li><strong>Signal → reach for it:</strong> "most recent" / nesting / balanced symbols / next-greater-or-smaller → stack (monotonic if brute force loops backward for a match) · level-order / shortest path on unweighted graph / flood fill → BFS queue · window max/min → monotonic deque · deep recursion risk → iterative explicit stack.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Using <code>arr.shift()</code> as a dequeue silently makes your "O(V+E)" BFS O(V·E)</strong> — <code>shift()</code> is O(n) because it re-indexes the whole array; use an index head pointer or two-stack queue for amortized O(1). Two other classic slips: in BFS mark visited on <em>enqueue</em> (not dequeue), or the same node gets queued from multiple paths and the queue explodes; and store <em>indices</em> (not values) in a monotonic stack so you can recover width/distance.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Stack for 'match the most recent', queue for 'process in order' — and when a brute force scans backward to find a match, a monotonic stack usually collapses it to O(n)."</div>
-  <div class="revision-say">"In JS I avoid <code>arr.shift()</code> for a queue because it's O(n); I use an index head pointer or a two-stack queue for amortized O(1)."</div>
-  <div class="revision-say">"For BFS I mark nodes visited on enqueue, not dequeue, so the same node isn't queued from multiple paths."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. What are the core operations of a stack and a queue, and what do they cost in JavaScript?</div>
+  <div class="qa-answer">
+    <p>A stack is LIFO: push, pop and peek at one end. In JS a plain array does this with <code>push</code>, <code>pop</code> and <code>arr.at(-1)</code>, all <code>O(1)</code> amortized. A queue is FIFO: enqueue at the back, dequeue from the front. <code>push</code> is fine for enqueue, but <code>shift()</code> is <code>O(n)</code> because it re-indexes the array, so use an index head pointer, a two-stack queue (amortized <code>O(1)</code>) or a linked list. A deque needs <code>O(1)</code> at both ends, which JS lacks natively.</p>
+  </div>
 </div>
-`},
+<div class="qa-block">
+  <div class="qa-question">Q17. Why does BFS mark a node visited when it is enqueued rather than when it is dequeued?</div>
+  <div class="qa-answer">
+    <p>If you only mark on dequeue, a node that is reachable from several nodes in the current frontier gets enqueued once per path before any copy is processed. The queue fills with duplicates, can blow up, and the node is processed more than once. Marking on enqueue guarantees each node enters the queue exactly once, which keeps BFS at <code>O(V + E)</code>.</p>
+  </div>
+</div>
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you state the operations and complexity of a stack and a queue?</li>
-    <li>Can you recognize a monotonic-stack problem?</li>
-    <li>Can you code the monotonic-stack template from memory?</li>
-    <li>Can you explain why BFS marks nodes visited on enqueue, not dequeue?</li>
-    <li>Can you implement a queue with two stacks?</li>
-    <li>Can you name 2 problems each of a stack and a queue solves?</li>
-  </ul>
-</div>
-`}
-]
+  ]
 });

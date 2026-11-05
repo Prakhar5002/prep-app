@@ -1,32 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'api-versioning',
-  module: 'api-design',
-  title: 'Versioning & Rate Limiting',
-  estimatedReadTime: '45 min',
-  tags: ['api-versioning', 'rate-limiting', 'token-bucket', 'sliding-window', 'deprecation', 'sunset', 'quota', 'gateway'],
+  id: "api-versioning",
+  module: "api-design",
+  title: "Versioning & Rate Limiting",
+  estimatedReadTime: "45 min",
+  tags: ["api-versioning","rate-limiting","token-bucket","sliding-window","deprecation","sunset","quota","gateway"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Two cross-cutting concerns that every public-ish API must solve from day one: <strong>versioning</strong> (how the contract evolves without breaking clients) and <strong>rate limiting</strong> (how to keep one bad actor from melting the service for everyone else). Both are easy to defer and painful to retrofit.</p>
-<ul>
-  <li><strong>Versioning strategies:</strong> URI path (<code>/v1/...</code>), header (<code>Accept-Version</code>), media type (<code>application/vnd.example.v2+json</code>), query string. URI is most popular; header / media type are more "REST-pure" but harder to adopt.</li>
-  <li><strong>Default policy:</strong> evolve additively — add fields, never remove silently; mark deprecated; ship a clear sunset date; track usage per client.</li>
-  <li><strong>Rate-limit algorithms:</strong> fixed window (simple, bursty edges), sliding window (smoother), token bucket (burst-tolerant, gold standard), leaky bucket (smoothing), sliding log (precise, expensive).</li>
-  <li><strong>Where to enforce:</strong> gateway (cheap, broad), service (precise, expensive), or both. Distributed limiters use Redis with atomic Lua scripts or Redis-Cell module.</li>
-  <li><strong>Headers:</strong> <code>RateLimit-Limit</code>, <code>RateLimit-Remaining</code>, <code>RateLimit-Reset</code> on every response (RFC draft). <code>429 Too Many Requests</code> + <code>Retry-After</code> when blocked.</li>
-  <li><strong>Quotas vs limits:</strong> rate-limit = per-second smoothing; quota = per-day cap. Usually need both.</li>
-  <li><strong>Mobile:</strong> exponential backoff with jitter, offline queue, idempotency keys for retried mutations.</li>
-</ul>
-<p><strong>Mantra:</strong> "Never break clients silently. Never trust clients implicitly. Both versioning and rate-limiting are policy decisions before they're technical ones."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Versioning is "never break clients silently" (additive evolution + deprecation + telemetry); rate limiting is "never trust clients implicitly" (token bucket by default, enforced in layers) — both are policy decisions before they are technical ones.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Day-one concerns</strong> for any public-ish API: both are easy to defer and painful to retrofit.</li>
+    <li><strong>URI path versioning is the boring default</strong> (<code>/v1/...</code>) — visible, easy to test and route; header and media-type are more REST-pure but invisible in logs; query-string is an anti-pattern.</li>
+    <li><strong>Stripe-style date versioning</strong> (<code>2024-09-01</code>) pins each API key at signup and runs every version via a permanent chain of compat shims — the senior move for fast-evolving APIs, at the cost of forever-code.</li>
+    <li><strong>Evolve additively; adding is safe, removing/renaming/retyping/tightening is breaking.</strong> A new required request field or tightened validation breaks callers — always add as optional with a default.</li>
+    <li><strong>Run the full deprecation cycle:</strong> announce → ship new → deprecate with <code>Deprecation</code> + <code>Sunset</code> headers → nudge → sunset with <code>410 Gone</code>. Typical window: 6 months for partners, 12+ for mobile.</li>
+    <li><strong>Token bucket is the industry default</strong> (rate + burst capacity; AWS, GCP, Stripe, Cloudflare). Fixed window is bursty at boundaries (2× LIMIT), sliding window smooths it, sliding log is exact but expensive, leaky bucket shapes outbound.</li>
+    <li><strong>Enforce in layers (defense in depth):</strong> CDN absorbs floods, gateway enforces per-key, service enforces business rules. Distribute with Redis + atomic Lua (or Redis-Cell's <code>CL.THROTTLE</code>).</li>
+    <li><strong>Combine identifiers</strong> — per-(api_key, endpoint) plus a global per-key cap; IP-alone punishes office/carrier NATs and mismatches IPv6.</li>
+    <li><strong>Rate limit ≠ quota:</strong> per-second smoothing vs per-day billing cap — production APIs usually need both. Cost-based limits bucket expensive calls (search) fairly instead of raw counting.</li>
+    <li><strong>Emit standard headers on every response</strong> (<code>RateLimit-Limit/Remaining/Reset</code>) and <code>429 + Retry-After</code> when blocked, so SDKs back off before they hit the wall.</li>
+    <li><strong>Mobile reality:</strong> exponential backoff with jitter, idempotency keys for retried mutations, offline queue, and <code>426 Upgrade Required</code> for stragglers.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Cutting a whole <code>/v2</code> (or bumping <code>/v1.1</code>) for a change that is actually additive — fragmenting clients and the URL space for nothing.</strong> URI versions should reflect breaking changes only; for additive changes just ship a new field and, when you must remove one, keep both and deprecate the old with telemetry so you know when zero usage makes it safe to sunset.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"URI versioning by default; Stripe-style date versioning when breaking changes are frequent and partner upgrade cycles are slow."</div>
+  <div class="revision-say">"Token bucket because it's burst-tolerant and intuitive — rate plus burst capacity — enforced in layers: CDN absorbs floods, gateway enforces per-key, service enforces business rules."</div>
+  <div class="revision-say">"Additive evolution, never remove without deprecation; track per-client usage and sunset only when telemetry shows zero."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why versioning matters</h3>
 <p>An API is a contract with code that runs on machines you don't own — partner servers, mobile apps installed for years, browser extensions, IoT firmware. Once shipped, even small changes can break callers you'll never reach. Versioning is how the contract evolves without bricking the field.</p>
 
@@ -72,12 +81,10 @@ window.PREP_SITE.registerTopic({
   <li>Hardcoded limits; can't tune without redeploy.</li>
   <li>Limit per-IP only; one office NAT melts the whole company.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model — Versioning',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model — Versioning", collapsible: true, html: `
 <h3>The four versioning strategies</h3>
 <table>
   <thead><tr><th>Strategy</th><th>Looks like</th><th>Pros</th><th>Cons</th></tr></thead>
@@ -160,12 +167,10 @@ function handle(req, key) {
 
 <h3>tRPC / RPC: schema additivity</h3>
 <p>tRPC has no schema language. Versioning = "don't remove or rename procedures; add new ones; deprecate old via JSDoc + monitoring." Tag releases of the shared types package; pin clients deliberately.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics — Rate Limiting',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics — Rate Limiting", collapsible: true, html: `
 <h3>The 5 main rate-limit algorithms</h3>
 
 <h4>1. Fixed window</h4>
@@ -329,12 +334,10 @@ Retry-After: 18
 allow if bucket.tokens &gt;= cost
 </code></pre>
 <p>GraphQL APIs do this with per-field complexity weights. Stripe and Shopify both use cost-based limits.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Versioning a breaking field rename</h3>
 <p>Goal: rename <code>full_name</code> → <code>name</code> on User without breaking clients.</p>
 <ol>
@@ -475,12 +478,11 @@ const daily     = quotaLimit({ ceiling: 100_000, period: 'day' });
 
 app.use('/api', persecond, daily);
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Versioning edges</h3>
 <ul>
   <li><strong>Mobile stragglers:</strong> 1–5% of users on app versions older than 12 months. Hard to force-upgrade. Plan minimum-supported-version policy and "minimum app version" responses (<code>426 Upgrade Required</code> + deep link to store).</li>
@@ -546,12 +548,9 @@ app.use('/api', persecond, daily);
   <li><strong>Distinguish soft vs hard limits</strong> in dashboards; "soft" = warned, "hard" = blocked.</li>
   <li><strong>Correlate version usage</strong> with changelog entries — sudden drop on v1 = deprecation working; sudden spike = a new bot adopted v1.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 10 most common versioning + rate-limit mistakes</h3>
 <ol>
   <li><strong>No versioning policy on day one.</strong> First breaking change becomes a heroic migration.</li>
@@ -624,12 +623,10 @@ await redis.eval(BUCKET_LUA, 1, key, capacity, rate, now);
 
 <h3>Anti-pattern: limit without cost</h3>
 <p>Counting requests when one search costs 100x another. Cost-based limits scale fairly; raw count doesn't.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common versioning + rate-limiting prompts</h3>
 <ol>
   <li>Design a versioning strategy for a public REST API.</li>
@@ -770,52 +767,32 @@ await redis.eval(BUCKET_LUA, 1, key, capacity, rate, now);
   <li><strong>Versioning &amp; Rate Limiting</strong> (this topic) — additive evolution, deprecation cycle, token bucket, layered enforcement.</li>
 </ul>
 <p>5 topics. Together they cover ~95% of API-design interview questions across REST, RPC, real-time, and operational concerns.</p>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Versioning is "never break clients silently" (additive evolution + deprecation + telemetry); rate limiting is "never trust clients implicitly" (token bucket by default, enforced in layers) — both are policy decisions before they are technical ones.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>URI path versioning is the boring default</strong> (<code>/v1/...</code>) — visible, easy to test and route; header and media-type are more REST-pure but invisible in logs; query-string is an anti-pattern.</li>
-    <li><strong>Stripe-style date versioning</strong> (<code>2024-09-01</code>) pins each API key at signup and runs every version via a permanent chain of compat shims — the senior move for fast-evolving APIs, at the cost of forever-code.</li>
-    <li><strong>Evolve additively; adding is safe, removing/renaming/retyping/tightening is breaking.</strong> A new required request field or tightened validation breaks callers — always add as optional with a default.</li>
-    <li><strong>Run the full deprecation cycle:</strong> announce → ship new → deprecate with <code>Deprecation</code> + <code>Sunset</code> headers → nudge → sunset with <code>410 Gone</code>. Typical window: 6 months for partners, 12+ for mobile.</li>
-    <li><strong>Token bucket is the industry default</strong> (rate + burst capacity; AWS, GCP, Stripe, Cloudflare). Fixed window is bursty at boundaries (2× LIMIT), sliding window smooths it, sliding log is exact but expensive, leaky bucket shapes outbound.</li>
-    <li><strong>Enforce in layers (defense in depth):</strong> CDN absorbs floods, gateway enforces per-key, service enforces business rules. Distribute with Redis + atomic Lua (or Redis-Cell's <code>CL.THROTTLE</code>).</li>
-    <li><strong>Combine identifiers</strong> — per-(api_key, endpoint) plus a global per-key cap; IP-alone punishes office/carrier NATs and mismatches IPv6.</li>
-    <li><strong>Rate limit ≠ quota:</strong> per-second smoothing vs per-day billing cap — production APIs usually need both. Cost-based limits bucket expensive calls (search) fairly instead of raw counting.</li>
-    <li><strong>Emit standard headers on every response</strong> (<code>RateLimit-Limit/Remaining/Reset</code>) and <code>429 + Retry-After</code> when blocked, so SDKs back off before they hit the wall.</li>
-    <li><strong>Mobile reality:</strong> exponential backoff with jitter, idempotency keys for retried mutations, offline queue, and <code>426 Upgrade Required</code> for stragglers.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Cutting a whole <code>/v2</code> (or bumping <code>/v1.1</code>) for a change that is actually additive — fragmenting clients and the URL space for nothing.</strong> URI versions should reflect breaking changes only; for additive changes just ship a new field and, when you must remove one, keep both and deprecate the old with telemetry so you know when zero usage makes it safe to sunset.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"URI versioning by default; Stripe-style date versioning when breaking changes are frequent and partner upgrade cycles are slow."</div>
-  <div class="revision-say">"Token bucket because it's burst-tolerant and intuitive — rate plus burst capacity — enforced in layers: CDN absorbs floods, gateway enforces per-key, service enforces business rules."</div>
-  <div class="revision-say">"Additive evolution, never remove without deprecation; track per-client usage and sunset only when telemetry shows zero."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you compare URI, header, and media-type versioning — and say when you'd pick Stripe-style date versioning?</li>
-    <li>Can you describe additive evolution plus a deprecation/sunset cycle backed by per-client telemetry?</li>
-    <li>Can you contrast token bucket, sliding window, and fixed window rate limiting?</li>
-    <li>Can you decide where to enforce limits — CDN vs gateway vs service — and why you'd layer them?</li>
-    <li>Can you distinguish a rate limit from a quota, and name the response headers plus <code>429</code> + <code>Retry-After</code>?</li>
-    <li>Can you build a distributed limiter that stays correct across many gateway instances?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. Compare URI, header and media-type versioning. When would you use Stripe-style date versioning?</div>
+  <div class="qa-answer">
+    <p><strong>URI path</strong> (<code>GET /v1/users/42</code>) is visible, easy to test and easy to route, which is why Stripe, Twilio and GitHub use it; the cost is that the same thing becomes different "resources" and CDN caches split. <strong>Header</strong> versioning (<code>API-Version: 2</code>) keeps one clean URI but is invisible in logs and harder to test from a browser. <strong>Media type</strong> (<code>Accept: application/vnd.example.v2+json</code>) is the "most RESTful" but painful to type with uneven tooling; query-string versions are generally an anti-pattern because they pollute cache keys. I'd pick URI by default, and <strong>Stripe-style date versioning</strong> when breaking changes are frequent and partners upgrade slowly: each API key is pinned to the version current at creation, and the server runs every version through a chain of compat shims that migrate requests and demigrate responses. Every change becomes opt-in, but each shim is code that lives forever.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q2. Compare fixed window, sliding window and token bucket rate limiting.</div>
+  <div class="qa-answer">
+    <p><strong>Fixed window</strong> counts requests per N-second bucket and resets at the boundary: dirt-simple and cheap, but bursty, since a client can send 2 × LIMIT within one window's length by straddling the boundary. <strong>Sliding window</strong> (counter approximation) estimates <code>previousCount × (1 − elapsedFraction) + currentCount</code>: smoother and still cheap, common in production, but not exact because it assumes uniform traffic. A <strong>sliding log</strong> stores timestamps and is exact but its memory grows with throughput. <strong>Token bucket</strong> refills tokens at rate <code>r</code> up to capacity <code>b</code> and each request costs a token: burst-tolerant and intuitive ("rate + burst"), used by AWS, GCP, Stripe and Cloudflare, so it's my default; it just needs careful concurrency when distributed.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. What is the difference between a rate limit and a quota, and what should the API return?</div>
+  <div class="qa-answer">
+    <p>A rate limit works over seconds to minutes and smooths spikes; a quota is a day- or month-long cap for billing and fair use. Most production APIs need both, e.g. "100 req/sec but no more than 1M/day". (A concurrency limit is a third thing: the maximum in flight at once.) Every response should carry <code>RateLimit-Limit</code>, <code>RateLimit-Remaining</code> and <code>RateLimit-Reset</code> (an RFC draft; the older <code>X-RateLimit-*</code> is still common) so SDKs can back off before hitting the wall. When blocked, return <code>429 Too Many Requests</code> with <code>Retry-After</code>, and document whether Reset and Retry-After are in seconds or a timestamp/date.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How do you build a rate limiter that stays correct across many gateway instances?</div>
+  <div class="qa-answer">
+    <p>Per-instance in-memory buckets let each instance grant the full limit, so the real limit multiplies with instance count. The state has to live in a shared store, and the read-refill-decrement must be atomic, otherwise concurrent requests race. The standard approach is a token bucket in Redis implemented as a Lua script run via <code>EVAL</code>/<code>EVALSHA</code>: it reads <code>tokens</code> and <code>ts</code> from a hash, refills by elapsed time × rate up to capacity, decrements if at least one token is available, writes back with a <code>PEXPIRE</code>, and returns allowed plus remaining, all atomically. The Redis-Cell module's <code>CL.THROTTLE</code> is a production-grade alternative. Key the bucket on combined identifiers such as (api_key, endpoint) plus a global per-key cap, and decide fail-open vs fail-closed per route for when Redis is down (auth fails closed, analytics fails open).</p>
+  </div>
+</div>
+` },
+
   ]
 });

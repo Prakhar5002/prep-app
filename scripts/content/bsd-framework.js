@@ -1,33 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'bsd-framework',
-  module: 'backend',
-  title: 'Backend SD Framework',
-  estimatedReadTime: '50 min',
-  tags: ['system-design', 'framework', 'estimation', 'capacity-planning', 'tradeoffs', 'interview'],
+  id: "bsd-framework",
+  module: "backend",
+  title: "Backend SD Framework",
+  estimatedReadTime: "50 min",
+  tags: ["system-design","framework","estimation","capacity-planning","tradeoffs","interview"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Backend system design interviews are 45-90 minutes of "design X at scale." Most candidates fail not from lack of knowledge but from <strong>poor structure</strong>. The framework below — clarify → estimate → high-level → deep dives → scale → wrap-up — is the difference between rambling for 60 minutes and confidently shipping a design.</p>
-<ul>
-  <li><strong>Spend the first 5-10 minutes clarifying scope.</strong> "Twitter" can be 5 features or 50; pin it.</li>
-  <li><strong>Capacity estimates anchor decisions.</strong> 100 RPS or 100k RPS = different system.</li>
-  <li><strong>High-level diagram first;</strong> agree on shape before diving in.</li>
-  <li><strong>Deep dives where it matters</strong> — pick the 2-3 hardest parts; don't try to cover everything.</li>
-  <li><strong>Scale + reliability + observability</strong> in the last third — bottleneck identification, partitioning, replication, monitoring.</li>
-  <li><strong>Tradeoffs out loud:</strong> "I'm choosing X over Y because Z." Silent decisions get marked down.</li>
-  <li><strong>5 reusable building blocks:</strong> load balancer, app servers, DB (SQL + NoSQL), cache (Redis), queue (Kafka / SQS), object storage (S3), CDN.</li>
-  <li><strong>Don't memorize Twitter / Uber answers</strong> — internalize the framework so any prompt fits.</li>
-</ul>
-<p><strong>Mantra:</strong> "Clarify scope. Estimate scale. High-level shape. Deep-dive what's hard. Scale + reliability. Tradeoffs out loud. Restraint over completeness."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Walk the six-step framework calmly and talk your tradeoffs out loud, because <strong>structure beats knowledge</strong> — the organized candidate passes over the equally-knowledgeable rambler.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>6-step framework:</strong> clarify scope (5-10m) → estimate scale (5m) → high-level design (10-15m) → deep dive 2-3 hard parts (15-20m) → scale + reliability + observability (10-15m) → wrap-up (2-5m).</li>
+    <li><strong>Structure beats knowledge</strong> — the structured candidate consistently passes over the equally-knowledgeable rambler. Don't memorize Twitter/Uber answers; internalize the framework so any prompt fits.</li>
+    <li><strong>Clarify first:</strong> features (in/out), users (total + DAU), traffic shape (read:write, peak), data shape, constraints (latency, consistency, compliance), availability target. Confirm scope back.</li>
+    <li><strong>Estimate aloud:</strong> RPS ≈ DAU × actions/day ÷ 86400; peak ≈ 3× average; reads often ~100× writes; then storage and bandwidth. Order-of-magnitude is what counts — 100 RPS vs 100K RPS is a different system (10K RPS ≈ one beefy DB; 1M RPS = sharded).</li>
+    <li><strong>Latency numbers:</strong> memory ~100ns, SSD ~100μs, datacenter RTT ~500μs, cross-continent RTT ~50-150ms.</li>
+    <li><strong>Capacity ceilings:</strong> single Postgres ~10K-50K writes/sec, single Redis ~100K ops/sec, single Kafka broker ~1M msg/sec.</li>
+    <li><strong>High-level = 5-7 boxes with a narrative;</strong> walk one key flow end-to-end. Every box needs a rationale.</li>
+    <li><strong>7 building blocks:</strong> load balancer, stateless app servers, SQL DB, NoSQL DB, cache (Redis/Valkey), queue/stream (Kafka/SQS), object storage (S3), CDN (+ search index, vector DB).</li>
+    <li><strong>Consistency per operation, not per system:</strong> strong for money/inventory/auth, eventual for feeds/counts/search.</li>
+    <li><strong>Fan-out:</strong> push (O(1) read, costly write) vs pull (cheap write, costly read) vs hybrid (push for normal users, pull for celebrities) — solve the <strong>hot key</strong>.</li>
+    <li><strong>Tradeoffs out loud</strong> ("X over Y because Z; cost is W"); restraint over completeness — no tool soup.</li>
+    <li><strong>Last third is non-functional:</strong> bottleneck at 10×, sharding, read replicas, multi-region + failover (RTO/RPO), observability (RED/USE metrics, logs, traces, SLOs + error budget).</li>
+    <li><strong>Always name the failure case</strong> ("primary fails → replica promoted via Patroni, RTO ~30s, RPO ~seconds") and wrap up with strong / deferred / next.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is jumping straight into a solution — dumping tools within 30 seconds and skipping clarification, so you spend the interview designing the wrong thing. The fix: pause, spend the first 5-10 minutes asking about features, scale, and constraints, then confirm the scope back before drawing a single box.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Clarify scope, estimate scale, high-level shape, deep-dive what's hard, then scale + reliability — tradeoffs out loud, restraint over completeness."</div>
+  <div class="revision-say">"I estimate aloud from DAU × actions ÷ 86400, peak roughly 3× average — order-of-magnitude right is what anchors every downstream decision."</div>
+  <div class="revision-say">"In every design I find the hot key and name the failure case — that's exactly where average-case designs break."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What backend system design interviews test</h3>
 <table>
   <thead><tr><th>What they grade</th><th>What it tells them</th></tr></thead>
@@ -76,12 +86,10 @@ window.PREP_SITE.registerTopic({
   <li>Spends 40 minutes on the schema; never gets to scale.</li>
   <li>Doesn't mention monitoring, observability, deploy strategy.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The 6-step framework</h3>
 <table>
   <thead><tr><th>Step</th><th>Time</th><th>Goal</th></tr></thead>
@@ -279,12 +287,10 @@ External: Object storage (S3) for user uploads
     <tr><td>Fan-out</td><td>One event → N downstream actions</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Sample dialog: clarifying scope</h3>
 <pre><code class="language-text">Interviewer: "Design Twitter."
 
@@ -441,12 +447,10 @@ This shows: confidence in what's done; honesty about gaps; clear next steps.
     <tr><td>Multiple boxes</td><td>Replicated / load-balanced</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Full walkthrough — URL shortener</h3>
 
 <p><strong>Step 1: Clarify</strong></p>
@@ -622,12 +626,11 @@ DEEP DIVE: idempotency (dedupe by notification_id); rate-limit per user; quiet h
 SCALE: Kafka partitions by user_id; consumers scale independently.
 RELIABILITY: DLQ per channel; retry with backoff; multi-region; per-channel SLOs.
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Common interview pitfalls</h3>
 
 <h4>Pitfall: starting before clarifying</h4>
@@ -754,12 +757,9 @@ RELIABILITY: DLQ per channel; retry with backoff; multi-region; per-channel SLOs
   <li><strong>Pick the simpler path.</strong> Reach for monolith / single DB; explain you'd revise if scale demands.</li>
   <li><strong>Acknowledge gaps.</strong> "I'd want to research X more before committing here."</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common backend system design interview mistakes</h3>
 <ol>
   <li><strong>Skipping clarification.</strong> Designs the wrong thing.</li>
@@ -887,12 +887,10 @@ You: "Good question. For tweets: eventual is fine (people don't notice 100ms lag
 // GOOD
 "To summarize: [strong points]. Deferred: [things explicitly out of scope]. Given more time: [specific next dives]. Anything you'd like me to explore further?"
 </code></pre>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common system design interview prompts</h3>
 <ol>
   <li>Design Twitter / Instagram / Pinterest feed.</li>
@@ -1040,57 +1038,44 @@ You: "Good question. For tweets: eventual is fine (people don't notice 100ms lag
   <li>"Pair with someone for timed mocks; get feedback."</li>
   <li>"Build one of the systems (URL shortener, rate limiter) end-to-end as a personal project."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Walk the six-step framework calmly and talk your tradeoffs out loud, because <strong>structure beats knowledge</strong> — the organized candidate passes over the equally-knowledgeable rambler.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>6-step framework:</strong> clarify scope (5-10m) → estimate scale (5m) → high-level design (10-15m) → deep dive 2-3 hard parts (15-20m) → scale + reliability + observability (10-15m) → wrap-up (2-5m).</li>
-    <li><strong>Structure beats knowledge</strong> — the structured candidate consistently passes over the equally-knowledgeable rambler.</li>
-    <li><strong>Clarify first:</strong> features (in/out), users (total + DAU), traffic shape (read:write, peak), data shape, constraints (latency, consistency, compliance), availability target. Confirm scope back.</li>
-    <li><strong>Estimate aloud:</strong> RPS ≈ DAU × actions/day ÷ 86400; peak ≈ 3× average; reads often ~100× writes; then storage and bandwidth. Order-of-magnitude is what counts.</li>
-    <li><strong>Latency numbers:</strong> memory ~100ns, SSD ~100μs, datacenter RTT ~500μs, cross-continent RTT ~50-150ms.</li>
-    <li><strong>Capacity ceilings:</strong> single Postgres ~10K-50K writes/sec, single Redis ~100K ops/sec, single Kafka broker ~1M msg/sec.</li>
-    <li><strong>High-level = 5-7 boxes with a narrative;</strong> walk one key flow end-to-end. Every box needs a rationale.</li>
-    <li><strong>7 building blocks:</strong> load balancer, stateless app servers, SQL DB, NoSQL DB, cache (Redis/Valkey), queue/stream (Kafka/SQS), object storage (S3), CDN (+ search index, vector DB).</li>
-    <li><strong>Consistency per operation, not per system:</strong> strong for money/inventory/auth, eventual for feeds/counts/search.</li>
-    <li><strong>Fan-out:</strong> push (O(1) read, costly write) vs pull (cheap write, costly read) vs hybrid (push for normal users, pull for celebrities) — solve the <strong>hot key</strong>.</li>
-    <li><strong>Tradeoffs out loud</strong> ("X over Y because Z; cost is W"); restraint over completeness — no tool soup.</li>
-    <li><strong>Last third is non-functional:</strong> bottleneck at 10×, sharding, read replicas, multi-region + failover (RTO/RPO), observability (RED/USE metrics, logs, traces, SLOs + error budget).</li>
-    <li><strong>Always name the failure case</strong> ("primary fails → replica promoted via Patroni, RTO ~30s, RPO ~seconds") and wrap up with strong / deferred / next.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">The #1 mistake is jumping straight into a solution — dumping tools within 30 seconds and skipping clarification, so you spend the interview designing the wrong thing. The fix: pause, spend the first 5-10 minutes asking about features, scale, and constraints, then confirm the scope back before drawing a single box.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Clarify scope, estimate scale, high-level shape, deep-dive what's hard, then scale + reliability — tradeoffs out loud, restraint over completeness."</div>
-  <div class="revision-say">"I estimate aloud from DAU × actions ÷ 86400, peak roughly 3× average — order-of-magnitude right is what anchors every downstream decision."</div>
-  <div class="revision-say">"In every design I find the hot key and name the failure case — that's exactly where average-case designs break."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. What are the six steps of the system design framework, and how do you budget time across a 45–60 minute interview?</div>
+  <div class="qa-answer">
+    <p>1. <strong>Clarify</strong> (5–10 min): features in and out, users and DAU, read:write ratio and peak, data shape, latency/consistency/compliance constraints — then confirm the scope back. 2. <strong>Estimate</strong> (5 min): RPS, storage, bandwidth. 3. <strong>High-level design</strong> (10–15 min): 5–7 boxes and one key flow walked end to end. 4. <strong>Deep dive</strong> (15–20 min): the 2–3 hardest parts. 5. <strong>Scale + reliability + observability</strong> (10–15 min): bottlenecks, replication, monitoring. 6. <strong>Wrap-up</strong> (2–5 min): what's strong, what you deferred, what's next. Graders look for hitting all six steps in the time and never going silent for more than 30 seconds.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the six steps of the framework in order, with a rough time budget for each in a 45-60 minute interview?</li>
-    <li>Can you estimate RPS, storage, and bandwidth aloud from DAU × actions/day ÷ 86400, with peak roughly 3× average and reads around 100× writes?</li>
-    <li>Can you recall the ballpark capacity ceilings — single Postgres ~10K-50K writes/sec, single Redis ~100K ops/sec, single Kafka broker ~1M msg/sec — and the latency numbers (memory ~100ns, SSD ~100μs, datacenter RTT ~500μs, cross-continent ~50-150ms)?</li>
-    <li>Can you list the building blocks (load balancer, stateless app servers, SQL + NoSQL DB, cache, queue/stream, object storage, CDN) and justify why each belongs in a given design?</li>
-    <li>Can you explain push vs pull vs hybrid fan-out and describe how you would handle the celebrity hot-key problem?</li>
-    <li>Can you cover the last-third non-functional concerns — bottleneck at 10×, sharding, replicas, multi-region failover with RTO/RPO, and observability (RED/USE metrics, logs, traces, SLOs) — and close with a strong / deferred / next wrap-up?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Estimate RPS, storage and bandwidth aloud for a Twitter-like feed with 10M DAU.</div>
+  <div class="qa-answer">
+    <p>RPS ≈ DAU × actions/day ÷ 86,400. Writes: 10M × 5 tweets/day ÷ 86,400 ≈ 600 tweets/sec average, ~1,800/sec at a 3× peak. Reads at 100:1 → ~180K/sec average, ~540K/sec peak. Storage: ~300B per tweet × 100M users × 1,000 tweets ≈ 30TB, plus a follow graph of 100M × 100 follows × 32B ≈ 320GB. Bandwidth: 540K reads/sec × ~5KB per feed page ≈ 2.7GB/s at peak, mostly absorbed by the CDN and cache. What the numbers say: 1,800 writes/sec fits a single Postgres, 540K reads/sec needs caching and replicas, and 30TB will need sharding eventually. Round generously — the order of magnitude is what counts.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q3. What ballpark capacity ceilings and latency numbers should you know?</div>
+  <div class="qa-answer">
+    <p>Capacity: a single Postgres handles roughly 10K–50K writes/sec (hardware- and workload-dependent), a single Redis about 100K ops/sec, and a single Kafka broker about 1M messages/sec produced. Latency: main memory ~100ns, SSD random read ~100–150μs, a round trip within a datacenter ~500μs, and cross-continent ~50–150ms; for reference, S3 reads are ~50–200ms and a CDN edge ~10–50ms. These are what you compare your estimates against: 18,000 writes/sec at 10× scale exceeds one Postgres, so you shard.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. What are the reusable building blocks, and how do you justify each one in a design?</div>
+  <div class="qa-answer">
+    <p>A <strong>load balancer</strong> distributes traffic, health-checks and terminates TLS. <strong>Stateless app servers</strong> scale horizontally behind it, with state kept in the DB, cache or queue. A <strong>SQL DB</strong> gives strong consistency, joins and transactions; a <strong>NoSQL DB</strong> serves a specific access pattern at scale. A <strong>cache</strong> (Redis/Valkey, Memcached) is for hot reads; a <strong>queue/stream</strong> (Kafka, SQS) for async work, fan-out and an event log; <strong>object storage</strong> (S3) for files, images and video; a <strong>CDN</strong> for global low-latency static and cached dynamic content — plus a search index or vector DB when needed. Every box needs a rationale tied to your requirements and estimates ("540K reads/sec, so a feed cache"); adding tools without a reason is tool soup and gets marked down.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. Explain push vs pull vs hybrid fan-out. How do you handle the celebrity hot-key problem?</div>
+  <div class="qa-answer">
+    <p><strong>Push</strong> (fan-out on write): when a user posts, write it into every follower's feed cache, so a feed read is an O(1) lookup — but a celebrity with 100M followers means 100M cache writes per post. <strong>Pull</strong> (fan-out on read): on feed read, fetch recent posts from everyone the user follows and merge — cheap writes, but the read costs O(follows). <strong>Hybrid</strong>: push for normal users (say under 10K followers), pull for celebrities, and on read merge the cached push results with a live pull of the celebrities' posts. That is the hot-key fix: the celebrity's writes stop fanning out, and their posts are read from a well-cached key, using a multi-tier cache if needed. The right cut-off depends on the follower distribution — with an average of 200 followers, push works for nearly everyone and pull for the top 0.1%.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. What do you cover in the last third of the interview, and how do you wrap up?</div>
+  <div class="qa-answer">
+    <p>Non-functional concerns. <strong>Bottleneck at 10×</strong>: usually DB write throughput, a single-cache hot key or bandwidth — for example 1,800 → 18,000 writes/sec exceeds one Postgres, so shard by <code>user_id</code> with consistent hashing. <strong>Read replicas</strong> for read-heavy paths (primary for read-after-write). <strong>Multi-region</strong>: active-passive at minimum, async replication, DNS failover. <strong>Failover with RTO/RPO</strong>: "the primary fails → a replica is promoted via Patroni, RTO ~30s, RPO a few seconds; Redis fails → fall through to the DB". <strong>Observability</strong>: RED metrics per service, USE per resource, logs, traces, SLOs with an error budget. Then wrap up: "Strong: hybrid fan-out, sharded Postgres, Redis-fed feeds. Deferred: ranking, spam, search. Given more time: the celebrity hot key and multi-region consistency."</p>
+  </div>
+</div>
+` },
+
   ]
 });

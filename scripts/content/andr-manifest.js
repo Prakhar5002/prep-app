@@ -1,24 +1,44 @@
 window.PREP_SITE.registerTopic({
-  id: 'andr-manifest',
-  module: 'Android Native (Deep)',
-  title: 'Manifest, Permissions & Resources',
-  estimatedReadTime: '24 min',
-  tags: ['androidmanifest', 'permissions', 'intent-filter', 'resources', 'res', 'drawable', 'mipmap', 'deep-linking', 'app-links', 'exported', 'queries', 'manifest-merger', 'fileprovider', 'adaptive-icons', 'splash-screen', 'values-night', 'network-security-config', 'expo', 'config-plugin'],
+  id: "andr-manifest",
+  module: "Android Native (Deep)",
+  title: "Manifest, Permissions & Resources",
+  estimatedReadTime: "24 min",
+  tags: ["androidmanifest","permissions","intent-filter","resources","res","drawable","mipmap","deep-linking","app-links","exported","queries","manifest-merger","fileprovider","adaptive-icons","splash-screen","values-night","network-security-config","expo","config-plugin"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><code>AndroidManifest.xml</code> is the app's contract with the OS: it names the app package, declares every permission and hardware feature, and registers the four component types the system can start — <strong>activities, services, receivers, providers</strong>. If a component isn't in the manifest (or merged into it), Android literally cannot launch it.</p>
-<p>The <code>res/</code> folder is the app's typed asset system: <code>drawable*/</code>, <code>mipmap-*/</code> (launcher icons), <code>values*/</code> (strings, colors, themes, dimens), and qualifier folders (<code>-night</code>, <code>-hdpi</code>..<code>-xxxhdpi</code>, <code>-v26</code>, <code>-land</code>) that let Android pick the right resource for the device. Every resource gets a compile-time integer ID in the generated <code>R</code> class.</p>
-<p>Three things you must be able to explain cold: <strong>why <code>android:exported</code> is mandatory on Android 12+</strong>, how <strong>manifest merging</strong> combines library + build-variant manifests, and how <strong>intent-filters</strong> create the launcher entry and deep links.</p>
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>The manifest <em>declares</em> what the app is and what it may do; <code>res/</code> <em>provides</em> the right asset per device via qualifiers; the merger <em>combines</em> your manifest with every library's — and on Expo, all three are generated from <code>app.json</code> and rewritten on every prebuild.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The manifest is the app's OS contract — permissions, features, and the four components (activity/service/receiver/provider) made reachable by intent-filters; <code>res/</code> supplies the right asset per device via qualifier folders and the <code>R</code> class; the merger folds in every library's manifest; and on Expo all of it is generated from <code>app.json</code>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Location:</strong> <code>android/app/src/main/AndroidManifest.xml</code>; the shipped file is the <strong>merged</strong> one in <code>build/intermediates/merged_manifests/&lt;variant&gt;/</code>.</li>
+    <li><strong>Root:</strong> <code>&lt;manifest&gt;</code> with <code>xmlns:android</code> + <code>xmlns:tools</code>; app identity now comes from <code>applicationId</code>/<code>namespace</code> in <code>build.gradle</code>, not the legacy <code>package</code> attribute.</li>
+    <li><strong>Permissions:</strong> <code>&lt;uses-permission&gt;</code>; normal = auto-granted (INTERNET), dangerous = manifest + runtime <code>PermissionsAndroid.request</code> on API 23+ (CAMERA, ACCESS_FINE_LOCATION, RECORD_AUDIO, POST_NOTIFICATIONS on 33+). <code>&lt;uses-feature required="false"&gt;</code> keeps the app installable on devices lacking the hardware.</li>
+    <li><strong>&lt;application&gt; attrs:</strong> <code>name</code> (=.MainApplication), <code>label</code>, <code>icon</code>/<code>roundIcon</code> (@mipmap), <code>theme</code>, <code>allowBackup</code> (set false for security), <code>usesCleartextTraffic</code>, <code>networkSecurityConfig</code> (@xml), <code>largeHeap</code>.</li>
+    <li><strong>Four components:</strong> <code>&lt;activity&gt;</code> (MainActivity: <code>exported</code>, <code>launchMode</code> singleTask/singleTop, <code>configChanges</code>, <code>windowSoftInputMode</code>), <code>&lt;service&gt;</code>, <code>&lt;receiver&gt;</code> (BroadcastReceiver), <code>&lt;provider&gt;</code> (ContentProvider / FileProvider).</li>
+    <li><strong>Intent-filters:</strong> MAIN + LAUNCHER = home entry; VIEW + BROWSABLE + DEFAULT + <code>&lt;data scheme host&gt;</code> = deep link. <code>autoVerify="true"</code> on an https filter = App Link, verified against <code>assetlinks.json</code> signing fingerprint → opens app directly, no chooser.</li>
+    <li><strong>android:exported</strong> is <strong>mandatory on API 31+</strong> for any component with an intent-filter — build fails otherwise; true only for real external entry points, false for everything internal.</li>
+    <li><strong>&lt;queries&gt; (API 30+):</strong> declare intents/packages you inspect, or <code>Linking.canOpenURL</code>/<code>resolveActivity</code> silently return false/null.</li>
+    <li><strong>Merger priority:</strong> build-variant &gt; main &gt; library; conflicts fail the build. <code>tools:replace</code> overrides, <code>tools:node="remove"</code> strips an injected permission, <code>tools:overrideLibrary</code> accepts higher minSdk. <code>tools:</code> is stripped from the APK.</li>
+    <li><strong>res/ folders:</strong> <code>drawable*/</code>, <code>mipmap-*/</code> (launcher icons kept at all densities; <code>mipmap-anydpi-v26/ic_launcher.xml</code> = adaptive icon with foreground/background/monochrome), <code>values*/</code> (strings, colors, styles/themes, dimens), <code>values-night/</code> for dark mode, density/qualifier folders (<code>-hdpi</code>..<code>-xxxhdpi</code>, <code>-v26</code>, <code>-land</code>, locale), <code>xml/</code> (network_security_config, file_paths), <code>raw/</code>.</li>
+    <li><strong>R class:</strong> every resource → integer ID; <code>@type/name</code> in XML, <code>R.type.name</code> in code. Missing qualifier match falls back silently to the default.</li>
+    <li><strong>assets/ vs res/raw/:</strong> raw = by <code>R.raw.*</code> ID, flat, qualifier-aware; assets = by path via AssetManager, arbitrary tree, no IDs — the RN JS bundle (<code>index.android.bundle</code>) lives in assets.</li>
+    <li><strong>Splash:</strong> classic = <code>android:windowBackground</code> layer-list drawable on the launch theme (paints before JS); modern = AndroidX <code>core-splashscreen</code> + <code>installSplashScreen()</code> / <code>setKeepOnScreenCondition</code>.</li>
+    <li><strong>Expo:</strong> manifest, icons, permissions, intent filters, splash, colors all generated from <code>app.json</code> (<code>android.permissions</code>, <code>android.intentFilters</code>, <code>android.adaptiveIcon</code>, <code>expo-splash-screen</code>, <code>expo-build-properties</code>) and overwritten by prebuild; hand edits belong in a <strong>config plugin</strong> (<code>withAndroidManifest</code>).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Debugging permissions or components from your own <code>src/main</code> manifest and forgetting it's the MERGED manifest that ships.</strong> Libraries inject permissions (AD_ID, location), providers (FileProvider), and activities into the merged output at <code>build/intermediates/merged_manifests/</code> — read that file (or Android Studio's Merged Manifest tab) and strip unwanted entries with <code>tools:node="remove"</code>. (Related traps: forgetting <code>&lt;queries&gt;</code> on Android 11 breaks <code>canOpenURL</code>; forgetting the runtime request makes a declared dangerous permission do nothing; and in Expo, hand edits vanish on <code>expo prebuild --clean</code>.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The manifest is the app's contract with the OS — it declares permissions, hardware needs, and registers the four components; intent-filters make them reachable. On Android 12+ any component with an intent-filter must set <code>android:exported</code> explicitly, and I default that to false unless another app genuinely needs to launch it."</div>
+  <div class="revision-say">"The manifest that ships is the merged one — build-variant over main over library manifests — so a library can inject a permission or a FileProvider. I inspect the merged manifest and use <code>tools:replace</code> and <code>tools:node=&quot;remove&quot;</code> to resolve conflicts and strip unwanted entries."</div>
+  <div class="revision-say">"res/ decouples assets from code via qualifier folders — density, <code>-night</code>, locale — so one APK serves every device; each resource gets an <code>R</code>-class ID. Launcher icons stay in <code>mipmap</code> so all densities survive stripping. In my Expo apps all of this is generated from <code>app.json</code>, and anything it can't express I put in a config plugin."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What the manifest is</h3>
 <p><code>AndroidManifest.xml</code> lives at <code>android/app/src/main/AndroidManifest.xml</code> in a React Native project. It is read by the Android <strong>PackageManager</strong> at install time and by the system whenever it needs to launch or bind to one of your components. Nothing your app can do — request the camera, show a launcher icon, respond to a deep link, run a background service — happens unless it is declared here.</p>
 
@@ -39,10 +59,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">🧩 Expo note — you rarely edit these by hand</div>
   <p>In an Expo prebuild project (like <code>sw-mobile</code> or <code>sw-ticketing</code>), <code>AndroidManifest.xml</code>, the launcher icons, <code>colors.xml</code>, <code>strings.xml</code>, and the splash resources are all <strong>generated from <code>app.json</code>/<code>app.config.js</code></strong> during <code>expo prebuild</code>. Hand edits to <code>android/</code> get wiped on the next <code>expo prebuild --clean</code>. The correct place for a manifest change is <code>app.json</code> (for the common cases) or a <strong>config plugin</strong> (for anything <code>app.json</code> doesn't expose). We'll map each hand-edit to its <code>app.json</code> equivalent throughout.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The manifest as the OS-facing contract</h3>
 <div class="diagram">
 <pre>
@@ -119,10 +139,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"The manifest I wrote is the manifest that ships." It is not. The merged manifest in <code>build/intermediates/merged_manifests/</code> is what runs — it contains permissions, activities, and providers injected by every library. Always inspect that file (or the <strong>Merged Manifest</strong> tab in Android Studio) when debugging permission or component surprises.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>1 — The &lt;manifest&gt; root and package</h3>
 <pre><code class="language-xml">&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools"
@@ -359,10 +379,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">🧩 Expo note — every one of these comes from app.json</div>
   <p>In Expo prebuild, you don't touch these files. Permissions come from <code>android.permissions</code>; deep links from <code>android.intentFilters</code> (and <code>scheme</code>); the icon from <code>android.adaptiveIcon</code> (foregroundImage / backgroundColor); label from <code>name</code>; splash from the <code>expo-splash-screen</code> plugin (image + backgroundColor, which writes <code>colors.xml</code> + the splash drawable + <code>values-night</code>); cleartext / network config from <code>expo-build-properties</code>. Anything with no <code>app.json</code> key — a custom <code>&lt;service&gt;</code>, a <code>tools:replace</code>, an extra <code>&lt;queries&gt;</code> entry — needs a <strong>config plugin</strong> using the <code>withAndroidManifest</code> / <code>withStringsXml</code> / <code>dangerouslyAddRawExperience</code>-style mods. Hand edits to <code>android/</code> are discarded on <code>expo prebuild --clean</code>.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — the minimal RN MainActivity + launcher</h3>
 <pre><code class="language-xml">&lt;activity
     android:name=".MainActivity"
@@ -515,10 +535,11 @@ module.exports = function withCustomQueries(config) {
   });
 };</code></pre>
 <p>This mod runs during prebuild and rewrites the generated manifest — the durable way to make a native manifest change survive <code>--clean</code> in a managed workflow.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. android:exported missing on Android 12+</h3>
 <p>Any component with an <code>&lt;intent-filter&gt;</code> and no explicit <code>android:exported</code> fails the build on API 31+. The error names the offending component. Add <code>exported="true"</code> only if other apps must reach it; else <code>false</code>.</p>
 
@@ -578,10 +599,9 @@ module.exports = function withCustomQueries(config) {
 
 <h3>20. Adaptive icon safe zone</h3>
 <p>Adaptive icon layers are 108dp with only the inner 72dp guaranteed visible after masking. Art outside the safe zone gets clipped into a circle/squircle — a foreground image that fills the whole canvas looks cropped on some launchers.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — exported="true" on everything</h3>
 <p>Blindly exporting components to silence the API 31 build error opens them to other apps. Default to <code>false</code>; export only genuine entry points (launcher, deep-link, share targets).</p>
 
@@ -626,10 +646,10 @@ module.exports = function withCustomQueries(config) {
 
 <h3>Anti-pattern 15 — assuming light-theme colors in a DayNight app</h3>
 <p>Hardcoding a white background in code while the theme is <code>DayNight</code> yields unreadable dark-mode screens. Provide <code>values-night</code> overrides and reference tokens.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What is AndroidManifest.xml responsible for?</div>
   <div class="qa-answer">
@@ -755,54 +775,7 @@ module.exports = function withCustomQueries(config) {
     <li>You know that in Expo prebuild all of this comes from app.json / config plugins.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">The manifest is the app's OS contract — permissions, features, and the four components (activity/service/receiver/provider) made reachable by intent-filters; <code>res/</code> supplies the right asset per device via qualifier folders and the <code>R</code> class; the merger folds in every library's manifest; and on Expo all of it is generated from <code>app.json</code>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Location:</strong> <code>android/app/src/main/AndroidManifest.xml</code>; the shipped file is the <strong>merged</strong> one in <code>build/intermediates/merged_manifests/&lt;variant&gt;/</code>.</li>
-    <li><strong>Root:</strong> <code>&lt;manifest&gt;</code> with <code>xmlns:android</code> + <code>xmlns:tools</code>; app identity now comes from <code>applicationId</code>/<code>namespace</code> in <code>build.gradle</code>, not the legacy <code>package</code> attribute.</li>
-    <li><strong>Permissions:</strong> <code>&lt;uses-permission&gt;</code>; normal = auto-granted (INTERNET), dangerous = manifest + runtime <code>PermissionsAndroid.request</code> on API 23+ (CAMERA, ACCESS_FINE_LOCATION, RECORD_AUDIO, POST_NOTIFICATIONS on 33+). <code>&lt;uses-feature required="false"&gt;</code> keeps the app installable on devices lacking the hardware.</li>
-    <li><strong>&lt;application&gt; attrs:</strong> <code>name</code> (=.MainApplication), <code>label</code>, <code>icon</code>/<code>roundIcon</code> (@mipmap), <code>theme</code>, <code>allowBackup</code> (set false for security), <code>usesCleartextTraffic</code>, <code>networkSecurityConfig</code> (@xml), <code>largeHeap</code>.</li>
-    <li><strong>Four components:</strong> <code>&lt;activity&gt;</code> (MainActivity: <code>exported</code>, <code>launchMode</code> singleTask/singleTop, <code>configChanges</code>, <code>windowSoftInputMode</code>), <code>&lt;service&gt;</code>, <code>&lt;receiver&gt;</code> (BroadcastReceiver), <code>&lt;provider&gt;</code> (ContentProvider / FileProvider).</li>
-    <li><strong>Intent-filters:</strong> MAIN + LAUNCHER = home entry; VIEW + BROWSABLE + DEFAULT + <code>&lt;data scheme host&gt;</code> = deep link. <code>autoVerify="true"</code> on an https filter = App Link, verified against <code>assetlinks.json</code> signing fingerprint → opens app directly, no chooser.</li>
-    <li><strong>android:exported</strong> is <strong>mandatory on API 31+</strong> for any component with an intent-filter — build fails otherwise; true only for real external entry points, false for everything internal.</li>
-    <li><strong>&lt;queries&gt; (API 30+):</strong> declare intents/packages you inspect, or <code>Linking.canOpenURL</code>/<code>resolveActivity</code> silently return false/null.</li>
-    <li><strong>Merger priority:</strong> build-variant &gt; main &gt; library; conflicts fail the build. <code>tools:replace</code> overrides, <code>tools:node="remove"</code> strips an injected permission, <code>tools:overrideLibrary</code> accepts higher minSdk. <code>tools:</code> is stripped from the APK.</li>
-    <li><strong>res/ folders:</strong> <code>drawable*/</code>, <code>mipmap-*/</code> (launcher icons kept at all densities; <code>mipmap-anydpi-v26/ic_launcher.xml</code> = adaptive icon with foreground/background/monochrome), <code>values*/</code> (strings, colors, styles/themes, dimens), <code>values-night/</code> for dark mode, density/qualifier folders (<code>-hdpi</code>..<code>-xxxhdpi</code>, <code>-v26</code>, <code>-land</code>, locale), <code>xml/</code> (network_security_config, file_paths), <code>raw/</code>.</li>
-    <li><strong>R class:</strong> every resource → integer ID; <code>@type/name</code> in XML, <code>R.type.name</code> in code. Missing qualifier match falls back silently to the default.</li>
-    <li><strong>assets/ vs res/raw/:</strong> raw = by <code>R.raw.*</code> ID, flat, qualifier-aware; assets = by path via AssetManager, arbitrary tree, no IDs — the RN JS bundle (<code>index.android.bundle</code>) lives in assets.</li>
-    <li><strong>Splash:</strong> classic = <code>android:windowBackground</code> layer-list drawable on the launch theme (paints before JS); modern = AndroidX <code>core-splashscreen</code> + <code>installSplashScreen()</code> / <code>setKeepOnScreenCondition</code>.</li>
-    <li><strong>Expo:</strong> manifest, icons, permissions, intent filters, splash, colors all generated from <code>app.json</code> (<code>android.permissions</code>, <code>android.intentFilters</code>, <code>android.adaptiveIcon</code>, <code>expo-splash-screen</code>, <code>expo-build-properties</code>) and overwritten by prebuild; hand edits belong in a <strong>config plugin</strong> (<code>withAndroidManifest</code>).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Debugging permissions or components from your own <code>src/main</code> manifest and forgetting it's the MERGED manifest that ships.</strong> Libraries inject permissions (AD_ID, location), providers (FileProvider), and activities into the merged output at <code>build/intermediates/merged_manifests/</code> — read that file (or Android Studio's Merged Manifest tab) and strip unwanted entries with <code>tools:node="remove"</code>. (Related traps: forgetting <code>&lt;queries&gt;</code> on Android 11 breaks <code>canOpenURL</code>; forgetting the runtime request makes a declared dangerous permission do nothing; and in Expo, hand edits vanish on <code>expo prebuild --clean</code>.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"The manifest is the app's contract with the OS — it declares permissions, hardware needs, and registers the four components; intent-filters make them reachable. On Android 12+ any component with an intent-filter must set <code>android:exported</code> explicitly, and I default that to false unless another app genuinely needs to launch it."</div>
-  <div class="revision-say">"The manifest that ships is the merged one — build-variant over main over library manifests — so a library can inject a permission or a FileProvider. I inspect the merged manifest and use <code>tools:replace</code> and <code>tools:node=&quot;remove&quot;</code> to resolve conflicts and strip unwanted entries."</div>
-  <div class="revision-say">"res/ decouples assets from code via qualifier folders — density, <code>-night</code>, locale — so one APK serves every device; each resource gets an <code>R</code>-class ID. Launcher icons stay in <code>mipmap</code> so all densities survive stripping. In my Expo apps all of this is generated from <code>app.json</code>, and anything it can't express I put in a config plugin."</div>
-</div>
-`},
-
-// ─────────────────────────────────────────────────────────────
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you list the four component types and explain how an intent-filter turns one into the launcher entry vs a deep-link handler?</li>
-    <li>Can you explain why <code>android:exported</code> became mandatory on Android 12+ and decide true vs false for a given component?</li>
-    <li>Can you contrast a custom-scheme deep link with a verified App Link, including the role of <code>assetlinks.json</code>?</li>
-    <li>Can you describe manifest merging priority and use <code>tools:replace</code>/<code>tools:node="remove"</code> to resolve a conflict or strip an injected permission?</li>
-    <li>Can you explain <code>&lt;queries&gt;</code> and why <code>Linking.canOpenURL</code> breaks on Android 11 without it?</li>
-    <li>Can you walk through the res/ qualifier system, the R class, and why launcher icons live in mipmap rather than drawable?</li>
-    <li>Can you say where each of these lives in an Expo prebuild project and when you'd reach for a config plugin?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

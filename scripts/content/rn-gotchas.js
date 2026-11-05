@@ -1,36 +1,46 @@
 window.PREP_SITE.registerTopic({
-  id: 'rn-gotchas',
-  module: 'React Native',
-  title: 'Common Gotchas',
-  estimatedReadTime: '24 min',
-  tags: ['react-native', 'gotchas', 'platform-differences', 'keyboard', 'safe-area', 'text', 'scrollview', 'pitfalls'],
+  id: "rn-gotchas",
+  module: "React Native",
+  title: "Common Gotchas",
+  estimatedReadTime: "24 min",
+  tags: ["react-native","gotchas","platform-differences","keyboard","safe-area","text","scrollview","pitfalls"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>A curated catalog of the problems every RN developer eventually hits. Most are cross-platform differences, API quirks, or subtle behaviors that aren't documented prominently.</p>
-<ul>
-  <li><strong>Text rendering</strong> — strings must be in <code>&lt;Text&gt;</code>; only Text inherits font styles.</li>
-  <li><strong>Flexbox defaults</strong> — <code>flexDirection: 'column'</code>, <code>alignItems: 'stretch'</code>. Different from web.</li>
-  <li><strong>Keyboard handling</strong> — Android push-vs-resize, iOS notch interactions, <code>KeyboardAvoidingView</code> is flaky.</li>
-  <li><strong>Safe area</strong> — use <code>react-native-safe-area-context</code>; built-in SafeAreaView is iOS-focused.</li>
-  <li><strong>Shadows</strong> — iOS <code>shadow*</code> vs Android <code>elevation</code>; requires non-transparent background on Android.</li>
-  <li><strong>ScrollView vs FlatList</strong> — ScrollView mounts all children; don't use for long lists.</li>
-  <li><strong>Image dimensions</strong> — no auto-sizing; always specify.</li>
-  <li><strong>Animations</strong> — <code>width</code>/<code>height</code> trigger layout; use <code>transform</code>.</li>
-  <li><strong>AsyncStorage</strong> is slow; MMKV is the modern default.</li>
-  <li><strong>Platform-specific behavior</strong> — touch feedback, status bar, back button, permissions, keyboard, system fonts.</li>
-  <li><strong>Hermes vs JSC differences</strong> — usually safe, occasionally bite on edge cases (regex, Intl).</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Most RN bugs are not bugs — they're cross-platform differences your JS code didn't handle. Learn the pitfalls early, or they'll surface at the worst time (production on a device you don't have).</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Most RN "bugs" are not bugs — they're <strong>cross-platform differences and API quirks your JS code didn't handle</strong>, so learn the pitfalls early or they surface in production on a device you don't own.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Most RN "bugs" are cross-platform differences</strong> your JS didn't handle — learn the pitfalls early or they surface in production on a device you don't own.</li>
+    <li><strong>Text rules:</strong> raw strings must live inside <code>&lt;Text&gt;</code> (bare string in a <code>&lt;View&gt;</code> crashes); only Text inherits font styles, and only to nested Text — nothing else cascades.</li>
+    <li><strong>Flexbox defaults differ from web:</strong> <code>flexDirection: 'column'</code> and <code>alignItems: 'stretch'</code>. Every horizontal layout needs <code>flexDirection: 'row'</code>. There is no CSS Grid — only Flexbox.</li>
+    <li><strong>Use <code>useWindowDimensions()</code>, not <code>Dimensions.get()</code></strong> — the hook is reactive to rotation; the static read isn't.</li>
+    <li><strong>ScrollView mounts all children</strong> — never use it for long lists. FlatList virtualizes; FlashList recycles native views (v2 dropped the required <code>estimatedItemSize</code>). Always give a stable <code>keyExtractor</code> and memoize <code>renderItem</code>.</li>
+    <li><strong>FlatList unmounts off-screen items (local state lost); FlashList recycles cells</strong> (local state may bleed across items) — design accordingly.</li>
+    <li><strong>Images have no intrinsic size</strong> — always give width/height or one dimension + <code>aspectRatio</code>. Prefer <code>expo-image</code> / <code>react-native-fast-image</code> over built-in Image for caching, placeholders, and async decode.</li>
+    <li><strong>Layout traps:</strong> a percentage size (or a <code>flex: 1</code> child) needs a parent with a defined size — under a parent with no height it collapses to nothing; <code>alignItems: 'stretch'</code> surprises you when you want auto-width content; Android clips to rounded corners only with <code>overflow: 'hidden'</code>.</li>
+    <li><strong>Animate <code>transform</code> / <code>opacity</code>, never layout props</strong> (<code>width</code>/<code>height</code>/<code>top</code>) which re-run Yoga each frame. Old Animated needs <code>useNativeDriver: true</code>; Reanimated worklets run arbitrary logic on the UI thread.</li>
+    <li><strong>Reanimated setup gotchas:</strong> plugin must be LAST in babel.config.js, wrap the app in <code>&lt;GestureHandlerRootView&gt;</code>, worklets need the <code>'worklet'</code> directive and can't read React state (use shared values + <code>runOnJS</code>).</li>
+    <li><strong>Shadows:</strong> iOS uses <code>shadow*</code> props on any view; Android uses <code>elevation</code> (needs a non-transparent background and also affects z-order).</li>
+    <li><strong>Safe area:</strong> use <code>react-native-safe-area-context</code> (<code>useSafeAreaInsets</code>) — the built-in SafeAreaView is iOS-focused and doesn't cover Android.</li>
+    <li><strong>Keyboard:</strong> <code>KeyboardAvoidingView</code> is flaky (iOS wants <code>padding</code>, Android varies with <code>windowSoftInputMode</code>); <code>react-native-keyboard-controller</code> is more reliable. Set <code>keyboardShouldPersistTaps="handled"</code> on scrollers with inputs.</li>
+    <li><strong>Storage:</strong> AsyncStorage is slow (bridge, ~1–5ms/op, 6MB Android limit) — use MMKV (JSI, sync, sub-ms) for hot data and SecureStore for tokens. MMKV needs a native rebuild.</li>
+    <li><strong>State traps:</strong> function-component <code>setState</code> replaces (no merge — spread manually); pass a lazy initializer for expensive init; object deps in <code>useEffect</code> fire every render (depend on primitives or <code>useMemo</code>); <code>useEffect</code> runs twice in StrictMode dev.</li>
+    <li><strong>Build/runtime:</strong> keep Hermes + New Architecture (Fabric + TurboModules, default since 0.76) on and test release on Hermes (<code>Intl</code>/regex edge cases); run <code>pod install</code> after native deps; bump versionCode / CFBundleVersion each upload; back up the Android keystore; always smoke-test release builds on a physical mid-range Android.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Building and testing on only one platform (usually the iOS simulator) and assuming it works everywhere.</strong> Keyboard behavior, shadows (<code>elevation</code> vs <code>shadow*</code>), safe area, status bar, the Android back button, permissions, and Hermes-vs-JSC edge cases all diverge — and a debugger attached hides the real perf. Fix: develop against both platforms per feature and smoke-test the release build on a physical mid-range Android before shipping.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Most RN bugs aren't bugs — they're cross-platform differences the JS code didn't handle, so I learn the platform pitfalls up front and test on real devices."</div>
+  <div class="revision-say">"My modern defaults are FlashList, Reanimated, expo-image, and MMKV, with Hermes and the New Architecture on."</div>
+  <div class="revision-say">"I animate transform and opacity — never layout props — and push heavy animation work onto the UI thread with Reanimated worklets."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'text-gotchas', title: '📝 Text Gotchas', html: `
+{ id: "text-gotchas", title: "📝 Text Gotchas", collapsible: true, html: `
 <h3>1. Strings must be inside &lt;Text&gt;</h3>
 <pre><code class="language-tsx">// BAD — crashes
 &lt;View&gt;Hello&lt;/View&gt;
@@ -68,10 +78,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>10. Inline image in Text is iOS-only historically</h3>
 <p><code>&lt;Text&gt;&lt;Image/&gt;&lt;/Text&gt;</code> renders inline on iOS. On Android it shows as a block (may wrap onto next line). Test both.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'layout-gotchas', title: '📐 Layout Gotchas', html: `
+{ id: "layout-gotchas", title: "📐 Layout Gotchas", collapsible: true, html: `
 <h3>1. flexDirection defaults to column</h3>
 <p>Web developers trip on this first. Every horizontal layout needs <code>flexDirection: 'row'</code>.</p>
 
@@ -120,10 +130,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>15. Dimensions vs useWindowDimensions</h3>
 <p><code>Dimensions.get('window')</code> is static at read time — doesn't update on rotation. <code>useWindowDimensions()</code> is reactive. Prefer the hook.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'keyboard-gotchas', title: '⌨️ Keyboard Gotchas', html: `
+{ id: "keyboard-gotchas", title: "⌨️ Keyboard Gotchas", collapsible: true, html: `
 <h3>1. KeyboardAvoidingView behavior differs per platform</h3>
 <pre><code class="language-tsx">&lt;KeyboardAvoidingView
   behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -159,10 +169,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>10. Keyboard hides input on Android (small screens)</h3>
 <p>Default autoscroll doesn't always work. Explicit scroll with <code>scrollToInput</code> on focus.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'platform-gotchas', title: '📱 Platform Gotchas', html: `
+{ id: "platform-gotchas", title: "📱 Platform Gotchas", collapsible: true, html: `
 <h3>1. Status bar manipulation</h3>
 <pre><code class="language-tsx">&lt;StatusBar barStyle="dark-content" backgroundColor="#fff" /&gt;
 // backgroundColor only on Android.
@@ -220,10 +230,10 @@ const insets = useSafeAreaInsets();
 
 <h3>15. App icon / launch screen</h3>
 <p>iOS: Xcode asset catalog for icons; LaunchScreen.storyboard for splash. Android: <code>mipmap/</code> for icons; <code>res/drawable/splash.xml</code> for splash. Tools like <code>@expo/image-utils</code> generate both automatically.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'list-image-gotchas', title: '📃 List & Image Gotchas', html: `
+{ id: "list-image-gotchas", title: "📃 List & Image Gotchas", collapsible: true, html: `
 <h3>1. ScrollView mounts all children</h3>
 <p>1000 items in a ScrollView = 1000 mounted components. Use FlatList / FlashList.</p>
 
@@ -279,10 +289,10 @@ const renderItem = useCallback(({ item }) =&gt; &lt;Row data={item} /&gt;, []);<
 <h3>15. FlatList onEndReached fires repeatedly</h3>
 <p>If data doesn't grow, it triggers on every bounce. Guard with <code>isLoading</code> flag:</p>
 <pre><code class="language-tsx">onEndReached={() =&gt; { if (!isFetching &amp;&amp; hasMore) fetchMore(); }}</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'animation-gotchas', title: '🎬 Animation & Gesture Gotchas', html: `
+{ id: "animation-gotchas", title: "🎬 Animation & Gesture Gotchas", collapsible: true, html: `
 <h3>1. Animating layout properties</h3>
 <p><code>width</code>, <code>height</code>, <code>top</code>, <code>left</code>, <code>margin</code> trigger layout (Yoga) each frame. Use <code>transform: [{ translateX }]</code> for movement, <code>scale</code> for size changes.</p>
 
@@ -337,10 +347,10 @@ const renderItem = useCallback(({ item }) =&gt; &lt;Row data={item} /&gt;, []);<
 
 <h3>15. Shared element transitions require native stack</h3>
 <p>Shared transitions integrate with <code>@react-navigation/native-stack</code>; not supported on JS stack. Check compatibility.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'state-storage-gotchas', title: '💾 State & Storage Gotchas', html: `
+{ id: "state-storage-gotchas", title: "💾 State & Storage Gotchas", collapsible: true, html: `
 <h3>1. setState with object — full replace</h3>
 <pre><code class="language-tsx">const [user, setUser] = useState({ name: '', age: 0 });
 setUser({ name: 'Ada' });  // age is now undefined — no merge
@@ -402,10 +412,10 @@ const [data, setData] = useState(() =&gt; expensiveInit());</code></pre>
 
 <h3>15. React Query focus refetch on app resume</h3>
 <p>Wire <code>focusManager</code> to AppState so TanStack Query refetches when app comes to foreground. Most teams forget.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'runtime-gotchas', title: '🏃 Runtime & Build Gotchas', html: `
+{ id: "runtime-gotchas", title: "🏃 Runtime & Build Gotchas", collapsible: true, html: `
 <h3>1. Hermes vs JSC differences</h3>
 <p>Mostly compatible, but: regex edge cases, <code>Intl</code> not included by default in Hermes, <code>eval</code> behavior, some older iterator patterns. Test release on Hermes.</p>
 
@@ -471,10 +481,10 @@ rm -rf $TMPDIR/metro-*</code></pre>
 
 <h3>20. Expo Go limitations</h3>
 <p>Expo Go doesn't include arbitrary native modules. If your app needs custom native, use Expo Dev Client (custom build) instead.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'top-30', title: '🏆 The Top 30', html: `
+{ id: "top-30", title: "🏆 The Top 30", collapsible: true, html: `
 <p>If you remember nothing else from this topic, these 30 catch 90% of new-developer bugs.</p>
 <ol>
   <li>Wrap strings in <code>&lt;Text&gt;</code>.</li>
@@ -508,10 +518,10 @@ rm -rf $TMPDIR/metro-*</code></pre>
   <li>Increment versionCode / CFBundleVersion on every upload.</li>
   <li>Staged rollout on Play + phased release on App Store.</li>
 </ol>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Name five common RN mistakes you've seen.</div>
   <div class="qa-answer">
@@ -679,53 +689,32 @@ rm -rf $TMPDIR/metro-*</code></pre>
     <li>You cleanup listeners, timers, and requests in useEffect.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Most RN "bugs" are not bugs — they're <strong>cross-platform differences and API quirks your JS code didn't handle</strong>, so learn the pitfalls early or they surface in production on a device you don't own.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Most RN "bugs" are cross-platform differences</strong> your JS didn't handle — learn the pitfalls early or they surface in production on a device you don't own.</li>
-    <li><strong>Text rules:</strong> raw strings must live inside <code>&lt;Text&gt;</code> (bare string in a <code>&lt;View&gt;</code> crashes); only Text inherits font styles, and only to nested Text — nothing else cascades.</li>
-    <li><strong>Flexbox defaults differ from web:</strong> <code>flexDirection: 'column'</code> and <code>alignItems: 'stretch'</code>. Every horizontal layout needs <code>flexDirection: 'row'</code>. There is no CSS Grid — only Flexbox.</li>
-    <li><strong>Use <code>useWindowDimensions()</code>, not <code>Dimensions.get()</code></strong> — the hook is reactive to rotation; the static read isn't.</li>
-    <li><strong>ScrollView mounts all children</strong> — never use it for long lists. FlatList virtualizes; FlashList recycles native views (v2 dropped the required <code>estimatedItemSize</code>). Always give a stable <code>keyExtractor</code> and memoize <code>renderItem</code>.</li>
-    <li><strong>FlatList unmounts off-screen items (local state lost); FlashList recycles cells</strong> (local state may bleed across items) — design accordingly.</li>
-    <li><strong>Images have no intrinsic size</strong> — always give width/height or one dimension + <code>aspectRatio</code>. Prefer <code>expo-image</code> / <code>react-native-fast-image</code> over built-in Image for caching, placeholders, and async decode.</li>
-    <li><strong>Animate <code>transform</code> / <code>opacity</code>, never layout props</strong> (<code>width</code>/<code>height</code>/<code>top</code>) which re-run Yoga each frame. Old Animated needs <code>useNativeDriver: true</code>; Reanimated worklets run arbitrary logic on the UI thread.</li>
-    <li><strong>Reanimated setup gotchas:</strong> plugin must be LAST in babel.config.js, wrap the app in <code>&lt;GestureHandlerRootView&gt;</code>, worklets need the <code>'worklet'</code> directive and can't read React state (use shared values + <code>runOnJS</code>).</li>
-    <li><strong>Shadows:</strong> iOS uses <code>shadow*</code> props on any view; Android uses <code>elevation</code> (needs a non-transparent background and also affects z-order).</li>
-    <li><strong>Safe area:</strong> use <code>react-native-safe-area-context</code> (<code>useSafeAreaInsets</code>) — the built-in SafeAreaView is iOS-focused and doesn't cover Android.</li>
-    <li><strong>Keyboard:</strong> <code>KeyboardAvoidingView</code> is flaky (iOS wants <code>padding</code>, Android varies with <code>windowSoftInputMode</code>); <code>react-native-keyboard-controller</code> is more reliable. Set <code>keyboardShouldPersistTaps="handled"</code> on scrollers with inputs.</li>
-    <li><strong>Storage:</strong> AsyncStorage is slow (bridge, ~1–5ms/op, 6MB Android limit) — use MMKV (JSI, sync, sub-ms) for hot data and SecureStore for tokens. MMKV needs a native rebuild.</li>
-    <li><strong>State traps:</strong> function-component <code>setState</code> replaces (no merge — spread manually); pass a lazy initializer for expensive init; object deps in <code>useEffect</code> fire every render (depend on primitives or <code>useMemo</code>); <code>useEffect</code> runs twice in StrictMode dev.</li>
-    <li><strong>Build/runtime:</strong> keep Hermes + New Architecture (Fabric + TurboModules, default since 0.76) on and test release on Hermes (<code>Intl</code>/regex edge cases); run <code>pod install</code> after native deps; bump versionCode / CFBundleVersion each upload; back up the Android keystore; always smoke-test release builds on a physical mid-range Android.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Building and testing on only one platform (usually the iOS simulator) and assuming it works everywhere.</strong> Keyboard behavior, shadows (<code>elevation</code> vs <code>shadow*</code>), safe area, status bar, the Android back button, permissions, and Hermes-vs-JSC edge cases all diverge — and a debugger attached hides the real perf. Fix: develop against both platforms per feature and smoke-test the release build on a physical mid-range Android before shipping.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Most RN bugs aren't bugs — they're cross-platform differences the JS code didn't handle, so I learn the platform pitfalls up front and test on real devices."</div>
-  <div class="revision-say">"My modern defaults are FlashList, Reanimated, expo-image, and MMKV, with Hermes and the New Architecture on."</div>
-  <div class="revision-say">"I animate transform and opacity — never layout props — and push heavy animation work onto the UI thread with Reanimated worklets."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. A bare string outside a Text component crashes the app — why, and how do you catch it early?</div>
+  <div class="qa-answer">
+    <p>A <code>&lt;View&gt;</code> has no text-rendering logic; only <code>&lt;Text&gt;</code> scopes font, color and line height and can measure text, so a raw string in a View throws "Text strings must be rendered within a &lt;Text&gt; component" when that screen renders. Because it only fires when that branch actually renders, it often slips through on conditional UI. Catch it early by always wrapping copy in <code>&lt;Text&gt;</code> (or a shared text component), exercising every screen and conditional branch in component tests, and testing on both platforms before release rather than discovering it on a device.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why a bare string outside <code>&lt;Text&gt;</code> crashes and how you catch it early?</li>
-    <li>Can you name the flex-vs-percentage layout traps and why <code>flex: 1</code> sometimes collapses to nothing?</li>
-    <li>Can you keep the keyboard from covering an input on both iOS and Android?</li>
-    <li>Can you list platform differences that bite — shadow vs elevation, ripple, status bar?</li>
-    <li>Can you explain why animating layout props janks and what to animate instead?</li>
-    <li>Can you spot a common list-key or image-caching gotcha and give its fix?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. What are the flex-vs-percentage layout traps, and why does flex: 1 sometimes collapse to nothing?</div>
+  <div class="qa-answer">
+    <p><code>flex: 1</code> means "fill the space available along the main axis", and a percentage means "a share of my parent's size" — both depend on the parent having a defined size (its own <code>flex: 1</code>, an explicit height, or content). If the parent has no size, there is nothing to fill or take a share of, so the child collapses to zero. Related traps: <code>flexDirection</code> defaults to column, so a horizontal layout needs <code>flexDirection: 'row'</code>; <code>alignItems</code> defaults to stretch, which surprises you when you want auto-width content; and there is no CSS Grid, so grids are <code>row</code> + <code>flexWrap: 'wrap'</code> + percentage widths.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q18. How do you keep the keyboard from covering an input on both iOS and Android?</div>
+  <div class="qa-answer">
+    <p>The most reliable option is <code>react-native-keyboard-controller</code>, which behaves consistently across platforms with animated keyboard tracking. With the built-in <code>KeyboardAvoidingView</code>, use <code>behavior={Platform.OS === 'ios' ? 'padding' : 'height'}</code> plus a <code>keyboardVerticalOffset</code> for the header; on Android its behavior depends on <code>android:windowSoftInputMode</code> (<code>adjustResize</code> shrinks the content area, <code>adjustPan</code> scrolls the focused input into view), and it is flaky with nested ScrollViews. Also set <code>keyboardShouldPersistTaps="handled"</code> on scrollers with inputs, don't hard-code keyboard height (CJK keyboards and suggestion bars are taller — read it from <code>keyboardDidShow</code>), and on small Android screens scroll to the focused input explicitly.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q19. Which platform differences tend to bite — shadow vs elevation, ripple, status bar and others?</div>
+  <div class="qa-answer">
+    <p><strong>Shadows:</strong> iOS uses <code>shadow*</code> props on any view; Android uses <code>elevation</code>, which needs a non-transparent background and also changes z-order. <strong>Touch feedback:</strong> Android users expect a ripple, which you get from Pressable's <code>android_ripple</code>. <strong>Status bar:</strong> <code>backgroundColor</code> and <code>translucent</code> only work on Android, and iOS native modals cover the status bar while Android's don't unless you set <code>statusBarTranslucent</code>. Others: the hardware back button exists only on Android (<code>BackHandler</code>), iOS swipe-back can conflict with horizontal scrollers at the edge, the built-in SafeAreaView is iOS-focused, and Android needs <code>overflow: 'hidden'</code> to clip children to rounded corners. Build and test each feature on both platforms.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

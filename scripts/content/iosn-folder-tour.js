@@ -1,25 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'iosn-folder-tour',
-  module: 'iOS Native (Deep)',
-  title: 'Anatomy of ios/ Folder',
-  estimatedReadTime: '22 min',
-  tags: ['ios', 'xcodeproj', 'xcworkspace', 'podfile', 'podfile-lock', 'pods', 'appdelegate', 'info-plist', 'entitlements', 'xcassets', 'launchscreen', 'privacyinfo', 'noop-file-swift', 'bridging-header', 'cocoapods', 'gemfile', 'xcode-env', 'deriveddata', 'react-native', 'expo', 'prebuild', 'cng', 'config-plugins'],
+  id: "iosn-folder-tour",
+  module: "iOS Native (Deep)",
+  title: "Anatomy of ios/ Folder",
+  estimatedReadTime: "22 min",
+  tags: ["ios","xcodeproj","xcworkspace","podfile","podfile-lock","pods","appdelegate","info-plist","entitlements","xcassets","launchscreen","privacyinfo","noop-file-swift","bridging-header","cocoapods","gemfile","xcode-env","deriveddata","react-native","expo","prebuild","cng","config-plugins"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>The <code>ios/</code> folder is the real, buildable Xcode project that wraps your React Native app. It is a mix of two things: a small amount of <strong>native app scaffolding</strong> (AppDelegate, Info.plist, assets, entitlements) that YOU own, and a large amount of <strong>generated machinery</strong> (Pods, DerivedData, codegen output) that tooling owns and can regenerate.</p>
-<p>The single most important habit: after CocoaPods runs, you open <code>&lt;AppName&gt;.xcworkspace</code>, never <code>&lt;AppName&gt;.xcodeproj</code>. The workspace stitches your app project together with the <code>Pods</code> project; opening the bare project builds without your dependencies and fails in confusing ways.</p>
-<p>Three files you actually hand-edit: <code>AppDelegate.mm</code> (app launch + RN root), <code>Info.plist</code> (permissions, config, URL schemes), and the <code>Podfile</code> (native dependency declarations). Almost everything else is either generated or touched rarely.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Open the <strong>.xcworkspace</strong>, not the <strong>.xcodeproj</strong>. The <code>.xcodeproj</code> is your app target; <code>Pods/</code> is generated dependencies; the <code>.xcworkspace</code> is the container that builds both together. Edit AppDelegate + Info.plist + Podfile; let Pods and DerivedData regenerate.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><code>ios/</code> is a real Xcode project split into <strong>files you own</strong> (AppDelegate, Info.plist, entitlements, Podfile, lockfiles) and <strong>generated machinery</strong> (Pods, build, DerivedData) — and you always open the <strong>.xcworkspace</strong>, never the <strong>.xcodeproj</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>.xcworkspace vs .xcodeproj vs Pods/:</strong> the <code>.xcodeproj</code> is your app project (its graph lives in <code>project.pbxproj</code>); <code>Pods/</code> is a SECOND generated project of dependencies; the <code>.xcworkspace</code> is the container that builds both together and shares headers. Open the workspace or you get "module 'React' not found."</li>
+    <li><strong>Commit vs generated:</strong> commit <code>AppDelegate</code>, <code>main.m</code>, <code>Info.plist</code>, <code>*.entitlements</code>, asset catalog, <code>Podfile</code>, <code>Podfile.lock</code>, <code>Gemfile</code>, <code>Gemfile.lock</code>, <code>project.pbxproj</code>, <code>.xcode.env</code>. Git-ignore <code>Pods/</code>, <code>ios/build/</code>, DerivedData, <code>.xcode.env.local</code>, <code>xcuserdata</code>.</li>
+    <li><strong>AppDelegate.h/.mm</strong> (ObjC++ so it can call C++/Hermes/TurboModules) boots the RN root view + sets the JS bundle URL (Metro in DEBUG, <code>main.jsbundle</code> in release) + hosts <code>didFinishLaunchingWithOptions</code>. RN 0.77+ uses a single <code>AppDelegate.swift</code>. <code>main.m</code> is the <code>UIApplicationMain</code> entry point you rarely touch.</li>
+    <li><strong>Info.plist</strong> = bundle id/version, orientations, ATS, URL schemes, and permission usage strings (<code>NS...UsageDescription</code>) — missing one crashes on first API call. <strong>.entitlements</strong> = signed capabilities (push <code>aps-environment</code>, Keychain, Associated Domains, App Groups) that must match the provisioning profile.</li>
+    <li><strong>Assets:</strong> <code>Images.xcassets</code> holds <code>AppIcon.appiconset</code>, imagesets, colorsets (@1x/@2x/@3x, light/dark) → compiled to <code>Assets.car</code>. App icon is NATIVE, not JS-bundled. <code>LaunchScreen.storyboard</code> is the pre-JS splash.</li>
+    <li><strong>PrivacyInfo.xcprivacy</strong> = Apple's required (2024+) privacy manifest: data collected + tracking domains + required-reason API justifications. Missing/incomplete → upload rejection.</li>
+    <li><strong>noop-file.swift</strong> = empty Swift file forcing Swift-stdlib embedding when Swift pods exist but the target has no Swift; without it → launch crash "libswiftCore.dylib not loaded." <strong>-Bridging-Header.h</strong> exposes ObjC to Swift, needed only when mixing both languages.</li>
+    <li><strong>Podfile</strong> declares pods (<code>use_react_native!</code> + autolinking), <strong>Podfile.lock</strong> pins exact versions (commit), <strong>Pods/</strong> is regenerated source (ignore). Run <code>bundle exec pod install</code> so the <code>Gemfile</code>-pinned CocoaPods runs. <strong>Gemfile/Gemfile.lock</strong> pin the Ruby tooling itself.</li>
+    <li><strong>.xcode.env / .xcode.env.local</strong> export <code>NODE_BINARY</code> for the JS-bundling/codegen build phases; missing → "node: command not found" / "PhaseScriptExecution failed," common on CI.</li>
+    <li><strong>Only three files you routinely hand-edit:</strong> <code>AppDelegate.mm</code> (launch + RN root), <code>Info.plist</code> (permissions, config, URL schemes), and the <code>Podfile</code> (native deps). Almost everything else is generated or rarely touched.</li>
+    <li><strong>build/ + DerivedData</strong> (<code>~/Library/Developer/Xcode/DerivedData</code>) are throwaway caches; delete them first when hitting ghost errors.</li>
+    <li><strong>Group vs folder reference:</strong> RN's app folder is a group, so a file on disk is NOT auto-added to Compile Sources — it must be added to the target or it silently never compiles.</li>
+    <li><strong>Deep dives:</strong> <code>iosn-xcode-project</code> (pbxproj/targets/schemes), <code>iosn-cocoapods</code> (Podfile/resolution/lock), <code>iosn-plist-entry</code> (every Info.plist key).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Opening <code>MyApp.xcodeproj</code> instead of <code>MyApp.xcworkspace</code></strong> — the project alone has no Pods project, so React/Hermes are missing and you get "module 'React' not found" or endless linker errors. (Second trap: in an Expo prebuild app, ANY hand-edit under <code>ios/</code> is wiped by <code>expo prebuild --clean</code> — encode changes in app.json / expo-build-properties / a config plugin instead.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The <code>ios/</code> folder is a normal Xcode project. The <code>.xcodeproj</code> is my app; <code>Pods/</code> is a separate generated project of dependencies; the <code>.xcworkspace</code> is the container that builds both — so I always open the workspace, never the project."</div>
+  <div class="revision-say">"I commit AppDelegate, Info.plist, entitlements, the Podfile and both lockfiles; I git-ignore Pods, build, DerivedData, and .xcode.env.local because they regenerate. Info.plist holds permission strings; entitlements hold signed capabilities that must match the provisioning profile."</div>
+  <div class="revision-say">"In my Expo apps the whole <code>ios/</code> folder is generated by <code>expo prebuild</code> from app.json plus config plugins, so I never hand-edit it — I use infoPlist keys, expo-build-properties, and custom plugins, which is how I kept sw-mobile's iOS 26 launch patches from being wiped."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What the ios/ folder actually is</h3>
 <p>When you run <code>npx react-native init</code> (bare RN) or <code>expo prebuild</code> (Expo), the CLI drops a fully-formed native iOS app into <code>ios/</code>. It is a standard Xcode project — the same thing a pure-Swift iOS engineer would recognize — with a few React-Native-specific hooks bolted in: an <code>AppDelegate</code> that boots a JS bundle into a root view, a <code>Podfile</code> that pulls in RN's native pods, and a codegen step that generates C++ glue for the New Architecture.</p>
 <p>The folder answers a simple question at build time: "how do I turn your JS + native code into a signed <code>.app</code> / <code>.ipa</code> that iOS will run?" Xcode reads the project, CocoaPods supplies third-party native libraries, the Metro/Hermes step bundles your JS, and the linker fuses it all into one binary.</p>
@@ -42,10 +60,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why Expo changes the ownership story</h3>
 <p>In a managed / prebuild Expo app, the ENTIRE <code>ios/</code> folder is generated output. It is produced from <code>app.json</code> / <code>app.config.js</code> plus config plugins by <code>expo prebuild</code>. That flips the "you own AppDelegate" rule on its head — you can delete and regenerate the whole folder, and you configure native values declaratively instead of by hand-editing. We flag this with an Expo note at each relevant file.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The tree (bare RN 0.7x app named "MyApp")</h3>
 <div class="diagram">
 <pre>
@@ -117,10 +135,10 @@ ios/
   <div class="callout-title">Common misconception</div>
   <p>"The <code>.xcodeproj</code> is the project so I should open it." No — once you run CocoaPods, opening the bare project omits the Pods project, so React, Hermes, and every native dependency are missing. You get "module 'React' not found" or thousands of linker errors. The <code>.xcworkspace</code> is the only correct entry point in a RN app.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Top level — the project & workspace bundles</h3>
 
 <h4><code>MyApp.xcodeproj</code> (a bundle, not a file)</h4>
@@ -264,10 +282,10 @@ export NODE_BINARY=/Users/you/.nvm/versions/node/v20.11.0/bin/node</code></pre>
   <div class="callout-title">🧩 Expo note — this whole folder is generated (CNG)</div>
   <p>In a managed / prebuild Expo project, <code>ios/</code> is produced by <code>expo prebuild</code> from <code>app.json</code>/<code>app.config.js</code> + config plugins. This is Continuous Native Generation (CNG). Consequences: (1) hand-edits to <code>AppDelegate</code>, <code>Info.plist</code>, entitlements, or the <code>Podfile</code> are WIPED by <code>expo prebuild --clean</code>; (2) you can safely add <code>ios/</code> to <code>.gitignore</code> and regenerate on demand. Configure native values declaratively instead: <code>infoPlist</code> and <code>entitlements</code> keys under <code>ios</code> in <code>app.json</code>, <code>expo-build-properties</code> for pod/deployment-target settings, and custom <code>config-plugins</code> for anything else. Cross-reference the <strong>rn-architecture</strong> / plugin topics for how a plugin mutates these files at prebuild.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — the correct open/build sequence</h3>
 <pre><code class="language-bash"># fresh clone or after adding a native dep:
 cd ios
@@ -337,10 +355,11 @@ echo "export NODE_BINARY=$(command -v node)" &gt; ios/.xcode.env.local
 
 <h3>Example 10 — real: sw-mobile's iOS 26 launch patches</h3>
 <p>Prakhar's <code>sw-mobile</code> (Expo 53 / RN 0.79, Paper/old arch, Hermes) needed FOUR coupled native edits to launch on iOS 26 simulators — and because it is an Expo prebuild app, they are applied via config plugins / patches so <code>expo prebuild --clean</code> does not erase them: a <code>Podfile</code> post_install tweak, an <code>AppDelegate.h</code> change, an <code>AppDelegate.mm</code> change, and an empty <code>noop-file.swift</code> added to the target to force Swift-stdlib linkage. This is the exact "these files travel together" lesson: the launch path spans Podfile + AppDelegate (both files) + a Swift noop, and touching one without the others left the app crashing on cold start.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Opening the wrong bundle</h3>
 <p>Opening <code>MyApp.xcodeproj</code> (or the implicit <code>MyApp.xcodeproj/project.xcworkspace</code>) instead of the top-level <code>MyApp.xcworkspace</code> omits the Pods project. Symptom: "module 'React' not found" or a flood of linker errors. Always open the <code>.xcworkspace</code> that sits directly in <code>ios/</code>.</p>
 
@@ -385,10 +404,9 @@ echo "export NODE_BINARY=$(command -v node)" &gt; ios/.xcode.env.local
 
 <h3>15. Committing Pods/ vs ignoring it</h3>
 <p>Default RN ignores <code>Pods/</code>. Some teams commit it for hermetic CI (no network at build). Both are valid but be consistent — a half-committed <code>Pods/</code> diverging from <code>Podfile.lock</code> is worse than either extreme.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — opening the .xcodeproj in a RN app</h3>
 <p>It silently drops the Pods project and produces "React not found" errors that send people down rabbit holes. Always open the <code>.xcworkspace</code>.</p>
 
@@ -430,10 +448,10 @@ echo "export NODE_BINARY=$(command -v node)" &gt; ios/.xcode.env.local
 
 <h3>Anti-pattern 14 — divergent iOS/Android native config</h3>
 <p>Setting a deployment target, permission, or feature on iOS but forgetting the Android counterpart yields platform-specific bugs. Keep parity; on Expo, prefer plugins that write both platforms from one declaration.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Why do you open the .xcworkspace and not the .xcodeproj in a React Native app?</div>
   <div class="qa-answer">
@@ -552,51 +570,14 @@ echo "export NODE_BINARY=$(command -v node)" &gt; ios/.xcode.env.local
     <li>You know that in Expo the whole folder is CNG output and edits go in app.json / plugins.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><code>ios/</code> is a real Xcode project split into <strong>files you own</strong> (AppDelegate, Info.plist, entitlements, Podfile, lockfiles) and <strong>generated machinery</strong> (Pods, build, DerivedData) — and you always open the <strong>.xcworkspace</strong>, never the <strong>.xcodeproj</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>.xcworkspace vs .xcodeproj vs Pods/:</strong> the <code>.xcodeproj</code> is your app project (its graph lives in <code>project.pbxproj</code>); <code>Pods/</code> is a SECOND generated project of dependencies; the <code>.xcworkspace</code> is the container that builds both together and shares headers. Open the workspace or you get "module 'React' not found."</li>
-    <li><strong>Commit vs generated:</strong> commit <code>AppDelegate</code>, <code>main.m</code>, <code>Info.plist</code>, <code>*.entitlements</code>, asset catalog, <code>Podfile</code>, <code>Podfile.lock</code>, <code>Gemfile</code>, <code>Gemfile.lock</code>, <code>project.pbxproj</code>, <code>.xcode.env</code>. Git-ignore <code>Pods/</code>, <code>ios/build/</code>, DerivedData, <code>.xcode.env.local</code>, <code>xcuserdata</code>.</li>
-    <li><strong>AppDelegate.h/.mm</strong> (ObjC++ so it can call C++/Hermes/TurboModules) boots the RN root view + sets the JS bundle URL (Metro in DEBUG, <code>main.jsbundle</code> in release) + hosts <code>didFinishLaunchingWithOptions</code>. RN 0.77+ uses a single <code>AppDelegate.swift</code>. <code>main.m</code> is the <code>UIApplicationMain</code> entry point you rarely touch.</li>
-    <li><strong>Info.plist</strong> = bundle id/version, orientations, ATS, URL schemes, and permission usage strings (<code>NS...UsageDescription</code>) — missing one crashes on first API call. <strong>.entitlements</strong> = signed capabilities (push <code>aps-environment</code>, Keychain, Associated Domains, App Groups) that must match the provisioning profile.</li>
-    <li><strong>Assets:</strong> <code>Images.xcassets</code> holds <code>AppIcon.appiconset</code>, imagesets, colorsets (@1x/@2x/@3x, light/dark) → compiled to <code>Assets.car</code>. App icon is NATIVE, not JS-bundled. <code>LaunchScreen.storyboard</code> is the pre-JS splash.</li>
-    <li><strong>PrivacyInfo.xcprivacy</strong> = Apple's required (2024+) privacy manifest: data collected + tracking domains + required-reason API justifications. Missing/incomplete → upload rejection.</li>
-    <li><strong>noop-file.swift</strong> = empty Swift file forcing Swift-stdlib embedding when Swift pods exist but the target has no Swift; without it → launch crash "libswiftCore.dylib not loaded." <strong>-Bridging-Header.h</strong> exposes ObjC to Swift, needed only when mixing both languages.</li>
-    <li><strong>Podfile</strong> declares pods (<code>use_react_native!</code> + autolinking), <strong>Podfile.lock</strong> pins exact versions (commit), <strong>Pods/</strong> is regenerated source (ignore). Run <code>bundle exec pod install</code> so the <code>Gemfile</code>-pinned CocoaPods runs. <strong>Gemfile/Gemfile.lock</strong> pin the Ruby tooling itself.</li>
-    <li><strong>.xcode.env / .xcode.env.local</strong> export <code>NODE_BINARY</code> for the JS-bundling/codegen build phases; missing → "node: command not found" / "PhaseScriptExecution failed," common on CI.</li>
-    <li><strong>build/ + DerivedData</strong> (<code>~/Library/Developer/Xcode/DerivedData</code>) are throwaway caches; delete them first when hitting ghost errors.</li>
-    <li><strong>Group vs folder reference:</strong> RN's app folder is a group, so a file on disk is NOT auto-added to Compile Sources — it must be added to the target or it silently never compiles.</li>
-    <li><strong>Deep dives:</strong> <code>iosn-xcode-project</code> (pbxproj/targets/schemes), <code>iosn-cocoapods</code> (Podfile/resolution/lock), <code>iosn-plist-entry</code> (every Info.plist key).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Opening <code>MyApp.xcodeproj</code> instead of <code>MyApp.xcworkspace</code></strong> — the project alone has no Pods project, so React/Hermes are missing and you get "module 'React' not found" or endless linker errors. (Second trap: in an Expo prebuild app, ANY hand-edit under <code>ios/</code> is wiped by <code>expo prebuild --clean</code> — encode changes in app.json / expo-build-properties / a config plugin instead.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"The <code>ios/</code> folder is a normal Xcode project. The <code>.xcodeproj</code> is my app; <code>Pods/</code> is a separate generated project of dependencies; the <code>.xcworkspace</code> is the container that builds both — so I always open the workspace, never the project."</div>
-  <div class="revision-say">"I commit AppDelegate, Info.plist, entitlements, the Podfile and both lockfiles; I git-ignore Pods, build, DerivedData, and .xcode.env.local because they regenerate. Info.plist holds permission strings; entitlements hold signed capabilities that must match the provisioning profile."</div>
-  <div class="revision-say">"In my Expo apps the whole <code>ios/</code> folder is generated by <code>expo prebuild</code> from app.json plus config plugins, so I never hand-edit it — I use infoPlist keys, expo-build-properties, and custom plugins, which is how I kept sw-mobile's iOS 26 launch patches from being wiped."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Why do you run bundle exec pod install instead of plain pod install, and what do the Gemfile and Gemfile.lock do?</div>
+  <div class="qa-answer">
+    <p>CocoaPods (and fastlane) are Ruby gems, and the <code>Gemfile</code> pins their versions, with <code>Gemfile.lock</code> recording the resolved gem versions (commit both). A mismatched <code>pod</code> version can rewrite <code>Podfile.lock</code> or the pbxproj differently, so you run <code>bundle install</code> once to get the pinned CocoaPods, then <code>bundle exec pod install</code> to generate <code>Pods/</code> and the <code>.xcworkspace</code> with that exact version instead of whatever global <code>pod</code> is on PATH. Re-run it after every pull that touches <code>Podfile.lock</code> or <code>package.json</code>, or your local <code>Pods/</code> falls behind and Xcode links stale headers.</p>
+  </div>
 </div>
-`},
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why you open <code>.xcworkspace</code> instead of <code>.xcodeproj</code>, and what breaks if you don't?</li>
-    <li>Can you list which files in <code>ios/</code> you commit versus which are generated and git-ignored?</li>
-    <li>Can you say what <code>AppDelegate.mm</code> does, why it is Objective-C++, and where it gets the JS bundle URL?</li>
-    <li>Can you distinguish <code>Info.plist</code> from <code>.entitlements</code>, and give an example key from each?</li>
-    <li>Can you explain what <code>noop-file.swift</code> and a bridging header are for, and the crash each prevents?</li>
-    <li>Can you describe the roles of <code>Podfile</code>, <code>Podfile.lock</code>, and <code>Pods/</code>, and why you run <code>bundle exec pod install</code>?</li>
-    <li>Can you explain how the <code>ios/</code> folder is generated in an Expo prebuild app and where native config should live instead?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

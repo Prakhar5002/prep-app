@@ -1,33 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'web-networking',
-  module: 'web',
-  title: 'Networking (HTTP/TLS/CDN)',
-  estimatedReadTime: '50 min',
-  tags: ['networking', 'http', 'http2', 'http3', 'tls', 'cdn', 'cors', 'caching', 'cookies', 'dns', 'web'],
+  id: "web-networking",
+  module: "web",
+  title: "Networking (HTTP/TLS/CDN)",
+  estimatedReadTime: "50 min",
+  tags: ["networking","http","http2","http3","tls","cdn","cors","caching","cookies","dns","web"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Web networking is the layer that delivers your content to users. Knowing how it works is non-negotiable for senior frontend engineers: HTTP versions, TLS handshakes, caching headers, CDNs, CORS, cookies, and DNS all directly affect your app's load time, security, and reliability.</p>
-<ul>
-  <li><strong>HTTP/1.1</strong> sequential per connection (head-of-line blocking); <strong>HTTP/2</strong> multiplexed over one TCP connection; <strong>HTTP/3</strong> over QUIC (UDP) — eliminates TCP HOL blocking, faster on lossy connections.</li>
-  <li><strong>TLS 1.3</strong> reduces handshake to 1-RTT (or 0-RTT with session resumption); critical for first-byte time.</li>
-  <li><strong>CDN</strong> = global edge cache + faster TLS + DDoS protection. Almost every production app should use one.</li>
-  <li><strong>HTTP caching:</strong> <code>Cache-Control</code> (max-age, s-maxage, no-cache, no-store, immutable) + <code>ETag</code> / <code>Last-Modified</code> for revalidation.</li>
-  <li><strong>CORS:</strong> the same-origin policy + opt-in mechanism for cross-origin requests; preflight (OPTIONS) for non-simple requests.</li>
-  <li><strong>Cookies:</strong> <code>Secure</code>, <code>HttpOnly</code>, <code>SameSite</code>, <code>__Host-</code> prefix for security; <code>Domain</code> + <code>Path</code> for scope.</li>
-  <li><strong>DNS</strong> resolves names; DNS-over-HTTPS / DoH increasingly default. <code>preconnect</code> warms the connection.</li>
-  <li><strong>WebSockets / Server-Sent Events / WebTransport</strong> for real-time; HTTP for everything else.</li>
-</ul>
-<p><strong>Mantra:</strong> "HTTP/3 + TLS 1.3 over a CDN, with proper cache headers and locked-down cookies. Measure RTT and TTFB; optimize the slowest hop."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Serve everything over a CDN with HTTP/3 + TLS 1.3, correct cache headers, and locked-down cookies — then optimize the slowest hop by measuring RTT and TTFB, not bandwidth.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>HTTP versions:</strong> 1.1 = sequential per connection (needs 6 parallel sockets); 2 = multiplexed over one TCP connection (but TCP head-of-line blocking remains); 3 = over QUIC/UDP, so a dropped packet only stalls its own stream — a big win on lossy mobile networks.</li>
+    <li><strong>RTT, not bandwidth, dominates for small assets.</strong> An unconnected origin costs 3+ round trips (DNS → TCP/QUIC → TLS) before any data flows; CDNs cut RTT by serving from a nearby edge, and <code>preconnect</code> warms DNS + TCP + TLS ahead of time.</li>
+    <li><strong>TLS 1.3</strong> is a 1-RTT handshake (0-RTT for repeat visitors, idempotent requests only).</li>
+    <li><strong>Cache-Control:</strong> hashed assets → <code>public, max-age=31536000, immutable</code>; HTML → <code>no-cache</code> (cache but always revalidate); per-user JSON → <code>private, max-age=N</code>; sensitive → <code>no-store</code>. <code>s-maxage</code> targets shared caches, <code>stale-while-revalidate</code> serves stale while refreshing.</li>
+    <li><strong>ETag / Last-Modified</strong> drive conditional requests → a <code>304 Not Modified</code> saves bytes but still costs an RTT; long <code>max-age</code> + <code>immutable</code> beats revalidation for static assets.</li>
+    <li><strong>CORS</strong> = the same-origin policy plus an opt-in via response headers. Non-simple requests (custom headers, JSON content-type, PUT/DELETE) trigger an <code>OPTIONS</code> preflight; cache it with <code>Access-Control-Max-Age</code>. Credentialed requests need a specific <code>Allow-Origin</code>, never <code>*</code>.</li>
+    <li><strong>Cookie security:</strong> <code>Secure</code> (HTTPS only), <code>HttpOnly</code> (no JS access — XSS defense), <code>SameSite=Lax</code> default, and the <code>__Host-</code> prefix for the strongest scoping. Store session tokens in HttpOnly cookies, never <code>localStorage</code>.</li>
+    <li><strong>CDN</strong> = global edge cache + faster TLS + DDoS protection &mdash; almost every production app should use one. DNS resolves names (DNS-over-HTTPS increasingly default).</li>
+    <li>Use <code>Vary</code> so caches don't serve the wrong variant; a per-user response must be <code>private</code> (or <code>Vary: Cookie</code>) or a shared CDN cache leaks one user's data to another.</li>
+    <li><strong>Real-time:</strong> HTTP polling (simplest), SSE (one-way server push, auto-reconnect), WebSocket (bidirectional), WebTransport (over QUIC). Pick by direction and latency needs.</li>
+    <li>Wrap fetches with <code>AbortController</code>, timeout, and exponential backoff for idempotent retries; a WebSocket must reconnect with backoff or it can DDoS your own server.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong><code>fetch</code> only rejects on network-level failures (DNS, CORS, abort) — an HTTP 4xx/5xx still RESOLVES.</strong> So <code>fetch(url).then(r =&gt; r.json())</code> silently parses an error body as if it succeeded. Always check <code>response.ok</code> (or <code>response.status</code>) and throw before reading the body. Sibling traps: <code>no-cache</code> means "revalidate," not "don't cache" (use <code>no-store</code> for that), and credentialed CORS can't use <code>Access-Control-Allow-Origin: *</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"For small payloads, latency is round trips, not bandwidth — so I put assets on a CDN edge, use HTTP/3 and TLS 1.3, and preconnect to upcoming origins to kill dead RTTs."</div>
+  <div class="revision-say">"fetch doesn't throw on a 500 — it only rejects on network errors — so I always check response.ok before reading the body."</div>
+  <div class="revision-say">"Hashed assets get a one-year immutable cache; HTML gets no-cache so it always revalidates; session tokens live in HttpOnly, Secure, SameSite cookies, never localStorage."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "networking" means for frontend engineers</h3>
 <p>Every byte your app sends or receives crosses a network. Understanding the layers (DNS → TCP / QUIC → TLS → HTTP → application) tells you why one site is fast and another isn't, what to optimize, and what's not your problem.</p>
 
@@ -112,12 +120,10 @@ window.PREP_SITE.registerTopic({
   <li>Cookies are <code>Secure</code>, <code>HttpOnly</code>, <code>SameSite=Lax</code> by default.</li>
   <li>You use <code>preconnect</code> for upcoming origins.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Anatomy of a request</h3>
 <pre><code class="language-text">User clicks link →
   1. DNS lookup     (0-200ms, depending on cache)
@@ -286,12 +292,10 @@ Non-simple (custom header, JSON content-type, PUT/DELETE):
     <tr><td>WebTransport</td><td>Bidirectional over QUIC</td><td>Newer; gaming, real-time AV</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Inspecting the network</h3>
 <p>Chrome DevTools → Network panel. Each request shows:</p>
 <ul>
@@ -479,12 +483,10 @@ while (true) {
   process(value);
 }
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Optimal cache headers per asset type</h3>
 <pre><code class="language-text"># Hashed JS / CSS (filename includes hash like main.abc123.js)
 Cache-Control: public, max-age=31536000, immutable
@@ -636,12 +638,11 @@ document.addEventListener('visibilitychange', () =&gt; {
   }
 });
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Mixed content</h3>
 <p>HTTPS page with HTTP resources gets blocked. Modern browsers refuse to load mixed-content scripts / iframes outright. Use HTTPS for all subresources.</p>
 
@@ -720,12 +721,9 @@ document.addEventListener('visibilitychange', () =&gt; {
 
 <h3>Network failures don't always reject fetch</h3>
 <p><code>fetch</code> rejects only on network errors (DNS fail, CORS, abort). HTTP errors (4xx, 5xx) still resolve; check <code>response.ok</code> or <code>response.status</code>.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: API response missing CORS headers on errors</h3>
 <p>Server adds CORS to 200 responses but not 500s. Client gets cryptic "Network error" instead of seeing the 500.</p>
 
@@ -793,12 +791,10 @@ const data = await r.json();
 
 <h3>Anti-pattern 10: Ignoring Save-Data header</h3>
 <p>Mobile users opt into data saver via OS / browser settings. Server / CDN can read <code>Save-Data: on</code> header and serve smaller assets. Ignored by most apps.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 14 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -894,52 +890,32 @@ const data = await r.json();
   <li>"I'd build a service-worker cache strategy by route type for offline support."</li>
   <li>"I'd add a Save-Data-aware asset path for users with data saver enabled."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Serve everything over a CDN with HTTP/3 + TLS 1.3, correct cache headers, and locked-down cookies — then optimize the slowest hop by measuring RTT and TTFB, not bandwidth.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>HTTP versions:</strong> 1.1 = sequential per connection (needs 6 parallel sockets); 2 = multiplexed over one TCP connection (but TCP head-of-line blocking remains); 3 = over QUIC/UDP, so a dropped packet only stalls its own stream — a big win on lossy mobile networks.</li>
-    <li><strong>RTT, not bandwidth, dominates for small assets.</strong> An unconnected origin costs 3+ round trips (DNS → TCP/QUIC → TLS) before any data flows; CDNs cut RTT by serving from a nearby edge, and <code>preconnect</code> warms DNS + TCP + TLS ahead of time.</li>
-    <li><strong>TLS 1.3</strong> is a 1-RTT handshake (0-RTT for repeat visitors, idempotent requests only).</li>
-    <li><strong>Cache-Control:</strong> hashed assets → <code>public, max-age=31536000, immutable</code>; HTML → <code>no-cache</code> (cache but always revalidate); per-user JSON → <code>private, max-age=N</code>; sensitive → <code>no-store</code>. <code>s-maxage</code> targets shared caches, <code>stale-while-revalidate</code> serves stale while refreshing.</li>
-    <li><strong>ETag / Last-Modified</strong> drive conditional requests → a <code>304 Not Modified</code> saves bytes but still costs an RTT; long <code>max-age</code> + <code>immutable</code> beats revalidation for static assets.</li>
-    <li><strong>CORS</strong> = the same-origin policy plus an opt-in via response headers. Non-simple requests (custom headers, JSON content-type, PUT/DELETE) trigger an <code>OPTIONS</code> preflight; cache it with <code>Access-Control-Max-Age</code>. Credentialed requests need a specific <code>Allow-Origin</code>, never <code>*</code>.</li>
-    <li><strong>Cookie security:</strong> <code>Secure</code> (HTTPS only), <code>HttpOnly</code> (no JS access — XSS defense), <code>SameSite=Lax</code> default, and the <code>__Host-</code> prefix for the strongest scoping. Store session tokens in HttpOnly cookies, never <code>localStorage</code>.</li>
-    <li>Use <code>Vary</code> so caches don't serve the wrong variant; a per-user response must be <code>private</code> (or <code>Vary: Cookie</code>) or a shared CDN cache leaks one user's data to another.</li>
-    <li><strong>Real-time:</strong> HTTP polling (simplest), SSE (one-way server push, auto-reconnect), WebSocket (bidirectional), WebTransport (over QUIC). Pick by direction and latency needs.</li>
-    <li>Wrap fetches with <code>AbortController</code>, timeout, and exponential backoff for idempotent retries; a WebSocket must reconnect with backoff or it can DDoS your own server.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong><code>fetch</code> only rejects on network-level failures (DNS, CORS, abort) — an HTTP 4xx/5xx still RESOLVES.</strong> So <code>fetch(url).then(r =&gt; r.json())</code> silently parses an error body as if it succeeded. Always check <code>response.ok</code> (or <code>response.status</code>) and throw before reading the body. Sibling traps: <code>no-cache</code> means "revalidate," not "don't cache" (use <code>no-store</code> for that), and credentialed CORS can't use <code>Access-Control-Allow-Origin: *</code>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"For small payloads, latency is round trips, not bandwidth — so I put assets on a CDN edge, use HTTP/3 and TLS 1.3, and preconnect to upcoming origins to kill dead RTTs."</div>
-  <div class="revision-say">"fetch doesn't throw on a 500 — it only rejects on network errors — so I always check response.ok before reading the body."</div>
-  <div class="revision-say">"Hashed assets get a one-year immutable cache; HTML gets no-cache so it always revalidates; session tokens live in HttpOnly, Secure, SameSite cookies, never localStorage."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain what HTTP/2 multiplexing fixed over HTTP/1.1, and what HTTP/3 adds?</li>
-    <li>Can you set <code>Cache-Control</code> for a hashed asset versus an HTML document?</li>
-    <li>Can you walk through a CORS preflight and say what triggers one?</li>
-    <li>Can you name the cookie flags that protect a session token and why each matters?</li>
-    <li>Can you break TTFB down into DNS, TCP, TLS, and round-trip time?</li>
-    <li>Can you explain when to push work to the CDN edge versus the origin?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. How would you set Cache-Control for a hashed static asset versus an HTML document?</div>
+  <div class="qa-answer">
+    <p>A content-hashed asset such as <code>app.3f9a1c.js</code> gets <code>public, max-age=31536000, immutable</code>: the URL changes whenever the content changes, so it can be cached for a year with no revalidation. Long max-age plus immutable beats ETag here, because a 304 still costs a round trip. The HTML document gets <code>no-cache</code>, which means "cache but always revalidate" (not "don't cache"), so users pick up the new asset URLs on every deploy. Per-user JSON is <code>private, max-age=N</code> and sensitive responses are <code>no-store</code>.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q2. Walk through a CORS preflight. What triggers one?</div>
+  <div class="qa-answer">
+    <p>Simple requests (GET, or POST with form data and no custom headers) go straight out with an <code>Origin</code> header, and the browser hands the response to JS only if the server replies with a matching <code>Access-Control-Allow-Origin</code>. A non-simple request, with a custom header like <code>Authorization</code>, a JSON content-type, or PUT/DELETE, makes the browser send an <code>OPTIONS</code> preflight first, carrying <code>Origin</code>, <code>Access-Control-Request-Method</code> and <code>Access-Control-Request-Headers</code>. The server answers with <code>Access-Control-Allow-Origin</code>, <code>-Methods</code>, <code>-Headers</code> and optionally <code>Access-Control-Max-Age: 86400</code> to cache the preflight; only then is the real request sent. Credentialed requests need a specific origin, never <code>*</code>.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Break down where the time goes before the first byte arrives.</div>
+  <div class="qa-answer">
+    <p>For an unconnected origin: DNS lookup (0&ndash;200ms depending on cache), then TCP or QUIC connect (1 RTT), then the TLS handshake (1 RTT for TLS 1.3, 0 if resumed), then the HTTP request travels and the server processes it, and the first byte comes back. That is 3+ round trips of dead time before any data flows. RTT ranges from 20&ndash;80ms on the same continent and 100&ndash;200ms cross-continent to 200&ndash;500ms on 3G, so cutting round trips (CDN edge, preconnect, TLS 1.3, HTTP/3) usually matters more than bandwidth. To debug a slow API, check TTFB, DNS, TCP, TLS, server processing, response size, compression and CDN hit/miss.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. When should work be served from the CDN edge rather than the origin?</div>
+  <div class="qa-answer">
+    <p>Push anything cacheable and shared to the edge: static assets with long immutable caching, and shared responses governed by <code>s-maxage</code> (optionally <code>stale-while-revalidate</code>). The edge cuts RTT from around 100ms cross-continent to about 5&ndash;20ms and adds faster TLS and DDoS protection. Keep per-user and sensitive responses at the origin: mark them <code>private</code> (or <code>Vary: Cookie</code>) or <code>no-store</code>, because a per-user response cached in a shared CDN leaks one user's data to another. The request path falls through browser cache, service worker, HTTP cache and CDN edge before it reaches the origin.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

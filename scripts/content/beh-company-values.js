@@ -1,32 +1,44 @@
 window.PREP_SITE.registerTopic({
-  id: 'beh-company-values',
-  module: 'behavioral',
-  title: 'Company Values (LPs etc.)',
-  estimatedReadTime: '40 min',
-  tags: ['behavioral', 'amazon-lp', 'leadership-principles', 'meta-values', 'google-googleyness', 'apple', 'microsoft', 'culture-fit'],
+  id: "beh-company-values",
+  module: "behavioral",
+  title: "Company Values (LPs etc.)",
+  estimatedReadTime: "40 min",
+  tags: ["behavioral","amazon-lp","leadership-principles","meta-values","google-googleyness","apple","microsoft","culture-fit"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Most large tech companies publish an explicit set of <strong>cultural principles</strong> they hire against. Amazon famously codified 16 <strong>Leadership Principles</strong> (LPs); Meta has its values; Google has "Googleyness"; Microsoft has its growth-mindset rubric; Apple operates on principles even if less publicly documented. Behavioral interviewers literally <strong>map your answers to these principles</strong>.</p>
-<ul>
-  <li><strong>Amazon's LPs are the most prescriptive.</strong> The bar-raiser system explicitly grades each story against ≥1 LP. Knowing the LPs verbatim and tagging your stories accordingly is non-optional for Amazon loops.</li>
-  <li><strong>Meta values:</strong> "Move Fast," "Be Bold," "Focus on Impact," "Be Open," "Build Awesome Things," and updated principles around live-by-impact and meta-mate care. Interviewers grade for "moves fast with discipline."</li>
-  <li><strong>Google's "Googleyness":</strong> intellectual humility, comfort with ambiguity, evidence of bias for action, collaborative orientation. Less codified than Amazon but rigorously assessed.</li>
-  <li><strong>Microsoft:</strong> growth mindset, customer-obsessed, diverse-and-inclusive, one-Microsoft (cross-team collaboration). The Satya-era reset is heavily emphasized.</li>
-  <li><strong>Apple:</strong> "values" rather than "principles" — dive-deep on craft, intolerance for sloppiness, secrecy/discipline, customer experience as north star.</li>
-  <li><strong>Mid-size and startups:</strong> often have published values too. Always read them before the loop. Map your stories.</li>
-  <li><strong>Pattern:</strong> understand the values → tag your stories → use the language naturally (not as quotes) → ask thoughtful reverse questions about how they live the values.</li>
-</ul>
-<p><strong>Mantra:</strong> "Read the values. Tag your stories. Use the language. Ask reverse questions that show you've done the work."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Big tech hires against published cultural principles, so <strong>read the values, tag your stories, use the language naturally, and ask reverse questions that show you've done the work</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Big tech publishes <strong>cultural principles</strong> and interviewers literally map your answers to them &mdash; culture fit is a graded rubric, not decoration.</li>
+    <li><strong>The 4-step pattern:</strong> read the values &rarr; tag your stories &rarr; use the language naturally &rarr; ask reverse questions that show you've done the work.</li>
+    <li><strong>Amazon LPs are the most prescriptive</strong> (16 of them). The bar-raiser system grades each story against assigned LPs; memorize them verbatim and ensure every LP has at least one story.</li>
+    <li><strong>Meta:</strong> Move Fast (with discipline), Focus on Long-Term Impact, Build Awesome Things, Live in the Future, Be Direct, "Meta, Metamates, Me" &mdash; grade is velocity-with-judgment.</li>
+    <li><strong>Google "Googleyness":</strong> intellectual humility, comfort with ambiguity, bias for action, collaboration, user focus &mdash; less codified, still rigorously assessed.</li>
+    <li><strong>Microsoft:</strong> growth mindset (the Satya-era reset), customer-obsessed, diverse &amp; inclusive, One Microsoft. <strong>Apple:</strong> &quot;values&quot; not &quot;principles&quot; &mdash; quality bar, craft, intolerance for sloppiness, secrecy/discipline, customer experience as north star, understatement.</li>
+    <li><strong>Mid-size and startups</strong> often publish values too &mdash; always read them (and the founder&#39;s writing) before the loop and map your stories.</li>
+    <li><strong>Embody, don't quote.</strong> Saying "this shows Customer Obsession" sounds rehearsed; "the user reports made the real problem clear" demonstrates it.</li>
+    <li>Use each value's <strong>native vocabulary</strong> &mdash; "I traced it all the way back to..." for Dive Deep; "I decided within the hour" for Bias for Action &mdash; without naming the principle.</li>
+    <li><strong>Same story, different emphasis per company:</strong> lead with the customer-pain framing for Amazon, the velocity tradeoff for Meta, the moment you changed your mind for Google, the polish you fought for at Apple.</li>
+    <li><strong>Calibrate tone:</strong> Amazon-direct, Apple-understated, Google-humble &mdash; a mismatched tone lands flat.</li>
+    <li>When asked "which value resonates most?", pick a <strong>non-obvious one and defend it with a specific story</strong> &mdash; not the crowd-pleaser everyone names.</li>
+    <li>Make <strong>reverse questions value-anchored</strong> and about lived practice ("how does a disagree-and-commit moment actually play out here?"); prepare 3 per round. Never quiz, brown-nose, or aggressively challenge.</li>
+    <li>Read the <strong>current</strong> versions (Meta changed in 2022, Amazon added two LPs in 2021); do a separate per-company tag pass; and don't fake fit &mdash; honest engagement beats manufactured alignment.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is <strong>quoting the principles verbatim</strong> &mdash; "This is a great example of Customer Obsession because..." &mdash; which sounds rehearsed and gets graded down. The fix: embody the value through your behavior and its native vocabulary ("the user reports made the real problem clear"), and never name the principle unless the interviewer asks.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I traced it all the way back to the root cause before proposing a fix &mdash; I sat with the data for two days first." (embodies Dive Deep without naming it)</div>
+  <div class="revision-say">"Are Right A Lot resonates most with me &mdash; specifically the 'seek diverse perspectives' clause; last quarter I was sure the answer was X, but sitting with our backend lead got me to Y, which was right."</div>
+  <div class="revision-say">"You talk about disagree-and-commit &mdash; when that happens on your team, is the disagreement documented, and do you revisit it after committing?"</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What are "company values"?</h3>
 <p>A short list of cultural principles a company uses to define how its people work. They're not just marketing — they show up in performance reviews, promo committees, hiring rubrics, and (for the most disciplined cultures) in everyday meetings. When you say "but that violates X," everyone knows what X means.</p>
 
@@ -63,12 +75,10 @@ window.PREP_SITE.registerTopic({
   <li>You ask reverse questions that show you understand <em>how</em> the company lives the values, not <em>that</em> they exist.</li>
   <li>You can articulate which values resonate with you and why — without memorized praise.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Amazon — 16 Leadership Principles</h3>
 <p>Amazon's LPs are the gold standard of codified values. Memorize them. They are:</p>
 <ol>
@@ -166,12 +176,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>The "tagging" rule</h3>
 <p>For each story in your bank, tag which values it best represents at each target company. Same story, different tags per company.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Pre-loop research checklist</h3>
 <ol>
   <li>Read the company's published values (their careers / about / culture pages).</li>
@@ -281,12 +289,10 @@ Gaps: Frugality, Strive to be Earth's Best Employer — develop a story for each
   <li>Ask in the loop: "How would you describe the team's values?" — answers tell you both what to emphasize and reveal alignment / mismatch.</li>
   <li>Don't assume FAANG-style behavioral rigor; some startups skip it; others (e.g., Stripe) are more rigorous than Amazon.</li>
 </ol>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Same story, three companies — the GraphQL pushback</h3>
 
 <h4>For Amazon (emphasizes Have Backbone, Are Right A Lot, Earn Trust):</h4>
@@ -408,12 +414,11 @@ I now write a 'cost of ownership' analysis on every infra proposal — runtime, 
 
 [Embodies: Intellectual humility (admitting "my gut was wrong" not "my data was wrong"), evidence-driven correction, growth from failure.]
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>"The company's values feel performative"</h3>
 <p>Some published values are aspirational rather than lived. You'll know within the first round. Adapt: lean into <em>your</em> values that align with the principles, not into specific phrasing. If the values feel hollow but the work is interesting, focus on the work.</p>
 
@@ -476,12 +481,9 @@ I now write a 'cost of ownership' analysis on every infra proposal — runtime, 
 
 <h3>"My reverse question reveals concerns about the team"</h3>
 <p>Sometimes asking "tell me about a time the values clashed" surfaces uncomfortable answers. Listen carefully. The information is for both sides — you're evaluating them too.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Quoting LPs verbatim</h3>
 <p>"This is a great example of Customer Obsession because..." The interviewer wants to <em>infer</em> the principle from your story; quoting it back signals rehearsal. Embody the language; don't recite it.</p>
 
@@ -541,12 +543,10 @@ I now write a 'cost of ownership' analysis on every infra proposal — runtime, 
 
 <h3>Anti-pattern 10: Overprepping to the point of stiffness</h3>
 <p>You read every Amazon LP article online, watched every Bezos talk, drilled every story 20 times. You arrive ready — but rigid. Real conversations diverge from prep. Practice flexibility too: tell stories with intentional improvisation.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Per-company pre-loop checklist</h3>
 <table>
   <thead><tr><th>Company</th><th>Pre-loop tasks</th></tr></thead>
@@ -632,57 +632,44 @@ I now write a 'cost of ownership' analysis on every infra proposal — runtime, 
   <li><strong>Company Values</strong> — the rubric you map your stories to.</li>
 </ul>
 <p>Master all three; behavioral becomes a strength rather than a hurdle.</p>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Big tech hires against published cultural principles, so <strong>read the values, tag your stories, use the language naturally, and ask reverse questions that show you've done the work</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Big tech publishes <strong>cultural principles</strong> and interviewers literally map your answers to them &mdash; culture fit is a graded rubric, not decoration.</li>
-    <li><strong>The 4-step pattern:</strong> read the values &rarr; tag your stories &rarr; use the language naturally &rarr; ask reverse questions that show you've done the work.</li>
-    <li><strong>Amazon LPs are the most prescriptive</strong> (16 of them). The bar-raiser system grades each story against assigned LPs; memorize them verbatim and ensure every LP has at least one story.</li>
-    <li><strong>Meta:</strong> Move Fast (with discipline), Focus on Long-Term Impact, Build Awesome Things, Live in the Future, Be Direct, "Meta, Metamates, Me" &mdash; grade is velocity-with-judgment.</li>
-    <li><strong>Google "Googleyness":</strong> intellectual humility, comfort with ambiguity, bias for action, collaboration, user focus &mdash; less codified, still rigorously assessed.</li>
-    <li><strong>Microsoft:</strong> growth mindset, customer-obsessed, diverse &amp; inclusive, One Microsoft. <strong>Apple:</strong> quality bar, craft, secrecy/discipline, understatement.</li>
-    <li><strong>Embody, don't quote.</strong> Saying "this shows Customer Obsession" sounds rehearsed; "the user reports made the real problem clear" demonstrates it.</li>
-    <li>Use each value's <strong>native vocabulary</strong> &mdash; "I traced it all the way back to..." for Dive Deep; "I decided within the hour" for Bias for Action &mdash; without naming the principle.</li>
-    <li><strong>Same story, different emphasis per company:</strong> lead with the customer-pain framing for Amazon, the velocity tradeoff for Meta, the moment you changed your mind for Google, the polish you fought for at Apple.</li>
-    <li><strong>Calibrate tone:</strong> Amazon-direct, Apple-understated, Google-humble &mdash; a mismatched tone lands flat.</li>
-    <li>When asked "which value resonates most?", pick a <strong>non-obvious one and defend it with a specific story</strong> &mdash; not the crowd-pleaser everyone names.</li>
-    <li>Make <strong>reverse questions value-anchored</strong> and about lived practice ("how does a disagree-and-commit moment actually play out here?"); prepare 3 per round. Never quiz, brown-nose, or aggressively challenge.</li>
-    <li>Read the <strong>current</strong> versions (Meta changed in 2022, Amazon added two LPs in 2021); do a separate per-company tag pass; and don't fake fit &mdash; honest engagement beats manufactured alignment.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">The #1 mistake is <strong>quoting the principles verbatim</strong> &mdash; "This is a great example of Customer Obsession because..." &mdash; which sounds rehearsed and gets graded down. The fix: embody the value through your behavior and its native vocabulary ("the user reports made the real problem clear"), and never name the principle unless the interviewer asks.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I traced it all the way back to the root cause before proposing a fix &mdash; I sat with the data for two days first." (embodies Dive Deep without naming it)</div>
-  <div class="revision-say">"Are Right A Lot resonates most with me &mdash; specifically the 'seek diverse perspectives' clause; last quarter I was sure the answer was X, but sitting with our backend lead got me to Y, which was right."</div>
-  <div class="revision-say">"You talk about disagree-and-commit &mdash; when that happens on your team, is the disagreement documented, and do you revisit it after committing?"</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Name a target company's published values and explain how interviewers grade your stories against them.</div>
+  <div class="qa-answer">
+    <p>For Amazon: Customer Obsession, Ownership, Bias for Action, Dive Deep, Earn Trust, Have Backbone; Disagree and Commit, Deliver Results and the rest of the 16 LPs, including the two added in 2021 (Strive to be Earth's Best Employer; Success and Scale Bring Broad Responsibility). Under the bar-raiser system each interviewer is assigned 2&ndash;3 LPs and grades your stories against those specific LPs; scores are aggregated after the loop, and a "no hire" on a high-priority LP can sink it. Other companies grade similarly but less formally: Meta for velocity-with-judgment, Google for Googleyness (humility, ambiguity, collaboration), Microsoft for growth mindset.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name a target company's published values from memory and describe how interviewers grade your stories against them?</li>
-    <li>Can you recite Amazon's 16 Leadership Principles and confirm every one is covered by at least one story in your bank?</li>
-    <li>Can you tell a STAR story that embodies a value through your behavior without ever naming the principle?</li>
-    <li>Can you retell one signature story three ways &mdash; Amazon-direct, Apple-understated, Google-humble &mdash; shifting the emphasis and tone for each?</li>
-    <li>Can you articulate which value resonates with you most, picking a non-obvious one and defending it with a specific story?</li>
-    <li>Can you pose 3 value-anchored reverse questions per round that probe how the values are actually lived, without quizzing or brown-nosing?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. How do you make sure your story bank covers all 16 of Amazon's Leadership Principles?</div>
+  <div class="qa-answer">
+    <p>Memorize all 16 LPs verbatim, then tag each story in the bank with 2&ndash;3 LPs and check coverage so every LP has at least one story. A 5-round loop probes roughly 10&ndash;12 LPs, so you need a story for almost every one. Develop dedicated stories for the under-covered ones (often Frugality and Strive to be Earth's Best Employer), and infer each round's assigned LPs from the question pattern so you can align your reverse question to them.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q3. How do you tell a STAR story that embodies a value without naming the principle?</div>
+  <div class="qa-answer">
+    <p>Show the value through behaviour and its native vocabulary instead of labelling it. "This is a Customer Obsession story" sounds rehearsed and gets graded down; "the user reports made it clear we had a real problem" demonstrates it. Likewise "I decided within an hour rather than waiting for the next steering meeting" (Bias for Action) and "I sat with the data for two days before forming a hypothesis" (Dive Deep). Only name the principle if the interviewer asks.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How would you retell one signature story for Amazon, Apple and Google?</div>
+  <div class="qa-answer">
+    <p>Keep the facts, change the emphasis and tone. Amazon-direct: clear ownership ("nobody was assigned, I took it on"), action verbs, and measurable customer impact such as a crash rate dropping from 1.4% to 0.3%. Apple-understated: less self-promotion, lower verb temperature ("ran" not "drove", "quietly" not "transformed"), a craft-focused, modest lesson. Google-humble: foreground the moment you changed your mind on new evidence and over-credit collaborators. A mismatched tone lands flat.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. Which value resonates with you most, and why?</div>
+  <div class="qa-answer">
+    <p>Pick a non-obvious value and defend it with a specific story; "Customer Obsession is my favourite!" is what every other candidate says. For example: "Are Right A Lot, specifically the 'seek diverse perspectives' clause; last quarter I was sure the answer was X, but sitting with our backend lead got me to Y, which was right." Keep it to about 60 seconds: specific, reasoned and tied to your behaviour.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. What reverse questions would you ask to probe how a company's values are actually lived?</div>
+  <div class="qa-answer">
+    <p>Prepare 3 value-anchored questions per round and pick the freshest one based on what has been discussed. Ask about lived practice, for example "Meta talks about moving fast with discipline; when did the discipline part win on your team?" or "Tell me about a serious disagreement and how you got to the commit step." Avoid quizzing ("Can you name all 16 LPs?"), brown-nosing ("these values are exactly what I've always believed") and aggressively challenging the values.</p>
+  </div>
+</div>
+` },
+
   ]
 });

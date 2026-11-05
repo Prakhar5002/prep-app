@@ -1,34 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'ts-conditional',
-  module: 'typescript',
-  title: 'Conditional & Mapped Types',
-  estimatedReadTime: '45 min',
-  tags: ['typescript', 'conditional-types', 'mapped-types', 'infer', 'distributive', 'template-literal-types', 'utility-types'],
+  id: "ts-conditional",
+  module: "typescript",
+  title: "Conditional & Mapped Types",
+  estimatedReadTime: "45 min",
+  tags: ["typescript","conditional-types","mapped-types","infer","distributive","template-literal-types","utility-types"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Conditional and mapped types</strong> are TypeScript's type-level programming primitives. Conditional types are <code>if/else</code> for types; mapped types are <code>map()</code> for object shapes. Combined with <code>infer</code> and template literal types, they let you derive new types from existing ones instead of duplicating them.</p>
-<ul>
-  <li><strong>Conditional:</strong> <code>type X = T extends U ? A : B</code> — type-level ternary.</li>
-  <li><strong>Distributive:</strong> when T is a "naked" type parameter and a union, the conditional applies to each member individually.</li>
-  <li><strong>infer:</strong> the type-level pattern-match — extracts a sub-type from inside another type.</li>
-  <li><strong>Mapped types:</strong> <code>{ [K in keyof T]: ... }</code> — transform every property of T.</li>
-  <li><strong>Modifiers:</strong> <code>+/-readonly</code> and <code>+/-?</code> on mapped types to add or strip readonly/optional.</li>
-  <li><strong>Key remapping (<code>as</code>):</strong> rename or filter keys during a map.</li>
-  <li><strong>Template literal types:</strong> string-level type computation for routes, event names, css properties.</li>
-  <li><strong>Utility types</strong> like <code>Pick</code>, <code>Omit</code>, <code>Partial</code>, <code>ReturnType</code>, <code>Parameters</code> are built from these primitives — and you can write your own.</li>
-</ul>
-<p><strong>Mantra:</strong> "If your type is a function of another type, write it that way — don't duplicate."</p>
-<p><strong>Version note:</strong> the per-feature versions cited below (key remapping 4.1, tail-recursive conditionals 4.5, <code>infer extends</code> 4.8) are accurate. Current stable is <strong>TypeScript 6.0</strong> (GA March 2026); the Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026, ~10× faster type-checking).</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Conditional types are a <strong>type-level ternary</strong> and mapped types are a <strong>type-level map</strong> — with <code>infer</code> as pattern-matching and template literals as string computation, you <em>derive</em> types from other types instead of duplicating them.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Mantra:</strong> "If your type is a function of another type, write it that way — don't duplicate."</li>
+    <li><strong>Conditional type = ternary:</strong> <code>T extends U ? A : B</code>.</li>
+    <li><strong>Distribution</strong> is the big surprise: when the checked type is a <em>naked</em> type parameter and a union, the conditional applies to each member (<code>ToArray&lt;string | number&gt;</code> = <code>string[] | number[]</code>). Suppress it by wrapping in a tuple: <code>[T] extends [U]</code>.</li>
+    <li><code>never</code> is the empty union, so it <strong>distributes to nothing</strong>: <code>ToArray&lt;never&gt;</code> = <code>never</code>, not <code>never[]</code>. And <code>boolean</code> is <code>true | false</code> internally, so it distributes into two branches.</li>
+    <li><strong><code>infer</code></strong> appears only in the <code>extends</code> clause; it binds a matched sub-type for use in the true branch — the basis of element-of, return-of, and params-of.</li>
+    <li><strong>Mapped type:</strong> <code>{ [K in keyof T]: ... }</code> produces one property per key, with the value usually computed from <code>T[K]</code>.</li>
+    <li><strong>Modifiers</strong> <code>+/-</code> on <code>readonly</code> and <code>?</code>: <code>-readonly</code> makes properties mutable, <code>-?</code> makes them required.</li>
+    <li><strong>Key remapping with <code>as</code></strong> (4.1) renames keys (turning fields into <code>getName</code>-style getters) or <em>filters</em> them by remapping unwanted keys to <code>never</code>.</li>
+    <li><strong>Template literal types</strong> do string-level computation for routes, event names, and CSS properties; the four built-ins are <code>Uppercase</code>/<code>Lowercase</code>/<code>Capitalize</code>/<code>Uncapitalize</code>.</li>
+    <li>The <strong>built-in utilities</strong> (<code>Pick</code>, <code>Omit</code>, <code>Partial</code>, <code>ReturnType</code>, <code>Parameters</code>, <code>Awaited</code>...) are just these primitives — use them before hand-rolling.</li>
+    <li><strong>The narrower type extends the wider one:</strong> <code>{ a: 1 } extends { a: number }</code> is true, not the reverse.</li>
+    <li>Watch perf and resolution: cartesian products of large unions explode the IDE, and a conditional <em>return</em> type may not narrow while the input is still generic (use overloads).</li>
+    <li><strong>Versions:</strong> key remapping 4.1, tail-recursive conditionals 4.5, <code>infer extends</code> 4.8; current stable is <strong>TS 6.0</strong> (March 2026), with the Go-native <strong>TS 7.0</strong> ("tsgo", ~10× faster checking) at RC.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Forgetting distribution.</strong> A naked type parameter over a union silently maps each member separately (<code>ToArray&lt;string | number&gt;</code> becomes <code>string[] | number[]</code>, not <code>(string | number)[]</code>), and <code>ToArray&lt;never&gt;</code> collapses to <code>never</code>. Fix: if you want the union kept whole, wrap the check in a tuple — <code>[T] extends [U] ? ...</code> — which suppresses distribution.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Conditional types are a type-level ternary, mapped types are a type-level map, and infer is destructuring inside the extends clause."</div>
+  <div class="revision-say">"Distribution is the gotcha: a naked type parameter over a union applies per-member, and never distributes to nothing — I wrap in a tuple to suppress it."</div>
+  <div class="revision-say">"I reach for the built-in utility types first — they're all just conditional plus mapped plus infer under the hood, and they keep tooltips readable."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What problem do conditional types solve?</h3>
 <p>Sometimes the type you want depends on another type. The classic example: a function that, given an array, returns one element of it. The return type is always "the array's element type" — but that depends on the array.</p>
 <pre><code class="language-ts">// Without conditional types — verbose, duplicated
@@ -77,12 +86,10 @@ type PartialUser3 = Partial&lt;User&gt;;
 
 <h3>The mental shift</h3>
 <p>You stop thinking "I need to write a type" and start thinking "I need to compute a type." Conditional types are <code>if</code>, mapped types are <code>map</code>, <code>infer</code> is destructuring. Together they form a tiny pure functional language whose values are types.</p>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Conditional type = ternary on types</h3>
 <pre><code class="language-ts">// Reads exactly like JS ternary
 type IsString&lt;T&gt; = T extends string ? "yes" : "no";
@@ -177,12 +184,10 @@ type B = Lowercase&lt;"HELLO"&gt;;    // "hello"
 type C = Capitalize&lt;"hello"&gt;;   // "Hello"
 type D = Uncapitalize&lt;"Hello"&gt;; // "hello"
 </code></pre>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Conditional type basics</h3>
 <pre><code class="language-ts">// Subtype check
 type IsArray&lt;T&gt; = T extends unknown[] ? true : false;
@@ -369,12 +374,10 @@ type X = RemoveUndefined&lt;{ a: string; b: undefined; c: number }&gt;;
 // ThisParameterType&lt;F&gt; = F extends (this: infer T, ...a: any[]) =&gt; any ? T : unknown
 // OmitThisParameter&lt;F&gt; = ...
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Type-safe Redux-style action creator</h3>
 <pre><code class="language-ts">type ActionCreators = {
   setUser: (id: string) =&gt; void;
@@ -558,12 +561,11 @@ function getPath&lt;T, P extends DeepKey&lt;T&gt;&gt;(obj: T, path: P): DeepValu
   return path.split(".").reduce((acc: any, k) =&gt; acc?.[k], obj);
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Distribution surprise — <code>never</code></h3>
 <pre><code class="language-ts">type ToArray&lt;T&gt; = T extends any ? T[] : never;
 type X = ToArray&lt;never&gt;;     // never (NOT never[])
@@ -646,19 +648,16 @@ type R = ReturnType&lt;Multi&gt;;   // boolean — last overload only
 const a: N = "42";       // ✅
 const b: N = "1e5";      // ✅
 const c: N = "0x10";     // ✅
-// '${number}' is a permissive shape — any JS-numeric string parses.
+// '\${number}' is a permissive shape — any JS-numeric string parses.
 </code></pre>
 
 <h3>Mapped with key remap losing modifiers</h3>
 <pre><code class="language-ts">// 'as' remap doesn't propagate optional/readonly automatically — apply explicitly
 type R&lt;T&gt; = { [K in keyof T as \`get\${Capitalize&lt;string &amp; K&gt;}\`]-?: () =&gt; T[K] };
 </code></pre>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Forgetting distribution</h3>
 <pre><code class="language-ts">// Goal: wrap T in an array
 type ToArray&lt;T&gt; = T extends any ? T[] : never;
@@ -759,12 +758,10 @@ type LB&lt;K extends keyof LookupBetter&gt; = LookupBetter[K];
 
 <h3>Anti-pattern 7: <code>infer</code> chains that hide design issues</h3>
 <p>If you find yourself <code>infer</code>ing 4 layers deep to extract some metadata, the source type's design is probably the problem. Refactor the source.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions interviewers actually ask</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -863,56 +860,17 @@ type LB&lt;K extends keyof LookupBetter&gt; = LookupBetter[K];
   <li>"I'd cap recursion depth with a counter type to keep error messages legible."</li>
   <li>"I'd export a named alias instead of the conditional expression so consumer tooltips stay readable."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Conditional types are a <strong>type-level ternary</strong> and mapped types are a <strong>type-level map</strong> — with <code>infer</code> as pattern-matching and template literals as string computation, you <em>derive</em> types from other types instead of duplicating them.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Conditional type = ternary:</strong> <code>T extends U ? A : B</code>.</li>
-    <li><strong>Distribution</strong> is the big surprise: when the checked type is a <em>naked</em> type parameter and a union, the conditional applies to each member (<code>ToArray&lt;string | number&gt;</code> = <code>string[] | number[]</code>). Suppress it by wrapping in a tuple: <code>[T] extends [U]</code>.</li>
-    <li><code>never</code> is the empty union, so it <strong>distributes to nothing</strong>: <code>ToArray&lt;never&gt;</code> = <code>never</code>, not <code>never[]</code>. And <code>boolean</code> is <code>true | false</code> internally, so it distributes into two branches.</li>
-    <li><strong><code>infer</code></strong> appears only in the <code>extends</code> clause; it binds a matched sub-type for use in the true branch — the basis of element-of, return-of, and params-of.</li>
-    <li><strong>Mapped type:</strong> <code>{ [K in keyof T]: ... }</code> produces one property per key, with the value usually computed from <code>T[K]</code>.</li>
-    <li><strong>Modifiers</strong> <code>+/-</code> on <code>readonly</code> and <code>?</code>: <code>-readonly</code> makes properties mutable, <code>-?</code> makes them required.</li>
-    <li><strong>Key remapping with <code>as</code></strong> (4.1) renames keys (turning fields into <code>getName</code>-style getters) or <em>filters</em> them by remapping unwanted keys to <code>never</code>.</li>
-    <li><strong>Template literal types</strong> do string-level computation for routes, event names, and CSS properties; the four built-ins are <code>Uppercase</code>/<code>Lowercase</code>/<code>Capitalize</code>/<code>Uncapitalize</code>.</li>
-    <li>The <strong>built-in utilities</strong> (<code>Pick</code>, <code>Omit</code>, <code>Partial</code>, <code>ReturnType</code>, <code>Parameters</code>, <code>Awaited</code>...) are just these primitives — use them before hand-rolling.</li>
-    <li><strong>The narrower type extends the wider one:</strong> <code>{ a: 1 } extends { a: number }</code> is true, not the reverse.</li>
-    <li>Watch perf and resolution: cartesian products of large unions explode the IDE, and a conditional <em>return</em> type may not narrow while the input is still generic (use overloads).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Forgetting distribution.</strong> A naked type parameter over a union silently maps each member separately (<code>ToArray&lt;string | number&gt;</code> becomes <code>string[] | number[]</code>, not <code>(string | number)[]</code>), and <code>ToArray&lt;never&gt;</code> collapses to <code>never</code>. Fix: if you want the union kept whole, wrap the check in a tuple — <code>[T] extends [U] ? ...</code> — which suppresses distribution.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Conditional types are a type-level ternary, mapped types are a type-level map, and infer is destructuring inside the extends clause."</div>
-  <div class="revision-say">"Distribution is the gotcha: a naked type parameter over a union applies per-member, and never distributes to nothing — I wrap in a tuple to suppress it."</div>
-  <div class="revision-say">"I reach for the built-in utility types first — they're all just conditional plus mapped plus infer under the hood, and they keep tooltips readable."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Write a mapped type that makes every property mutable and required.</div>
+  <div class="qa-answer">
+    <p>Mapped types accept <code>+</code>/<code>-</code> modifiers on <code>readonly</code> and <code>?</code>: <code>-readonly</code> strips readonly (making the property mutable) and <code>-?</code> strips optionality (making it required). Plain <code>readonly</code> or <code>?</code> is the same as <code>+readonly</code> / <code>+?</code> and adds the modifier. This is exactly how the built-in <code>Required&lt;T&gt;</code> is written.</p>
+    <pre><code class="language-ts">type Mutable&lt;T&gt; = { -readonly [K in keyof T]: T[K] };
+type RequiredX&lt;T&gt; = { [K in keyof T]-?: T[K] };
+type Concrete&lt;T&gt; = { -readonly [K in keyof T]-?: T[K] };</code></pre>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain distribution over unions in a conditional type and how to suppress it with a tuple wrap?</li>
-    <li>Can you explain why <code>ToArray&lt;never&gt;</code> is <code>never</code>, not <code>never[]</code>?</li>
-    <li>Can you explain where <code>infer</code> may appear and what it binds?</li>
-    <li>Can you write a mapped type that strips <code>readonly</code> and optional modifiers with <code>-readonly</code> and <code>-?</code>?</li>
-    <li>Can you explain key remapping with <code>as</code> to rename or filter keys?</li>
-    <li>Can you name the built-in utility types that are just conditional + mapped + <code>infer</code> under the hood?</li>
-  </ul>
-</div>
-`
-    }
+` },
+
   ]
 });

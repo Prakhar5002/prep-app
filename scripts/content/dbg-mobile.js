@@ -1,35 +1,44 @@
 window.PREP_SITE.registerTopic({
-  id: 'dbg-mobile',
-  module: 'Debugging',
-  title: 'Mobile Debugging',
-  estimatedReadTime: '24 min',
-  tags: ['debugging', 'mobile', 'react-native', 'flipper', 'xcode', 'android-studio', 'safari', 'remote-debugging'],
+  id: "dbg-mobile",
+  module: "Debugging",
+  title: "Mobile Debugging",
+  estimatedReadTime: "24 min",
+  tags: ["debugging","mobile","react-native","flipper","xcode","android-studio","safari","remote-debugging"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Mobile debugging spans web (Mobile Safari, Chrome on Android) and native apps (React Native, Flutter, native iOS/Android). Different tools per stack; common workflows.</p>
-<ul>
-  <li><strong>Mobile Safari (iOS)</strong> — connect device via USB, debug via macOS Safari → Develop menu.</li>
-  <li><strong>Chrome on Android</strong> — connect device via USB, <code>chrome://inspect/#devices</code> on desktop.</li>
-  <li><strong>React Native DevTools</strong> (RN 0.76+) — built-in Chrome-based debugger with React + Hermes integration.</li>
-  <li><strong>React DevTools standalone</strong> — Electron app for inspecting RN component trees.</li>
-  <li><strong>Flipper</strong> — legacy Facebook tool; still works for older RN versions but de-emphasized.</li>
-  <li><strong>Xcode Instruments / Console</strong> — native iOS perf + crash + log debugging.</li>
-  <li><strong>Android Studio Profiler / Logcat</strong> — native Android equivalent.</li>
-  <li><strong>Sentry / Crashlytics</strong> — production crash reporting with symbolication for both JS + native.</li>
-  <li><strong>Reactotron</strong> — third-party RN dev tool for log streaming + state inspection.</li>
-  <li><strong>Real device testing</strong> — simulators / emulators are approximations. Critical features (camera, biometrics, push, performance) need real devices.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Different stacks, different tools. Web on mobile: connect device + use desktop browser DevTools. RN: React Native DevTools + native platform tools (Xcode / Android Studio) for the native side. Production: Sentry with symbols. Always test critical paths on real devices.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Different stacks, different tools — connect a real device, debug JS on the actual engine, use native tools for native, and Sentry with uploaded symbols for production</strong> — and always smoke-test critical paths on a real device.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Mobile web:</strong> connect the device and drive it from a desktop browser — iOS Safari via the macOS <strong>Develop menu</strong> (Web Inspector on), Android Chrome via <code>chrome://inspect/#devices</code> (USB debugging on).</li>
+    <li><strong>React Native DevTools (RN 0.76+)</strong> replaced "Debug in Chrome": it connects to on-device <strong>Hermes</strong> via the Chrome DevTools Protocol, so you debug the real engine your users run — not Chrome's V8 (behavior could diverge: regex, Intl).</li>
+    <li>Split debugging by layer: <strong>JS issue → RN / React DevTools; native issue → Xcode (iOS) or Android Studio (Android).</strong></li>
+    <li><strong>Flipper is de-emphasized</strong> (heavyweight, plugins lagged RN versions, Meta cut investment) — use RN DevTools for JS, native tools for native.</li>
+    <li>Native perf: <strong>Xcode Instruments</strong> (Time Profiler, Allocations, Animation Hitches) and <strong>Android Studio Profiler</strong> (CPU, Memory, Network, Energy).</li>
+    <li><strong>RN Perf Monitor</strong> shows JS FPS + UI FPS: <strong>JS FPS drop = JS-thread bottleneck</strong> (memo, FlashList, useCallback); <strong>UI FPS drop = native render bottleneck</strong> (reduce view count).</li>
+    <li>Know the <code>adb logcat</code> filters: <code>grep ReactNativeJS</code> (RN console.log), <code>*:E</code> (errors), <code>--pid=$(adb shell pidof com.myapp)</code> (your app), <code>grep FATAL</code> (crashes); <code>adb reverse tcp:8081 tcp:8081</code> tunnels Metro to a device.</li>
+    <li><strong>Production needs Sentry / Crashlytics</strong> — you can't attach DevTools to a user's phone. Upload <strong>all</strong> symbols in CI: JS source maps + iOS dSYM + Android proguard mapping — or crashes are unreadable.</li>
+    <li>Add <strong>breadcrumbs</strong> at navigation and key actions for "what was the user doing?" context on a crash.</li>
+    <li><strong>Simulators/emulators are approximations:</strong> camera, biometrics, push delivery, real network, and performance all differ — test critical paths on a real <strong>mid-range Android</strong> (Pixel 5, Galaxy A), not a flagship.</li>
+    <li><strong>Test a release build locally</strong> before shipping — catches Hermes-only bugs, ProGuard-removed classes (add <code>-keep</code>), missing assets.</li>
+    <li>Know the platform killers: Android <strong>ANR</strong> (main thread blocked &gt;5s) and iOS <strong>watchdog timeout</strong> (~20s launch) — both point to blocking the main thread; defer work off first frame.</li>
+    <li>Intercept HTTPS from a device with <strong>Charles / Proxyman</strong>: set the device proxy to your machine + install and trust the root cert (pinning like TrustKit can still block).</li>
+    <li>Supporting tools: the <strong>standalone React DevTools</strong> (Electron) inspects RN component trees; <strong>Reactotron</strong> is a third-party dev tool for log streaming + state inspection; Flipper still works only for older RN versions.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Debugging only on the simulator (and with "Debug in Chrome").</strong> Simulators run on your Mac's CPU and fake or omit camera, biometrics, push, thermals, and real networks — and "Debug in Chrome" runs JS in V8, not the device's Hermes, so behavior diverges. Fix: use RN DevTools / the Hermes inspector for accurate JS, and smoke-test every critical path on a real mid-range device before claiming "works."</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Different stacks, different tools: connect a real device and use the desktop browser for mobile web, RN DevTools on Hermes for JS, and Xcode / Android Studio for the native side."</div>
+  <div class="revision-say">"For production I can't attach a debugger to a user's phone, so I run Sentry and upload source maps, dSYM, and proguard mapping in CI, plus breadcrumbs for context."</div>
+  <div class="revision-say">"Simulators are approximations — I always test camera, push, and performance on a mid-range Android, and I profile a release build, not just dev."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The mobile debugging matrix</h3>
 <table>
   <thead><tr><th>Stack</th><th>JS / app debugger</th><th>Native</th><th>Production crashes</th></tr></thead>
@@ -60,10 +69,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why production debugging needs Sentry</h3>
 <p>You can't connect DevTools to a user's device. Crashes manifest as user reviews, app store complaints, support tickets. Without instrumentation: zero data. With Sentry: stack traces (symbolicated via uploaded source maps + dSYM / proguard mapping), user context, breadcrumbs, release tagging.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "where to debug" picture</h3>
 <div class="diagram">
 <pre>
@@ -144,10 +153,10 @@ adb bugreport                           # full system bug report</code></pre>
   <div class="callout-title">Common misconception</div>
   <p>"Simulator behavior is the same as device." It's an approximation. Always smoke-test on a real device before claiming "works." Camera, biometrics, push delivery, performance, real network behavior — all vary.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>iOS Safari Web Inspector</h3>
 <pre><code>iPhone:
   Settings → Safari → Advanced → Web Inspector → ON
@@ -348,10 +357,10 @@ xcrun atos -arch arm64 -o YourApp.app.dSYM/Contents/Resources/DWARF/YourApp \\
 
 # Android tombstone — automatically symbolicated by Android Studio
 adb pull /data/tombstones/tombstone_00 .</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — debug iOS Safari issue</h3>
 <pre><code>1. iPhone: Settings → Safari → Advanced → Web Inspector ON
 2. Connect to Mac via USB
@@ -486,10 +495,11 @@ Sentry.addBreadcrumb({
 
 // On crash: Sentry shows last 100 breadcrumbs leading to the error
 // Massive context for "what was the user doing?"</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Web Inspector won't connect (iOS)</h3>
 <p>Cable issue. Try a different USB cable / port. Trust the computer on iPhone (popup). Restart Safari and Phone. iOS update may toggle Web Inspector off.</p>
 
@@ -549,10 +559,9 @@ Sentry.addBreadcrumb({
 
 <h3>20. Multi-process apps</h3>
 <p>Some apps run multiple processes (web workers in browser; service worker; iOS extensions). Each has its own debugger entry. Choose the right one.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — debugging only on simulator</h3>
 <p>Camera, biometrics, push, real perf, real network all differ. Always smoke-test critical paths on a real device before claiming "ready."</p>
 
@@ -597,10 +606,10 @@ Sentry.addBreadcrumb({
 
 <h3>Anti-pattern 15 — letting test devices drift</h3>
 <p>Old simulator, old OS, old Xcode. Every test on stale runtime gives stale results. Keep at least one device on latest stable, one on min-supported.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How do you debug iOS Safari?</div>
   <div class="qa-answer">
@@ -799,50 +808,20 @@ npx sentry-cli upload-proguard --org=myorg --project=myapp \\
     <li>You symbolicate crashes (don't squint at minified stacks).</li>
   </ul>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Different stacks, different tools — connect a real device, debug JS on the actual engine, use native tools for native, and Sentry with uploaded symbols for production</strong> — and always smoke-test critical paths on a real device.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Mobile web:</strong> connect the device and drive it from a desktop browser — iOS Safari via the macOS <strong>Develop menu</strong> (Web Inspector on), Android Chrome via <code>chrome://inspect/#devices</code> (USB debugging on).</li>
-    <li><strong>React Native DevTools (RN 0.76+)</strong> replaced "Debug in Chrome": it connects to on-device <strong>Hermes</strong> via the Chrome DevTools Protocol, so you debug the real engine your users run — not Chrome's V8 (behavior could diverge: regex, Intl).</li>
-    <li>Split debugging by layer: <strong>JS issue → RN / React DevTools; native issue → Xcode (iOS) or Android Studio (Android).</strong></li>
-    <li><strong>Flipper is de-emphasized</strong> (heavyweight, plugins lagged RN versions, Meta cut investment) — use RN DevTools for JS, native tools for native.</li>
-    <li>Native perf: <strong>Xcode Instruments</strong> (Time Profiler, Allocations, Animation Hitches) and <strong>Android Studio Profiler</strong> (CPU, Memory, Network, Energy).</li>
-    <li><strong>RN Perf Monitor</strong> shows JS FPS + UI FPS: <strong>JS FPS drop = JS-thread bottleneck</strong> (memo, FlashList, useCallback); <strong>UI FPS drop = native render bottleneck</strong> (reduce view count).</li>
-    <li>Know the <code>adb logcat</code> filters: <code>grep ReactNativeJS</code> (RN console.log), <code>*:E</code> (errors), <code>--pid=$(adb shell pidof com.myapp)</code> (your app), <code>grep FATAL</code> (crashes); <code>adb reverse tcp:8081 tcp:8081</code> tunnels Metro to a device.</li>
-    <li><strong>Production needs Sentry / Crashlytics</strong> — you can't attach DevTools to a user's phone. Upload <strong>all</strong> symbols in CI: JS source maps + iOS dSYM + Android proguard mapping — or crashes are unreadable.</li>
-    <li>Add <strong>breadcrumbs</strong> at navigation and key actions for "what was the user doing?" context on a crash.</li>
-    <li><strong>Simulators/emulators are approximations:</strong> camera, biometrics, push delivery, real network, and performance all differ — test critical paths on a real <strong>mid-range Android</strong> (Pixel 5, Galaxy A), not a flagship.</li>
-    <li><strong>Test a release build locally</strong> before shipping — catches Hermes-only bugs, ProGuard-removed classes (add <code>-keep</code>), missing assets.</li>
-    <li>Know the platform killers: Android <strong>ANR</strong> (main thread blocked &gt;5s) and iOS <strong>watchdog timeout</strong> (~20s launch) — both point to blocking the main thread; defer work off first frame.</li>
-    <li>Intercept HTTPS from a device with <strong>Charles / Proxyman</strong>: set the device proxy to your machine + install and trust the root cert (pinning like TrustKit can still block).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Debugging only on the simulator (and with "Debug in Chrome").</strong> Simulators run on your Mac's CPU and fake or omit camera, biometrics, push, thermals, and real networks — and "Debug in Chrome" runs JS in V8, not the device's Hermes, so behavior diverges. Fix: use RN DevTools / the Hermes inspector for accurate JS, and smoke-test every critical path on a real mid-range device before claiming "works."</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Different stacks, different tools: connect a real device and use the desktop browser for mobile web, RN DevTools on Hermes for JS, and Xcode / Android Studio for the native side."</div>
-  <div class="revision-say">"For production I can't attach a debugger to a user's phone, so I run Sentry and upload source maps, dSYM, and proguard mapping in CI, plus breadcrumbs for context."</div>
-  <div class="revision-say">"Simulators are approximations — I always test camera, push, and performance on a mid-range Android, and I profile a release build, not just dev."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Which native tools do you reach for on iOS versus Android?</div>
+  <div class="qa-answer">
+    <p><strong>iOS:</strong> Xcode's Console (and Devices and Simulators → Device Logs) for logs and native crash reports, and <strong>Instruments</strong> (Product → Profile) with templates such as Time Profiler (CPU sampling), Allocations, Leaks, Animation Hitches (dropped frames), Network, Energy Log and Core Animation. <strong>Android:</strong> Android Studio's <strong>Logcat</strong> (filter by package, log level, or tags like <code>ReactNativeJS</code> / <code>AndroidRuntime</code>, or <code>adb logcat</code> from the terminal), the <strong>Profiler</strong> (CPU flame graph, Memory heap dumps, Network, Energy), and the Layout Inspector for the native view hierarchy. Rule of thumb: JS issues go to RN / React DevTools, native issues go to these platform tools.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you debug Mobile Safari on a physical iPhone from your Mac's Develop menu?</li>
-    <li>Can you inspect Chrome on an Android device via <code>chrome://inspect/#devices</code>?</li>
-    <li>Can you explain what React Native DevTools (RN 0.76+) gives you over the old Flipper / remote debugger?</li>
-    <li>Can you say which native tools you'd reach for on the iOS side vs the Android side (Instruments / Console vs Profiler / Logcat)?</li>
-    <li>Can you explain how production crashes get symbolicated across JS and native with Sentry / Crashlytics?</li>
-    <li>Can you justify why simulators and emulators aren't enough for camera, biometrics, push, and performance?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. How do production crashes get symbolicated across JS and native code?</div>
+  <div class="qa-answer">
+    <p>You can't attach DevTools to a user's phone, so Sentry or Crashlytics captures the crash, but release builds are minified and stripped, so stacks are only readable if the matching symbols were uploaded for that release. That means three uploads in CI after every build: <strong>JS source maps</strong> for JS stacks (<code>sentry-cli sourcemaps upload --release ...</code>), the <strong>iOS dSYM</strong> for native iOS frames (<code>sentry-cli debug-files upload</code>), and the <strong>Android ProGuard mapping</strong> (<code>mapping.txt</code>, via <code>sentry-cli upload-proguard</code>). Tag events with the release so the right files are used. Without symbols, production crashes are unreadable; as a manual fallback you can symbolicate an iOS <code>.ips</code> report with <code>atos</code> against the dSYM.</p>
+  </div>
 </div>
-`}
+` },
 
-]
+  ]
 });

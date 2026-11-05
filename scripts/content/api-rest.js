@@ -1,32 +1,40 @@
 window.PREP_SITE.registerTopic({
-  id: 'api-rest',
-  module: 'api-design',
-  title: 'REST Principles',
-  estimatedReadTime: '45 min',
-  tags: ['rest', 'http', 'api-design', 'idempotency', 'caching', 'pagination', 'status-codes', 'http-verbs'],
+  id: "api-rest",
+  module: "api-design",
+  title: "REST Principles",
+  estimatedReadTime: "45 min",
+  tags: ["rest","http","api-design","idempotency","caching","pagination","status-codes","http-verbs"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>REST</strong> is an architectural style for distributed systems that uses HTTP as a protocol of <em>resources</em> (nouns) manipulated by <em>verbs</em> (GET, POST, PUT, PATCH, DELETE). The core appeal: it leverages everything HTTP already gives you — caching, status codes, content negotiation, redirects — and it's polyglot-friendly. The core pain: schemas are external (OpenAPI), error semantics drift, and over-/under-fetching is unavoidable for read-heavy UIs.</p>
-<ul>
-  <li><strong>Resources, not actions:</strong> URIs are nouns (<code>/users/42/orders</code>), not verbs (<code>/getOrdersForUser?id=42</code>).</li>
-  <li><strong>Pick the right verb:</strong> GET reads, POST creates, PUT replaces, PATCH partially updates, DELETE removes. Use HEAD for existence + OPTIONS for CORS preflight.</li>
-  <li><strong>Status codes carry semantics:</strong> 2xx success, 3xx redirect, 4xx client error, 5xx server error. Be specific — 422 for validation, 409 for conflict, 404 for missing, 401 for auth, 403 for permission.</li>
-  <li><strong>Idempotency matters:</strong> GET, PUT, DELETE are idempotent by spec; POST isn't unless you add an <code>Idempotency-Key</code> header.</li>
-  <li><strong>Pagination, filtering, sorting</strong> are first-class concerns: cursor &gt; offset for large or live datasets.</li>
-  <li><strong>Cache aggressively:</strong> <code>Cache-Control</code>, <code>ETag</code>, <code>Last-Modified</code>, <code>304 Not Modified</code> save bandwidth and round-trips.</li>
-  <li><strong>Errors:</strong> consistent shape — <code>application/problem+json</code> (RFC 9457, formerly 7807) or your team's equivalent.</li>
-</ul>
-<p><strong>Mantra:</strong> "Resources as nouns, HTTP verbs as actions, status codes as semantics, headers as metadata."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>REST leverages HTTP itself: resources are nouns, verbs are actions, status codes are semantics, and headers are metadata — so caching, idempotency, and pagination come almost for free.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>URIs are nouns, never verbs</strong> — <code>GET /users/42</code>, not <code>POST /getUserById</code>; hierarchy reflects ownership (<code>/orgs/42/projects/7</code>), plural + kebab-case, no file extensions.</li>
+    <li><strong>Pick the verb by semantics:</strong> GET reads, POST creates, PUT replaces, PATCH partially updates, DELETE removes; HEAD for existence, OPTIONS for CORS preflight. GET/PUT/DELETE are idempotent by spec, POST is not, PATCH depends on the payload.</li>
+    <li><strong>Status codes carry meaning</strong> — be specific: 201 + Location on create, 204 for no-body delete, 422 for validation (body parsed but business-invalid) vs 400 for malformed, 409 for conflict, 401 auth vs 403 permission, 429 + Retry-After when rate-limited.</li>
+    <li><strong>Idempotency protects retries:</strong> add an <code>Idempotency-Key</code> header on mutating POSTs and dedupe on (key, request hash) — mobile networks fail mid-request and clients retry.</li>
+    <li><strong>Cursor pagination by default</strong> — stable across writes and index-friendly; offset/page break under inserts. Encode the cursor opaque so clients cannot mutate it.</li>
+    <li><strong>Cache with ETag + <code>If-None-Match</code> → 304,</strong> plus <code>Cache-Control</code> and <code>Vary</code>; use <code>If-Match</code> → 412 for optimistic concurrency.</li>
+    <li><strong>One consistent error envelope</strong> — RFC 9457 (formerly 7807) problem+json or your own — used everywhere; inconsistent error shapes are the #1 client complaint.</li>
+    <li><strong>Data hygiene:</strong> ISO 8601 UTC timestamps with <code>Z</code>, money as integer minor units (never floats), big IDs as strings to survive JS 2⁵³.</li>
+    <li><strong>Mantra:</strong> "Resources as nouns, HTTP verbs as actions, status codes as semantics, headers as metadata."</li>
+    <li><strong>Where REST hurts:</strong> schemas are external (OpenAPI, nothing enforces it), over-/under-fetching, N+1 round trips for screens that need several resources, and no native realtime (WebSocket/SSE bolted on).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Returning HTTP 200 with <code>{ "success": false }</code> for errors (and 500 for client mistakes).</strong> This blinds every proxy, CDN, and client that observes status codes. Let the status line carry the outcome: 4xx for client faults (422/409/401/403), 5xx only for real server bugs.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"422 instead of 400 when the JSON parses but business rules fail — it distinguishes 'bad request' from 'bad data'."</div>
+  <div class="revision-say">"Idempotency-Key on every mutating POST, because mobile networks drop mid-request and clients retry safely."</div>
+  <div class="revision-say">"Cursor pagination because feeds are append-mostly and offset skips or dupes rows under concurrent writes."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "REST" actually means</h3>
 <p>REST (REpresentational State Transfer) is the dissertation thesis Roy Fielding wrote in 2000 that codified the constraints of HTTP-style architectures. In practice, "REST" today usually means HTTP+JSON APIs that <em>follow most</em> of those constraints. Pure REST is rare; "RESTful" is the working term.</p>
 
@@ -93,12 +101,10 @@ window.PREP_SITE.registerTopic({
   <li>Auth is one mechanism, documented; rate limits are documented.</li>
   <li>OpenAPI is generated from code (or vice versa) and published alongside the API.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Resources, representations, and state</h3>
 <p>A <strong>resource</strong> is a conceptual thing (a User, an Order, a list of Comments). A <strong>representation</strong> is a concrete encoding of that thing (JSON, XML, HTML). The same resource may have multiple representations negotiated via <code>Accept</code>:</p>
 <pre><code class="language-http">GET /users/42 HTTP/1.1
@@ -184,12 +190,10 @@ Accept: text/html
   <li><strong>App-level cache</strong> — controlled by <code>ETag</code> + <code>If-None-Match</code> revalidation.</li>
 </ol>
 <p>Default rule of thumb: GET with no Authorization → <code>Cache-Control: public, max-age=&lt;short&gt;</code>. Authenticated GET → <code>private, no-cache</code> + ETag.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Pagination strategies</h3>
 <table>
   <thead><tr><th>Style</th><th>How</th><th>Pro</th><th>Con</th></tr></thead>
@@ -358,12 +362,10 @@ Accept: text/csv
           $ref: '#/components/responses/NotFound'
 </code></pre>
 <p>Generate types for every consumer (TS, Swift, Kotlin) and run contract tests in CI. The bigger your API surface, the more this pays off.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Designing a Comments API</h3>
 <p>Requirements: posts have many comments; comments have author, body, createdAt; comments support pagination, edits, deletes; abuse reports need to be tracked.</p>
 
@@ -513,12 +515,11 @@ Content-Type: application/json
   <li>Stop on 4xx (except 429); send dead-letter alert.</li>
   <li>Document delivery guarantees: at-least-once, possibly out-of-order.</li>
 </ul>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Trailing slashes</h3>
 <p>Pick one (with or without) and 308-redirect the other. Mixing breaks caches and bookmarks.</p>
 
@@ -607,12 +608,9 @@ Content-Type: application/json
 
 <h3>Versioning + caching collision</h3>
 <p>If you key cache by URI alone, switching response shape breaks consumers stuck on stale CDN copies. Either bump URI version (<code>/v1/users/42</code> → <code>/v2/users/42</code>) or include version in <code>Vary</code> + cache key.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 10 most common REST anti-patterns</h3>
 <ol>
   <li><strong>Verbs in URIs.</strong> <code>POST /getUser</code>, <code>POST /updatePassword</code>. Use <code>GET /users/42</code>, <code>PATCH /users/42/password</code>.</li>
@@ -689,12 +687,10 @@ GET /users/42
 
 <h3>Anti-pattern: enums as strings without versioning policy</h3>
 <p>Adding a new enum value (<code>status: "archived"</code>) breaks clients that did <code>switch (status) { case "active": ... default: throw }</code>. Document: "new enum values may appear; clients must handle unknown."</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common REST design prompts</h3>
 <ol>
   <li>Design the API for Twitter / Instagram / Pinterest feed.</li>
@@ -820,50 +816,38 @@ GET /users/42
   <li>"Read AWS S3 API docs for pre-signed URL flow + multipart upload."</li>
   <li>"Pair-design a payments API with someone; idempotency stories make it real."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>REST leverages HTTP itself: resources are nouns, verbs are actions, status codes are semantics, and headers are metadata — so caching, idempotency, and pagination come almost for free.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>URIs are nouns, never verbs</strong> — <code>GET /users/42</code>, not <code>POST /getUserById</code>; hierarchy reflects ownership (<code>/orgs/42/projects/7</code>), plural + kebab-case, no file extensions.</li>
-    <li><strong>Pick the verb by semantics:</strong> GET reads, POST creates, PUT replaces, PATCH partially updates, DELETE removes; GET/PUT/DELETE are idempotent by spec, POST is not.</li>
-    <li><strong>Status codes carry meaning</strong> — be specific: 201 + Location on create, 204 for no-body delete, 422 for validation (body parsed but business-invalid) vs 400 for malformed, 409 for conflict, 401 auth vs 403 permission, 429 + Retry-After when rate-limited.</li>
-    <li><strong>Idempotency protects retries:</strong> add an <code>Idempotency-Key</code> header on mutating POSTs and dedupe on (key, request hash) — mobile networks fail mid-request and clients retry.</li>
-    <li><strong>Cursor pagination by default</strong> — stable across writes and index-friendly; offset/page break under inserts. Encode the cursor opaque so clients cannot mutate it.</li>
-    <li><strong>Cache with ETag + <code>If-None-Match</code> → 304,</strong> plus <code>Cache-Control</code> and <code>Vary</code>; use <code>If-Match</code> → 412 for optimistic concurrency.</li>
-    <li><strong>One consistent error envelope</strong> — RFC 9457 (formerly 7807) problem+json or your own — used everywhere; inconsistent error shapes are the #1 client complaint.</li>
-    <li><strong>Data hygiene:</strong> ISO 8601 UTC timestamps with <code>Z</code>, money as integer minor units (never floats), big IDs as strings to survive JS 2⁵³.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Returning HTTP 200 with <code>{ "success": false }</code> for errors (and 500 for client mistakes).</strong> This blinds every proxy, CDN, and client that observes status codes. Let the status line carry the outcome: 4xx for client faults (422/409/401/403), 5xx only for real server bugs.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"422 instead of 400 when the JSON parses but business rules fail — it distinguishes 'bad request' from 'bad data'."</div>
-  <div class="revision-say">"Idempotency-Key on every mutating POST, because mobile networks drop mid-request and clients retry safely."</div>
-  <div class="revision-say">"Cursor pagination because feeds are append-mostly and offset skips or dupes rows under concurrent writes."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you map "activate this account" to a verb + URI and defend the choice against the alternative?</li>
-    <li>Can you explain when to return 422 vs 400, and 409 vs 404?</li>
-    <li>Can you make a POST idempotent with an <code>Idempotency-Key</code>, and name which verbs are idempotent by spec?</li>
-    <li>Can you explain when cursor pagination beats offset for a live, append-mostly feed?</li>
-    <li>Can you wire up <code>ETag</code> / <code>If-None-Match</code> / <code>304</code> to cut bandwidth and round-trips?</li>
-    <li>Can you name REST's structural weaknesses — over/under-fetching, N+1 round trips, no native realtime?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. How would you model "activate this account" in a REST API, and why?</div>
+  <div class="qa-answer">
+    <p>The rule is no verbs in URIs, so <code>POST /users/42/activate</code> is the option to avoid. My default is <code>PATCH /users/42</code> with <code>{ "status": "active" }</code>: it treats activation as a state change of the user resource, and setting a status is idempotent, so clients can retry it freely. The alternative is to model the action as a noun, <code>POST /users/42/activations</code>, which creates an activation sub-resource; that fits when the action carries its own data or history, but POST is not idempotent by spec, so it needs an <code>Idempotency-Key</code>. Either way I'd name the trade-off aloud, because "verb mapping awkwardness" is a known REST weak spot.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q2. When do you return 422 vs 400, and 409 vs 404?</div>
+  <div class="qa-answer">
+    <p><strong>400</strong> is for a malformed request: broken JSON or a missing required field. <strong>422</strong> is when the body parses but fails validation or business rules, which distinguishes "bad request" from "bad data". <strong>404</strong> means the resource doesn't exist (and is also used when you want to hide that it exists from someone who can't see it). <strong>409</strong> means the resource exists but the request conflicts with its current state, such as an optimistic-lock failure or a duplicate unique key. Never return 200 with <code>{ "success": false }</code>, or 500 for a client mistake.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. Which HTTP verbs are idempotent, and how do you make a POST safe to retry?</div>
+  <div class="qa-answer">
+    <p>By spec GET, HEAD, PUT and DELETE are idempotent (a repeated DELETE returning 404 is fine); POST is not, and PATCH depends on the payload: <code>{ "status": "active" }</code> is idempotent, an increment isn't. To make a POST retry-safe the client sends an <code>Idempotency-Key: &lt;uuid&gt;</code> header. The server stores <code>(idempotency_key, request_hash) → response</code> for a TTL (24h is typical): the same key returns the cached response without re-executing, a new key is processed normally, and the same key with a different body gets a 422. This matters because mobile networks fail mid-request and clients retry.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. How do ETag, If-None-Match and 304 work together?</div>
+  <div class="qa-answer">
+    <p>The server returns an <code>ETag</code>, an opaque version token, with the resource, plus <code>Cache-Control</code> for how long and where it may be cached. On the next request the client sends it back as <code>If-None-Match: "v3-abc"</code>; if the resource hasn't changed the server replies <strong>304 Not Modified</strong> with no body, so the client reuses its cached copy. This saves bandwidth, which on cellular is real money, and is worth defaulting to on list endpoints. A common bug is emitting ETags but never honouring <code>If-None-Match</code>, which pays for the cache infrastructure with no benefit. The write-side twin is <code>If-Match</code> → 412 for optimistic concurrency.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. What are REST's structural weaknesses?</div>
+  <div class="qa-answer">
+    <p><strong>Over- and under-fetching:</strong> "a user with their orders and addresses" is either 3 round trips or one bloated endpoint. <strong>N+1 round trips:</strong> the client must assemble several endpoints, and mobile apps on bad networks pay for every one. <strong>No native realtime:</strong> REST is request/response, so WebSockets or SSE get bolted on. Also <strong>schema drift</strong>, since OpenAPI is external and nothing in HTTP enforces it, and awkward verb mapping for actions. That's why for an internal mobile-only stack tRPC or GraphQL can cut round trips, while REST stays strong for polyglot consumers, CDN cacheability and public APIs.</p>
+  </div>
+</div>
+` },
+
   ]
 });

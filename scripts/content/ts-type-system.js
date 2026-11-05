@@ -1,33 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'ts-type-system',
-  module: 'typescript',
-  title: 'Type System Basics',
-  estimatedReadTime: '40 min',
-  tags: ['typescript', 'type-system', 'structural-typing', 'narrowing', 'never', 'unknown', 'union', 'intersection', 'literal-types'],
+  id: "ts-type-system",
+  module: "typescript",
+  title: "Type System Basics",
+  estimatedReadTime: "40 min",
+  tags: ["typescript","type-system","structural-typing","narrowing","never","unknown","union","intersection","literal-types"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>TypeScript is a <strong>structural, gradual, erased</strong> type system layered over JavaScript. Types describe the shape of values; they vanish at compile time and have <em>zero runtime cost</em>. Your job as a TS user is to give the checker enough information to catch real bugs without drowning the codebase in noise.</p>
-<ul>
-  <li><strong>Structural:</strong> two types match if their shapes match. There is no nominal "<em>this is a User and that is a User-shaped thing</em>" distinction unless you opt in.</li>
-  <li><strong>Gradual:</strong> <code>any</code> opts out, <code>unknown</code> is the safe escape hatch, <code>never</code> represents impossible values. Use them on purpose.</li>
-  <li><strong>Erased:</strong> nothing in <code>.ts</code> survives compilation except runtime JS. Types do not validate input at runtime — that's <code>zod</code>/<code>io-ts</code>'s job.</li>
-  <li><strong>Inference is your friend:</strong> annotate function parameters and exported APIs; let TS infer almost everything else.</li>
-  <li><strong>Narrowing:</strong> <code>typeof</code>, <code>instanceof</code>, <code>in</code>, equality, and discriminated unions tighten a wide type within a branch.</li>
-  <li><strong>Union vs intersection:</strong> <code>A | B</code> is "either"; <code>A &amp; B</code> is "both at once" (the merged shape).</li>
-  <li><strong>Literal types and <code>const</code> assertions</strong> make the type system express domain rules ("status must be one of these four strings") for free.</li>
-</ul>
-<p><strong>Mantra:</strong> "Model the data, narrow the unknowns, refuse <code>any</code>, never trust the network."</p>
-<p><strong>Version note:</strong> the type-system fundamentals here are version-stable. Current stable is <strong>TypeScript 6.0</strong> (GA March 2026); the Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026, ~10× faster type-checking).</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">TypeScript is a <strong>structural, gradual, erased</strong> type system where <strong>types are sets of values</strong> — model the data, narrow the unknowns, refuse <code>any</code>, and never trust the network at runtime.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Structural:</strong> compatibility is by shape, not name — anything with a string <code>name</code> matches <code>{ name: string }</code>; a nominal feel needs branding or a private member.</li>
+    <li><strong>Gradual:</strong> <code>any</code> opts out of checking (and infects everything downstream); <code>unknown</code> is the safe escape hatch that forces narrowing. Use them on purpose.</li>
+    <li><strong>Erased:</strong> types vanish at compile time with zero runtime cost — they cannot validate input; that's <code>zod</code>/<code>io-ts</code>'s job.</li>
+    <li><strong>Types are sets:</strong> <code>never</code> = ∅, <code>unknown</code> = the universal set, union = set union (wider), intersection = set intersection (narrower / merged object shape), subtype = subset, and a value is assignable iff its set is a subset.</li>
+    <li><strong>The trio:</strong> <code>any</code> = trust me (banned by default), <code>unknown</code> = narrow before use, <code>never</code> = impossible / exhaustiveness (<code>const _: never = s</code>).</li>
+    <li><strong>Narrow with</strong> <code>typeof</code>, <code>instanceof</code>, <code>in</code>, equality, discriminated unions, and user-defined predicates (<code>x is T</code>).</li>
+    <li><strong>Literal types + <code>as const</code></strong> express domain rules for free; <code>let</code> widens (<code>"hi"</code> → <code>string</code>), <code>const</code> preserves the literal.</li>
+    <li><strong>Inference:</strong> annotate function parameters and exported APIs (they're contracts); let locals infer — inference is often narrower than your annotation.</li>
+    <li><strong>Excess-property checks fire only on fresh object literals</strong> and are bypassed once the value is in a variable — use <code>satisfies</code> to keep the check downstream.</li>
+    <li><strong><code>satisfies</code> vs annotation vs <code>as</code>:</strong> <code>satisfies</code> checks shape without widening (keeps literals); an annotation widens; <code>as</code> asserts without checking and can lie.</li>
+    <li><strong><code>type</code> vs <code>interface</code>:</strong> interfaces merge/extend and suit object shapes and public API; <code>type</code> aliases handle unions, tuples, and mapped/conditional types.</li>
+    <li><strong>Strict baseline:</strong> <code>strict</code> + <code>noUncheckedIndexedAccess</code> (which makes <code>arr[i]</code> return <code>T | undefined</code>) is the highest-leverage flag for catching null-deref bugs.</li>
+    <li><strong>Version note:</strong> current stable is <strong>TypeScript 6.0</strong> (GA March 2026); the Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026, ~10× faster type-checking).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Using <code>as</code> to trust untyped data</strong> — <code>JSON.parse(raw) as User</code> is a runtime lie because the cast is erased, so a bad field crashes later; and <strong>one <code>any</code> at a boundary infects every downstream value</strong>. Fix: cast to <code>unknown</code> and narrow with a guard or a schema, and reach for <code>unknown</code> — never <code>any</code> — to stop the bleeding.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"TypeScript is structural, gradual, and erased — compatibility is by shape, and types disappear at runtime, so they can't validate input."</div>
+  <div class="revision-say">"The clearest model is types-as-sets: never is the empty set, unknown is everything, union is set union, and intersection is set intersection."</div>
+  <div class="revision-say">"At the boundary I cast to unknown and narrow with a guard or zod — never any, and never JSON.parse as SomeType, because the cast is a runtime lie."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is the TypeScript type system?</h3>
 <p>TypeScript adds a <em>static</em> type checker on top of JavaScript. You write code that looks like JS plus type annotations; the compiler (<code>tsc</code>) reads the annotations and either tells you something is wrong or strips them away and emits plain JS. The type system itself is a separate language that runs only at compile time.</p>
 <p>Three properties define how it behaves:</p>
@@ -89,12 +99,10 @@ window.PREP_SITE.registerTopic({
 }
 </code></pre>
 <p><code>noUncheckedIndexedAccess</code> in particular catches the most common real-world bug class: assuming an array lookup returns the element type when it can return <code>undefined</code>.</p>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>"Types are sets of values"</h3>
 <p>This is the single most clarifying mental model in TS. Forget "type" as a class label. A type is a <em>set</em>; a value belongs to that set if it's a member.</p>
 <table>
@@ -148,12 +156,10 @@ const p: Point = new Vec();   // ✅ Vec has x and y, that's enough
     <tr><td><code>as const</code></td><td>locks all literals + readonly</td><td><code>{x: 1, y: 2} as const</code></td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Defining types: <code>type</code> vs <code>interface</code></h3>
 <pre><code class="language-ts">// Both define a User
 type User = { id: string; name: string };
@@ -332,12 +338,10 @@ const ROLE = ["admin", "user"] as const;
 type Role2 = typeof ROLE[number];        // "admin" | "user"
 // Zero runtime cost, plays nicely with bundlers, exhaustively checkable.
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Modeling a Result type for async data</h3>
 <pre><code class="language-ts">type Result&lt;T, E = Error&gt; =
   | { tag: "idle" }
@@ -507,12 +511,11 @@ const c2 = { red: "#f00", green: "#0f0" } satisfies Record&lt;string, string&gt;
 c2.red;               // "#f00" (still literal)
 c2.purple;            // ❌ does not exist
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Optional vs <code>undefined</code> property</h3>
 <p>With <code>exactOptionalPropertyTypes</code> off (the default), <code>{ x?: number }</code> and <code>{ x: number | undefined }</code> are nearly identical. With it on (<em>recommended</em>), they're different — the former allows omission, the latter requires you to write <code>undefined</code> explicitly.</p>
 
@@ -611,12 +614,9 @@ class Foo2 {
   constructor(public bar3: string) {}  // assigned in constructor
 }
 </code></pre>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: <code>as</code> instead of narrowing</h3>
 <pre><code class="language-ts">// BAD — silent at compile time, crashes at runtime
 const data = JSON.parse(raw) as User;
@@ -754,12 +754,10 @@ interface Order {
 
 <h3>Anti-pattern 7: Ignoring the lint warning that the compiler is wrong</h3>
 <p>"It's just a TS error, the code works." Read the error. They are almost always real issues — wrong assumptions about nullability, wrong shape, stale signatures.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 must-know answers</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -874,57 +872,32 @@ type ProductId = Brand&lt;string, "ProductId"&gt;;</code></pre>
   <li>"For migrations from JS, <code>allowJs</code> + <code>checkJs</code> with JSDoc gives you 80% of TS at 0% of the rewrite cost."</li>
   <li>"<code>noUncheckedIndexedAccess</code> is the single highest-leverage flag for catching null-deref bugs in real codebases."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">TypeScript is a <strong>structural, gradual, erased</strong> type system where <strong>types are sets of values</strong> — model the data, narrow the unknowns, refuse <code>any</code>, and never trust the network at runtime.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Structural:</strong> compatibility is by shape, not name — anything with a string <code>name</code> matches <code>{ name: string }</code>; a nominal feel needs branding or a private member.</li>
-    <li><strong>Gradual:</strong> <code>any</code> opts out of checking (and infects everything downstream); <code>unknown</code> is the safe escape hatch that forces narrowing. Use them on purpose.</li>
-    <li><strong>Erased:</strong> types vanish at compile time with zero runtime cost — they cannot validate input; that's <code>zod</code>/<code>io-ts</code>'s job.</li>
-    <li><strong>Types are sets:</strong> <code>never</code> = ∅, <code>unknown</code> = the universal set, union = set union (wider), intersection = set intersection (narrower / merged object shape), subtype = subset, and a value is assignable iff its set is a subset.</li>
-    <li><strong>The trio:</strong> <code>any</code> = trust me (banned by default), <code>unknown</code> = narrow before use, <code>never</code> = impossible / exhaustiveness (<code>const _: never = s</code>).</li>
-    <li><strong>Narrow with</strong> <code>typeof</code>, <code>instanceof</code>, <code>in</code>, equality, discriminated unions, and user-defined predicates (<code>x is T</code>).</li>
-    <li><strong>Literal types + <code>as const</code></strong> express domain rules for free; <code>let</code> widens (<code>"hi"</code> → <code>string</code>), <code>const</code> preserves the literal.</li>
-    <li><strong>Inference:</strong> annotate function parameters and exported APIs (they're contracts); let locals infer — inference is often narrower than your annotation.</li>
-    <li><strong>Excess-property checks fire only on fresh object literals</strong> and are bypassed once the value is in a variable — use <code>satisfies</code> to keep the check downstream.</li>
-    <li><strong><code>satisfies</code> vs annotation vs <code>as</code>:</strong> <code>satisfies</code> checks shape without widening (keeps literals); an annotation widens; <code>as</code> asserts without checking and can lie.</li>
-    <li><strong><code>type</code> vs <code>interface</code>:</strong> interfaces merge/extend and suit object shapes and public API; <code>type</code> aliases handle unions, tuples, and mapped/conditional types.</li>
-    <li><strong>Strict baseline:</strong> <code>strict</code> + <code>noUncheckedIndexedAccess</code> (which makes <code>arr[i]</code> return <code>T | undefined</code>) is the highest-leverage flag for catching null-deref bugs.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Using <code>as</code> to trust untyped data</strong> — <code>JSON.parse(raw) as User</code> is a runtime lie because the cast is erased, so a bad field crashes later; and <strong>one <code>any</code> at a boundary infects every downstream value</strong>. Fix: cast to <code>unknown</code> and narrow with a guard or a schema, and reach for <code>unknown</code> — never <code>any</code> — to stop the bleeding.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"TypeScript is structural, gradual, and erased — compatibility is by shape, and types disappear at runtime, so they can't validate input."</div>
-  <div class="revision-say">"The clearest model is types-as-sets: never is the empty set, unknown is everything, union is set union, and intersection is set intersection."</div>
-  <div class="revision-say">"At the boundary I cast to unknown and narrow with a guard or zod — never any, and never JSON.parse as SomeType, because the cast is a runtime lie."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. TypeScript is structural, gradual and erased. What does each mean, and what's one consequence of each?</div>
+  <div class="qa-answer">
+    <p><strong>Structural:</strong> compatibility is by shape, not name — <code>{ name: string }</code> accepts anything with a string <code>name</code>. That's why duck-typed JS interop just works, and why you need branding to make <code>UserId</code> and <code>ProductId</code> non-interchangeable. <strong>Gradual:</strong> typed and untyped code can mix, and <code>any</code> short-circuits the checker. That lets big JS codebases migrate incrementally, but it also makes "death by <code>any</code>" possible. <strong>Erased:</strong> types disappear at compile time and the runtime never sees them, so runtime performance is identical to JS — and types can't validate user input; that needs <code>zod</code>/<code>io-ts</code>.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the three pillars — structural, gradual, and erased — and one consequence of each?</li>
-    <li>Can you explain the "types are sets" model (<code>never</code> = empty, <code>unknown</code> = universe, union = wider, intersection = narrower)?</li>
-    <li>Can you contrast <code>any</code>, <code>unknown</code>, and <code>never</code> and say when to use each?</li>
-    <li>Can you list the narrowing techniques — <code>typeof</code>, <code>instanceof</code>, <code>in</code>, equality, discriminated unions, user-defined predicates?</li>
-    <li>Can you explain why excess-property checks fire only on fresh object literals and how <code>satisfies</code> keeps the check?</li>
-    <li>Can you explain the difference between <code>satisfies</code>, a type annotation, and <code>as</code>?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Explain the "types are sets" model.</div>
+  <div class="qa-answer">
+    <p>A type is the set of values that belong to it: <code>"red"</code> is the one-element set, <code>boolean</code> is {true, false}, <code>string</code> is all strings. <code>never</code> is the empty set; <code>unknown</code> is the universal set (and <code>any</code> is also everything, but the checker stops asking). A union <code>A | B</code> is set union, so it's wider and accepts more values; an intersection <code>A &amp; B</code> is set intersection, so it's narrower — for object types that's the combined shape, because a value with both shapes is in both sets. A subtype is a subset, and a value of type T is assignable to S exactly when T's set ⊆ S's set.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. Why do excess-property checks fire only on fresh object literals, and how does <code>satisfies</code> help?</div>
+  <div class="qa-answer">
+    <p>Structurally, an object with extra properties still fits a smaller type, so TS only flags extras where they're almost certainly a typo: an object literal written directly into a typed slot. <code>const p: Point = { x: 1, y: 2, z: 3 }</code> errors on <code>z</code>, but <code>const obj = { x: 1, y: 2, z: 3 }; const p2: Point = obj;</code> passes, because <code>obj</code> is no longer a fresh literal. Writing the literal with <code>satisfies Point</code> keeps the check at the point of creation while preserving the value's precise inferred type for later use.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. What is the difference between <code>satisfies</code>, a type annotation, and <code>as</code>?</div>
+  <div class="qa-answer">
+    <p>An <strong>annotation</strong> (<code>const colors: Record&lt;string, string&gt; = {...}</code>) checks the value and then widens it to the annotated type, so <code>colors.red</code> is just <code>string</code> and you lose which keys exist. An <strong>assertion</strong> (<code>as</code>) doesn't check — it tells the compiler to trust you, so <code>{ red: "#f00" } as Record&lt;"red" | "green", string&gt;</code> compiles even though <code>green</code> is missing; it can lie. <strong><code>satisfies</code></strong> checks the value against the type <em>without</em> widening: <code>c2.red</code> stays the literal <code>"#f00"</code> and <code>c2.purple</code> is an error. Default to <code>satisfies</code> or an annotation; reserve <code>as</code> for cases you can't express otherwise, and never for untrusted data.</p>
+  </div>
+</div>
+` },
+
   ]
 });

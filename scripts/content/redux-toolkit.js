@@ -1,25 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'redux-toolkit',
-  module: 'redux',
-  title: 'Redux Toolkit (RTK)',
-  estimatedReadTime: '30 min',
-  tags: ['redux', 'rtk', 'redux-toolkit', 'immer', 'typescript'],
+  id: "redux-toolkit",
+  module: "redux",
+  title: "Redux Toolkit (RTK)",
+  estimatedReadTime: "30 min",
+  tags: ["redux","rtk","redux-toolkit","immer","typescript"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>Redux Toolkit (RTK)</strong> is the official, recommended way to write Redux — as of 2026 it's not an alternative to Redux, it <em>is</em> Redux. Nobody hand-writes action constants and switch-statement reducers in production anymore (that's the previous topic, and it exists purely to teach the mechanism).</p>
-<ul>
-  <li><strong>Batteries included:</strong> one package (<code>@reduxjs/toolkit</code>, current major RTK 2.x on top of Redux core 5.x) bundles <code>configureStore</code> (store setup with good defaults), <code>createSlice</code> (reducers + actions in one place), <code>createAsyncThunk</code> (async request lifecycle), <code>createEntityAdapter</code> (normalized CRUD state), and RTK Query (a full data-fetching layer, covered next topic).</li>
-  <li><strong>The core trick: Immer.</strong> <code>createSlice</code> lets you write reducer logic that <em>looks</em> like it mutates state (<code>state.count += 1</code>) but is actually 100% safe — Immer intercepts those writes on a "draft" object and produces a real, immutable next state behind the scenes. The rule from the last topic ("never mutate") still holds; RTK just makes obeying it automatic instead of manual.</li>
-  <li><strong>No more action-type strings scattered everywhere.</strong> <code>createSlice</code> auto-generates action creators and action-type strings from the reducer names you write, so there's exactly one place that defines each piece of slice logic.</li>
-  <li><strong>Good defaults, not just less typing:</strong> <code>configureStore</code> wires up the thunk middleware, Redux DevTools, and (in development only) checks that catch accidental state mutation and non-serializable values — the exact two bugs called out as "edge cases" in hand-written Redux.</li>
-  <li><strong>Mental model doesn't change.</strong> There's still one store, state still changes only via dispatched actions run through reducers. RTK is a layer that generates the boilerplate you'd otherwise hand-write — it doesn't replace the store/action/reducer/dispatch loop from the previous topic.</li>
-</ul>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">RTK is the official way to write Redux in 2026 — it <strong>generates the boilerplate</strong> (actions, types, immutable updates, store wiring) without changing the store/action/reducer/dispatch model, and its core trick is <strong>Immer</strong>: mutating-looking reducer code becomes a safe immutable update.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>RTK <em>is</em> Redux now</strong> — nobody hand-writes action constants and switch reducers in production; the mental model (one store, change only via dispatched actions through reducers) is unchanged.</li>
+    <li><strong>Batteries included in one package:</strong> <code>configureStore</code>, <code>createSlice</code>, <code>createAsyncThunk</code>, <code>createEntityAdapter</code>, and RTK Query.</li>
+    <li><strong>Immer is the core trick:</strong> the <code>state</code> parameter inside a <code>createSlice</code> reducer is a <em>draft</em> proxy that records writes; <code>state.count += 1</code> never touches real state — Immer produces a new immutable object from the recorded changes. The "never mutate" rule still holds; it's just automatic.</li>
+    <li><strong><code>createSlice</code> generates action creators AND action-type strings</strong> from the reducer keys (<code>name/reducerKey</code>), so a creator and its reducer can never drift out of sync — no hand-typed type strings, no typo no-ops.</li>
+    <li><strong><code>configureStore</code> bakes in good defaults:</strong> thunk middleware, Redux DevTools, and dev-only <em>immutability</em> and <em>serializability</em> checks (stripped from production) — the exact two bugs from hand-written Redux, caught automatically.</li>
+    <li><strong><code>createAsyncThunk('prefix', fn)</code> generates the pending/fulfilled/rejected lifecycle:</strong> dispatch it → <code>pending</code> fires immediately, then <code>fulfilled</code> (resolved value as payload) or <code>rejected</code> (error, or <code>rejectWithValue</code> value). Handle all three in <code>extraReducers</code> via <code>builder.addCase</code>, usually toggling a <code>status: idle | loading | succeeded | failed</code> field.</li>
+    <li><strong><code>reducers</code> handles a slice's own actions; <code>extraReducers</code> handles outside actions</strong> (like a thunk's three), and the builder ties each case to the real action creator for full type-safety.</li>
+    <li><strong><code>createEntityAdapter</code> gives normalized <code>{ ids, entities }</code> state</strong> with pre-built CRUD reducers (<code>addOne</code>, <code>removeOne</code>, <code>updateOne</code>, <code>upsertMany</code>) and memoized selectors (<code>selectAll</code>, <code>selectById</code>, ...) — O(1) lookup by id instead of scanning an array.</li>
+    <li><strong><code>createSelector</code> (Reselect) memoizes derived state</strong> — recomputes only when its input selectors change, and returns the same reference otherwise so consumers can skip re-renders. Still don't <em>store</em> derived data; compute it on read.</li>
+    <li><strong>Type the store by inference:</strong> <code>RootState = ReturnType&lt;typeof store.getState&gt;</code>, <code>AppDispatch = typeof store.dispatch</code>, then pre-typed <code>useAppSelector</code>/<code>useAppDispatch</code>. <code>AppDispatch</code> is needed because the default <code>Dispatch</code> type doesn't know the store accepts thunks.</li>
+    <li>One package, <code>@reduxjs/toolkit</code>: current major is <strong>RTK 2.x on top of Redux core 5.x</strong>. Whatever RTK generates, the store/action/reducer/dispatch loop underneath is the same one you hand-roll in Core Concepts.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Fighting Immer.</strong> Two flavors: (1) mutating the draft <em>and</em> also returning a new value in the same case reducer — Immer allows one or the other, never both, and returning a value makes it ignore your draft mutations; (2) assuming Immer protects mutations made <em>outside</em> a slice reducer — it only intercepts writes to its draft, so mutating a plain object you pulled out of the store (e.g. in a component) is a real, dangerous mutation.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"RTK is just Redux with the boilerplate generated — createSlice makes actions and reducers together, and Immer lets me write mutating-looking reducers that are actually immutable updates on a draft."</div>
+  <div class="revision-say">"createAsyncThunk gives me pending/fulfilled/rejected for free; I handle them in extraReducers and drive a status field, so no component manages its own loading flag."</div>
+  <div class="revision-say">"I normalize collections with createEntityAdapter for O(1) id lookups, memoize derived data with createSelector, and type the store by inferring RootState and AppDispatch from configureStore."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What hand-written Redux actually cost you</h3>
 <p>The previous topic showed the real mechanism — and also, honestly, most of the pain. For one small slice of state (say, a cart), hand-written Redux typically meant writing and maintaining <em>all</em> of the following, by hand, in sync with each other:</p>
 <ul>
@@ -44,10 +60,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">🧠 One-liner</div>
   <p>RTK doesn't change what Redux <em>is</em> — action in, reducer computes, store holds, subscribers notified. It changes what you have to <em>type</em> to get there, and it bakes in the defaults (thunk, DevTools, mutation/serializability checks) that used to be easy to forget.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>A slice = one domain's reducer logic + its actions, together</h3>
 <p>In hand-written Redux, "the cart reducer" and "the cart actions" were two separate things you kept in sync by hand. RTK's central unit, the <strong>slice</strong>, fuses them: <code>createSlice</code> takes a name, an initial state, and a set of "case reducer" functions, and returns <em>both</em> a reducer function <em>and</em> matching action creators — generated from the same source, so they can never drift out of sync.</p>
 <pre><code class="language-text">createSlice({ name: 'cart', initialState, reducers: { itemAdded, itemRemoved } })
@@ -74,10 +90,10 @@ What actually happens: Immer records "count changed to N+1" on the draft,
   <div class="callout-title">🔥 Key insight</div>
   <p><code>createSlice</code> reducers get to look like ordinary, mutating JavaScript (<code>state.items.push(x)</code>, <code>state.done = true</code>) because Immer is silently translating every one of those writes into an immutable update. The mental model from the last topic — reducers return new state, never mutate the old one — is still exactly true; RTK just does the translation for you.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3><code>configureStore</code> — good defaults, one call</h3>
 <pre><code class="language-js">import { configureStore } from '@reduxjs/toolkit';
 import cartReducer from './cartSlice';
@@ -241,10 +257,10 @@ import type { RootState, AppDispatch } from './store';
 export const useAppDispatch = useDispatch.withTypes&lt;AppDispatch&gt;();
 export const useAppSelector = useSelector.withTypes&lt;RootState&gt;();</code></pre>
 <p><code>RootState</code> is inferred from the store's own <code>getState</code> return type — never hand-typed and re-typed to match every reducer you add. <code>AppDispatch</code> matters because the plain <code>Dispatch</code> type doesn't know your store accepts thunks (functions), only plain action objects; without it, TypeScript would reject <code>dispatch(fetchUsers())</code>. Using <code>useAppSelector</code>/<code>useAppDispatch</code> everywhere means every component gets full autocomplete on state shape and dispatchable actions, with zero per-call type annotations.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — <code>counterSlice</code>, wired into a component</h3>
 <pre><code class="language-ts">// counterSlice.ts
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
@@ -408,10 +424,10 @@ export const store = configureStore({
 export type RootState = ReturnType&lt;typeof store.getState&gt;;
 export type AppDispatch = typeof store.dispatch;</code></pre>
 <p>Three slices, each self-contained (its own reducer logic, actions, and — for <code>todos</code> — selectors), composed into one store with no manual middleware setup and no hand-written action-type wiring anywhere.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">Why use Redux Toolkit over hand-written Redux?</div>
 <div class="qa-a">
@@ -453,46 +469,7 @@ export type AppDispatch = typeof store.dispatch;</code></pre>
 <p>Mixing styles in one reducer: mutating the draft <em>and</em> returning a new value in the same function. Immer only lets you do one or the other — if you return a value from a <code>createSlice</code> case reducer, Immer expects that return value to <em>be</em> the new state and ignores/conflicts with any draft mutations you made earlier in the same function. Another real one: putting a non-serializable value (a class instance, a <code>Map</code>, a Promise) into slice state — the dev-only serializability check in <code>configureStore</code> will warn about it, and it's worth listening to, since it breaks DevTools and persistence the same way it did in hand-written Redux.</p>
 </div>
 </div>
-`},
+` },
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">RTK is the official way to write Redux in 2026 — it <strong>generates the boilerplate</strong> (actions, types, immutable updates, store wiring) without changing the store/action/reducer/dispatch model, and its core trick is <strong>Immer</strong>: mutating-looking reducer code becomes a safe immutable update.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>RTK <em>is</em> Redux now</strong> — nobody hand-writes action constants and switch reducers in production; the mental model (one store, change only via dispatched actions through reducers) is unchanged.</li>
-    <li><strong>Batteries included in one package:</strong> <code>configureStore</code>, <code>createSlice</code>, <code>createAsyncThunk</code>, <code>createEntityAdapter</code>, and RTK Query.</li>
-    <li><strong>Immer is the core trick:</strong> the <code>state</code> parameter inside a <code>createSlice</code> reducer is a <em>draft</em> proxy that records writes; <code>state.count += 1</code> never touches real state — Immer produces a new immutable object from the recorded changes. The "never mutate" rule still holds; it's just automatic.</li>
-    <li><strong><code>createSlice</code> generates action creators AND action-type strings</strong> from the reducer keys (<code>name/reducerKey</code>), so a creator and its reducer can never drift out of sync — no hand-typed type strings, no typo no-ops.</li>
-    <li><strong><code>configureStore</code> bakes in good defaults:</strong> thunk middleware, Redux DevTools, and dev-only <em>immutability</em> and <em>serializability</em> checks (stripped from production) — the exact two bugs from hand-written Redux, caught automatically.</li>
-    <li><strong><code>createAsyncThunk('prefix', fn)</code> generates the pending/fulfilled/rejected lifecycle:</strong> dispatch it → <code>pending</code> fires immediately, then <code>fulfilled</code> (resolved value as payload) or <code>rejected</code> (error, or <code>rejectWithValue</code> value). Handle all three in <code>extraReducers</code> via <code>builder.addCase</code>, usually toggling a <code>status: idle | loading | succeeded | failed</code> field.</li>
-    <li><strong><code>reducers</code> handles a slice's own actions; <code>extraReducers</code> handles outside actions</strong> (like a thunk's three), and the builder ties each case to the real action creator for full type-safety.</li>
-    <li><strong><code>createEntityAdapter</code> gives normalized <code>{ ids, entities }</code> state</strong> with pre-built CRUD reducers (<code>addOne</code>, <code>removeOne</code>, <code>updateOne</code>, <code>upsertMany</code>) and memoized selectors (<code>selectAll</code>, <code>selectById</code>, ...) — O(1) lookup by id instead of scanning an array.</li>
-    <li><strong><code>createSelector</code> (Reselect) memoizes derived state</strong> — recomputes only when its input selectors change, and returns the same reference otherwise so consumers can skip re-renders. Still don't <em>store</em> derived data; compute it on read.</li>
-    <li><strong>Type the store by inference:</strong> <code>RootState = ReturnType&lt;typeof store.getState&gt;</code>, <code>AppDispatch = typeof store.dispatch</code>, then pre-typed <code>useAppSelector</code>/<code>useAppDispatch</code>. <code>AppDispatch</code> is needed because the default <code>Dispatch</code> type doesn't know the store accepts thunks.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Fighting Immer.</strong> Two flavors: (1) mutating the draft <em>and</em> also returning a new value in the same case reducer — Immer allows one or the other, never both, and returning a value makes it ignore your draft mutations; (2) assuming Immer protects mutations made <em>outside</em> a slice reducer — it only intercepts writes to its draft, so mutating a plain object you pulled out of the store (e.g. in a component) is a real, dangerous mutation.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"RTK is just Redux with the boilerplate generated — createSlice makes actions and reducers together, and Immer lets me write mutating-looking reducers that are actually immutable updates on a draft."</div>
-  <div class="revision-say">"createAsyncThunk gives me pending/fulfilled/rejected for free; I handle them in extraReducers and drive a status field, so no component manages its own loading flag."</div>
-  <div class="revision-say">"I normalize collections with createEntityAdapter for O(1) id lookups, memoize derived data with createSelector, and type the store by inferring RootState and AppDispatch from configureStore."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain what RTK generates and why it doesn't change the store/action/reducer/dispatch model?</li>
-    <li>Can you explain how Immer turns mutating-looking reducer code into a safe immutable update?</li>
-    <li>Can you explain why you must never both mutate the draft and return a value in one case reducer?</li>
-    <li>Can you explain why Immer does <em>not</em> protect a plain object you pulled out of the store in a component?</li>
-    <li>Can you describe what <code>createAsyncThunk</code> gives you (pending/fulfilled/rejected) and how to handle it in extraReducers?</li>
-    <li>Can you normalize with <code>createEntityAdapter</code> and type the store via RootState/AppDispatch inference?</li>
-  </ul>
-</div>
-`}
-
-]});
+  ]
+});

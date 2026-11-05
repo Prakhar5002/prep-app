@@ -1,26 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'git-fundamentals',
-  module: 'git',
-  title: 'Git Fundamentals',
-  estimatedReadTime: '22 min',
-  tags: ['git', 'fundamentals', 'commits', 'staging', 'basics'],
+  id: "git-fundamentals",
+  module: "git",
+  title: "Git Fundamentals",
+  estimatedReadTime: "22 min",
+  tags: ["git","fundamentals","commits","staging","basics"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p><strong>Git</strong> is a <strong>distributed version control system</strong>: a tool that records snapshots of a project's files over time, so you can see history, undo mistakes, and let multiple people work on the same project without overwriting each other. "Distributed" means every clone of a project holds the <em>entire</em> history — not just the latest files, not a thin pointer back to a central server.</p>
-<ul>
-  <li><strong>The core loop:</strong> edit files → <code>git add</code> (stage the changes you want to keep) → <code>git commit</code> (save a permanent snapshot). You'll run this loop hundreds of times a day once it's second nature.</li>
-  <li><strong>Three areas, one pipeline:</strong> your <strong>working tree</strong> (the files you're editing) → the <strong>staging area</strong> a.k.a. "the index" (a holding pen for what the <em>next</em> commit will contain) → the <strong>repository</strong> (the permanent, saved history of commits).</li>
-  <li><strong>A commit is a snapshot, not a diff.</strong> Each commit records the full state of every tracked file at that point, plus a pointer to its parent commit(s), an author, a message, and a unique ID (a SHA hash). Git computes diffs on demand by comparing snapshots.</li>
-  <li><strong>Staging exists so you can curate a commit.</strong> You don't have to commit every change in your working tree at once — you choose exactly what goes in, which is what makes clean, focused commit messages possible.</li>
-  <li><strong>This is topic 1 of the Git module.</strong> Everything from here — branching, remotes, undoing mistakes, and eventually rebase, bisect, and recovery — builds on these three areas and the add → commit loop. Get this mental model solid before moving on.</li>
-</ul>
-<p><strong>Mantra:</strong> "Edit the working tree, stage what you want to keep, commit to save it permanently. Every clone has the full history."</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Git records snapshots through three areas — edit the working tree, <code>git add</code> to stage what you want, <code>git commit</code> to save it permanently</strong> — and every clone holds the entire history.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The core loop is edit → <code>git add</code> → <code>git commit</code></strong>, run hundreds of times a day.</li>
+    <li><strong>Three areas, one pipeline: working tree → staging area (the "index") → repository.</strong> <code>git add</code> moves changes into staging; <code>git commit</code> seals staging into permanent history.</li>
+    <li><strong>A commit is a snapshot, not a diff</strong> — it records the full state of every tracked file, plus parent pointer(s), author, message, and a unique SHA; Git computes diffs on demand by comparing snapshots.</li>
+    <li><strong>The staging area exists to curate a commit</strong> — you choose exactly what goes in, enabling clean, focused commits (even part of a file via <code>git add -p</code>).</li>
+    <li><strong>Distributed means every clone has the entire history</strong> — not just the latest files, not a thin pointer back to a central server — so you commit, browse, diff, and branch fully offline, with no single point of failure.</li>
+    <li><strong><code>HEAD</code> = "where I am now"</strong> — normally the tip of the checked-out branch; committing moves HEAD and its branch forward.</li>
+    <li><strong><code>git status</code> is the most-run command</strong> — it shows staged, modified-unstaged, and untracked files; run it constantly.</li>
+    <li><strong><code>git diff</code> vs <code>git diff --staged</code>:</strong> plain diff = working tree vs staging ("what I haven't staged"); <code>--staged</code> = staging vs HEAD ("what I'm about to commit").</li>
+    <li><code>git commit -am</code> stages and commits already-tracked files in one step, but <strong>new files still need <code>git add</code></strong>.</li>
+    <li><strong><code>.gitignore</code> only stops <em>new, untracked</em> files</strong> — an already-tracked file keeps showing up until you <code>git rm --cached</code> it.</li>
+    <li>Setup gotchas: every commit needs <code>user.name</code>/<code>user.email</code> configured; a fresh repo may default to <code>master</code> unless <code>init.defaultBranch</code> is set to <code>main</code>.</li>
+    <li><code>git log --oneline</code> (and <code>--graph</code>) walk the commit chain backwards from <code>HEAD</code> through parent pointers.</li>
+    <li>Everything later — branching, remotes, undoing, rebase, bisect, recovery — builds on these three areas and the add → commit loop.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Expecting <strong><code>.gitignore</code> to untrack a file that's already been committed</strong> — it only affects new, untracked files. Fix: <code>git rm --cached &lt;file&gt;</code> to stop tracking it (keeping it on disk), then commit; going forward <code>.gitignore</code> applies.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Git has three areas — working tree, staging area, repository — and changes flow through them via <code>git add</code> then <code>git commit</code>."</div>
+  <div class="revision-say">"A commit is an immutable snapshot with a parent pointer, author, message, and SHA — not a diff; Git computes diffs by comparing snapshots."</div>
+  <div class="revision-say">"Distributed means every clone has the full history, so I can commit and browse offline; the staging area lets me curate focused commits."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What version control is for</h3>
 <p>Version control is just a system for tracking changes to a set of files over time. Without it, "keeping history" usually looks like a folder full of <code>report_final.docx</code>, <code>report_final_v2.docx</code>, <code>report_final_v2_ACTUALLY_FINAL.docx</code> — a manual, error-prone, un-searchable mess. Version control replaces that with a structured history that a tool understands and can query, compare, and roll back.</p>
 <p>Concretely, version control gives you:</p>
@@ -49,10 +66,10 @@ window.PREP_SITE.registerTopic({
   <li>You can even stage <em>part</em> of a single file's changes (covered in Mechanics below) — useful when one file has both a real fix and an unrelated formatting change mixed together.</li>
 </ul>
 <p>Skipping staging and always committing "everything that changed" works for tiny throwaway projects, but it's how commit history turns into an unreadable pile of unrelated changes bundled together. Staging is what makes commit history a <em>useful, readable</em> log instead of just "whatever happened to be true when I hit save."</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The three areas, as a pipeline</h3>
 <p>Everything in day-to-day Git revolves around three areas your files move through, in order:</p>
 <pre><code class="language-text">┌───────────────┐   git add    ┌────────────────┐  git commit  ┌──────────────┐
@@ -84,10 +101,10 @@ window.PREP_SITE.registerTopic({
 <h3>What <code>HEAD</code> means</h3>
 <p><code>HEAD</code> is Git's answer to "where am I right now?" In the normal case, <code>HEAD</code> points at the tip (the most recent commit) of whatever branch you currently have checked out. When you make a new commit, <code>HEAD</code> — and the branch it points to — both move forward to the new commit.</p>
 <p>You don't need branches to understand <code>HEAD</code> yet (that's the next topic) — for now, just know: <code>HEAD</code> always means "the commit I'd currently see if I looked at my working tree," and it's the reference point most commands use by default (e.g. <code>git diff</code> with no arguments compares your working tree against what's staged, and <code>git diff --staged</code> compares what's staged against <code>HEAD</code>).</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Starting a repository</h3>
 <pre><code class="language-bash"># Turn the current directory into a Git repository (creates a hidden .git folder):
 git init
@@ -170,10 +187,10 @@ dist/
 .env
 .DS_Store</code></pre>
 <p>Create it once per project, commit it (yes, the <code>.gitignore</code> file itself gets tracked), and everyone who clones the repo gets the same ignore rules automatically.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Initialize a repo and make your first two commits</h3>
 <pre><code class="language-bash">mkdir my-project && cd my-project
 git init
@@ -236,10 +253,11 @@ git status
 git add .gitignore
 git commit -m "Ignore build output directory"</code></pre>
 <p>From now on, anything under <code>dist/</code> is invisible to <code>git status</code> and <code>git add .</code> — exactly as intended. If <code>dist/</code> had already been committed <em>before</em> you added it to <code>.gitignore</code>, see the "already-tracked files" edge case below — <code>.gitignore</code> alone won't remove it.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>"I added a file to .gitignore but Git is still tracking it"</h3>
 <p><code>.gitignore</code> only stops Git from noticing <em>new, untracked</em> files that match its patterns — it does nothing for files Git is <em>already</em> tracking (i.e. that have been committed at least once). If you commit a file and only later add it to <code>.gitignore</code>, it stays tracked and keeps showing up in status/diffs.</p>
 <pre><code class="language-bash"># Stop tracking the file, but keep it on disk:
@@ -273,10 +291,10 @@ git config --global core.autocrlf true
 # On macOS/Linux — convert to LF when committing, don't convert on checkout:
 git config --global core.autocrlf input</code></pre>
 <p>You likely won't need to touch this as a beginner, but if you ever see a diff where <em>every</em> line of an unchanged-looking file appears modified, this setting (or a mismatch of it across your team) is the usual suspect.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What are the three areas in Git?</div>
 <div class="qa-a">
@@ -325,50 +343,14 @@ git config --global core.autocrlf input</code></pre>
 <p>The staging area lets you curate exactly what goes into a commit, separate from everything else you happen to have changed in your working tree at that moment. That's what makes it possible to split unrelated changes into separate, focused commits (or even stage just part of one file's changes, via <code>git add -p</code>), instead of every commit being an undifferentiated dump of "whatever was true when I hit save."</p>
 </div>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Git records snapshots through three areas — edit the working tree, <code>git add</code> to stage what you want, <code>git commit</code> to save it permanently</strong> — and every clone holds the entire history.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>The core loop is edit → <code>git add</code> → <code>git commit</code></strong>, run hundreds of times a day.</li>
-    <li><strong>Three areas, one pipeline: working tree → staging area (the "index") → repository.</strong> <code>git add</code> moves changes into staging; <code>git commit</code> seals staging into permanent history.</li>
-    <li><strong>A commit is a snapshot, not a diff</strong> — it records the full state of every tracked file, plus parent pointer(s), author, message, and a unique SHA; Git computes diffs on demand.</li>
-    <li><strong>The staging area exists to curate a commit</strong> — you choose exactly what goes in, enabling clean, focused commits (even part of a file via <code>git add -p</code>).</li>
-    <li><strong>Distributed means every clone has the entire history</strong>, not just the latest files — so you commit, browse, diff, and branch fully offline, with no single point of failure.</li>
-    <li><strong><code>HEAD</code> = "where I am now"</strong> — normally the tip of the checked-out branch; committing moves HEAD and its branch forward.</li>
-    <li><strong><code>git status</code> is the most-run command</strong> — it shows staged, modified-unstaged, and untracked files; run it constantly.</li>
-    <li><strong><code>git diff</code> vs <code>git diff --staged</code>:</strong> plain diff = working tree vs staging ("what I haven't staged"); <code>--staged</code> = staging vs HEAD ("what I'm about to commit").</li>
-    <li><code>git commit -am</code> stages and commits already-tracked files in one step, but <strong>new files still need <code>git add</code></strong>.</li>
-    <li><strong><code>.gitignore</code> only stops <em>new, untracked</em> files</strong> — an already-tracked file keeps showing up until you <code>git rm --cached</code> it.</li>
-    <li>Setup gotchas: every commit needs <code>user.name</code>/<code>user.email</code> configured; a fresh repo may default to <code>master</code> unless <code>init.defaultBranch</code> is set to <code>main</code>.</li>
-    <li><code>git log --oneline</code> (and <code>--graph</code>) walk the commit chain backwards from <code>HEAD</code> through parent pointers.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Expecting <strong><code>.gitignore</code> to untrack a file that's already been committed</strong> — it only affects new, untracked files. Fix: <code>git rm --cached &lt;file&gt;</code> to stop tracking it (keeping it on disk), then commit; going forward <code>.gitignore</code> applies.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Git has three areas — working tree, staging area, repository — and changes flow through them via <code>git add</code> then <code>git commit</code>."</div>
-  <div class="revision-say">"A commit is an immutable snapshot with a parent pointer, author, message, and SHA — not a diff; Git computes diffs by comparing snapshots."</div>
-  <div class="revision-say">"Distributed means every clone has the full history, so I can commit and browse offline; the staging area lets me curate focused commits."</div>
+<div class="qa-block">
+  <div class="qa-question">Q8. You added a file to .gitignore but it still shows up in git status. Why, and how do you fix it?</div>
+  <div class="qa-answer">
+    <p><code>.gitignore</code> only tells Git to ignore <em>new, untracked</em> files — it has no effect on a file that has already been committed, because Git keeps tracking anything it already knows about. The fix is <code>git rm --cached &lt;file&gt;</code>, which stops tracking the file while leaving it on disk, followed by a commit. From then on the ignore pattern applies. Commit the <code>.gitignore</code> itself so everyone who clones gets the same rules.</p>
+  </div>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the three areas and describe how changes flow through them?</li>
-    <li>Can you explain why a commit is a snapshot rather than a diff, and what it contains?</li>
-    <li>Can you explain what the staging area is for and why it isn't just redundant?</li>
-    <li>Can you say what distributed version control gives you over a centralized one?</li>
-    <li>Can you explain the difference between <code>git diff</code> and <code>git diff --staged</code>?</li>
-    <li>Can you explain why <code>.gitignore</code> doesn't untrack an already-committed file, and how to fix it?</li>
-  </ul>
-</div>
-`}
-
-]});
+  ]
+});

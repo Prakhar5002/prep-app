@@ -1,32 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'mux-ios-hig',
-  module: 'mobile-ux',
-  title: 'iOS Human Interface Guidelines',
-  estimatedReadTime: '45 min',
-  tags: ['ios', 'hig', 'human-interface-guidelines', 'sf-symbols', 'safe-area', 'dynamic-type', 'haptics', 'navigation', 'tab-bar', 'react-native'],
+  id: "mux-ios-hig",
+  module: "mobile-ux",
+  title: "iOS Human Interface Guidelines",
+  estimatedReadTime: "45 min",
+  tags: ["ios","hig","human-interface-guidelines","sf-symbols","safe-area","dynamic-type","haptics","navigation","tab-bar","react-native"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Apple's <strong>Human Interface Guidelines (HIG)</strong> are the design contract iOS users implicitly expect. Following them isn't aesthetic preference — it's how your app feels "native" rather than "an Android port" and is a <em>reviewable signal</em> in App Store rejections. For a React Native engineer, the HIG is what closes the gap between "it runs on iOS" and "it feels like an iOS app."</p>
-<ul>
-  <li><strong>Three pillars:</strong> Clarity (legible, focused, beautiful), Deference (UI helps users understand content, doesn't compete), Depth (visual layers + motion convey hierarchy).</li>
-  <li><strong>Navigation patterns:</strong> tab bar (5 tabs max), navigation stack with back-swipe, modal presentation for self-contained tasks, sheets for inspector-style.</li>
-  <li><strong>System primitives to lean on:</strong> SF Symbols 7 (~6,900+ icons matching system weight + scale), Dynamic Type (text scales with user setting), system colours (auto dark mode), haptics (UIImpactFeedbackGenerator).</li>
-  <li><strong>Layout fundamentals:</strong> Safe Area for notch / Dynamic Island / home indicator; 44×44pt minimum tap target; 8pt grid; status bar awareness.</li>
-  <li><strong>Native feel checklist:</strong> back-swipe gesture works; swipe-to-dismiss modals; pull-to-refresh; large titles on top-level views; context menus on long-press.</li>
-  <li><strong>RN gotchas:</strong> swap default <code>Touchable*</code> for <code>Pressable</code>; use <code>useSafeAreaInsets</code> from <code>react-native-safe-area-context</code>; don't fight the system Status Bar; use native modal stacks (react-navigation native-stack).</li>
-  <li><strong>Review reality:</strong> Apple does reject for "doesn't feel native" (Guideline 4.0 Design); the HIG is the appeal document.</li>
-</ul>
-<p><strong>Mantra:</strong> "Use system primitives. Respect safe area. Honor Dynamic Type. Don't reinvent the navigation patterns users already know."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The HIG is the <strong>design contract iOS users expect</strong> — lean on system primitives, respect safe area, honor Dynamic Type, and don't reinvent the navigation patterns users already know.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three pillars — Clarity, Deference, Depth.</strong> Legible focused UI; chrome recedes so content shines; layers + motion convey hierarchy. Liquid Glass (iOS 26) leans hard on Deference + Depth.</li>
+    <li><strong>Three navigation patterns:</strong> tab bar (3–5 top-level destinations, 5 max), navigation stack (drill-down with back-swipe), modal/sheet (self-contained task). Match the user's mental model.</li>
+    <li><strong>Native-stack over the JS stack</strong> — it bridges to UIKit's UINavigationController, so back-swipe, transitions, large titles, and sheet detents are all native and free.</li>
+    <li><strong>Safe area via <code>useSafeAreaInsets</code>, never hard-coded 34/44.</strong> SafeAreaProvider once at root; raw insets where you position over content; don't nest <code>SafeAreaView</code> — it double-pads against native headers.</li>
+    <li><strong>SF Symbols (~6,900+, SF Symbols 7) scale with Dynamic Type and flip color in dark mode</strong> — render via <code>SymbolView</code>/<code>SFSymbol</code>; never rasterize them to PNG.</li>
+    <li><strong>Semantic colors, not hex.</strong> System tokens (<code>label</code>, <code>systemBackground</code>, <code>separator</code>) flip in dark mode; <code>#fff</code>/<code>#000</code> don't. Define a theme object and switch it on <code>useColorScheme</code>.</li>
+    <li><strong>Dynamic Type is a first-class constraint</strong> — text scales up to AX5 (2.5–3×). Use variable-height rows; truncate only non-essential meta; test at the largest accessibility size.</li>
+    <li><strong>44 × 44pt minimum tap target; 8pt grid; 16pt edge margins.</strong> Tab bar 49pt + inset; nav bar 44pt (96pt with large title).</li>
+    <li><strong>Gestures users expect:</strong> edge-swipe back, pull-to-refresh, swipe-down to dismiss modals, long-press context menus, swipe-left row actions, tap status bar to scroll to top.</li>
+    <li><strong>Use the system, not a clone:</strong> <code>Alert</code> for destructive confirms, <code>Share</code> (UIActivityViewController) for sharing, <code>ActionSheetIOS</code> for choices — a custom look-alike alert is uncanny and a review risk.</li>
+    <li><strong>Haptics are deliberate, not gratuitous</strong> (UIImpactFeedbackGenerator under the hood) — medium impact on commit, success notification on save, nothing on ordinary taps.</li>
+    <li><strong>Cross-platform: shared logic, platform-specific UI primitives.</strong> Swap <code>Touchable*</code> for <code>Pressable</code> + <code>Platform.select</code>; iOS tab bar vs Android drawer; don't fight the system status bar. One component for both pleases neither.</li>
+    <li><strong>App Store Guideline 4.0 (Design) rejects "doesn't feel native"</strong> — plus ATT, guest browsing, Sign in with Apple parity, and IAP for digital goods.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Hard-coded colors + missing safe area:</strong> a white background that stays white in dark mode and content sitting under the notch / home indicator. Fix with semantic theme tokens switched on <code>useColorScheme</code> and <code>useSafeAreaInsets</code> at the screen root — the same discipline that also kills the "custom alert instead of system <code>Alert</code>" smell.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Use system primitives, respect safe area, honor Dynamic Type, and don't reinvent navigation patterns users already know — that's what closes the gap between 'runs on iOS' and 'feels like iOS.'"</div>
+  <div class="revision-say">"Native-stack via react-navigation gives back-swipe, large titles, and sheet detents for free because it bridges to UIKit; the JS stack reimplements them and looks subtly off."</div>
+  <div class="revision-say">"Semantic colors in a theme object plus useSafeAreaInsets and SF Symbols mean dark mode, notch handling, and Dynamic Type all come for free — custom-drawn equivalents can't."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What the HIG actually is</h3>
 <p>A ~600-page living document at <code>developer.apple.com/design/human-interface-guidelines</code> covering every UI pattern, component, gesture, and interaction Apple ships across iPhone, iPad, Mac, watchOS, tvOS, visionOS. It's <em>opinionated</em>: each section gives "do this" and "don't do that" examples with exact spacing, sizes, and behaviour.</p>
 
@@ -91,12 +102,10 @@ window.PREP_SITE.registerTopic({
   <li>FAB (floating action button) on a list — that's Material, not HIG.</li>
   <li>Status bar text invisible because background is light.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The three navigation patterns iOS uses</h3>
 <table>
   <thead><tr><th>Pattern</th><th>Use for</th><th>RN equivalent</th></tr></thead>
@@ -206,12 +215,10 @@ window.PREP_SITE.registerTopic({
   <li>Set via React Navigation <code>screenOptions</code> for whole-stack consistency.</li>
   <li>Don't disable the status bar without a strong reason (full-screen video, camera).</li>
 </ul>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Setting up native-stack with iOS niceties</h3>
 <pre><code class="language-typescript">import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -407,12 +414,10 @@ Alert.alert('Delete photo?', 'This cannot be undone.', [
 ]);
 </code></pre>
 <p>Always use system alerts for destructive confirmations — users trust them.</p>
-`
-    },
-    {
-      id: 'worked-examples',
-      title: '🧩 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: A native-feeling email inbox</h3>
 <p>Layout: tab bar (Inbox / Sent / Settings); large title on inbox; list rows with swipe actions; tap row → drill-down detail with back-swipe.</p>
 <pre><code class="language-typescript">function InboxScreen() {
@@ -566,12 +571,11 @@ useEffect(() =&gt; {
 // In your animated transition
 const duration = reduceMotion ? 0 : 300;
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '🚧 Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Notch / Dynamic Island</h3>
 <ul>
   <li>Don't render text or interactive controls under the notch.</li>
@@ -665,12 +669,9 @@ const duration = reduceMotion ? 0 : 300;
   <li>Sign in with Apple required if you offer any other social SSO.</li>
   <li>3rd-party billing for digital goods inside app = rejected; must use IAP.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>The 12 most common HIG violations in RN apps</h3>
 <ol>
   <li><strong>Material hamburger menu on iOS.</strong> Use tab bar.</li>
@@ -781,12 +782,10 @@ Alert.alert('Title', 'Message', actions);
 
 <h3>Anti-pattern: web-styled toast</h3>
 <p>Slide-in toast from corner. iOS has no native equivalent; the closest is in-app notifications or system banners. Use a sheet with auto-dismiss instead, or a localized banner pinned to the top of the screen.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '💼 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Common HIG / iOS-design interview prompts</h3>
 <ol>
   <li>How do you make a React Native app feel native on iOS?</li>
@@ -911,58 +910,20 @@ Alert.alert('Title', 'Message', actions);
   <li>"Reverse-engineer an Apple app (Notes, Reminders) — note every micro-interaction."</li>
   <li>"Build a clone of one Apple app's screen in RN; aim for indistinguishable from native."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">The HIG is the <strong>design contract iOS users expect</strong> — lean on system primitives, respect safe area, honor Dynamic Type, and don't reinvent the navigation patterns users already know.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Three pillars — Clarity, Deference, Depth.</strong> Legible focused UI; chrome recedes so content shines; layers + motion convey hierarchy. Liquid Glass (iOS 26) leans hard on Deference + Depth.</li>
-    <li><strong>Three navigation patterns:</strong> tab bar (3–5 top-level destinations), navigation stack (drill-down with back-swipe), modal/sheet (self-contained task). Match the user's mental model.</li>
-    <li><strong>Native-stack over the JS stack</strong> — it bridges to UIKit's UINavigationController, so back-swipe, transitions, large titles, and sheet detents are all native and free.</li>
-    <li><strong>Safe area via <code>useSafeAreaInsets</code>, never hard-coded 34/44.</strong> SafeAreaProvider once at root; raw insets where you position over content; don't nest <code>SafeAreaView</code> — it double-pads against native headers.</li>
-    <li><strong>SF Symbols (~6,900+, SF Symbols 7) scale with Dynamic Type and flip color in dark mode</strong> — render via <code>SymbolView</code>/<code>SFSymbol</code>; never rasterize them to PNG.</li>
-    <li><strong>Semantic colors, not hex.</strong> System tokens (<code>label</code>, <code>systemBackground</code>, <code>separator</code>) flip in dark mode; <code>#fff</code>/<code>#000</code> don't. Define a theme object and switch it on <code>useColorScheme</code>.</li>
-    <li><strong>Dynamic Type is a first-class constraint</strong> — text scales up to AX5 (2.5–3×). Use variable-height rows; truncate only non-essential meta; test at the largest accessibility size.</li>
-    <li><strong>44 × 44pt minimum tap target; 8pt grid; 16pt edge margins.</strong> Tab bar 49pt + inset; nav bar 44pt (96pt with large title).</li>
-    <li><strong>Gestures users expect:</strong> edge-swipe back, pull-to-refresh, swipe-down to dismiss modals, long-press context menus, swipe-left row actions, tap status bar to scroll to top.</li>
-    <li><strong>Use the system, not a clone:</strong> <code>Alert</code> for destructive confirms, <code>Share</code> (UIActivityViewController) for sharing, <code>ActionSheetIOS</code> for choices — a custom look-alike alert is uncanny and a review risk.</li>
-    <li><strong>Haptics are deliberate, not gratuitous</strong> — medium impact on commit, success notification on save, nothing on ordinary taps.</li>
-    <li><strong>Cross-platform: shared logic, platform-specific UI primitives.</strong> Swap <code>Touchable*</code> for <code>Pressable</code> + <code>Platform.select</code>; iOS tab bar vs Android drawer. One component for both pleases neither.</li>
-    <li><strong>App Store Guideline 4.0 (Design) rejects "doesn't feel native"</strong> — plus ATT, guest browsing, Sign in with Apple parity, and IAP for digital goods.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Hard-coded colors + missing safe area:</strong> a white background that stays white in dark mode and content sitting under the notch / home indicator. Fix with semantic theme tokens switched on <code>useColorScheme</code> and <code>useSafeAreaInsets</code> at the screen root — the same discipline that also kills the "custom alert instead of system <code>Alert</code>" smell.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Use system primitives, respect safe area, honor Dynamic Type, and don't reinvent navigation patterns users already know — that's what closes the gap between 'runs on iOS' and 'feels like iOS.'"</div>
-  <div class="revision-say">"Native-stack via react-navigation gives back-swipe, large titles, and sheet detents for free because it bridges to UIKit; the JS stack reimplements them and looks subtly off."</div>
-  <div class="revision-say">"Semantic colors in a theme object plus useSafeAreaInsets and SF Symbols mean dark mode, notch handling, and Dynamic Type all come for free — custom-drawn equivalents can't."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. What are the three HIG pillars and the three iOS navigation patterns, and when do you use each pattern?</div>
+  <div class="qa-answer">
+    <p>The pillars are <strong>Clarity</strong> (legible text, precise icons, intentional layout: SF Pro, SF Symbols, generous whitespace), <strong>Deference</strong> (the UI helps content shine instead of competing: translucent bars, blur, subtle separators) and <strong>Depth</strong> (layers and motion convey hierarchy: cards float, modals slide up, large titles shrink on scroll); iOS 26's Liquid Glass leans hard on Deference and Depth. The navigation patterns are a <strong>tab bar</strong> for 3 to 5 top-level destinations (<code>@react-navigation/bottom-tabs</code>), a <strong>navigation stack</strong> for drill-down hierarchies like list → detail (<code>native-stack</code>), and a <strong>modal or sheet</strong> for a self-contained task that halts the flow (<code>presentation: 'modal' | 'formSheet' | 'pageSheet'</code>, with detents for compose or filter screens). iOS doesn't ship drawers natively, so with 6+ destinations you rethink the IA rather than adding a drawer.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the three HIG pillars and the three iOS navigation patterns, and say when to use each?</li>
-    <li>Can you explain why native-stack beats the JS stack for a native iOS feel?</li>
-    <li>Can you handle safe area correctly — insets at the root without nesting <code>SafeAreaView</code> — on notch and home-indicator phones?</li>
-    <li>Can you ship dark mode and Dynamic Type: semantic tokens over hex, variable-height rows tested at AX5?</li>
-    <li>Can you say when to use the system <code>Alert</code>, <code>Share</code>, and action sheet instead of a custom clone — and why a look-alike alert is a review risk?</li>
-    <li>Can you explain the cross-platform tradeoff: shared logic but platform-specific UI primitives, not one component for both?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. When do you use the system Alert, Share sheet and action sheet instead of a custom clone, and why is a look-alike alert a review risk?</div>
+  <div class="qa-answer">
+    <p>Use <code>Alert.alert</code> with <code>style: 'destructive'</code> and a cancel button for destructive confirmations, because users trust system alerts; <code>Share.share</code> for sharing, which opens UIActivityViewController with the user's installed apps; and <code>ActionSheetIOS.showActionSheetWithOptions</code> (with <code>destructiveButtonIndex</code> and <code>cancelButtonIndex</code>) for "more options" choices on iOS, with a bottom sheet equivalent on Android. A custom modal that looks iOS-ish but isn't system-rendered feels uncanny, and in App Review a custom alert that imitates a system alert is treated as a phishing concern and can be rejected. Custom alert, share or picker UI is one of the most common HIG violations graders flag.</p>
+  </div>
 </div>
-`
-    }
+` },
+
   ]
 });

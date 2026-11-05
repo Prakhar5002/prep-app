@@ -1,30 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'andr-tools',
-  module: 'Android Native (Deep)',
-  title: 'Tools: Studio, SDK, adb, logcat',
-  estimatedReadTime: '24 min',
-  tags: ['android-studio', 'sdk-manager', 'adb', 'logcat', 'emulator', 'avd', 'avdmanager', 'ndk', 'platform-tools', 'build-tools', 'cmdline-tools', 'sdkmanager', 'gradlew', 'android-home', 'dumpsys', 'bugreport', 'profiler', 'layout-inspector', 'apk-analyzer', 'hermes', 'expo', 'react-native'],
+  id: "andr-tools",
+  module: "Android Native (Deep)",
+  title: "Tools: Studio, SDK, adb, logcat",
+  estimatedReadTime: "24 min",
+  tags: ["android-studio","sdk-manager","adb","logcat","emulator","avd","avdmanager","ndk","platform-tools","build-tools","cmdline-tools","sdkmanager","gradlew","android-home","dumpsys","bugreport","profiler","layout-inspector","apk-analyzer","hermes","expo","react-native"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>The Android toolchain is four layers, and as a React Native dev you touch all of them:</p>
-<ul>
-  <li><strong>Android Studio</strong> — the IntelliJ-based IDE. You open the <code>android/</code> folder in it to read/edit native Kotlin/Java, run Gradle Sync, and use its debug panels (Logcat, Device Manager, Layout Inspector, Profiler, APK Analyzer, SDK Manager).</li>
-  <li><strong>Android SDK</strong> — the platforms, build-tools, and command-line tools on disk under <code>ANDROID_HOME</code>. Managed via <strong>SDK Manager</strong> (GUI) or <code>sdkmanager</code> (CLI); virtual devices via <strong>AVD Manager</strong> / <code>avdmanager</code>.</li>
-  <li><strong>adb</strong> — the Android Debug Bridge, your daily CLI: install APKs, stream logs, port-forward Metro over USB, drive the shell.</li>
-  <li><strong>Gradle</strong> — the build system (<code>./gradlew</code>), covered in depth in the Gradle topics; here it's the thing Studio and <code>expo run:android</code> invoke.</li>
-</ul>
-<p>For managed Expo apps you rarely OPEN Android Studio — <code>expo run:android</code> / Expo Dev Client drives it under the hood — but you use <code>adb</code> and <code>logcat</code> constantly to install builds, read native crashes, and reconnect test devices.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Android Studio is the IDE, the SDK is the toolbox on disk under <code>ANDROID_HOME</code>, and <code>adb</code> is the wire to the device. Master <code>adb logcat</code> and you can debug 80% of native Android problems from the terminal without ever opening the IDE.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Android Studio is the IntelliJ-based IDE, the SDK is the toolbox on disk under <strong>ANDROID_HOME</strong>, <strong>adb</strong> is the wire to the device, and <strong>logcat</strong> is where native crashes live — as an RN dev you rarely open Studio for managed apps but use adb + logcat every day.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Android Studio</strong> = Google's IDE on IntelliJ IDEA; open the <code>android/</code> folder, it runs <strong>Gradle Sync</strong>, and gives you Logcat, Device Manager, Gradle tool window, App Inspection, Layout Inspector, Profiler, APK Analyzer, SDK Manager, Device Explorer. It orchestrates Gradle; it isn't the compiler. <strong>Invalidate Caches / Restart</strong> clears stale index/caches.</li>
+    <li><strong>ANDROID_HOME</strong> (modern) / <strong>ANDROID_SDK_ROOT</strong> (deprecated alias) point at the SDK: <code>platform-tools/</code> (adb), <code>platforms/android-XX/</code> (android.jar = compileSdk), <code>build-tools/NN.N.N/</code> (aapt2, d8/r8, zipalign, apksigner), <code>cmdline-tools/latest/</code> (sdkmanager, avdmanager), <code>emulator/</code>, <code>system-images/</code>, <code>ndk/</code>.</li>
+    <li><strong>SDK Manager</strong> (GUI) / <code>sdkmanager</code> (CLI) install platforms, build-tools, NDK, system images; <code>yes | sdkmanager --licenses</code> accepts licenses (CI). <strong>AVD Manager</strong> / <code>avdmanager</code> create emulators from a system image.</li>
+    <li><strong>NDK</strong> = C/C++ toolchain (clang, libc++, CMake) that builds native <code>.so</code> libs; RN needs it for JSI/TurboModule/Fabric C++ + Hermes + Reanimated; pinned via <code>ndkVersion</code> in <code>android/build.gradle</code>.</li>
+    <li><strong>adb</strong> = client/server (host daemon on :5037) / device (adbd) model. Core commands: <code>adb devices -l</code>, <code>install -r</code>/<code>uninstall</code>, <code>shell</code>, <code>pm clear</code>, <code>am start</code>/<code>force-stop</code>, <code>pull</code>/<code>push</code>, <code>bugreport</code>, <code>dumpsys &lt;svc&gt;</code>. Target one device with <code>-s &lt;serial&gt;</code>.</li>
+    <li><strong>adb reverse tcp:8081 tcp:8081</strong> = the Metro-over-USB mechanism (device reaches host); per-connection, dropped on replug. <strong>adb connect &lt;ip&gt;:5555</strong> after <code>adb tcpip 5555</code> = Wi-Fi debugging (Prakhar's <code>adb connect 10.12.70.142:5555</code>).</li>
+    <li><strong>logcat</strong> levels V &lt; D &lt; I &lt; W &lt; E &lt; F (+ S silent). Filters: <code>TAG:LEVEL</code>, <code>*:E</code>, end with <code>*:S</code> to mute the rest, <code>--pid=$(adb shell pidof -s pkg)</code>, <code>-c</code> to clear, <code>-v threadtime</code> format, <code>-G 16M</code> to enlarge buffer. Master <code>adb logcat</code> and you can debug ~80% of native Android problems from the terminal without opening the IDE.</li>
+    <li><strong>Key tags:</strong> <code>ReactNativeJS</code> = JS console + redbox text; <code>AndroidRuntime</code> = FATAL native exceptions; <code>DEBUG</code> = libc SIGSEGV tombstones; <code>ReactNative</code> = native infra. JS errors also hit Metro; native crashes do NOT.</li>
+    <li><strong>Emulator:</strong> pick <code>arm64-v8a</code> images on Apple Silicon (x86_64 on Intel); acceleration was HAXM/now AEHD/hypervisor; snapshots save/restore state, <code>-no-snapshot</code> cold-boots, <code>-wipe-data</code> factory-resets, <code>-writable-system</code> remounts <code>/system</code> RW.</li>
+    <li><strong>Gradle recap:</strong> <code>./gradlew assembleDebug</code>/<code>installDebug</code>/<code>clean</code>/<code>tasks</code>/<code>:app:dependencies</code>. Escalate build fixes: Gradle Sync → <code>./gradlew clean</code> + delete <code>build/</code> and <code>.gradle</code> → Invalidate Caches.</li>
+    <li><strong>Profiler</strong> = CPU/Memory/Energy/Network (native + leaks, not Hermes JS); <strong>Layout Inspector</strong> = live native view hierarchy + overdraw; <strong>APK Analyzer</strong> = size by dex/res/native .so.</li>
+    <li><strong>Expo reality:</strong> <code>expo run:android</code> drives Gradle+adb; still needs SDK + device; edit native config via <code>expo-build-properties</code> in <code>app.json</code> (hand edits to <code>android/</code> are wiped by <code>expo prebuild --clean</code>); <code>npx expo-doctor</code> validates the setup.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Debugging RN with only Metro open and missing the crash.</strong> Native Java/Kotlin exceptions surface ONLY in <code>logcat</code> under <code>AndroidRuntime</code> (and libc SIGSEGV under <code>DEBUG</code>) — never in the Metro console. Always run <code>adb logcat -c</code> then <code>adb logcat AndroidRuntime:E *:S</code> alongside Metro, and remember <code>adb reverse</code> is per-connection so a replug silently breaks Metro-over-USB.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Android Studio is the IntelliJ-based IDE; the SDK is what it manages on disk under ANDROID_HOME — platform-tools, platforms, build-tools, cmdline-tools, emulator, system-images, ndk. For managed Expo apps I rarely open Studio, but I use adb and logcat constantly."</div>
+  <div class="revision-say">"Native crashes never reach Metro — I filter <code>adb logcat AndroidRuntime:E *:S</code> for the FATAL EXCEPTION stack, and <code>ReactNativeJS:V *:S</code> for JS console output and redbox text."</div>
+  <div class="revision-say">"<code>adb reverse tcp:8081 tcp:8081</code> is how a USB device reaches Metro; it's per-connection so replugging drops it. For Wi-Fi I do <code>adb tcpip 5555</code> then <code>adb connect &lt;ip&gt;:5555</code>."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What each tool actually is</h3>
 <ul>
   <li><strong>Android Studio</strong> — Google's official IDE, built on JetBrains IntelliJ IDEA. It bundles the Android Gradle Plugin, a Kotlin/Java editor, a device emulator, and a suite of inspectors. It is NOT the compiler — it orchestrates Gradle, which does the building.</li>
@@ -48,10 +60,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">🧩 Expo note — you still need the SDK and adb</div>
   <p>Managed Expo hides the <code>android/</code> folder until you run <code>expo prebuild</code>, but it does NOT hide the toolchain. <code>expo run:android</code> still requires <code>ANDROID_HOME</code>, an installed platform + build-tools, and a device/emulator reachable by <code>adb</code>. <code>npx expo-doctor</code> checks your environment (SDK path, versions). You rarely open Android Studio for a managed app, but you live in <code>adb</code> and <code>logcat</code>.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The layered toolchain picture</h3>
 <div class="diagram">
 <pre>
@@ -104,10 +116,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">The two env vars</div>
   <p><code>ANDROID_HOME</code> is the modern name; <code>ANDROID_SDK_ROOT</code> is the older/deprecated alias. Set both to the same path for maximum tool compatibility. Gradle also reads <code>sdk.dir</code> from <code>android/local.properties</code>, which takes precedence for that project — a frequent "works in terminal, fails in Studio" cause when the two disagree.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Android Studio — the panels you actually use</h3>
 <p>You open <strong>the <code>android/</code> folder</strong> (not the repo root) in Android Studio so it recognizes the Gradle project. On open it runs <strong>Gradle Sync</strong> — reading <code>build.gradle</code> / <code>settings.gradle</code> to build the project model and download dependencies. Nothing works until sync succeeds.</p>
 <table>
@@ -147,8 +159,7 @@ sdkmanager --update</code></pre>
 
 <h3>AVD Manager — creating emulators from the CLI</h3>
 <pre><code class="language-bash"># create an AVD from an installed system image
-avdmanager create avd -n Pixel7_API34 \
-  -k "system-images;android-34;google_apis;arm64-v8a" -d pixel_7
+avdmanager create avd -n Pixel7_API34   -k "system-images;android-34;google_apis;arm64-v8a" -d pixel_7
 
 # list AVDs and boot one headlessly / with options
 avdmanager list avd
@@ -275,10 +286,10 @@ adb logcat -v brief</code></pre>
   <div class="callout-title">🧩 Expo note — the tools under the hood</div>
   <p><code>expo run:android</code> runs prebuild (if needed), then the same Gradle + adb pipeline. <code>expo-build-properties</code> (a config plugin in <code>app.json</code>/<code>app.config.js</code>) is how you set <code>compileSdkVersion</code>, <code>targetSdkVersion</code>, <code>ndkVersion</code>, etc. WITHOUT hand-editing <code>android/build.gradle</code> — because <code>expo prebuild --clean</code> regenerates the native folder and wipes manual edits. <code>npx expo-doctor</code> validates the SDK/toolchain setup. EAS Build runs all of this on a cloud machine, but locally you still need the SDK + adb.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — first-run environment setup (macOS)</h3>
 <pre><code class="language-bash"># ~/.zshrc
 export ANDROID_HOME="$HOME/Library/Android/sdk"
@@ -331,8 +342,7 @@ yes | sdkmanager --licenses     # unblocks "You have not accepted the license"</
 
 <h3>Example 8 — create and boot an emulator entirely from CLI</h3>
 <pre><code class="language-bash">sdkmanager "system-images;android-34;google_apis;arm64-v8a"
-avdmanager create avd -n Pixel7_API34 \
-  -k "system-images;android-34;google_apis;arm64-v8a" -d pixel_7
+avdmanager create avd -n Pixel7_API34   -k "system-images;android-34;google_apis;arm64-v8a" -d pixel_7
 emulator -avd Pixel7_API34 -no-snapshot-load</code></pre>
 
 <h3>Example 9 — clear app state to reproduce a first-launch bug</h3>
@@ -353,10 +363,11 @@ adb exec-out run-as com.smartworks.mobile cat databases/app.db &gt; app.db</code
 <pre><code class="language-bash">adb bugreport ./mrt-crash-bugreport.zip
 adb shell dumpsys meminfo com.smartworks.mobile   # memory snapshot
 adb shell dumpsys gfxinfo com.smartworks.mobile   # frame render times (jank)</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. adb server version mismatch</h3>
 <p>Two adb binaries of different versions (Studio's bundled one and a Homebrew/standalone one) fight over port 5037. Symptom: "adb server version (NN) doesn't match this client." Fix: use ONE adb everywhere (put <code>$ANDROID_HOME/platform-tools</code> first on PATH), then <code>adb kill-server &amp;&amp; adb start-server</code>.</p>
 
@@ -401,10 +412,9 @@ adb shell dumpsys gfxinfo com.smartworks.mobile   # frame render times (jank)</c
 
 <h3>15. Hermes bytecode isn't human-readable in logcat</h3>
 <p>A Hermes engine crash may log an address, not a JS line. You need source maps (<code>compose-source-maps</code>) and symbolication (Sentry with the Hermes bundle uploaded) to map back to JS. Plain logcat won't give you the JS frame.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — debugging RN with only Metro open</h3>
 <p>Native crashes (<code>AndroidRuntime</code>), <code>UnsatisfiedLinkError</code>, ANRs, and libc SIGSEGV tombstones NEVER reach the Metro console. Keep an <code>adb logcat</code> running alongside Metro at all times.</p>
 
@@ -446,10 +456,10 @@ adb shell dumpsys gfxinfo com.smartworks.mobile   # frame render times (jank)</c
 
 <h3>Anti-pattern 14 — leaving Invalidate Caches as a first resort</h3>
 <p>Nuking caches for every hiccup wastes 5-minute re-index cycles. Try Gradle Sync, then <code>./gradlew clean</code>, THEN invalidate caches — escalate, don't start there.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What is Android Studio and do you need it for React Native?</div>
   <div class="qa-answer">
@@ -569,51 +579,7 @@ adb shell dumpsys gfxinfo com.smartworks.mobile   # frame render times (jank)</c
     <li>You know Expo hides the IDE but not the SDK/adb, and edits go through <code>expo-build-properties</code>.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Android Studio is the IntelliJ-based IDE, the SDK is the toolbox on disk under <strong>ANDROID_HOME</strong>, <strong>adb</strong> is the wire to the device, and <strong>logcat</strong> is where native crashes live — as an RN dev you rarely open Studio for managed apps but use adb + logcat every day.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Android Studio</strong> = Google's IDE on IntelliJ IDEA; open the <code>android/</code> folder, it runs <strong>Gradle Sync</strong>, and gives you Logcat, Device Manager, Gradle tool window, App Inspection, Layout Inspector, Profiler, APK Analyzer, SDK Manager, Device Explorer. It orchestrates Gradle; it isn't the compiler. <strong>Invalidate Caches / Restart</strong> clears stale index/caches.</li>
-    <li><strong>ANDROID_HOME</strong> (modern) / <strong>ANDROID_SDK_ROOT</strong> (deprecated alias) point at the SDK: <code>platform-tools/</code> (adb), <code>platforms/android-XX/</code> (android.jar = compileSdk), <code>build-tools/NN.N.N/</code> (aapt2, d8/r8, zipalign, apksigner), <code>cmdline-tools/latest/</code> (sdkmanager, avdmanager), <code>emulator/</code>, <code>system-images/</code>, <code>ndk/</code>.</li>
-    <li><strong>SDK Manager</strong> (GUI) / <code>sdkmanager</code> (CLI) install platforms, build-tools, NDK, system images; <code>yes | sdkmanager --licenses</code> accepts licenses (CI). <strong>AVD Manager</strong> / <code>avdmanager</code> create emulators from a system image.</li>
-    <li><strong>NDK</strong> = C/C++ toolchain (clang, libc++, CMake) that builds native <code>.so</code> libs; RN needs it for JSI/TurboModule/Fabric C++ + Hermes + Reanimated; pinned via <code>ndkVersion</code> in <code>android/build.gradle</code>.</li>
-    <li><strong>adb</strong> = client/server (host daemon on :5037) / device (adbd) model. Core commands: <code>adb devices -l</code>, <code>install -r</code>/<code>uninstall</code>, <code>shell</code>, <code>pm clear</code>, <code>am start</code>/<code>force-stop</code>, <code>pull</code>/<code>push</code>, <code>bugreport</code>, <code>dumpsys &lt;svc&gt;</code>. Target one device with <code>-s &lt;serial&gt;</code>.</li>
-    <li><strong>adb reverse tcp:8081 tcp:8081</strong> = the Metro-over-USB mechanism (device reaches host); per-connection, dropped on replug. <strong>adb connect &lt;ip&gt;:5555</strong> after <code>adb tcpip 5555</code> = Wi-Fi debugging (Prakhar's <code>adb connect 10.12.70.142:5555</code>).</li>
-    <li><strong>logcat</strong> levels V &lt; D &lt; I &lt; W &lt; E &lt; F (+ S silent). Filters: <code>TAG:LEVEL</code>, <code>*:E</code>, end with <code>*:S</code> to mute the rest, <code>--pid=$(adb shell pidof -s pkg)</code>, <code>-c</code> to clear, <code>-v threadtime</code> format, <code>-G 16M</code> to enlarge buffer.</li>
-    <li><strong>Key tags:</strong> <code>ReactNativeJS</code> = JS console + redbox text; <code>AndroidRuntime</code> = FATAL native exceptions; <code>DEBUG</code> = libc SIGSEGV tombstones; <code>ReactNative</code> = native infra. JS errors also hit Metro; native crashes do NOT.</li>
-    <li><strong>Emulator:</strong> pick <code>arm64-v8a</code> images on Apple Silicon (x86_64 on Intel); acceleration was HAXM/now AEHD/hypervisor; snapshots save/restore state, <code>-no-snapshot</code> cold-boots, <code>-wipe-data</code> factory-resets, <code>-writable-system</code> remounts <code>/system</code> RW.</li>
-    <li><strong>Gradle recap:</strong> <code>./gradlew assembleDebug</code>/<code>installDebug</code>/<code>clean</code>/<code>tasks</code>/<code>:app:dependencies</code>. Escalate build fixes: Gradle Sync → <code>./gradlew clean</code> + delete <code>build/</code> and <code>.gradle</code> → Invalidate Caches.</li>
-    <li><strong>Profiler</strong> = CPU/Memory/Energy/Network (native + leaks, not Hermes JS); <strong>Layout Inspector</strong> = live native view hierarchy + overdraw; <strong>APK Analyzer</strong> = size by dex/res/native .so.</li>
-    <li><strong>Expo reality:</strong> <code>expo run:android</code> drives Gradle+adb; still needs SDK + device; edit native config via <code>expo-build-properties</code> in <code>app.json</code> (hand edits to <code>android/</code> are wiped by <code>expo prebuild --clean</code>); <code>npx expo-doctor</code> validates the setup.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Debugging RN with only Metro open and missing the crash.</strong> Native Java/Kotlin exceptions surface ONLY in <code>logcat</code> under <code>AndroidRuntime</code> (and libc SIGSEGV under <code>DEBUG</code>) — never in the Metro console. Always run <code>adb logcat -c</code> then <code>adb logcat AndroidRuntime:E *:S</code> alongside Metro, and remember <code>adb reverse</code> is per-connection so a replug silently breaks Metro-over-USB.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Android Studio is the IntelliJ-based IDE; the SDK is what it manages on disk under ANDROID_HOME — platform-tools, platforms, build-tools, cmdline-tools, emulator, system-images, ndk. For managed Expo apps I rarely open Studio, but I use adb and logcat constantly."</div>
-  <div class="revision-say">"Native crashes never reach Metro — I filter <code>adb logcat AndroidRuntime:E *:S</code> for the FATAL EXCEPTION stack, and <code>ReactNativeJS:V *:S</code> for JS console output and redbox text."</div>
-  <div class="revision-say">"<code>adb reverse tcp:8081 tcp:8081</code> is how a USB device reaches Metro; it's per-connection so replugging drops it. For Wi-Fi I do <code>adb tcpip 5555</code> then <code>adb connect &lt;ip&gt;:5555</code>."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you list what lives under <code>ANDROID_HOME</code> and what each folder (platform-tools, platforms, build-tools, cmdline-tools, ndk, system-images) is for?</li>
-    <li>Can you explain the adb client/server/device model and why "server version mismatch" happens?</li>
-    <li>Can you say why <code>adb reverse tcp:8081 tcp:8081</code> is needed and how Wi-Fi debugging is set up?</li>
-    <li>Can you filter logcat to only your app's native crash, and name which tag it appears under?</li>
-    <li>Can you explain what the NDK is and why React Native depends on it?</li>
-    <li>Can you create and boot an emulator entirely from the CLI, and pick the right ABI for Apple Silicon?</li>
-    <li>Can you say what you'd use Profiler, Layout Inspector, and APK Analyzer for, and how Expo changes when you open Android Studio at all?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

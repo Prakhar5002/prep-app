@@ -1,33 +1,44 @@
 window.PREP_SITE.registerTopic({
-  id: 'ts-declaration',
-  module: 'typescript',
-  title: 'Declaration Files',
-  estimatedReadTime: '35 min',
-  tags: ['typescript', 'declaration-files', 'd-ts', 'ambient', 'modules', 'globals', 'definitelytyped', 'js-interop'],
+  id: "ts-declaration",
+  module: "typescript",
+  title: "Declaration Files",
+  estimatedReadTime: "35 min",
+  tags: ["typescript","declaration-files","d-ts","ambient","modules","globals","definitelytyped","js-interop"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Declaration files</strong> (<code>.d.ts</code>) are pure type information — they describe the shape of code that already exists, without producing any JS. They are how TypeScript talks to JavaScript libraries, the DOM, Node, and the global scope.</p>
-<ul>
-  <li><strong>Three uses:</strong> describe a JS module you depend on, declare globals, or augment existing types.</li>
-  <li><strong>Anatomy:</strong> only types, interfaces, <code>declare</code> statements, and re-exports. No runtime code.</li>
-  <li><strong>Module declarations:</strong> <code>declare module "name"</code> tells TS what an importable module exports.</li>
-  <li><strong>Ambient globals:</strong> <code>declare const FOO: string</code> at the top level adds a global TS knows about.</li>
-  <li><strong>Module augmentation:</strong> reopen a third-party module's types to add fields (e.g., extending <code>Express.Request</code>).</li>
-  <li><strong>DefinitelyTyped (<code>@types/*</code>):</strong> community-maintained <code>.d.ts</code> packages for libraries that ship as plain JS.</li>
-  <li><strong>Triple-slash directives:</strong> <code>///&lt;reference&gt;</code> — usually unnecessary now; <code>tsconfig</code>'s <code>types</code>/<code>typeRoots</code> handles it.</li>
-</ul>
-<p><strong>Mantra:</strong> "<code>.d.ts</code> describes what's there. <code>.ts</code> creates it. Don't mix."</p>
-<p><strong>Version note:</strong> current stable is <strong>TypeScript 6.0</strong> (GA March 2026); declaration-file mechanics are unchanged. The Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026) with ~10× faster type-checking and <code>.d.ts</code> emit.</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A <code>.d.ts</code> file is <strong>pure, ambient, type-only information that emits no JS</strong> — it describes the shape of code that already exists so TypeScript can talk to JavaScript, globals, and your own published library.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Mantra:</strong> "<code>.d.ts</code> describes what's there. <code>.ts</code> creates it. Don't mix."</li>
+    <li><strong>Three uses:</strong> describe a JS module you depend on, declare globals, or augment existing types.</li>
+    <li><strong><code>.d.ts</code> contains only type-level statements and emits nothing</strong> — putting runtime code in one is a compile error.</li>
+    <li><strong>Module vs global scope is the key mental model:</strong> any top-level <code>import</code>/<code>export</code> makes the file a <em>module</em> (file-scoped names); with none, it is <em>global</em> (visible everywhere). This explains most "why doesn't TS see my type?" mysteries.</li>
+    <li>To add globals from a module file: <code>export {};</code> then <code>declare global { ... }</code>.</li>
+    <li><code>declare</code> means "this exists at runtime; here's its type, emit nothing" — mandatory for top-level entities in a <code>.d.ts</code>; a top-level <code>declare const FOO: string</code> adds an ambient global.</li>
+    <li><code>declare module "name"</code> types an untyped import; wildcard <code>declare module "*.png"</code> types asset imports — but the bundler still needs a real loader for it to work at runtime.</li>
+    <li><strong>Module augmentation</strong> reopens a third-party module's types to add fields — augment the module that actually <em>declares</em> the type (Express's <code>Request</code> lives in <code>express-serve-static-core</code>, not <code>express</code>).</li>
+    <li><strong>DefinitelyTyped (<code>@types/*</code>)</strong> provides community types — install those before hand-writing your own; a package with its own <code>"types"</code> field needs no <code>@types</code>.</li>
+    <li><code>import type</code> guarantees zero runtime emission — critical with side-effect-import bundlers.</li>
+    <li><strong>Publishing a TS library:</strong> set <code>declaration: true</code>, point <code>package.json</code> <code>"types"</code> at the emitted <code>.d.ts</code>, list peer deps, and keep the surface narrow (<code>as const</code> / explicit annotations avoid over-wide emit).</li>
+    <li>Key tsconfig knobs: <code>typeRoots</code>, <code>types</code> (whitelist), <code>skipLibCheck</code> (on in apps, off in a library build), <code>declarationMap</code>. Triple-slash <code>///&lt;reference&gt;</code> directives are usually unnecessary now — <code>types</code>/<code>typeRoots</code> handle it.</li>
+    <li>Never use <code>declare module "*"</code> (kills all type safety) or edit a <code>node_modules</code> <code>.d.ts</code> directly (augment instead).</li>
+    <li><strong>Versions:</strong> declaration-file mechanics are unchanged in <strong>TS 6.0</strong> (March 2026); the Go-native <strong>TS 7.0</strong> ("tsgo") is at RC with ~10× faster checking and <code>.d.ts</code> emit.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>A stray top-level <code>export</code> silently flips a globals file into a module,</strong> so its ambient declarations vanish everywhere — and <strong>augmenting the wrong module name</strong> (e.g. <code>"express"</code> instead of <code>"express-serve-static-core"</code>) does nothing at all. Fix: keep globals files export-free, or wrap them in <code>export {}</code> + <code>declare global</code>, and always augment the module that actually declares the type.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A .d.ts is ambient, type-only, and emits nothing — it describes shapes that already exist at runtime."</div>
+  <div class="revision-say">"The one rule that explains most mysteries: any top-level import or export makes the file a module and scopes its names — so I use export {} plus declare global to add globals from a module file."</div>
+  <div class="revision-say">"I install @types before hand-writing declarations, augment third-party modules instead of forking them, and use import type to keep types out of the runtime bundle."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a declaration file?</h3>
 <p>A file with the <code>.d.ts</code> extension that contains <em>only</em> type-level statements. The compiler reads it to understand the shape of values that exist somewhere outside this file — typically a third-party JS library, a browser global, a Node built-in, or another part of your own codebase that's pure JS.</p>
 
@@ -63,12 +74,10 @@ npm i -D @types/lodash      # pulls in lodash.d.ts community types
   <li><strong>Asset imports:</strong> <code>import img from "./logo.png"</code> needs a declaration that says "any <code>.png</code> import resolves to <code>string</code>".</li>
   <li><strong>Native modules in RN:</strong> when bridging to a hand-written native module, the <code>.d.ts</code> describes the JS-facing surface.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The two compiler models</h3>
 <p>Before TS can resolve an import or a global, it needs to know whether it lives in:</p>
 <ol>
@@ -121,12 +130,10 @@ declare module "*.png" { const src: string; export default src; }
 
 <h3>The "ambient" terminology</h3>
 <p>"Ambient" is just TS slang for "declared without an implementation." All entities in <code>.d.ts</code> files are ambient. <code>declare</code> in a <code>.ts</code> file is also ambient. The body — if any — is ignored.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Anatomy of a declaration file</h3>
 <pre><code class="language-ts">// my-lib.d.ts
 
@@ -334,12 +341,10 @@ import type * as Express from "express";
 import { type Request, json } from "express";   // 'json' is runtime; 'Request' is type-only
 </code></pre>
 <p>Critical when interop with bundlers that have side-effect imports — using <code>import type</code> guarantees zero runtime emission.</p>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Add types to an untyped npm package</h3>
 <p>You install a package with no types and no <code>@types/...</code> on DefinitelyTyped.</p>
 <pre><code class="language-ts">// types/legacy-tracker.d.ts (anywhere included by tsconfig)
@@ -540,12 +545,11 @@ declare const beforeEach: (fn: () =&gt; void) =&gt; void;
 declare const afterEach: (fn: () =&gt; void) =&gt; void;
 </code></pre>
 <p>In practice you should always install <code>@types/jest</code>; this is just to illustrate the shape.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>"My types aren't picked up"</h3>
 <p>The most common <code>.d.ts</code> bug. Checklist:</p>
 <ol>
@@ -623,12 +627,9 @@ type Lib = typeof lib;   // works
 
 <h3>Conflict between local and library types</h3>
 <p>If you locally augment <code>express</code> and the consumer also augments it, both apply (declaration merging unions them). Conflicts in field types raise errors. Coordinate with the team or namespace your additions.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: putting runtime code in <code>.d.ts</code></h3>
 <pre><code class="language-ts">// foo.d.ts
 export const VERSION = "1.0.0";    // ❌ "An implementation cannot be declared in ambient contexts"
@@ -724,12 +725,10 @@ declare const CURRENT_USER: User;
 
 <h3>Anti-pattern 7: mixing <code>declare namespace</code> and <code>export</code></h3>
 <p>Old-style namespaces and ESM exports can coexist but it's confusing. Pick one: namespaces for legacy global libs (UMD), modules everywhere else.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 10 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -825,56 +824,20 @@ export {};</code></pre>
   <li>"I'd add a CI check that <code>tsc --emitDeclarationOnly</code> succeeds on every PR — catches accidental type drift before publish."</li>
   <li>"I'd keep <code>skipLibCheck</code> on in apps but off in the library build to ensure my emitted <code>.d.ts</code> is internally consistent."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A <code>.d.ts</code> file is <strong>pure, ambient, type-only information that emits no JS</strong> — it describes the shape of code that already exists so TypeScript can talk to JavaScript, globals, and your own published library.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong><code>.d.ts</code> contains only type-level statements and emits nothing</strong> — putting runtime code in one is a compile error.</li>
-    <li><strong>Module vs global scope is the key mental model:</strong> any top-level <code>import</code>/<code>export</code> makes the file a <em>module</em> (file-scoped names); with none, it is <em>global</em> (visible everywhere). This explains most "why doesn't TS see my type?" mysteries.</li>
-    <li>To add globals from a module file: <code>export {};</code> then <code>declare global { ... }</code>.</li>
-    <li><code>declare</code> means "this exists at runtime; here's its type, emit nothing" — mandatory for top-level entities in a <code>.d.ts</code>.</li>
-    <li><code>declare module "name"</code> types an untyped import; wildcard <code>declare module "*.png"</code> types asset imports — but the bundler still needs a real loader for it to work at runtime.</li>
-    <li><strong>Module augmentation</strong> reopens a third-party module's types to add fields — augment the module that actually <em>declares</em> the type (Express's <code>Request</code> lives in <code>express-serve-static-core</code>, not <code>express</code>).</li>
-    <li><strong>DefinitelyTyped (<code>@types/*</code>)</strong> provides community types — install those before hand-writing your own; a package with its own <code>"types"</code> field needs no <code>@types</code>.</li>
-    <li><code>import type</code> guarantees zero runtime emission — critical with side-effect-import bundlers.</li>
-    <li><strong>Publishing a TS library:</strong> set <code>declaration: true</code>, point <code>package.json</code> <code>"types"</code> at the emitted <code>.d.ts</code>, list peer deps, and keep the surface narrow (<code>as const</code> / explicit annotations avoid over-wide emit).</li>
-    <li>Key tsconfig knobs: <code>typeRoots</code>, <code>types</code> (whitelist), <code>skipLibCheck</code> (on in apps, off in a library build), <code>declarationMap</code>.</li>
-    <li>Never use <code>declare module "*"</code> (kills all type safety) or edit a <code>node_modules</code> <code>.d.ts</code> directly (augment instead).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>A stray top-level <code>export</code> silently flips a globals file into a module,</strong> so its ambient declarations vanish everywhere — and <strong>augmenting the wrong module name</strong> (e.g. <code>"express"</code> instead of <code>"express-serve-static-core"</code>) does nothing at all. Fix: keep globals files export-free, or wrap them in <code>export {}</code> + <code>declare global</code>, and always augment the module that actually declares the type.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A .d.ts is ambient, type-only, and emits nothing — it describes shapes that already exist at runtime."</div>
-  <div class="revision-say">"The one rule that explains most mysteries: any top-level import or export makes the file a module and scopes its names — so I use export {} plus declare global to add globals from a module file."</div>
-  <div class="revision-say">"I install @types before hand-writing declarations, augment third-party modules instead of forking them, and use import type to keep types out of the runtime bundle."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Why is putting runtime code in a .d.ts file a compile error?</div>
+  <div class="qa-answer">
+    <p>A <code>.d.ts</code> file is an ambient context: everything in it is "declared without an implementation" and the file is erased entirely after type checking, so it never emits JS. <code>declare</code> says "this exists at runtime, here's its type — emit nothing", and it is mandatory for top-level entities there. An implementation such as <code>export const VERSION = "1.0.0"</code> fails with "An implementation cannot be declared in ambient contexts"; even <code>declare const VERSION = "1.0"</code> is wrong because an ambient declaration can't have an initializer. The fix is to state only the type: <code>export declare const VERSION: string;</code>.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain what makes a <code>.d.ts</code> file module-scoped versus global?</li>
-    <li>Can you explain what <code>declare</code> means and why runtime code in a <code>.d.ts</code> is a compile error?</li>
-    <li>Can you write the <code>export {}</code> + <code>declare global</code> pattern to add a global from a module file?</li>
-    <li>Can you explain module augmentation and why you augment <code>express-serve-static-core</code>, not <code>express</code>?</li>
-    <li>Can you explain when you need <code>@types/*</code> and when a package needs none?</li>
-    <li>Can you explain why <code>import type</code> matters and why <code>declare module "*"</code> is dangerous?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. When do you need an @types/* package, and when does a package need none?</div>
+  <div class="qa-answer">
+    <p>You need <code>@types/X</code> when a library ships as plain JS with no types of its own: DefinitelyTyped publishes community-maintained <code>.d.ts</code> packages for those (<code>npm i -D @types/lodash</code>). If the package ships its own types, the <code>"types"</code> or <code>"typings"</code> field in its <code>package.json</code> points at a <code>.d.ts</code> and TS reads it automatically, so no <code>@types</code> is needed (React Native, for example, ships its own types now). TS resolves an import by checking the package's <code>"types"</code> field first, then <code>node_modules/@types/X</code>. Only if neither exists do you hand-write a <code>declare module "X"</code>.</p>
+  </div>
 </div>
-`
-    }
+` },
+
   ]
 });

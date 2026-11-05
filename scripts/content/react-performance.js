@@ -1,33 +1,46 @@
 window.PREP_SITE.registerTopic({
-  id: 'react-performance',
-  module: 'React Deep',
-  title: 'Performance',
-  estimatedReadTime: '30 min',
-  tags: ['react', 'performance', 'memo', 'useMemo', 'useCallback', 'profiler', 'virtualization', 'code-splitting'],
+  id: "react-performance",
+  module: "React Deep",
+  title: "Performance",
+  estimatedReadTime: "30 min",
+  tags: ["react","performance","memo","useMemo","useCallback","profiler","virtualization","code-splitting"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>React performance work is mostly about <strong>not doing unnecessary work</strong>. There are three places to save time:</p>
-<ol>
-  <li><strong>Skip renders</strong> — <code>React.memo</code>, <code>useMemo</code>, <code>useCallback</code>, stable context values, splitting contexts, moving state down.</li>
-  <li><strong>Do less during render</strong> — avoid expensive computation in the component body, virtualize long lists, defer non-urgent updates with <code>startTransition</code>.</li>
-  <li><strong>Ship less JS / paint less</strong> — code-split routes with <code>lazy</code>, tree-shake dead code, hydrate less with RSC, avoid DOM churn (keys, portals, layout stability).</li>
-</ol>
-<ul>
-  <li>Always <strong>measure first</strong> — React DevTools Profiler shows why components rendered and how long they took. Optimizing without measurement wastes time and often makes code slower (memo overhead).</li>
-  <li>Common culprits: new inline objects/functions every render (breaks memo), huge Context, reading shared state that updates often, uncontrolled lists without virtualization, synchronous expensive calculations in render.</li>
-  <li>Many "perf bugs" are actually correctness bugs (wrong keys, missing deps) that happen to cost frames.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Measure, then optimize. React re-renders are cheap if the reconciler can quickly decide "no changes." Your job is usually to stabilize identity, scope state correctly, and avoid expensive work in the render path.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Performance is mostly <strong>not doing unnecessary work</strong> — <strong>measure with the Profiler first</strong>; a re-render is cheap when output is unchanged, and memoization has its own cost.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Performance work is mostly not doing unnecessary work:</strong> skip renders (memo, stable identity, context split), do less per render (virtualize, <code>startTransition</code>), ship/paint less (code-split, tree-shake).</li>
+    <li><strong>Measure first with the React DevTools Profiler</strong> — commit times, self vs total, "why did this render?" Optimizing on intuition wastes time and often adds memo overhead.</li>
+    <li><strong>A re-render is cheap when output is unchanged</strong> (a few μs + a diff with zero DOM ops). It only matters for many instances, heavy per-component work, huge subtrees, or effects re-firing.</li>
+    <li><strong>Memoization isn't free</strong> — each <code>useMemo</code>/<code>useCallback</code> costs a hook slot + a deps shallow-compare every render. It pays off only for expensive factories, props to memoized children, or effect deps.</li>
+    <li><strong>Stable identity matters:</strong> inline objects/arrays/functions are new every render → they defeat <code>React.memo</code> and re-fire effects. Stabilize with <code>useMemo</code>/<code>useCallback</code> or hoist constants outside the component.</li>
+    <li><strong>Common culprits:</strong> new inline objects/functions every render, one huge Context, reading shared state that updates often, long lists without virtualization, and expensive sync calculations in render. Many "perf bugs" are really <strong>correctness bugs</strong> (wrong keys, missing deps) that happen to cost frames.</li>
+    <li><code>React.memo</code> shallow-compares props with <code>Object.is</code>; a <strong>context change re-renders a consumer regardless of memo</strong>.</li>
+    <li><strong>Split context by update cadence</strong>, and <strong>move state down</strong> to the lowest common ancestor of its consumers so hot updates don't re-render the whole subtree.</li>
+    <li><strong>Virtualize lists beyond ~100–200 rows</strong> (<code>react-window</code>, <code>@tanstack/virtual</code>, FlashList in RN) — render only visible rows plus a small overscan, recycling DOM nodes.</li>
+    <li><strong>Code-split</strong> with <code>lazy</code> + <code>Suspense</code>; <strong>tree-shake</strong> via named ES imports and <code>"sideEffects": false</code>; <strong>hydrate less</strong> with RSC and avoid DOM churn (stable keys, layout stability).</li>
+    <li><code>startTransition</code> tags an update low-priority so urgent input stays responsive — same wall-clock time, better <em>perceived</em> perf; <code>useDeferredValue</code> lags a value you don't control setting of.</li>
+    <li>Lazy initializer: <code>useState(() =&gt; heavy())</code> runs once; <code>useState(heavy())</code> runs every render (result discarded after mount).</li>
+    <li>Profiler <strong>actual time vs base time</strong>: a big gap means memoization is working; similar values mean the component isn't benefiting from memo.</li>
+    <li><strong>Commit is sync but the browser paints on the next frame</strong> — a big DOM makes paint feel slow even when React work is cheap. Audit DOM complexity, not just render calls.</li>
+    <li>Hidden content via <code>display: none</code> <strong>still renders and runs effects</strong> — unmount conditionally (<code>{show &amp;&amp; &lt;Heavy/&gt;}</code>) instead.</li>
+    <li><strong>React Compiler 1.0 shipped stable Oct 7 2025</strong> (Babel + SWC); in compiler-enabled projects manual <code>useMemo</code>/<code>useCallback</code>/<code>React.memo</code> are largely unnecessary.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Sprinkling <code>useMemo</code>/<code>useCallback</code> everywhere on intuition — each costs a hook slot + a deps compare, and an inline object/array prop still defeats a memoized child. Stabilize identity and scope state down first, and <strong>measure before wrapping</strong>. (React Compiler makes most of this manual work unnecessary.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I measure first — open the Profiler, find the top components by time, and classify unexpected re-renders vs expensive renders vs big commits before changing anything."</div>
+  <div class="revision-say">"Memoization isn't free, so I stabilize identity and scope state correctly before wrapping things in <code>React.memo</code>."</div>
+  <div class="revision-say">"State should live at the lowest common ancestor of its consumers — moving state down often beats memoizing everything above it."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "slow React" usually means</h3>
 <p>"The page is slow" in React apps decomposes into a few distinct issues:</p>
 <ol>
@@ -62,10 +75,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why profiling is non-optional</h3>
 <p>Your intuition about "the expensive part" is almost always wrong. A tiny re-render 200 times a second is a bigger problem than a 30ms filter that runs once. Profile. Look at actual commit durations, self time vs total time, whether the commit was caused by props or state. Optimize the biggest number first.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "render pipeline" picture</h3>
 <div class="diagram">
 <pre>
@@ -109,10 +122,10 @@ OPTIMIZATIONS
   <div class="callout-title">Common misconception</div>
   <p>"Wrap everything in React.memo for free perf." No — memo has a cost. Components that render cheaply and often get new props are slower with memo than without. Benchmark in production, not dev (dev has extra instrumentation).</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Tooling: the React DevTools Profiler</h3>
 <p>Install React DevTools → Profiler tab. Click record → interact → stop. You see:</p>
 <ul>
@@ -217,10 +230,10 @@ const onFilter = (q) =&gt; {
 
 <h3>React Compiler (stable since Oct 2025)</h3>
 <p>A build-time compiler (works via both Babel and SWC) that statically analyzes components and auto-memoizes. Wrapping in <code>React.memo</code>, calls to <code>useMemo</code>/<code>useCallback</code> largely become unnecessary. <strong>React Compiler 1.0 shipped stable on Oct 7 2025</strong>; in compiler-enabled projects manual memoization is mostly redundant.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — memo on a leaf</h3>
 <pre><code class="language-js">const Row = React.memo(function Row({ item, onClick }) {
   return &lt;li onClick={() =&gt; onClick(item.id)}&gt;{item.title}&lt;/li&gt;;
@@ -335,10 +348,11 @@ setN(0); // React compares Object.is → bails out, no re-render.</code></pre>
   const t = useContext(ThemeCtx); // re-renders on context change regardless of memo
   return ...;
 });</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. memo doesn't help if props are always new</h3>
 <pre><code class="language-js">&lt;Memo onClick={() =&gt; {}} options={{a:1}} /&gt;
 // New fn + new object every render → memo never bails out.</code></pre>
@@ -409,10 +423,9 @@ useState(heavyComputation())          // runs every render (discarded after moun
 
 <h3>20. <code>Object.freeze</code> to catch mutations</h3>
 <p>In dev, freeze props/state to prove nothing mutates them. If your app crashes on freeze, you had hidden mutation that was probably a bug.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — wrap-everything-in-memo</h3>
 <p>Memoization is not free. Only wrap components that are proven slow or receive stable props. Benchmark before and after.</p>
 
@@ -472,10 +485,10 @@ const derived = useMemo(() =&gt; compute(a,b), [a,b]);</code></pre>
 <pre><code class="language-js">&lt;div style={{ display: 'none' }}&gt;&lt;HeavyDashboard/&gt;&lt;/div&gt;
 // HeavyDashboard still renders, effects still run, DOM nodes still exist.
 // Unmount conditionally instead: {show &amp;&amp; &lt;HeavyDashboard/&gt;}</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How do you approach a "my React app is slow" ticket?</div>
   <div class="qa-answer">
@@ -629,53 +642,7 @@ const derived = useMemo(() =&gt; compute(a,b), [a,b]);</code></pre>
     <li>You mention React Compiler as the emerging direction.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Performance is mostly <strong>not doing unnecessary work</strong> — <strong>measure with the Profiler first</strong>; a re-render is cheap when output is unchanged, and memoization has its own cost.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Performance work is mostly not doing unnecessary work:</strong> skip renders (memo, stable identity, context split), do less per render (virtualize, <code>startTransition</code>), ship/paint less (code-split, tree-shake).</li>
-    <li><strong>Measure first with the React DevTools Profiler</strong> — commit times, self vs total, "why did this render?" Optimizing on intuition wastes time and often adds memo overhead.</li>
-    <li><strong>A re-render is cheap when output is unchanged</strong> (a few μs + a diff with zero DOM ops). It only matters for many instances, heavy per-component work, huge subtrees, or effects re-firing.</li>
-    <li><strong>Memoization isn't free</strong> — each <code>useMemo</code>/<code>useCallback</code> costs a hook slot + a deps shallow-compare every render. It pays off only for expensive factories, props to memoized children, or effect deps.</li>
-    <li><strong>Stable identity matters:</strong> inline objects/arrays/functions are new every render → they defeat <code>React.memo</code> and re-fire effects. Stabilize with <code>useMemo</code>/<code>useCallback</code> or hoist constants outside the component.</li>
-    <li><code>React.memo</code> shallow-compares props with <code>Object.is</code>; a <strong>context change re-renders a consumer regardless of memo</strong>.</li>
-    <li><strong>Split context by update cadence</strong>, and <strong>move state down</strong> to the lowest common ancestor of its consumers so hot updates don't re-render the whole subtree.</li>
-    <li><strong>Virtualize lists beyond ~100–200 rows</strong> (<code>react-window</code>, <code>@tanstack/virtual</code>, FlashList in RN) — render only visible rows plus a small overscan, recycling DOM nodes.</li>
-    <li><strong>Code-split</strong> with <code>lazy</code> + <code>Suspense</code>; <strong>tree-shake</strong> via named ES imports and <code>"sideEffects": false</code>.</li>
-    <li><code>startTransition</code> tags an update low-priority so urgent input stays responsive — same wall-clock time, better <em>perceived</em> perf; <code>useDeferredValue</code> lags a value you don't control setting of.</li>
-    <li>Lazy initializer: <code>useState(() =&gt; heavy())</code> runs once; <code>useState(heavy())</code> runs every render (result discarded after mount).</li>
-    <li>Profiler <strong>actual time vs base time</strong>: a big gap means memoization is working; similar values mean the component isn't benefiting from memo.</li>
-    <li><strong>Commit is sync but the browser paints on the next frame</strong> — a big DOM makes paint feel slow even when React work is cheap. Audit DOM complexity, not just render calls.</li>
-    <li>Hidden content via <code>display: none</code> <strong>still renders and runs effects</strong> — unmount conditionally (<code>{show &amp;&amp; &lt;Heavy/&gt;}</code>) instead.</li>
-    <li><strong>React Compiler 1.0 shipped stable Oct 7 2025</strong> (Babel + SWC); in compiler-enabled projects manual <code>useMemo</code>/<code>useCallback</code>/<code>React.memo</code> are largely unnecessary.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Sprinkling <code>useMemo</code>/<code>useCallback</code> everywhere on intuition — each costs a hook slot + a deps compare, and an inline object/array prop still defeats a memoized child. Stabilize identity and scope state down first, and <strong>measure before wrapping</strong>. (React Compiler makes most of this manual work unnecessary.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I measure first — open the Profiler, find the top components by time, and classify unexpected re-renders vs expensive renders vs big commits before changing anything."</div>
-  <div class="revision-say">"Memoization isn't free, so I stabilize identity and scope state correctly before wrapping things in <code>React.memo</code>."</div>
-  <div class="revision-say">"State should live at the lowest common ancestor of its consumers — moving state down often beats memoizing everything above it."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you describe how you'd measure with the Profiler before changing any code?</li>
-    <li>Can you distinguish an unexpected re-render from an expensive render from a large commit?</li>
-    <li>Can you explain why <code>React.memo</code> isn't free and how an unstable prop silently defeats it?</li>
-    <li>Can you explain why a Context change bypasses <code>React.memo</code> for its consumers?</li>
-    <li>Can you explain how moving state down or lifting it correctly can beat memoizing everything above it?</li>
-    <li>Can you say when you'd reach for <code>useMemo</code>/<code>useCallback</code> versus list virtualization?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

@@ -1,32 +1,45 @@
 window.PREP_SITE.registerTopic({
-  id: 'react-state',
-  module: 'React Deep',
-  title: 'State Management',
-  estimatedReadTime: '28 min',
-  tags: ['react', 'state', 'useState', 'useReducer', 'context', 'redux', 'zustand', 'lifting', 'derived-state'],
+  id: "react-state",
+  module: "React Deep",
+  title: "State Management",
+  estimatedReadTime: "28 min",
+  tags: ["react","state","useState","useReducer","context","redux","zustand","lifting","derived-state"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>State management in React is a set of design choices, not a single technology. The question is always: <em>who owns this piece of data, and who needs to know when it changes?</em></p>
-<ul>
-  <li><strong>Component-local state</strong> (<code>useState</code>, <code>useReducer</code>): the default. If only this component needs it, keep it here.</li>
-  <li><strong>Lift state up</strong>: when two sibling components need the same data, hoist it to their lowest common ancestor.</li>
-  <li><strong>Context</strong>: ambient "read-mostly" values like theme, current user, i18n locale. Not a general-purpose store — context invalidation re-renders all consumers.</li>
-  <li><strong>External stores</strong> (Redux, Zustand, Jotai, Valtio): when many disparate components read or write the same data, or you need selector-based subscriptions. Redux Toolkit is the industry standard for complex apps; Zustand for lightweight needs.</li>
-  <li><strong>Server state</strong> (React Query, SWR, Apollo): data fetched from an API belongs in a server-state library that handles caching, revalidation, staleness, retries — NOT in Redux / useState.</li>
-  <li><strong>URL state</strong>: filters, search, tab selection — belongs in the URL (shareable, refresh-safe). React Router, search params, nuqs.</li>
-  <li><strong>Form state</strong>: its own ecosystem — React Hook Form, Formik, Final Form — because form UX has idiosyncratic requirements (validation, dirty tracking, field registration).</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Don't start with Redux. Start with <code>useState</code>. Lift when necessary. Add Context for ambient values. Add a server-state library for server data. Only reach for a global store when you have a real cross-cutting concern — and still prefer lightweight stores over ceremony-heavy ones.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">State management is a <strong>classification problem</strong> — decide who owns the data and who needs to know it changed: default to <code>useState</code>, lift up when siblings share, add Context for ambient values, a store only for real cross-cutting state.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>State management is a classification problem, not a tool choice.</strong> Ask: who owns this data, and who needs to know when it changes?</li>
+    <li><strong>Default to <code>useState</code>; lift up when siblings share; add Context for ambient values; add a store only for real cross-cutting concerns.</strong> Don't start with Redux.</li>
+    <li><strong>Five kinds of state:</strong> server (React Query/SWR/Apollo), URL (search params), form (React Hook Form/Formik — its own ecosystem for validation, dirty tracking, field registration), UI/local (<code>useState</code>), and cross-cutting domain (Zustand/Redux/Jotai). Mis-classifying is the #1 cause of bad state architecture.</li>
+    <li><strong>Context is NOT a store</strong> — every consumer re-renders when the value changes. Fine for rarely-updating read-mostly data (theme, user, locale); a perf disaster for frequently-updating data.</li>
+    <li><strong>Server data does NOT belong in Redux/<code>useState</code></strong> — you'd re-implement caching, dedup, revalidation, retries, and optimistic updates badly. Use React Query/SWR/RTK Query.</li>
+    <li><strong>Derived state is a trap</strong> — don't store it in <code>useState</code> + sync with an effect (extra render, stale risk). Derive during render with <code>useMemo</code> or a plain expression. Only put data with its own identity in state.</li>
+    <li><strong><code>useState</code>'s setter replaces, it does NOT merge</strong> (unlike class <code>setState</code>). Use <code>setUser(u =&gt; ({ ...u, name }))</code>.</li>
+    <li><strong>Never mutate state</strong> — <code>items.push(x); setItems(items)</code> keeps the same reference → no re-render. Produce a new array/object (or use Immer, which RTK bundles).</li>
+    <li><strong>Prefer normalized state</strong> (ids + lookup-by-id) over deep nesting → O(1) updates, trivial selectors. RTK's <code>createEntityAdapter</code> generates the helpers.</li>
+    <li><strong>External stores earn their keep via</strong> selector-based subscriptions (subscribe to a slice, skip unrelated re-renders), DevTools/time-travel, middleware, and pure-reducer predictability.</li>
+    <li><strong>Zustand vs Redux Toolkit:</strong> Zustand = minimal API, no provider, selectors built-in → default for small/medium apps; RTK = richer ecosystem (RTK Query, patterns, DevTools) → large teams needing consistency.</li>
+    <li><strong>Reducers must be pure</strong> — side effects (network, logging, localStorage) go in middleware/thunks/handlers, or time-travel breaks. Never <code>dispatch</code> during render (infinite loop).</li>
+    <li><strong>Zustand selector returning a new object each call</strong> re-renders every time → add <code>shallow</code> equality or select primitives separately.</li>
+    <li><strong>URL state</strong> (filters/sort/tabs) is shareable, refresh-safe, and back-button-safe; prefer individual primitive params over base64-JSON blobs (React Router search params, nuqs).</li>
+    <li><strong>Optimistic update pattern (React Query):</strong> <code>onMutate</code> cancels queries, snapshots previous, writes optimistic value; <code>onError</code> rolls back; <code>onSettled</code> invalidates.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Putting <strong>server data in Redux/<code>useState</code></strong> (you'll re-implement caching, dedup, and revalidation badly — use React Query/SWR), or <strong>storing derived state</strong> and syncing it with an effect (derive during render instead). And remember Context is not a store — it re-renders every consumer on change.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"For each piece of state I ask who owns it, who reads it, and how often it changes — that decides between local state, lifting up, Context, a store, or a server-state library."</div>
+  <div class="revision-say">"Context is not a store — it re-renders every consumer on change, so I keep it for ambient read-mostly values and use a store with selectors when data updates often."</div>
+  <div class="revision-say">"Server data goes in React Query, not Redux — otherwise you re-implement caching, revalidation, and optimistic updates by hand. And I derive during render instead of storing derived state."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The "kinds of state" taxonomy</h3>
 <p>Before picking a tool, classify your state:</p>
 <table>
@@ -71,10 +84,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why derived state is a trap</h3>
 <p>Storing derived state in <code>useState</code> means you have to keep it in sync with its sources — any time either source changes, you must update the derived copy. That's a source of bugs. <em>Derive during render</em> via <code>useMemo</code> or plain expressions. Only put something in state if it has its own identity (the user typed, a server returned data).</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "state ownership graph" picture</h3>
 <p>For each piece of state, ask: <em>which component is its source of truth?</em> Anyone else that needs it should receive it via props or subscribe via context/store. Trouble comes when two components both think they own the same state and you write "sync" logic between them.</p>
 
@@ -122,10 +135,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"Redux is too complex, so I'll use Context everywhere." Context is not a store. Rendering 50 components for a one-field update to a mega-context is worse than learning Zustand. For anything non-trivial, use a library.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>useState vs useReducer</h3>
 <ul>
   <li><code>useState</code>: great for one or two fields with simple transitions.</li>
@@ -251,10 +264,10 @@ const [filter, setFilter] = useQueryState('filter', parseAsString.withDefault('a
   <li>In a form? → React Hook Form.</li>
   <li>Cross-cutting, updates often, multiple consumers? → Zustand (default) or Redux Toolkit (complex apps).</li>
 </ol>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — local state for an open/close</h3>
 <pre><code class="language-js">function Modal() {
   const [open, setOpen] = useState(false);
@@ -399,10 +412,11 @@ const { a, b } = useStore((s) =&gt; ({ a: s.a, b: s.b }), shallow);
 <pre><code class="language-js">const bc = new BroadcastChannel('cart');
 useStore.subscribe((s) =&gt; bc.postMessage(s.items));
 bc.onmessage = (e) =&gt; useStore.setState({ items: e.data });</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Storing server data in Redux</h3>
 <p>You'll re-implement caching, revalidation, optimistic updates, retry logic. Each badly. Use React Query / RTK Query / SWR for server data.</p>
 
@@ -490,10 +504,9 @@ items.push(x); setItems(items); // same reference → no re-render + hidden muta
 <h3>20. Using context value before mount complete</h3>
 <pre><code class="language-js">&lt;Ctx.Provider value={undefined}&gt;...&lt;/Ctx.Provider&gt;
 // Consumers must handle the undefined sentinel; or provide a default in createContext.</code></pre>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — dumping everything into Redux</h3>
 <p>Server data, form state, animation state, UI open/close — all in Redux. Actions file explodes, reducers mirror server logic, team hates state code. Classify your state.</p>
 
@@ -552,10 +565,10 @@ useEffect(() =&gt; setQ(params.get('q')), [params]);
 
 <h3>Anti-pattern 15 — no persistence strategy</h3>
 <p>User's draft, cart, filters lost on reload. Plan persistence: URL (filters), localStorage (cart, drafts), server (user profile). Each has different requirements — don't stuff everything into localStorage.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How do you decide where to put a piece of state?</div>
   <div class="qa-answer">
@@ -730,53 +743,14 @@ useEffect(() =&gt; setQ(params.get('q')), [params]);
     <li>You can implement optimistic updates with rollback.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">State management is a <strong>classification problem</strong> — decide who owns the data and who needs to know it changed: default to <code>useState</code>, lift up when siblings share, add Context for ambient values, a store only for real cross-cutting state.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>State management is a classification problem, not a tool choice.</strong> Ask: who owns this data, and who needs to know when it changes?</li>
-    <li><strong>Default to <code>useState</code>; lift up when siblings share; add Context for ambient values; add a store only for real cross-cutting concerns.</strong> Don't start with Redux.</li>
-    <li><strong>Five kinds of state:</strong> server (React Query/SWR), URL (search params), form (React Hook Form), UI/local (<code>useState</code>), and cross-cutting domain (Zustand/Redux/Jotai). Mis-classifying is the #1 cause of bad state architecture.</li>
-    <li><strong>Context is NOT a store</strong> — every consumer re-renders when the value changes. Fine for rarely-updating read-mostly data (theme, user, locale); a perf disaster for frequently-updating data.</li>
-    <li><strong>Server data does NOT belong in Redux/<code>useState</code></strong> — you'd re-implement caching, dedup, revalidation, retries, and optimistic updates badly. Use React Query/SWR/RTK Query.</li>
-    <li><strong>Derived state is a trap</strong> — don't store it in <code>useState</code> + sync with an effect (extra render, stale risk). Derive during render with <code>useMemo</code> or a plain expression. Only put data with its own identity in state.</li>
-    <li><strong><code>useState</code>'s setter replaces, it does NOT merge</strong> (unlike class <code>setState</code>). Use <code>setUser(u =&gt; ({ ...u, name }))</code>.</li>
-    <li><strong>Never mutate state</strong> — <code>items.push(x); setItems(items)</code> keeps the same reference → no re-render. Produce a new array/object (or use Immer, which RTK bundles).</li>
-    <li><strong>Prefer normalized state</strong> (ids + lookup-by-id) over deep nesting → O(1) updates, trivial selectors. RTK's <code>createEntityAdapter</code> generates the helpers.</li>
-    <li><strong>External stores earn their keep via</strong> selector-based subscriptions (subscribe to a slice, skip unrelated re-renders), DevTools/time-travel, middleware, and pure-reducer predictability.</li>
-    <li><strong>Zustand vs Redux Toolkit:</strong> Zustand = minimal API, no provider, selectors built-in → default for small/medium apps; RTK = richer ecosystem (RTK Query, patterns, DevTools) → large teams needing consistency.</li>
-    <li><strong>Reducers must be pure</strong> — side effects (network, logging, localStorage) go in middleware/thunks/handlers, or time-travel breaks. Never <code>dispatch</code> during render (infinite loop).</li>
-    <li><strong>Zustand selector returning a new object each call</strong> re-renders every time → add <code>shallow</code> equality or select primitives separately.</li>
-    <li><strong>URL state</strong> (filters/sort/tabs) is shareable, refresh-safe, and back-button-safe; prefer individual primitive params over base64-JSON blobs.</li>
-    <li><strong>Optimistic update pattern (React Query):</strong> <code>onMutate</code> cancels queries, snapshots previous, writes optimistic value; <code>onError</code> rolls back; <code>onSettled</code> invalidates.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Putting <strong>server data in Redux/<code>useState</code></strong> (you'll re-implement caching, dedup, and revalidation badly — use React Query/SWR), or <strong>storing derived state</strong> and syncing it with an effect (derive during render instead). And remember Context is not a store — it re-renders every consumer on change.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"For each piece of state I ask who owns it, who reads it, and how often it changes — that decides between local state, lifting up, Context, a store, or a server-state library."</div>
-  <div class="revision-say">"Context is not a store — it re-renders every consumer on change, so I keep it for ambient read-mostly values and use a store with selectors when data updates often."</div>
-  <div class="revision-say">"Server data goes in React Query, not Redux — otherwise you re-implement caching, revalidation, and optimistic updates by hand. And I derive during render instead of storing derived state."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Why do people say "Context is not a store", and when does it cause an avalanche of re-renders?</div>
+  <div class="qa-answer">
+    <p>Context is a dependency-injection channel, not a state manager: it has no selectors, so when the Provider's value changes, every consumer re-renders, even ones that only read an unrelated field, and <code>React.memo</code> doesn't stop it. For small, rarely-updating, read-mostly data (theme, auth user, locale) that's fine. For frequently-updating data (scroll position, form fields, realtime counters) or one mega-context, a one-field update re-renders dozens of components, which is a perf disaster. Use Context for ambient values (split by update cadence, memoize the value), and use a store with selector-based subscriptions (Zustand, Redux) for everything else.</p>
+  </div>
 </div>
-`},
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you decide where a piece of state should live by asking who owns it, who reads it, and how often it changes?</li>
-    <li>Can you explain why Context is not a store and when it causes an avalanche of consumer re-renders?</li>
-    <li>Can you explain why server data belongs in something like React Query instead of Redux?</li>
-    <li>Can you explain why you derive values during render rather than storing derived state?</li>
-    <li>Can you compare Context against a store with selectors, and say when each wins?</li>
-    <li>Can you explain when to lift state up versus colocate it at the lowest common ancestor?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

@@ -1,32 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'mprod-deep-link',
-  module: 'mobile-prod',
-  title: 'Deep Linking',
-  estimatedReadTime: '40 min',
-  tags: ['deep-linking', 'universal-links', 'app-links', 'branch', 'firebase-dynamic-links', 'react-native', 'navigation', 'attribution'],
+  id: "mprod-deep-link",
+  module: "mobile-prod",
+  title: "Deep Linking",
+  estimatedReadTime: "40 min",
+  tags: ["deep-linking","universal-links","app-links","branch","firebase-dynamic-links","react-native","navigation","attribution"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Deep links</strong> turn URLs into in-app destinations. A user taps a link in an email or message; instead of opening Safari, your app opens directly to the right screen with the right context. Done well, this is the highest-leverage growth channel after push.</p>
-<ul>
-  <li><strong>Three flavors:</strong> <em>Custom URL schemes</em> (<code>myapp://product/123</code> — primitive, easily hijacked), <em>Universal Links</em> (iOS, https URLs verified via apple-app-site-association), <em>App Links</em> (Android, https URLs verified via assetlinks.json).</li>
-  <li><strong>"Deferred deep links"</strong> survive the install: a user without the app taps a link → goes to App Store → installs → app opens to the original destination. Requires a routing service (Branch, Adjust, Firebase Dynamic Links).</li>
-  <li><strong>The verification dance.</strong> iOS fetches <code>/.well-known/apple-app-site-association</code>; Android fetches <code>/.well-known/assetlinks.json</code>. Both must be served at the apex domain over HTTPS with correct content type.</li>
-  <li><strong>Default tools:</strong> <strong>Branch</strong> (industry standard for attribution + deferred deep links), <strong>AppsFlyer</strong> + OneLink, <strong>Adjust</strong>, <strong>Firebase Dynamic Links</strong> (sunset Aug 2025 — migrate now).</li>
-  <li><strong>Routing is your responsibility.</strong> The OS hands you a URL; you decode → navigate → restore state.</li>
-  <li><strong>Edge cases everywhere:</strong> deferred install timing, attribution windows, web fallback when app not installed, "open in browser" preferences, iOS clipboard ATT, App Store Connect Universal Links banner.</li>
-  <li><strong>Never trust the URL.</strong> Validate every parameter. URLs are user-controllable input — sanitize before navigating, and authenticate before granting access.</li>
-</ul>
-<p><strong>Mantra:</strong> "Universal Links over schemes; verify the domain; route in one place; handle deferred installs; treat URLs as untrusted input."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Deep links turn URLs into in-app destinations — prefer <strong>Universal Links (iOS) / App Links (Android)</strong> over custom schemes, verify domain ownership, route every URL through <strong>one validated pipeline</strong>, and use a routing service for <strong>deferred</strong> installs.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Three flavors:</strong> custom URL schemes (<code>myapp://...</code> — hijackable, no web fallback), Universal Links (iOS, https verified via <code>apple-app-site-association</code>), App Links (Android, https verified via <code>assetlinks.json</code> + autoVerify).</li>
+    <li><strong>Prefer Universal/App Links</strong> — they verify domain ownership so they can't be hijacked, and they fall back to the web when the app is missing.</li>
+    <li><strong>Verification files:</strong> iOS serves <code>/.well-known/apple-app-site-association</code> (content-type application/json, NO .json extension); Android serves <code>/.well-known/assetlinks.json</code> with the release keystore SHA-256 — both at the apex domain over HTTPS.</li>
+    <li><strong>Deferred deep linking</strong> survives the install: tap link → App Store → install → app opens to the original destination. Needs a routing service (Branch, AppsFlyer, Adjust) keyed by device fingerprint, with an attribution window (~24h).</li>
+    <li><strong>Routing is your job.</strong> The OS hands you a URL; you parse → validate → authorize → navigate in <strong>one</strong> pipeline, not scattered handlers.</li>
+    <li><strong>RN cold vs warm start:</strong> <code>Linking.getInitialURL()</code> for cold start, <code>Linking.addEventListener('url', ...)</code> for background→foreground — wire BOTH, and gate on navigation being ready.</li>
+    <li><strong>Never trust the URL.</strong> Allowlist hosts and routes, validate every parameter, and reject open redirects (<code>next</code>/<code>redirect</code> targets).</li>
+    <li><strong>Auth-gated links:</strong> park the URL as pending, navigate to Login, replay after auth succeeds.</li>
+    <li><strong>Always pair with a web fallback</strong> so links open the same content when the app isn't installed; version URL paths so old marketing emails keep working.</li>
+    <li><strong>Firebase Dynamic Links sunsets August 2025</strong> — migrate to Branch / AppsFlyer / Adjust; don't start new apps on FDL.</li>
+    <li>Deep links are the highest-leverage growth channel after push; expect edge cases: deferred-install timing, attribution windows, "open in browser" preferences, iOS clipboard ATT toast, in-app browsers.</li>
+    <li>Custom schemes leak auth tokens (any app can claim the scheme) — use Universal/App Links + PKCE for OAuth callbacks.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Registering the URL listener before the navigator is mounted — the cold-start handler fires and <code>nav.navigate()</code> throws on a race. Also: AASA served with the wrong content-type or a <code>.json</code> extension makes Universal Links fail <em>silently</em>. Gate routing on navigation-ready, and serve AASA as application/json at the exact well-known path.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I'd use Universal Links and App Links over custom schemes — they verify domain ownership via the AASA and assetlinks files, so they can't be hijacked and they fall back to the web when the app is missing."</div>
+  <div class="revision-say">"Every incoming URL goes through one pipeline: parse, validate against an allowlist, authorize, then navigate — I never trust the URL directly, which kills open-redirect and token-leak bugs."</div>
+  <div class="revision-say">"For deferred deep links I'd use Branch: it stashes the URL keyed to the device, redirects to the App Store, and the SDK replays the original destination after install — that's what makes referral and ad-campaign routing work post-install."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a deep link?</h3>
 <p>A URL whose <em>handler</em> is your app rather than a browser. The user taps <code>https://myapp.com/products/abc123</code>; iOS / Android determine the registered app for that domain and hand the URL off; your app processes it and navigates to the product screen.</p>
 
@@ -78,12 +88,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>Deferred deep linking</strong> is wired for marketing campaigns.</li>
   <li>Deep link routes are <strong>versioned</strong> — old marketing emails still work after a redesign.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The OS routing decision</h3>
 <pre><code class="language-text">User taps a URL.
    ↓
@@ -171,12 +179,10 @@ App routes to /p/123.
 
 <h3>The ATT clipboard surprise</h3>
 <p>iOS 16+ shows "App pasted from clipboard" toasts whenever you read the pasteboard. Some attribution SDKs (Branch, AppsFlyer) historically read the clipboard for cross-app attribution. iOS 14.5+ banned that without ATT consent. Modern SDKs default to off; verify your version.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>iOS Universal Links — the full setup</h3>
 <p><strong>1. Add associated domain to Xcode</strong></p>
 <pre><code class="language-text">Target → Signing &amp; Capabilities → Add Capability → Associated Domains
@@ -416,12 +422,10 @@ useEffect(() =&gt; {
 
 <h3>Web fallback</h3>
 <p>Every deep link URL must work on the open web (the marketing emails go there too). The web pages render the same content. The smart-app-banner (iOS Safari) and a "Get the app" button on the web help convert mobile-web users to app users.</p>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: A complete shareable link flow</h3>
 <pre><code class="language-tsx">// 1. User taps "Share" on a product
 async function shareProduct(product: Product) {
@@ -578,12 +582,11 @@ function parse(url: string) {
 &lt;meta name="apple-itunes-app" content="app-id=123456789, app-argument=https://myapp.com/p/abc" /&gt;
 </code></pre>
 <p>Safari on iOS shows a "Get / Open" banner; tapping Open uses your Universal Link. <code>app-argument</code> ensures the app opens at the right page.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>AASA file caching</h3>
 <p>iOS aggressively caches the apple-app-site-association file via Apple's CDN. Updates can take ~24h to propagate. After updating:</p>
 <ul>
@@ -658,12 +661,9 @@ URL libraries handle this; manual parsing breaks. Always use URL constructor.
 
 <h3>Test on cold install, not just from Xcode</h3>
 <p>Universal Links don't always trigger when the app was launched from Xcode (debugging mode bypasses the OS handoff). Test from a fresh install (TestFlight, ad hoc).</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: AASA served with wrong content-type</h3>
 <pre><code class="language-text">Content-Type: text/plain   ❌  iOS rejects, Universal Links silently fail
 Content-Type: application/json   ✅
@@ -778,12 +778,10 @@ nav.navigate('Product', { id });
 }
 // Telemetry the failure; consider surfacing a toast for genuinely malformed links.
 </code></pre>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -891,56 +889,20 @@ nav.navigate('Product', { id });
   <li>"I'd add a smart 'open in app' banner on the web with a 90-day cookie so we don't pester returning users."</li>
   <li>"I'd add structured deep-link analytics: source channel, campaign, conversion rate per route."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Deep links turn URLs into in-app destinations — prefer <strong>Universal Links (iOS) / App Links (Android)</strong> over custom schemes, verify domain ownership, route every URL through <strong>one validated pipeline</strong>, and use a routing service for <strong>deferred</strong> installs.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Three flavors:</strong> custom URL schemes (<code>myapp://...</code> — hijackable, no web fallback), Universal Links (iOS, https verified via <code>apple-app-site-association</code>), App Links (Android, https verified via <code>assetlinks.json</code> + autoVerify).</li>
-    <li><strong>Prefer Universal/App Links</strong> — they verify domain ownership so they can't be hijacked, and they fall back to the web when the app is missing.</li>
-    <li><strong>Verification files:</strong> iOS serves <code>/.well-known/apple-app-site-association</code> (content-type application/json, NO .json extension); Android serves <code>/.well-known/assetlinks.json</code> with the release keystore SHA-256 — both at the apex domain over HTTPS.</li>
-    <li><strong>Deferred deep linking</strong> survives the install: tap link → App Store → install → app opens to the original destination. Needs a routing service (Branch, AppsFlyer, Adjust) keyed by device fingerprint, with an attribution window (~24h).</li>
-    <li><strong>Routing is your job.</strong> The OS hands you a URL; you parse → validate → authorize → navigate in <strong>one</strong> pipeline, not scattered handlers.</li>
-    <li><strong>RN cold vs warm start:</strong> <code>Linking.getInitialURL()</code> for cold start, <code>Linking.addEventListener('url', ...)</code> for background→foreground — wire BOTH, and gate on navigation being ready.</li>
-    <li><strong>Never trust the URL.</strong> Allowlist hosts and routes, validate every parameter, and reject open redirects (<code>next</code>/<code>redirect</code> targets).</li>
-    <li><strong>Auth-gated links:</strong> park the URL as pending, navigate to Login, replay after auth succeeds.</li>
-    <li><strong>Always pair with a web fallback</strong> so links open the same content when the app isn't installed; version URL paths so old marketing emails keep working.</li>
-    <li><strong>Firebase Dynamic Links sunsets August 2025</strong> — migrate to Branch / AppsFlyer / Adjust; don't start new apps on FDL.</li>
-    <li>Custom schemes leak auth tokens (any app can claim the scheme) — use Universal/App Links + PKCE for OAuth callbacks.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Registering the URL listener before the navigator is mounted — the cold-start handler fires and <code>nav.navigate()</code> throws on a race. Also: AASA served with the wrong content-type or a <code>.json</code> extension makes Universal Links fail <em>silently</em>. Gate routing on navigation-ready, and serve AASA as application/json at the exact well-known path.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I'd use Universal Links and App Links over custom schemes — they verify domain ownership via the AASA and assetlinks files, so they can't be hijacked and they fall back to the web when the app is missing."</div>
-  <div class="revision-say">"Every incoming URL goes through one pipeline: parse, validate against an allowlist, authorize, then navigate — I never trust the URL directly, which kills open-redirect and token-leak bugs."</div>
-  <div class="revision-say">"For deferred deep links I'd use Branch: it stashes the URL keyed to the device, redirects to the App Store, and the SDK replays the original destination after install — that's what makes referral and ad-campaign routing work post-install."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. How do you wire cold-start and warm-start deep links in React Native, and why must routing wait for navigation to be ready?</div>
+  <div class="qa-answer">
+    <p>When the app isn't running and the link launches it, read the URL once with <code>Linking.getInitialURL()</code>; when the app is backgrounded and the link brings it forward, you get it from <code>Linking.addEventListener('url', ...)</code>. You must wire both, from one top-level place, and remove the subscription on unmount, otherwise links get handled twice (two listeners double-navigate) or accumulate under fast refresh. The cold-start URL usually arrives before <code>NavigationContainer</code> has mounted, so calling <code>nav.navigate()</code> immediately throws. Park the parsed route as pending and flush it from the container's <code>onReady</code> callback, or let React Navigation's <code>linking</code> prop handle the timing for you.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the three deep-link flavors and why Universal Links / App Links beat custom URL schemes?</li>
-    <li>Do you know where the AASA and assetlinks.json files live, their content-type, and what each declares?</li>
-    <li>Can you describe deferred deep linking end-to-end and name the routing services that provide it?</li>
-    <li>Can you wire both cold-start (<code>getInitialURL</code>) and warm-start (<code>addEventListener</code>) handling in React Native and gate it on navigation being ready?</li>
-    <li>Can you handle an auth-gated deep link with pending-link parking and replay after login?</li>
-    <li>Can you name the security risks — custom-scheme hijacking, open redirects, magic-link reuse — and how you'd validate URLs against them?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. What are the main deep-link security risks, and how do you validate URLs against them?</div>
+  <div class="qa-answer">
+    <p><strong>Custom-scheme hijacking:</strong> two apps can register the same scheme, so a malicious app can intercept something like <code>myapp://oauth/callback?token=secret</code>; use Universal Links / App Links, which verify domain ownership, plus PKCE for OAuth. <strong>Open redirects:</strong> blindly navigating to a <code>to</code>, <code>next</code> or <code>redirect</code> parameter creates a phishing surface; allowlist the target routes and fall back to Home. <strong>Magic-link reuse:</strong> a forwarded login link logs the friend in too, so tokens must be single-use, short-TTL (e.g. 10 minutes) and invalidated by the server on first exchange. Defensively, every URL goes through one parser that allowlists hosts and route shapes, returns <code>null</code> for anything unknown, sanitises parameters, and gates auth-required routes before navigating.</p>
+  </div>
 </div>
-`
-    }
+` },
+
   ]
 });

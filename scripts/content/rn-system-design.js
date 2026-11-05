@@ -1,37 +1,45 @@
 window.PREP_SITE.registerTopic({
-  id: 'rn-system-design',
-  module: 'React Native',
-  title: 'Mobile System Design',
-  estimatedReadTime: '40 min',
-  tags: ['react-native', 'system-design', 'mobile', 'architecture', 'offline', 'sync', 'case-study', 'interview'],
+  id: "rn-system-design",
+  module: "React Native",
+  title: "Mobile System Design",
+  estimatedReadTime: "40 min",
+  tags: ["react-native","system-design","mobile","architecture","offline","sync","case-study","interview"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>A mobile system design interview asks you to design a non-trivial mobile product end-to-end in 45-60 minutes. The 10-step framework from Frontend System Design applies, with <strong>mobile-specific extensions</strong>: offline-first architecture, sync protocols, battery / data constraints, native vs JS thread coordination, app lifecycle, push, and cross-platform tradeoffs.</p>
-
-<p><strong>Mobile-specific axes</strong> beyond the standard framework:</p>
-<ul>
-  <li><strong>Offline-first</strong> — assume the network can disappear at any time; design for graceful degradation.</li>
-  <li><strong>Sync protocol</strong> — how do local changes propagate to server and back? CRDTs, op-logs, last-writer-wins.</li>
-  <li><strong>Storage tiers</strong> — memory cache, MMKV, SQLite, file system, server. Pick per data shape.</li>
-  <li><strong>Background work</strong> — push notifications, periodic fetch, foreground services. Limited and platform-dependent.</li>
-  <li><strong>Threading model</strong> — what runs on JS thread vs UI thread vs native; Reanimated for animations.</li>
-  <li><strong>Battery & data</strong> — cellular detection, polling cadence, image quality, background restraint.</li>
-  <li><strong>App lifecycle</strong> — cold start, warm resume, backgrounding, kill states.</li>
-  <li><strong>Cross-platform</strong> — iOS vs Android differences (push, permissions, file system, UI conventions).</li>
-  <li><strong>Build & release</strong> — staged rollout, OTA updates, hotfix strategy.</li>
-  <li><strong>Observability</strong> — Sentry crashes, RUM, analytics, A/B framework.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Mobile system design = standard frontend system design + offline + sync + lifecycle + battery + cross-platform. A senior answer covers all six, names the storage tier per data type, and shows how the system degrades on bad networks rather than just on perfect networks.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Run the standard 10-step framework, then apply the mobile lenses</strong> — offline-first, sync, lifecycle, battery/data, threading, and cross-platform — designing how the system degrades on bad networks, not just perfect ones.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Mobile system design = standard frontend framework + mobile lenses:</strong> offline-first, sync, lifecycle, battery/data, threading, and cross-platform. Cover these and you read senior.</li>
+    <li><strong>Offline-first is the default mental model</strong> — run the same 10 steps (clarify → scale → architecture → data model → API → components → state → performance → edge cases → deep dive) but assume the network can vanish: cache locally for instant cold start, queue writes, use optimistic mutations, and show sync state (banner, "saving…").</li>
+    <li><strong>Decompose storage by data shape:</strong> memory (Zustand/React Query) → MMKV (settings, tokens, small caches, sync sub-ms) → SQLite (queryable, &gt;1k rows) → file system (blobs) → server (source of truth). Tokens go in SecureStore (hardware-backed).</li>
+    <li><strong>Sync protocols:</strong> last-writer-wins (simplest, often broken), op-log/event sourcing, CRDT (Yjs/Automerge, for collaborative editing), 3-way merge, or manual reconciliation. Pick per data shape.</li>
+    <li><strong>Offline sync flow:</strong> optimistic UI → mutation queued (SQLite) with an idempotency key → drain in order on reconnect → server returns canonical state; 4xx rolls back, 5xx/network retries with backoff.</li>
+    <li><strong>Real-time is a hybrid:</strong> WebSocket/SSE in foreground, push (silent or visible) in background (OS suspends sockets within seconds), then re-establish WS + delta-fetch since last cursor on resume.</li>
+    <li><strong>Three-thread model is a constant constraint:</strong> heavy work on JS lags state; heavy work on UI stutters animation. Reanimated worklets keep gestures/animations smooth while JS is busy.</li>
+    <li><strong>Mobile-aware API:</strong> cursor pagination (not offset — retry-safe on drops), batch endpoints, idempotency keys on every mutation, ETags for conditional fetch, a <code>GET /sync?since=cursor</code> delta, compressed payloads, and per-DPR image variants.</li>
+    <li><strong>Never trust the client clock</strong> — use server timestamps + sequence numbers for ordering and expirations; display in the user's locale.</li>
+    <li><strong>Lifecycle:</strong> cold start (from killed), warm resume (background→active), and kill (OS jetsam/OOM). Persist state to MMKV/SQLite so relaunch restores real state, not just a splash.</li>
+    <li><strong>Battery/data:</strong> throttle location updates (and drop tracking when done), prefer significant-location-change on iOS, defer big downloads and lower image quality on cellular, and pause heavy work on low battery.</li>
+    <li><strong>Background upload pipeline:</strong> compress off-main-thread → strip EXIF GPS → chunked upload via presigned URLs → track chunks in SQLite to resume. iOS background <code>URLSession</code>, Android WorkManager + foreground service (<code>react-native-background-upload</code>).</li>
+    <li><strong>Performance defaults:</strong> Hermes + New Architecture, FlashList for long lists, Reanimated, expo-image, MMKV, inlineRequires + lazy routes; target cold start &lt; 2s on mid-range Android.</li>
+    <li><strong>Banking vs social:</strong> banking needs SecureStore + biometric gating + certificate pinning + jailbreak detection + screenshot blocking, NO optimistic mutations (transfers await server confirmation), read-only offline, and forced-upgrade support (server 426).</li>
+    <li><strong>Have a rollout/hotfix story:</strong> staged rollout, OTA (EAS Update/CodePush) for JS-only fixes, feature flags, and kill switches. Plus observability: Sentry (with native symbols), RUM, analytics.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Designing only the happy path — a perfect network, an always-alive process, and a trusted client clock.</strong> On mobile the network vanishes, the OS suspends sockets within seconds and can jetsam/OOM-kill the app, and device clocks are wrong. Fix: make offline-first the default (cache locally for instant cold start, queue writes with idempotency keys, optimistic UI with visible sync state), treat real-time as a hybrid (WebSocket in foreground, push in background, delta-fetch from the last cursor on resume), persist state to MMKV/SQLite so relaunch restores real state, and order events by server timestamps + sequence numbers — never the client clock.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Mobile system design is the standard 10-step framework plus mobile lenses: offline-first, sync, lifecycle, battery, threading, and cross-platform — I design how the system degrades on bad networks, not just perfect ones."</div>
+  <div class="revision-say">"I decompose storage by data shape — SecureStore for tokens, MMKV for small sync reads, SQLite for queryable history, file system for blobs — and queue writes with idempotency keys for offline sync."</div>
+  <div class="revision-say">"Real-time on mobile is a hybrid: WebSocket in the foreground, push in the background since the OS suspends sockets, and a delta-fetch from the last cursor on resume."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>How mobile system design differs from web</h3>
 <table>
   <thead><tr><th></th><th>Web</th><th>Mobile</th></tr></thead>
@@ -79,10 +87,10 @@ window.PREP_SITE.registerTopic({
   <li>Production patterns (rollout, observability, hotfix).</li>
   <li>Empathy for the mobile user (offline, slow networks, low-end devices).</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "10 + mobile" framework</h3>
 <p>Same 10 steps as Frontend System Design, with mobile-specific lenses applied at each:</p>
 <ol>
@@ -174,10 +182,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"WebSocket connections persist while app is backgrounded." They don't reliably. iOS / Android suspend most network sockets within seconds of backgrounding. Real-time on mobile requires a hybrid: WS in foreground, push in background, re-sync on resume.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Step 1 — Clarify (mobile-specific additions)</h3>
 <pre><code>FUNCTIONAL
 - (standard product features)
@@ -345,10 +353,10 @@ Cross-cutting:
   <li>"What happens when push delivery is lost?"</li>
   <li>"How do you validate the new architecture migration didn't break anything?"</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Case Studies', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Case 1 — Mobile chat app (WhatsApp-class)</h3>
 
 <h4>Clarify</h4>
@@ -650,10 +658,11 @@ NON-FUNCTIONAL
   <li>Low battery + sensitive operation: warn, allow.</li>
   <li>Localization: currency, locale-specific decimal separators (€1.234,56 vs $1,234.56).</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Cold-start state restoration</h3>
 <p>Map every piece of UI state to a storage tier. On launch, hydrate from MMKV / SQLite before rendering — users see last state immediately, then async revalidation.</p>
 
@@ -713,10 +722,9 @@ NON-FUNCTIONAL
 
 <h3>20. Date / time / language oddities</h3>
 <p>Right-to-left languages reverse layout direction. Some calendars (Hijri, Buddhist) shift dates. <code>Intl.DateTimeFormat</code> with explicit locale + calendar.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — designing for "happy path" only</h3>
 <p>Senior signal: cover offline, errors, lifecycle, low-end. Junior answers focus on perfect-network use cases.</p>
 
@@ -761,10 +769,10 @@ NON-FUNCTIONAL
 
 <h3>Anti-pattern 15 — no rollout / hotfix story</h3>
 <p>Senior question: "How do you respond if we ship a bug to 100% of users?" Have an answer: staged rollout, OTA hotfix for JS, feature flag, kill switch.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How would you approach a mobile system design interview?</div>
   <div class="qa-answer">
@@ -1007,53 +1015,26 @@ NON-FUNCTIONAL
     <li>You scope down when time-pressed and call out open questions at the end.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Run the standard 10-step framework, then apply the mobile lenses</strong> — offline-first, sync, lifecycle, battery/data, threading, and cross-platform — designing how the system degrades on bad networks, not just perfect ones.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Mobile system design = standard frontend framework + mobile lenses:</strong> offline-first, sync, lifecycle, battery/data, threading, and cross-platform. Cover these and you read senior.</li>
-    <li><strong>Offline-first is the default mental model</strong> — run the same 10 steps (clarify → scale → architecture → data model → API → components → state → performance → edge cases → deep dive) but assume the network can vanish: cache locally for instant cold start, queue writes, use optimistic mutations, and show sync state (banner, "saving…").</li>
-    <li><strong>Decompose storage by data shape:</strong> memory (Zustand/React Query) → MMKV (settings, tokens, small caches, sync sub-ms) → SQLite (queryable, &gt;1k rows) → file system (blobs) → server (source of truth). Tokens go in SecureStore (hardware-backed).</li>
-    <li><strong>Sync protocols:</strong> last-writer-wins (simplest, often broken), op-log/event sourcing, CRDT (Yjs/Automerge, for collaborative editing), 3-way merge, or manual reconciliation. Pick per data shape.</li>
-    <li><strong>Offline sync flow:</strong> optimistic UI → mutation queued (SQLite) with an idempotency key → drain in order on reconnect → server returns canonical state; 4xx rolls back, 5xx/network retries with backoff.</li>
-    <li><strong>Real-time is a hybrid:</strong> WebSocket/SSE in foreground, push (silent or visible) in background (OS suspends sockets within seconds), then re-establish WS + delta-fetch since last cursor on resume.</li>
-    <li><strong>Three-thread model is a constant constraint:</strong> heavy work on JS lags state; heavy work on UI stutters animation. Reanimated worklets keep gestures/animations smooth while JS is busy.</li>
-    <li><strong>Mobile-aware API:</strong> cursor pagination (not offset — retry-safe on drops), batch endpoints, idempotency keys on every mutation, ETags for conditional fetch, a <code>GET /sync?since=cursor</code> delta, compressed payloads, and per-DPR image variants.</li>
-    <li><strong>Never trust the client clock</strong> — use server timestamps + sequence numbers for ordering and expirations; display in the user's locale.</li>
-    <li><strong>Lifecycle:</strong> cold start (from killed), warm resume (background→active), and kill (OS jetsam/OOM). Persist state to MMKV/SQLite so relaunch restores real state, not just a splash.</li>
-    <li><strong>Battery/data:</strong> throttle location updates (and drop tracking when done), prefer significant-location-change on iOS, defer big downloads and lower image quality on cellular, and pause heavy work on low battery.</li>
-    <li><strong>Background upload pipeline:</strong> compress off-main-thread → strip EXIF GPS → chunked upload via presigned URLs → track chunks in SQLite to resume. iOS background <code>URLSession</code>, Android WorkManager + foreground service (<code>react-native-background-upload</code>).</li>
-    <li><strong>Performance defaults:</strong> Hermes + New Architecture, FlashList for long lists, Reanimated, expo-image, MMKV, inlineRequires + lazy routes; target cold start &lt; 2s on mid-range Android.</li>
-    <li><strong>Banking vs social:</strong> banking needs SecureStore + biometric gating + certificate pinning + jailbreak detection + screenshot blocking, NO optimistic mutations (transfers await server confirmation), read-only offline, and forced-upgrade support (server 426).</li>
-    <li><strong>Have a rollout/hotfix story:</strong> staged rollout, OTA (EAS Update/CodePush) for JS-only fixes, feature flags, and kill switches. Plus observability: Sentry (with native symbols), RUM, analytics.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Designing only the happy path — a perfect network, an always-alive process, and a trusted client clock.</strong> On mobile the network vanishes, the OS suspends sockets within seconds and can jetsam/OOM-kill the app, and device clocks are wrong. Fix: make offline-first the default (cache locally for instant cold start, queue writes with idempotency keys, optimistic UI with visible sync state), treat real-time as a hybrid (WebSocket in foreground, push in background, delta-fetch from the last cursor on resume), persist state to MMKV/SQLite so relaunch restores real state, and order events by server timestamps + sequence numbers — never the client clock.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Mobile system design is the standard 10-step framework plus mobile lenses: offline-first, sync, lifecycle, battery, threading, and cross-platform — I design how the system degrades on bad networks, not just perfect ones."</div>
-  <div class="revision-say">"I decompose storage by data shape — SecureStore for tokens, MMKV for small sync reads, SQLite for queryable history, file system for blobs — and queue writes with idempotency keys for offline sync."</div>
-  <div class="revision-say">"Real-time on mobile is a hybrid: WebSocket in the foreground, push in the background since the OS suspends sockets, and a delta-fetch from the last cursor on resume."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Cursor pagination vs offset pagination — why does cursor win on mobile?</div>
+  <div class="qa-answer">
+    <p>Offset pagination (<code>?page=3&amp;size=20</code>) addresses rows by position, so when new items are inserted at the top of a live feed every later page shifts — you get duplicates or skipped items. A cursor addresses "everything after this item", so it stays stable on inserts. That matters more on mobile because networks drop responses: re-requesting the same cursor after a failure is retry-safe and returns the same page. Cursors also double as sync state — persist the last-seen cursor in MMKV, resume an infinite FlashList from it, delta-fetch with <code>GET /sync?since=cursor</code> after reconnecting, and invalidate the top cursor on pull-to-refresh.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you design a real-time feature that survives the OS suspending sockets in the background?</li>
-    <li>Can you explain the WebSocket-in-foreground, push-in-background, delta-fetch-on-resume pattern?</li>
-    <li>Can you design an offline-first sync layer and reason about conflict resolution?</li>
-    <li>Can you argue cursor pagination vs offset and why cursor wins on mobile?</li>
-    <li>Can you talk through image delivery, caching, and CDN strategy for a media-heavy app?</li>
-    <li>Can you scope an MVP, state your assumptions, and defend the trade-offs out loud?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. Talk through image delivery, caching and CDN strategy for a media-heavy app.</div>
+  <div class="qa-answer">
+    <p>Originals go to object storage fronted by a CDN that resizes on the fly and serves WebP/AVIF, and the API hands out per-DPR variants so a device never downloads more pixels than it can show — thumbnails eagerly, full size only on demand. On the client, use expo-image for its disk + memory cache and blurhash/skeleton placeholders so the feed feels instant, with a dedicated file-system area for larger cached media. Make it network-aware via NetInfo: on cellular, lower image quality, defer prefetching and mute autoplay video (720p vs 1080p on wifi), and pre-fetch the next likely views on wifi. For video, pre-buffer only the next item and pause on scroll-out; on uploads, compress on-device off the main thread and use chunked, presigned-URL uploads.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q18. How do you scope an MVP, state your assumptions and defend the trade-offs out loud?</div>
+  <div class="qa-answer">
+    <p>Start in the Clarify step: list the functional features, then the mobile non-functionals as explicit assumptions — platforms and tablets, min OS versions, offline behavior (read cached, queue writes?), push needs, background tasks, app-size and cold-start targets (e.g. under 2s on mid-range Android), cellular vs wifi, accessibility and RTL — and an out-of-scope list (backend internals, deep ML). Then scope down explicitly: "I'll focus on the main flow and skip Y and Z — adjust if you'd rather", instead of trying to cover every feature. As you design, name each trade-off and why: SQLite vs MMKV per data shape, last-writer-wins vs CRDT, optimistic UI vs awaiting the server, and "iOS does X, Android does Y, cross-platform we…".</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

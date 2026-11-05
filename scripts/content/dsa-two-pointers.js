@@ -1,31 +1,48 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-two-pointers',
-  module: 'DSA',
-  title: 'Two Pointers',
-  estimatedReadTime: '22 min',
-  tags: ['dsa', 'two-pointers', 'array', 'string', 'pattern'],
+  id: "dsa-two-pointers",
+  module: "DSA",
+  title: "Two Pointers",
+  estimatedReadTime: "22 min",
+  tags: ["dsa","two-pointers","array","string","pattern"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Two pointers is a pattern where you maintain two indices into a sequence and move them according to logic. Reduces many O(n²) brute-force problems to O(n).</p>
-<ul>
-  <li><strong>Opposite ends</strong>: <code>l</code> starts at 0, <code>r</code> at end; converge. For sorted arrays, palindromes, container problems.</li>
-  <li><strong>Same direction (slow + fast)</strong>: both start at 0 (or 0 and 1); fast advances; slow advances when condition met. For dedup, partition, cycle detection.</li>
-  <li><strong>Linked-list cycle</strong>: Floyd's tortoise-and-hare uses fast/slow pointers.</li>
-  <li><strong>Sorted prerequisite</strong>: opposite-ends two pointers on unsorted is usually wrong; sort first or use a different pattern.</li>
-  <li><strong>Skip duplicates</strong>: when result must be unique tuples, advance pointers past equal neighbors.</li>
-  <li><strong>O(n) time, O(1) space</strong> typical.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Two pointers turns nested loops into linear scans by exploiting structure (sortedness, monotonic constraints, symmetry). Identify the structure first; the pointer moves follow.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Two pointers <strong>exploits structure — sortedness, symmetry, or a monotonic constraint — to replace nested loops with a single linear <code>O(n)</code> scan in <code>O(1)</code> space</strong>; identify the structure first and the pointer moves follow.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Two indices moved by intentional logic</strong> — turns many <code>O(n²)</code> brute forces into <code>O(n)</code>, usually with <code>O(1)</code> space.</li>
+    <li><strong>Opposite ends converging:</strong> sorted arrays, palindromes, container/water. Move the pointer the comparison dictates.</li>
+    <li><strong>Same direction (slow + fast):</strong> dedup, move zeros, partition — <code>slow</code> is the write position, <code>fast</code> is the scan index.</li>
+    <li><strong>Fast/slow at different speeds (Floyd's tortoise-and-hare):</strong> cycle detection, middle of a list, nth-from-end — <code>O(1)</code> space vs a hash set's <code>O(n)</code>.</li>
+    <li><strong>Opposite-ends needs monotonicity → sort first;</strong> but sorting destroys original indices, so use a hash map for two-sum on an unsorted array.</li>
+    <li><strong>Skip duplicates for unique tuples</strong> (3-sum): skip <code>nums[i] === nums[i-1]</code> on the outer loop, and skip both inner pointers past equal neighbors after a match.</li>
+    <li><strong>Container with most water: move the shorter side</strong> — moving the taller side can only keep or shrink the area.</li>
+    <li><strong>Trapping rain water:</strong> process the side with the smaller current max; water there is bounded by that max. <code>O(n)</code> time, <code>O(1)</code> space.</li>
+    <li><strong>Dutch flag</strong> (3 pointers, sort 0/1/2): on a swap with <code>high</code>, do NOT advance <code>mid</code> — re-check the swapped-in value.</li>
+    <li><strong>Floyd's setup:</strong> both pointers start at <code>head</code>, guard the loop with <code>fast &amp;&amp; fast.next</code>; to find the cycle start, reset one pointer to head and step both by 1.</li>
+    <li><strong>Squares of a sorted array:</strong> fill the result back-to-front comparing absolute values from both ends → <code>O(n)</code> instead of an <code>O(n log n)</code> sort.</li>
+    <li><strong><code>l &lt; r</code> stops at the meeting point (middle not processed); <code>l &lt;= r</code> processes it</strong> — pick per problem. A dummy node makes linked-list head removal uniform.</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> <code>O(n)</code> for single-pass variants; <code>O(n²)</code> for 3-sum (outer loop × inner two-pointer scan); <code>O(n log n)</code> when a sort is required first.</li>
+    <li><strong>Space:</strong> <code>O(1)</code> in-place — <code>O(n)</code> only when you build an output array (e.g. sorted-squares).</li>
+    <li><strong>Signal → reach for it:</strong> sorted + pair/triplet with a target → opposite ends · palindrome/symmetry → opposite ends · in-place dedup/partition/move → slow + fast · linked-list cycle/midpoint/nth-from-end → fast + slow · sort 0/1/2 → Dutch flag (3 pointers).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Applying opposite-ends two pointers to an UNSORTED array, and mishandling the pointer-advance edges.</strong> Opposite-ends convergence needs monotonicity — sort first, but remember sorting destroys original indices (use a hash map for two-sum on unsorted input). The other repeat mistakes: forgetting to skip duplicate neighbors so 3-sum emits repeated tuples; advancing <code>mid</code> after a swap with <code>high</code> in Dutch-flag (you must re-check the swapped-in value); and confusing <code>l &lt; r</code> (stops before the middle) with <code>l &lt;= r</code> (processes it). For Floyd's, guard the loop with <code>fast &amp;&amp; fast.next</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Two pointers exploits structure — sortedness, symmetry, or a monotonic constraint — to replace nested loops with a single linear scan, usually in O(1) space."</div>
+  <div class="revision-say">"In container-with-most-water I always move the shorter pointer, because moving the taller one can only keep the min the same or lower it while the width shrinks."</div>
+  <div class="revision-say">"For linked-list cycles I use Floyd's tortoise-and-hare — both start at head, and it detects the cycle in O(1) space instead of an O(n) hash set."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why two pointers works</h3>
 <p>The pattern eliminates redundant work. In a sorted array's two-sum problem, brute force tries every pair (n²). Two pointers converge based on the sum's relationship to target — each step either rules out the left's smallest with current right, or right's largest with current left. Each pointer moves at most n steps total → O(n).</p>
 
@@ -52,10 +69,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why on linked lists</h3>
 <p>Random access is O(n), but two pointers (one fast, one slow) detect cycles, find midpoints, and perform other tasks in a single pass without random access. Floyd's cycle detection is the canonical example.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "convergence" picture</h3>
 <div class="diagram">
 <pre>
@@ -131,10 +148,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"Two pointers always means starting at both ends." Many two-pointer problems have both pointers starting at 0 (slow + fast). The key is: two indices, intentional movement based on logic.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Template — opposite ends</h3>
 <pre><code class="language-js">function template(arr) {
   let l = 0, r = arr.length - 1;
@@ -360,10 +377,10 @@ function sortedSquares(nums) {
   return true;
 }
 // Two pointers from end, accounting for backspaces. O(n+m) time, O(1) space.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — palindrome check</h3>
 <pre><code class="language-js">function isPalindrome(s) {
   let l = 0, r = s.length - 1;
@@ -561,10 +578,11 @@ function merge(a, b) {
   while (j &lt; b.length) result.push(b[j++]);
   return result;
 }</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Off-by-one (l &lt; r vs l &lt;= r)</h3>
 <p><code>l &lt; r</code>: stop when they meet — meeting point not processed. <code>l &lt;= r</code>: meeting point processed. Choose based on whether you need to inspect the middle element.</p>
 
@@ -628,10 +646,9 @@ if (nums[m] === 2) { swap; h--; }   // re-check arr[m] next iteration</code></pr
 
 <h3>20. Three sum closest with multiple equal sums</h3>
 <p>Doesn't matter which triple you return (problem usually asks for the sum value, not the triple).</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — using two pointers on unsorted</h3>
 <p>Two-pointer convergence depends on monotonicity. Sort first or use a different pattern (hash map for two-sum unsorted).</p>
 
@@ -681,10 +698,10 @@ if (cond) { l++; r--; }
 
 <h3>Anti-pattern 15 — mutating input when caller didn't expect</h3>
 <p>Some callers expect a new array; in-place mutation is surprising. Document or copy first if uncertain.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. When to use two pointers?</div>
   <div class="qa-answer">
@@ -892,55 +909,14 @@ if (cond) { l++; r--; }
     <li>You sort first when the algorithm requires it.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Two pointers <strong>exploits structure — sortedness, symmetry, or a monotonic constraint — to replace nested loops with a single linear <code>O(n)</code> scan in <code>O(1)</code> space</strong>; identify the structure first and the pointer moves follow.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Two indices moved by intentional logic</strong> — turns many <code>O(n²)</code> brute forces into <code>O(n)</code>, usually with <code>O(1)</code> space.</li>
-    <li><strong>Opposite ends converging:</strong> sorted arrays, palindromes, container/water. Move the pointer the comparison dictates.</li>
-    <li><strong>Same direction (slow + fast):</strong> dedup, move zeros, partition — <code>slow</code> is the write position, <code>fast</code> is the scan index.</li>
-    <li><strong>Fast/slow at different speeds (Floyd's tortoise-and-hare):</strong> cycle detection, middle of a list, nth-from-end — <code>O(1)</code> space vs a hash set's <code>O(n)</code>.</li>
-    <li><strong>Opposite-ends needs monotonicity → sort first;</strong> but sorting destroys original indices, so use a hash map for two-sum on an unsorted array.</li>
-    <li><strong>Skip duplicates for unique tuples</strong> (3-sum): skip <code>nums[i] === nums[i-1]</code> on the outer loop, and skip both inner pointers past equal neighbors after a match.</li>
-    <li><strong>Container with most water: move the shorter side</strong> — moving the taller side can only keep or shrink the area.</li>
-    <li><strong>Trapping rain water:</strong> process the side with the smaller current max; water there is bounded by that max. <code>O(n)</code> time, <code>O(1)</code> space.</li>
-    <li><strong>Dutch flag</strong> (3 pointers, sort 0/1/2): on a swap with <code>high</code>, do NOT advance <code>mid</code> — re-check the swapped-in value.</li>
-    <li><strong>Floyd's setup:</strong> both pointers start at <code>head</code>, guard the loop with <code>fast &amp;&amp; fast.next</code>; to find the cycle start, reset one pointer to head and step both by 1.</li>
-    <li><strong>Squares of a sorted array:</strong> fill the result back-to-front comparing absolute values from both ends → <code>O(n)</code> instead of an <code>O(n log n)</code> sort.</li>
-    <li><strong><code>l &lt; r</code> stops at the meeting point (middle not processed); <code>l &lt;= r</code> processes it</strong> — pick per problem. A dummy node makes linked-list head removal uniform.</li>
-  </ul>
-  <h4>Complexity &amp; when to reach for it</h4>
-  <ul>
-    <li><strong>Time:</strong> <code>O(n)</code> for single-pass variants; <code>O(n²)</code> for 3-sum (outer loop × inner two-pointer scan); <code>O(n log n)</code> when a sort is required first.</li>
-    <li><strong>Space:</strong> <code>O(1)</code> in-place — <code>O(n)</code> only when you build an output array (e.g. sorted-squares).</li>
-    <li><strong>Signal → reach for it:</strong> sorted + pair/triplet with a target → opposite ends · palindrome/symmetry → opposite ends · in-place dedup/partition/move → slow + fast · linked-list cycle/midpoint/nth-from-end → fast + slow · sort 0/1/2 → Dutch flag (3 pointers).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Applying opposite-ends two pointers to an UNSORTED array, and mishandling the pointer-advance edges.</strong> Opposite-ends convergence needs monotonicity — sort first, but remember sorting destroys original indices (use a hash map for two-sum on unsorted input). The other repeat mistakes: forgetting to skip duplicate neighbors so 3-sum emits repeated tuples; advancing <code>mid</code> after a swap with <code>high</code> in Dutch-flag (you must re-check the swapped-in value); and confusing <code>l &lt; r</code> (stops before the middle) with <code>l &lt;= r</code> (processes it). For Floyd's, guard the loop with <code>fast &amp;&amp; fast.next</code>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Two pointers exploits structure — sortedness, symmetry, or a monotonic constraint — to replace nested loops with a single linear scan, usually in O(1) space."</div>
-  <div class="revision-say">"In container-with-most-water I always move the shorter pointer, because moving the taller one can only keep the min the same or lower it while the width shrinks."</div>
-  <div class="revision-say">"For linked-list cycles I use Floyd's tortoise-and-hare — both start at head, and it detects the cycle in O(1) space instead of an O(n) hash set."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Why does opposite-ends two pointers usually need a sorted array?</div>
+  <div class="qa-answer">
+    <p>Convergence relies on monotonicity: in a sorted array, if the pair sum is too small you know moving <code>l</code> right is the only move that can increase it, and if it's too big only moving <code>r</code> left can decrease it, so each step safely discards candidates. On unsorted input that reasoning breaks and you would miss pairs. Sort first (<code>O(n log n)</code>), but sorting destroys the original indices, so for two-sum on an unsorted array either store <code>[value, originalIndex]</code> pairs or use a hash map instead.</p>
+  </div>
 </div>
-`},
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you state when to reach for the two-pointer pattern?</li>
-    <li>Can you code the opposite-ends template from memory?</li>
-    <li>Can you code the fast/slow (Floyd's) template from memory?</li>
-    <li>Can you state its time/space complexity versus a hash-set approach?</li>
-    <li>Can you explain why the array usually has to be sorted first?</li>
-    <li>Can you name 2 problems two pointers solves?</li>
-  </ul>
-</div>
-`}
-]
+  ]
 });

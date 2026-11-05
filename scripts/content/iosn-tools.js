@@ -1,31 +1,45 @@
 window.PREP_SITE.registerTopic({
-  id: 'iosn-tools',
-  module: 'iOS Native (Deep)',
-  title: 'Tools: Xcode, xcodebuild, Simulators',
-  estimatedReadTime: '24 min',
-  tags: ['xcode', 'xcodebuild', 'xcrun', 'simctl', 'simulator', 'instruments', 'console', 'lldb', 'deriveddata', 'dsym', 'atos', 'symbolicate', 'cocoapods', 'xcode-select', 'expo', 'eas', 'ios', 'react-native', 'signing', 'excluded-archs'],
+  id: "iosn-tools",
+  module: "iOS Native (Deep)",
+  title: "Tools: Xcode, xcodebuild, Simulators",
+  estimatedReadTime: "24 min",
+  tags: ["xcode","xcodebuild","xcrun","simctl","simulator","instruments","console","lldb","deriveddata","dsym","atos","symbolicate","cocoapods","xcode-select","expo","eas","ios","react-native","signing","excluded-archs"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>The Apple toolchain is what actually turns your React Native iOS project into a running app, and knowing it is the difference between "I re-ran <code>pod install</code> and prayed" and "I read the logs and fixed it." The pieces you must know:</p>
-<ul>
-  <li><strong>Xcode</strong> — the IDE that owns the build, signing, the Simulator launch, native debugging (LLDB), and profiling (Instruments). You open it for signing, native crashes, and native-module work.</li>
-  <li><strong>xcodebuild</strong> — the command-line build engine Xcode wraps. <code>react-native run-ios</code>, <code>expo run:ios</code>, Fastlane, and EAS all shell out to it under the hood.</li>
-  <li><strong>xcrun + simctl</strong> — the Swiss-army launcher; <code>simctl</code> drives Simulators from the terminal (boot, install, launch, <code>openurl</code> for deep links, <code>erase</code>, tail logs).</li>
-  <li><strong>Instruments, Console.app / <code>log</code>, LLDB</strong> — profile, read system logs, and debug the native side.</li>
-  <li><strong>DerivedData, .dSYM, atos/symbolicatecrash</strong> — where builds cache, why stale caches break you, and how you turn a hex-address crash into a readable stack.</li>
-</ul>
-<p>As an Expo + prebuild developer you rarely open Xcode day to day, but you still lean on <code>simctl</code>, Console, and Instruments the moment something native misbehaves — and you must know them for interviews.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Xcode is a GUI over a stack of CLIs — <code>xcode-select</code> picks the toolchain, <code>xcodebuild</code> builds it, <code>xcrun simctl</code> drives the Simulator, LLDB debugs it, Instruments profiles it, and DerivedData caches it. RN's <code>run-ios</code> and Expo's <code>run:ios</code> are thin wrappers over exactly these tools.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Xcode is a GUI over a CLI stack — <strong><code>xcode-select</code></strong> picks the toolchain, <strong><code>xcodebuild</code></strong> builds, <strong><code>xcrun simctl</code></strong> drives the Simulator, <strong>LLDB</strong> debugs, <strong>Instruments</strong> profiles, <strong>DerivedData</strong> caches, and a <strong>.dSYM</strong> + <strong>atos</strong> turns a crash back into a stack; RN's <code>run-ios</code> and Expo's <code>run:ios</code> are thin wrappers over exactly these.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>run-ios pipeline:</strong> RN/Expo CLI → resolve <code>.xcworkspace</code> + scheme → <code>xcodebuild</code> (using the toolchain from <code>xcode-select -p</code>) → <code>.app</code> in DerivedData → <code>xcrun simctl</code> boot/install/launch; Metro serves the JS bundle separately on 8081.</li>
+    <li><strong>Xcode navigators:</strong> Project (Cmd+1), Debug (Cmd+7, live CPU/mem/threads), Breakpoint (Cmd+8, symbolic breakpoints), Report (Cmd+9, the actual build/xcodebuild logs); Debug area (Cmd+Shift+Y) is the LLDB console + variables view.</li>
+    <li><strong>Scheme + run destination</strong> pick target+config and which Simulator/device; Edit Scheme ▸ Run ▸ Build Configuration → Release reproduces production-only bugs.</li>
+    <li><strong>Signing &amp; Capabilities</strong> (Team, Bundle ID, provisioning, Push/Associated Domains/Keychain) lives only in Xcode; the <strong>Organizer</strong> holds Archives, Crashes (auto-symbolicated), Energy; <strong>Devices &amp; Simulators</strong> (Cmd+Shift+2) manages hardware + simulators.</li>
+    <li><strong>xcode-select:</strong> <code>-p</code> prints active dir, <code>--install</code> gets standalone CLT, <code>--switch</code> changes Xcode; run <code>sudo xcodebuild -license accept</code> after updates or every build fails.</li>
+    <li><strong>xcodebuild:</strong> <code>-workspace -scheme -configuration -sdk -destination</code> + <code>build</code>/<code>clean</code>/<code>test</code>/<code>archive</code>/<code>-exportArchive</code>; <code>-list</code> shows schemes, <code>-quiet</code> cuts noise; only <strong>shared</strong> schemes are visible to CLI/CI.</li>
+    <li><strong>xcrun</strong> runs a tool in the active toolchain; <strong>simctl</strong>: <code>list</code>, <code>boot</code>/<code>shutdown</code>, <code>install</code>/<code>launch</code>, <code>openurl</code> (deep links), <code>get_app_container</code> (sandbox), <code>erase</code> (factory reset), <code>push</code>, <code>spawn booted log stream</code> (logs).</li>
+    <li><strong>Simulator vs device:</strong> different SDKs (<code>iphonesimulator</code> vs <code>iphoneos</code>); on Apple Silicon both are arm64, so a device-only framework needs a simulator slice (<code>.xcframework</code>) or the stopgap <code>EXCLUDED_ARCHS[sdk=iphonesimulator*] = arm64</code> (forces x86_64/Rosetta).</li>
+    <li><strong>Instruments</strong> (Cmd+I, builds Release): Time Profiler (CPU), Allocations/Leaks (memory), Core Animation/Animation Hitches (FPS), Energy Log, Network; CLI capture via <code>xcrun xctrace record</code>. Never profile Debug.</li>
+    <li><strong>Logs:</strong> <code>NSLog</code>/<code>os_log</code>/RN native logs go to unified logging → Console.app or <code>log stream --predicate 'process == "YourApp"'</code>; on simulator <code>xcrun simctl spawn booted log stream</code>. Always filter; values show <code>&lt;private&gt;</code> unless <code>%{public}@</code>.</li>
+    <li><strong>LLDB:</strong> <code>b</code> (file:line or symbolic), <code>po</code>, <code>p</code>, <code>bt</code> / <code>thread backtrace all</code>, <code>frame variable</code>, <code>c</code>/<code>n</code>/<code>s</code>; an All-Exceptions breakpoint stops at the throw.</li>
+    <li><strong>DerivedData</strong> (<code>~/Library/Developer/Xcode/DerivedData</code>) caches products + ModuleCache + indexes; Cmd+Shift+K cleans the scheme, <code>rm -rf</code> the folder is the deep reset — fixes stale headers after RN bumps, pod installs, codegen/New-Arch toggles, branch switches.</li>
+    <li><strong>.dSYM</strong> maps hex→symbols; matched by UUID (<code>dwarfdump --uuid</code>). <code>atos -o …/DWARF/App -arch arm64 -l &lt;load&gt; &lt;addr&gt;</code> for one frame, <code>symbolicatecrash</code>/Organizer for a full report; upload dSYMs to Sentry/Crashlytics.</li>
+    <li><strong>CocoaPods:</strong> <code>bundle exec pod install</code> (pinned via Gemfile) generates the <code>.xcworkspace</code> (open the workspace, never the <code>.xcodeproj</code>); <code>ios/.xcode.env</code> sets <code>NODE_BINARY</code> so build phases find Node (fixes nvm "node: command not found").</li>
+    <li><strong>Expo:</strong> <code>expo run:ios</code> (prebuild + xcodebuild), Dev Client, <code>eas build -p ios</code> (cloud macOS), <code>expo-doctor</code>; managed projects rarely open Xcode but still use simctl/Console/Instruments — and <code>expo prebuild --clean</code> wipes hand edits to <code>ios/</code>, so configure via app.json/config plugins/<code>expo-build-properties</code>.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Assuming Metro builds the app and that <code>console.log</code> shows everything.</strong> Metro only bundles JS; the native <code>.app</code> is built by <strong>xcodebuild</strong>, and native warnings/crashes/permission denials only appear in Console/<code>log</code>, Xcode's Report navigator, or a symbolicated crash log. Runner-up trap: deleting DerivedData as a reflex instead of reading the actual error, and leaving the <code>EXCLUDED_ARCHS</code> Rosetta hack in permanently.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Xcode is a GUI over a CLI stack: <code>xcode-select</code> picks the toolchain, <code>xcodebuild</code> builds it, <code>xcrun simctl</code> drives the Simulator, LLDB debugs, Instruments profiles, DerivedData caches. <code>run-ios</code> and Expo's <code>run:ios</code> just orchestrate those."</div>
+  <div class="revision-say">"For a native crash I set an All-Exceptions breakpoint or read Console with a process predicate, then symbolicate the production stack with the matching dSYM via atos or the Organizer — I always check the dSYM UUID first."</div>
+  <div class="revision-say">"On Apple Silicon a device-only framework fails the simulator link because both are arm64; I fix it with a real <code>.xcframework</code> simulator slice and only fall back to <code>EXCLUDED_ARCHS[sdk=iphonesimulator*]=arm64</code> as a stopgap. And in Expo I never hand-edit <code>ios/</code> — prebuild wipes it, so I configure through app.json and config plugins."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "the iOS toolchain" actually is</h3>
 <p>When you type <code>npx react-native run-ios</code> or <code>npx expo run:ios</code>, a chain of Apple tools fires: the RN CLI resolves your <code>.xcworkspace</code>, calls <strong>xcodebuild</strong> to compile, xcodebuild uses the <strong>active developer directory</strong> (chosen by <code>xcode-select</code>) to find the compiler and SDKs, the compiled <code>.app</code> lands in <strong>DerivedData</strong>, then <strong>simctl</strong> boots a Simulator and installs + launches it. Every one of those is a tool you can invoke yourself, and being able to do so is how you debug the whole pipeline instead of guessing.</p>
 
@@ -52,10 +66,10 @@ window.PREP_SITE.registerTopic({
   </tbody>
 </table>
 <p>The GUI is friendlier for setup; the CLI is scriptable, reproducible, and what CI (EAS Build, Fastlane, GitHub Actions) actually runs. Master both — they are two front-ends to the same engine.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "what runs when you run-ios" picture</h3>
 <div class="diagram">
 <pre>
@@ -112,10 +126,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"Metro builds my iOS app." No — Metro only bundles and serves the JavaScript. The native <code>.app</code> is built entirely by <strong>xcodebuild</strong> before Metro is even needed. If your build fails at the native stage, Metro logs won't help you; you read the <strong>xcodebuild</strong> / Xcode Report navigator output instead.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>1 — Xcode the IDE: the parts you touch</h3>
 <p>Open <code>ios/YourApp.xcworkspace</code> (the <strong>workspace</strong>, never the bare <code>.xcodeproj</code> — CocoaPods integrates via the workspace). Orient by area:</p>
 <ul>
@@ -147,20 +161,13 @@ sudo xcodebuild -license accept</code></pre>
 
 <h3>3 — xcodebuild: the build engine</h3>
 <p>Everything Xcode's Cmd+B does, this does headlessly. The canonical RN invocation:</p>
-<pre><code class="language-bash">xcodebuild \
-  -workspace ios/YourApp.xcworkspace \
-  -scheme YourApp \
-  -configuration Debug \
-  -sdk iphonesimulator \
-  -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
-  build
+<pre><code class="language-bash">xcodebuild   -workspace ios/YourApp.xcworkspace   -scheme YourApp   -configuration Debug   -sdk iphonesimulator   -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5'   build
 
 # Other verbs / flags you will meet:
 xcodebuild ... clean            # wipe this scheme's build products
 xcodebuild ... test             # run the test scheme (XCTest)
 xcodebuild ... archive -archivePath build/YourApp.xcarchive
-xcodebuild -exportArchive -archivePath build/YourApp.xcarchive \
-  -exportOptionsPlist ExportOptions.plist -exportPath build/ipa
+xcodebuild -exportArchive -archivePath build/YourApp.xcarchive   -exportOptionsPlist ExportOptions.plist -exportPath build/ipa
 xcodebuild -list -workspace ios/YourApp.xcworkspace   # list schemes/targets/configs
 xcodebuild -showsdks                                   # available SDKs
 xcodebuild -quiet ...                                  # cut the log noise</code></pre>
@@ -268,14 +275,12 @@ rm -rf ~/Library/Developer/Xcode/DerivedData/YourApp-*</code></pre>
 <h3>10 — .dSYM + symbolicating crashes</h3>
 <p>A Release build strips symbols out of the binary and into a <strong>.dSYM</strong> (debug symbol bundle). A crash log then contains only hex addresses; you re-attach names with the matching dSYM. The two tools:</p>
 <pre><code class="language-bash"># atos — turn one address into a symbol (needs the exact dSYM + load address + arch)
-atos -o YourApp.app.dSYM/Contents/Resources/DWARF/YourApp \
-  -arch arm64 -l 0x102b40000 0x102b6d1a4
+atos -o YourApp.app.dSYM/Contents/Resources/DWARF/YourApp   -arch arm64 -l 0x102b40000 0x102b6d1a4
 # → -[BookingManager cancel:] (in YourApp) BookingManager.m:88
 
 # symbolicatecrash — symbolicate a whole .crash/.ips file at once
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
-"$DEVELOPER_DIR"/Platforms/iPhoneOS.platform/Developer/Library/PrivateFrameworks/DTDeviceKitBase.framework/symbolicatecrash \
-  crash.ips YourApp.app.dSYM &gt; symbolicated.txt</code></pre>
+"$DEVELOPER_DIR"/Platforms/iPhoneOS.platform/Developer/Library/PrivateFrameworks/DTDeviceKitBase.framework/symbolicatecrash   crash.ips YourApp.app.dSYM &gt; symbolicated.txt</code></pre>
 <p>The dSYM and the binary are matched by a <strong>UUID</strong> (<code>dwarfdump --uuid YourApp.app.dSYM</code> must equal the binary's) — the #1 symbolication failure is a mismatched or missing dSYM. Xcode's Organizer ▸ Crashes symbolicates automatically when it has the archive; crash reporters (Sentry, Crashlytics) want you to upload the dSYM so their servers can do it. See the crash-debugging topic for the full workflow.</p>
 
 <h3>11 — CocoaPods / Ruby tooling recap</h3>
@@ -302,10 +307,10 @@ eas build -p ios               # cloud macOS build (no local Xcode needed)</code
   <div class="callout-title">🧩 Expo note — prebuild owns the ios/ folder</div>
   <p>In a managed/prebuild project the entire <code>ios/</code> directory is generated. Hand-editing the Xcode project, the Podfile, <code>Info.plist</code>, or entitlements gets <strong>wiped on the next <code>expo prebuild --clean</code></strong>. Persist native settings through <code>app.json</code>/<code>app.config.js</code> and config plugins instead — e.g. <code>expo-build-properties</code> sets <code>ios.deploymentTarget</code>, <code>useFrameworks</code>, and pod flags; capabilities/entitlements go under the <code>ios</code> key or a plugin. You still use <code>simctl</code>, Console, Instruments, and LLDB for native debugging exactly the same way — those tools don't care that Expo generated the project.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Boot a simulator and install a fresh build from the CLI</h3>
 <pre><code class="language-bash">xcrun simctl boot "iPhone 15"
 open -a Simulator                       # bring the window up
@@ -323,10 +328,7 @@ xcrun simctl openurl booted "yourapp://timeline?date=2026-08-26"</code></pre>
 <p>Edit Scheme (Cmd+&lt;) ▸ Run ▸ Build Configuration → <strong>Release</strong>. Now Cmd+R runs the optimized, symbol-stripped build the way the App Store ships it. A bug that only appears in Release (dead-code elimination, <code>NDEBUG</code>, missing dev-only shims) now reproduces, and you symbolicate with the dSYM.</p>
 
 <h3>Example 4 — Tail only your app's native logs on the simulator</h3>
-<pre><code class="language-bash">xcrun simctl spawn booted log stream \
-  --level debug \
-  --predicate 'processImagePath CONTAINS "YourApp"' \
-  --style compact</code></pre>
+<pre><code class="language-bash">xcrun simctl spawn booted log stream   --level debug   --predicate 'processImagePath CONTAINS "YourApp"'   --style compact</code></pre>
 
 <h3>Example 5 — Inspect the app sandbox (find the AsyncStorage sqlite)</h3>
 <pre><code class="language-bash">DIR=$(xcrun simctl get_app_container booted com.yourco.yourapp data)
@@ -335,8 +337,7 @@ ls "$DIR/Documents"
 # RN AsyncStorage / SQLite files live under the app's Library/Application Support</code></pre>
 
 <h3>Example 6 — Symbolicate a single crash address</h3>
-<pre><code class="language-bash">atos -o YourApp.app.dSYM/Contents/Resources/DWARF/YourApp \
-  -arch arm64 -l 0x104b28000 0x104b5c8f0
+<pre><code class="language-bash">atos -o YourApp.app.dSYM/Contents/Resources/DWARF/YourApp   -arch arm64 -l 0x104b28000 0x104b5c8f0
 # → -[RNBookingModule cancelBooking:] BookingModule.m:142</code></pre>
 
 <h3>Example 7 — Full clean when a build is haunted</h3>
@@ -357,9 +358,7 @@ xcodebuild -version    # confirm the version you expect</code></pre>
 # fix in Xcode ▸ Product ▸ Scheme ▸ Manage Schemes ▸ check "Shared".</code></pre>
 
 <h3>Example 10 — Profile a janky screen with Instruments (CLI capture)</h3>
-<pre><code class="language-bash">xcrun xctrace record --template 'Time Profiler' \
-  --launch -- "$APP" \
-  --output trace.trace
+<pre><code class="language-bash">xcrun xctrace record --template 'Time Profiler'   --launch -- "$APP"   --output trace.trace
 open trace.trace     # inspect the heaviest stacks in Instruments</code></pre>
 
 <h3>Example 11 — Send a test push to the simulator</h3>
@@ -372,10 +371,11 @@ open trace.trace     # inspect the heaviest stacks in Instruments</code></pre>
 
 <h3>Example 12 — Catch a native exception with a symbolic breakpoint</h3>
 <p>Breakpoint navigator ▸ + ▸ "Exception Breakpoint…" ▸ set to <strong>Objective-C</strong>, All. Run, reproduce the crash; execution stops <em>at the throw</em> (not after), and <code>bt</code> in the console shows the exact native frame — far more useful than the post-mortem SIGABRT stack.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Opening the .xcodeproj instead of the .xcworkspace</h3>
 <p>With CocoaPods, the Pods are only wired into the <strong>workspace</strong>. Open <code>YourApp.xcodeproj</code> and you get hundreds of "header not found" errors. Always open <code>YourApp.xcworkspace</code>.</p>
 
@@ -423,10 +423,9 @@ open trace.trace     # inspect the heaviest stacks in Instruments</code></pre>
 
 <h3>16. Derived indexing vs building</h3>
 <p>Autocomplete/indexing lives in DerivedData too; a corrupt index shows phantom "cannot find in scope" errors while the build succeeds. Deleting DerivedData forces a re-index.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — "just delete DerivedData" as the only debugging move</h3>
 <p>It fixes stale-cache bugs, but reaching for it reflexively hides real errors (a missing Pod, a bad NODE_BINARY). Read the Report navigator / xcodebuild output first; nuke the cache when the error is genuinely a stale artifact.</p>
 
@@ -468,10 +467,10 @@ open trace.trace     # inspect the heaviest stacks in Instruments</code></pre>
 
 <h3>Anti-pattern 14 — using the .app from the wrong DerivedData folder</h3>
 <p>Multiple checkouts create multiple <code>YourApp-xxxx</code> DerivedData dirs; installing an old one onto the simulator ships stale native code. Resolve the path from the current build, not a hard-coded one.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What actually happens when you run <code>npx react-native run-ios</code>?</div>
   <div class="qa-answer">
@@ -591,54 +590,14 @@ open trace.trace     # inspect the heaviest stacks in Instruments</code></pre>
     <li>You respect that Expo prebuild owns <code>ios/</code> and configure via app.json/plugins.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Xcode is a GUI over a CLI stack — <strong><code>xcode-select</code></strong> picks the toolchain, <strong><code>xcodebuild</code></strong> builds, <strong><code>xcrun simctl</code></strong> drives the Simulator, <strong>LLDB</strong> debugs, <strong>Instruments</strong> profiles, <strong>DerivedData</strong> caches, and a <strong>.dSYM</strong> + <strong>atos</strong> turns a crash back into a stack; RN's <code>run-ios</code> and Expo's <code>run:ios</code> are thin wrappers over exactly these.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>run-ios pipeline:</strong> RN/Expo CLI → resolve <code>.xcworkspace</code> + scheme → <code>xcodebuild</code> (using the toolchain from <code>xcode-select -p</code>) → <code>.app</code> in DerivedData → <code>xcrun simctl</code> boot/install/launch; Metro serves the JS bundle separately on 8081.</li>
-    <li><strong>Xcode navigators:</strong> Project (Cmd+1), Debug (Cmd+7, live CPU/mem/threads), Breakpoint (Cmd+8, symbolic breakpoints), Report (Cmd+9, the actual build/xcodebuild logs); Debug area (Cmd+Shift+Y) is the LLDB console + variables view.</li>
-    <li><strong>Scheme + run destination</strong> pick target+config and which Simulator/device; Edit Scheme ▸ Run ▸ Build Configuration → Release reproduces production-only bugs.</li>
-    <li><strong>Signing &amp; Capabilities</strong> (Team, Bundle ID, provisioning, Push/Associated Domains/Keychain) lives only in Xcode; the <strong>Organizer</strong> holds Archives, Crashes (auto-symbolicated), Energy; <strong>Devices &amp; Simulators</strong> (Cmd+Shift+2) manages hardware + simulators.</li>
-    <li><strong>xcode-select:</strong> <code>-p</code> prints active dir, <code>--install</code> gets standalone CLT, <code>--switch</code> changes Xcode; run <code>sudo xcodebuild -license accept</code> after updates or every build fails.</li>
-    <li><strong>xcodebuild:</strong> <code>-workspace -scheme -configuration -sdk -destination</code> + <code>build</code>/<code>clean</code>/<code>test</code>/<code>archive</code>/<code>-exportArchive</code>; <code>-list</code> shows schemes, <code>-quiet</code> cuts noise; only <strong>shared</strong> schemes are visible to CLI/CI.</li>
-    <li><strong>xcrun</strong> runs a tool in the active toolchain; <strong>simctl</strong>: <code>list</code>, <code>boot</code>/<code>shutdown</code>, <code>install</code>/<code>launch</code>, <code>openurl</code> (deep links), <code>get_app_container</code> (sandbox), <code>erase</code> (factory reset), <code>push</code>, <code>spawn booted log stream</code> (logs).</li>
-    <li><strong>Simulator vs device:</strong> different SDKs (<code>iphonesimulator</code> vs <code>iphoneos</code>); on Apple Silicon both are arm64, so a device-only framework needs a simulator slice (<code>.xcframework</code>) or the stopgap <code>EXCLUDED_ARCHS[sdk=iphonesimulator*] = arm64</code> (forces x86_64/Rosetta).</li>
-    <li><strong>Instruments</strong> (Cmd+I, builds Release): Time Profiler (CPU), Allocations/Leaks (memory), Core Animation/Animation Hitches (FPS), Energy Log, Network; CLI capture via <code>xcrun xctrace record</code>. Never profile Debug.</li>
-    <li><strong>Logs:</strong> <code>NSLog</code>/<code>os_log</code>/RN native logs go to unified logging → Console.app or <code>log stream --predicate 'process == "YourApp"'</code>; on simulator <code>xcrun simctl spawn booted log stream</code>. Always filter; values show <code>&lt;private&gt;</code> unless <code>%{public}@</code>.</li>
-    <li><strong>LLDB:</strong> <code>b</code> (file:line or symbolic), <code>po</code>, <code>p</code>, <code>bt</code> / <code>thread backtrace all</code>, <code>frame variable</code>, <code>c</code>/<code>n</code>/<code>s</code>; an All-Exceptions breakpoint stops at the throw.</li>
-    <li><strong>DerivedData</strong> (<code>~/Library/Developer/Xcode/DerivedData</code>) caches products + ModuleCache + indexes; Cmd+Shift+K cleans the scheme, <code>rm -rf</code> the folder is the deep reset — fixes stale headers after RN bumps, pod installs, codegen/New-Arch toggles, branch switches.</li>
-    <li><strong>.dSYM</strong> maps hex→symbols; matched by UUID (<code>dwarfdump --uuid</code>). <code>atos -o …/DWARF/App -arch arm64 -l &lt;load&gt; &lt;addr&gt;</code> for one frame, <code>symbolicatecrash</code>/Organizer for a full report; upload dSYMs to Sentry/Crashlytics.</li>
-    <li><strong>CocoaPods:</strong> <code>bundle exec pod install</code> (pinned via Gemfile) generates the <code>.xcworkspace</code> (open the workspace, never the <code>.xcodeproj</code>); <code>ios/.xcode.env</code> sets <code>NODE_BINARY</code> so build phases find Node (fixes nvm "node: command not found").</li>
-    <li><strong>Expo:</strong> <code>expo run:ios</code> (prebuild + xcodebuild), Dev Client, <code>eas build -p ios</code> (cloud macOS), <code>expo-doctor</code>; managed projects rarely open Xcode but still use simctl/Console/Instruments — and <code>expo prebuild --clean</code> wipes hand edits to <code>ios/</code>, so configure via app.json/config plugins/<code>expo-build-properties</code>.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Assuming Metro builds the app and that <code>console.log</code> shows everything.</strong> Metro only bundles JS; the native <code>.app</code> is built by <strong>xcodebuild</strong>, and native warnings/crashes/permission denials only appear in Console/<code>log</code>, Xcode's Report navigator, or a symbolicated crash log. Runner-up trap: deleting DerivedData as a reflex instead of reading the actual error, and leaving the <code>EXCLUDED_ARCHS</code> Rosetta hack in permanently.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Xcode is a GUI over a CLI stack: <code>xcode-select</code> picks the toolchain, <code>xcodebuild</code> builds it, <code>xcrun simctl</code> drives the Simulator, LLDB debugs, Instruments profiles, DerivedData caches. <code>run-ios</code> and Expo's <code>run:ios</code> just orchestrate those."</div>
-  <div class="revision-say">"For a native crash I set an All-Exceptions breakpoint or read Console with a process predicate, then symbolicate the production stack with the matching dSYM via atos or the Organizer — I always check the dSYM UUID first."</div>
-  <div class="revision-say">"On Apple Silicon a device-only framework fails the simulator link because both are arm64; I fix it with a real <code>.xcframework</code> simulator slice and only fall back to <code>EXCLUDED_ARCHS[sdk=iphonesimulator*]=arm64</code> as a stopgap. And in Expo I never hand-edit <code>ios/</code> — prebuild wipes it, so I configure through app.json and config plugins."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Give me a tour of the Xcode UI: where do build errors, signing, breakpoints, and the LLDB console live?</div>
+  <div class="qa-answer">
+    <p>The navigator area on the left (Cmd+1..9) has the Project navigator (Cmd+1, files and targets), the Debug navigator (Cmd+7, live CPU/memory/threads), the Breakpoint navigator (Cmd+8, including symbolic breakpoints), and the Report navigator (Cmd+9, every build/run log, which is where xcodebuild errors actually print). The Debug area at the bottom (Cmd+Shift+Y) splits into the variables view and the console, which is your LLDB prompt and where <code>NSLog</code>/RN native logs print. Signing lives in the target editor's Signing &amp; Capabilities tab (Team, Bundle Identifier, automatic signing, profile, + Capability). The scheme selector and run destination in the toolbar pick target + build configuration and the Simulator/device. Window ▸ Organizer holds Archives, auto-symbolicated Crashes, Energy and Metrics.</p>
+  </div>
 </div>
-`},
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you trace exactly what <code>npx react-native run-ios</code> (and <code>expo run:ios</code>) does down to xcodebuild, simctl, and Metro?</li>
-    <li>Can you name the Xcode navigators and where xcodebuild errors, signing, breakpoints, and the LLDB console live?</li>
-    <li>Can you drive a Simulator entirely from the terminal — boot, install, launch, deep-link, inspect the sandbox, and tail its logs?</li>
-    <li>Can you explain why a device-only framework fails to build for the Simulator, and what <code>EXCLUDED_ARCHS</code> does (and why it's a stopgap)?</li>
-    <li>Can you read native logs with Console / <code>log</code> predicates and say why <code>console.log</code> doesn't show them?</li>
-    <li>Can you symbolicate a hex-only crash with a matching dSYM using atos, and verify the UUID match?</li>
-    <li>Can you say when to delete DerivedData, and pick the right Instruments template for a jank vs a memory vs a battery problem?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

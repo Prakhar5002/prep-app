@@ -1,33 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'git-worktrees',
-  module: 'git',
-  title: 'Worktrees',
-  estimatedReadTime: '25 min',
-  tags: ['git', 'worktree', 'workflow', 'parallel-work', 'branches', 'productivity'],
+  id: "git-worktrees",
+  module: "git",
+  title: "Worktrees",
+  estimatedReadTime: "25 min",
+  tags: ["git","worktree","workflow","parallel-work","branches","productivity"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><code>git worktree</code> lets you check out multiple branches of the same repo into different directories simultaneously. Instead of stashing or branch-switching to context-switch, you keep a separate working directory per branch — each with its own checkout, build artifacts, and IDE state. Once you've used worktrees for parallel work / hotfixes / reviews, you don't go back.</p>
-<ul>
-  <li><strong>One repo, many checkouts.</strong> All worktrees share the <code>.git</code> directory (objects, refs); each has its own working tree at a different path.</li>
-  <li><strong>Cheap to create</strong> — just creates a directory + a pointer in <code>.git/worktrees/</code>. No re-cloning.</li>
-  <li><strong>Best uses:</strong> hotfix on release branch while feature work is in flight; reviewing PR while building locally; long-running build / test on main without freezing dev work.</li>
-  <li><strong>Each worktree is a "real" checkout</strong> — has its own HEAD, can have its own uncommitted changes, can be rebased / committed independently.</li>
-  <li><strong>One restriction:</strong> the same branch can only be checked out in one worktree at a time. Different branches in different worktrees, fine.</li>
-  <li><strong>Mobile / RN context:</strong> worktrees are powerful for mobile because builds are slow + native deps are heavy. Avoid <code>pod install</code> + Xcode-cache invalidation when switching contexts.</li>
-  <li><strong>Worktrees vs. multiple clones:</strong> worktrees share Git history; clones don't. Worktrees are faster to create + smaller on disk.</li>
-  <li><strong>Cleanup matters.</strong> Use <code>git worktree remove</code>; don't just delete directories.</li>
-</ul>
-<p><strong>Mantra:</strong> "One repo, many checkouts. Use worktrees for parallel branches. Hotfixes don't disturb feature work. Same branch only in one worktree. Remove cleanly."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A worktree = <strong>one repo, many checkouts</strong> — multiple branches checked out into separate directories that all share one <code>.git</code> object store, so hotfixes and reviews never disturb your feature work.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>One shared <code>.git</code>, many working trees.</strong> All worktrees share objects and refs; each has its own HEAD, index, and files on disk.</li>
+    <li><strong>Cheap to create</strong> — <code>git worktree add</code> just makes a directory plus a pointer in <code>.git/worktrees/</code>; no re-clone, no re-fetch.</li>
+    <li><strong>Best uses:</strong> a hotfix on a release branch while feature work is in flight, reviewing a PR locally while building, and a long-running build / test on main without freezing dev work.</li>
+    <li>Each worktree is a <strong>real checkout</strong> — it can hold its own uncommitted changes and be committed / rebased independently. A commit made in one worktree is <strong>instantly visible</strong> in all others — they share history, only their "current state" pointers differ.</li>
+    <li><strong>The one hard rule: the same branch can't be checked out in two worktrees at once.</strong> Use a different branch, or <code>--detach</code>.</li>
+    <li>The original clone is the <strong>main worktree</strong> (can't be removed); the others are <strong>linked worktrees</strong> whose <code>.git</code> is a file pointing back to main.</li>
+    <li>Core commands: <code>add</code>, <code>list</code>, <code>remove</code>, <code>move</code>, <code>lock</code>/<code>unlock</code>, <code>prune</code>.</li>
+    <li><strong>Always clean up with <code>git worktree remove</code></strong> — if you <code>rm -rf</code> a worktree dir manually, run <code>git worktree prune</code> to clear the stale metadata.</li>
+    <li><strong>Worktrees beat multiple clones</strong> for parallel branches: faster, smaller on disk, shared history. Clones win only for truly isolated environments.</li>
+    <li><strong>Mobile is the killer use case</strong> — Pods, Gradle, Xcode indexing, and Metro make branch switching a 5–30 min tax; worktrees eliminate it. Seniors live in 2–4 at once.</li>
+    <li>Each worktree needs its <strong>own <code>node_modules</code> / Pods</strong> — never symlink deps (native modules break); rely on the offline/CocoaPods caches for fast installs.</li>
+    <li><strong>Stashes are global to the repo, not per-worktree</strong> — a stash from worktree A is visible (and mis-appliable) in worktree B. Name stashes and read the source branch.</li>
+    <li>Don't run destructive <code>.git</code> operations (<code>gc</code>, <code>filter-repo</code>) while other worktrees are mid-work — object pruning can corrupt referenced state.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Deleting a worktree with <code>rm -rf</code> instead of <code>git worktree remove</code>. Git still thinks the worktree exists, so <code>git worktree list</code> lies and you can't re-check-out that branch. <strong>Fix:</strong> run <code>git worktree prune</code> to clear the orphaned <code>.git/worktrees/</code> entry — and prefer <code>git worktree remove</code> next time.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Worktrees are one repo, many checkouts — every worktree shares the same .git object store but has its own working tree, so a hotfix on a release branch never touches my feature work."</div>
+  <div class="revision-say">"The one rule is the same branch can only be checked out in one worktree at a time — different branch or detached HEAD otherwise."</div>
+  <div class="revision-say">"For mobile they pay back daily: no re-installing Pods or re-indexing Xcode on every context switch — switching is just a cd."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The mental model: shared <code>.git</code>, separate working trees</h3>
 <pre><code>~/repos/myproject/                    ← main worktree
 ├── .git/                              ← THE git directory
@@ -120,12 +130,10 @@ window.PREP_SITE.registerTopic({
   <li>Frequent code review of others' PRs.</li>
 </ul>
 <p>...find worktrees pay back daily.</p>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "shared object store, separate index" model</h3>
 <p>Git stores commits, trees, and blobs in <code>.git/objects/</code>. This object store is shared across worktrees — every worktree sees every commit. What's separate per-worktree:</p>
 <ul>
@@ -196,12 +204,10 @@ window.PREP_SITE.registerTopic({
 <p>Per-worktree configs are limited. By default, <code>core.bare</code> and <code>core.worktree</code> are per-worktree; most others are shared. To make a config worktree-specific:</p>
 <pre><code>git config --worktree my.setting value</code></pre>
 <p>This affects only the current worktree.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Creating a worktree</h3>
 <pre><code># Add worktree at &lt;path&gt; tracking &lt;branch&gt;:
 git worktree add &lt;path&gt; &lt;branch&gt;
@@ -404,12 +410,10 @@ function wtr() {
     <tr><td>Vim / Emacs</td><td>Just <code>cd</code> and open. Per-buffer.</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'examples',
-      title: '🔍 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Mobile hotfix without disturbing feature work</h3>
 <p><strong>Setup:</strong> You're 3 days into a feature branch. iOS Pods are installed; Xcode is indexed; simulator has test data. Crash report comes in for production v3.5.</p>
 
@@ -647,12 +651,11 @@ git worktree list
 # (clean)</code></pre>
 
 <p><strong>Lesson:</strong> always use <code>git worktree remove</code>, but <code>git worktree prune</code> recovers from manual deletions.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Worktree on a branch already checked out elsewhere</h3>
 <p>Attempting to check out the same branch in two worktrees fails:</p>
 <pre><code>git worktree add ../foo-2 feature/X
@@ -775,12 +778,9 @@ cd foo.git
 git worktree add ../foo-main main
 git worktree add ../foo-dev dev
 # All work happens in linked worktrees; foo.git is just the object store</code></pre>
-`
-    },
-    {
-      id: 'bugs',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern: not removing finished worktrees</h3>
 <p><strong>Looks like:</strong> Pile up 10+ worktrees over months; never remove.</p>
 <p><strong>Why bad:</strong> Disk usage compounds. <code>git worktree list</code> output gets noisy.</p>
@@ -855,12 +855,10 @@ git worktree add ../foo-dev dev
 <p><strong>Looks like:</strong> Heavy stash usage; never tries worktree; stash conflicts on long-running stashes.</p>
 <p><strong>Why bad:</strong> Stash works for short-term; long-term it's risky. Stashes can conflict when applied to drifted branches; large stashes become hard to manage.</p>
 <p><strong>Fix:</strong> Try worktrees once. If you have multi-branch parallel work, the workflow improvement is real.</p>
-`
-    },
-    {
-      id: 'interview',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>"Have you used <code>git worktree</code>?"</h3>
 <p>Lower-frequency interview question; often signals the interviewer values workflow productivity.</p>
 
@@ -1030,57 +1028,14 @@ multi-worktree workflow is non-negotiable now."</code></pre>
 <h3>The 30-second mantra</h3>
 <p><em>"One repo, many checkouts. Use worktrees for parallel branches. Hotfixes don't disturb feature work. Same branch only in one worktree. Remove cleanly. Pays back daily for build-heavy stacks like mobile."</em></p>
 <p>Worktrees are one of those Git features that quietly transform your workflow once adopted. Many engineers don't know about them; the ones who do don't go back.</p>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A worktree = <strong>one repo, many checkouts</strong> — multiple branches checked out into separate directories that all share one <code>.git</code> object store, so hotfixes and reviews never disturb your feature work.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>One shared <code>.git</code>, many working trees.</strong> All worktrees share objects and refs; each has its own HEAD, index, and files on disk.</li>
-    <li><strong>Cheap to create</strong> — <code>git worktree add</code> just makes a directory plus a pointer in <code>.git/worktrees/</code>; no re-clone, no re-fetch.</li>
-    <li>A commit made in one worktree is <strong>instantly visible</strong> in all others — they share history, only their "current state" pointers differ.</li>
-    <li><strong>The one hard rule: the same branch can't be checked out in two worktrees at once.</strong> Use a different branch, or <code>--detach</code>.</li>
-    <li>The original clone is the <strong>main worktree</strong> (can't be removed); the others are <strong>linked worktrees</strong> whose <code>.git</code> is a file pointing back to main.</li>
-    <li>Core commands: <code>add</code>, <code>list</code>, <code>remove</code>, <code>move</code>, <code>lock</code>/<code>unlock</code>, <code>prune</code>.</li>
-    <li><strong>Always clean up with <code>git worktree remove</code></strong> — if you <code>rm -rf</code> a worktree dir manually, run <code>git worktree prune</code> to clear the stale metadata.</li>
-    <li><strong>Worktrees beat multiple clones</strong> for parallel branches: faster, smaller on disk, shared history. Clones win only for truly isolated environments.</li>
-    <li><strong>Mobile is the killer use case</strong> — Pods, Gradle, Xcode indexing, and Metro make branch switching a 5–30 min tax; worktrees eliminate it. Seniors live in 2–4 at once.</li>
-    <li>Each worktree needs its <strong>own <code>node_modules</code> / Pods</strong> — never symlink deps (native modules break); rely on the offline/CocoaPods caches for fast installs.</li>
-    <li><strong>Stashes are global to the repo, not per-worktree</strong> — a stash from worktree A is visible (and mis-appliable) in worktree B. Name stashes and read the source branch.</li>
-    <li>Don't run destructive <code>.git</code> operations (<code>gc</code>, <code>filter-repo</code>) while other worktrees are mid-work — object pruning can corrupt referenced state.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Deleting a worktree with <code>rm -rf</code> instead of <code>git worktree remove</code>. Git still thinks the worktree exists, so <code>git worktree list</code> lies and you can't re-check-out that branch. <strong>Fix:</strong> run <code>git worktree prune</code> to clear the orphaned <code>.git/worktrees/</code> entry — and prefer <code>git worktree remove</code> next time.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Worktrees are one repo, many checkouts — every worktree shares the same .git object store but has its own working tree, so a hotfix on a release branch never touches my feature work."</div>
-  <div class="revision-say">"The one rule is the same branch can only be checked out in one worktree at a time — different branch or detached HEAD otherwise."</div>
-  <div class="revision-say">"For mobile they pay back daily: no re-installing Pods or re-indexing Xcode on every context switch — switching is just a cd."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Can worktrees share node_modules or Pods? How do you handle dependencies across worktrees?</div>
+  <div class="qa-answer">
+    <p>Don't share them. Symlinking <code>node_modules</code> between worktrees looks like a time-saver, but if the branches have different dependency versions you get the wrong deps and subtle bugs, and native modules especially break. Symlinking iOS Pods can break Xcode. Each worktree gets its own install, made fast by caches: yarn's offline cache (or pnpm) for JS and the CocoaPods cache for Pods. The cost is disk: a large mobile worktree with deps and build output can be around 4GB, so remove worktrees you're done with.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain what a worktree shares with the main repo and what it keeps separate?</li>
-    <li>Can you state the one-branch-one-worktree rule and its two workarounds?</li>
-    <li>Can you contrast worktrees with keeping two clones — when does each win?</li>
-    <li>Can you describe the clean lifecycle: add, use, remove, and recover from a manual delete with prune?</li>
-    <li>Can you explain why worktrees are especially valuable for mobile / build-heavy stacks?</li>
-    <li>Can you say why stashes and node_modules need care across worktrees?</li>
-  </ul>
-</div>
-`
-    }
+` },
+
   ]
 });

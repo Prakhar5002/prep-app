@@ -1,28 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'eh-scanning',
-  module: 'eh',
-  title: 'Scanning & Enumeration',
-  estimatedReadTime: '30 min',
-  tags: ['ethical-hacking', 'security', 'pentest', 'scanning', 'enumeration', 'nmap', 'nse', 'smb', 'snmp'],
+  id: "eh-scanning",
+  module: "eh",
+  title: "Scanning & Enumeration",
+  estimatedReadTime: "30 min",
+  tags: ["ethical-hacking","security","pentest","scanning","enumeration","nmap","nse","smb","snmp"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<div class="callout danger">
-  <div class="callout-title">⚠️ This topic assumes eh-foundations: lab/authorization first</div>
-  <p>Everything below is <strong>active</strong> reconnaissance — unlike the passive OSINT covered in the previous Reconnaissance topic, every technique here sends packets directly at the target: ARP requests, TCP/UDP probes, authentication attempts against SMB/SNMP/LDAP/SMTP services. That traffic lands in firewall logs, IDS/IPS alerts, and target-side connection logs the moment you run it. Only ever point these tools at your own lab VMs (Metasploitable, DVWA, etc. — see eh-foundations) or a system you have explicit, written, in-scope authorization to test. Running an nmap SYN scan against a system you don't own or aren't authorized to test is itself an unauthorized-access act in most jurisdictions, independent of anything you do afterward.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Scanning &amp; enumeration is the active phase that turns passive recon into a concrete attack map — live hosts, open ports, service versions, OS, and what chatty services (SMB/SNMP/LDAP/NFS/SMTP) hand over when asked.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Scanning answers "what's there?" (hosts, ports, services/versions, OS); enumeration goes one level deeper per-service to turn "port open" into a reportable finding.</li>
+    <li>The pipeline narrows each stage: host discovery → port scanning → service/version detection → OS fingerprint → deep enumeration.</li>
+    <li><code>-sT</code> (TCP connect) completes the full handshake, needs no root, but is fully logged by the target app; <code>-sS</code> (SYN "half-open") needs raw sockets/root, is nmap's default when privileged, and is stealthier.</li>
+    <li><code>-sU</code> (UDP) is slow and ambiguous — no reply means open|filtered — because UDP has no handshake, yet SNMP/DNS/NFS/TFTP live there.</li>
+    <li>Timing templates run <code>-T0</code> Paranoid (a probe every 5 min) through <code>-T5</code> Insane; <code>-T4</code> is the common lab/internal choice, slow templates exist to fall under IDS rate thresholds.</li>
+    <li>NSE (<code>--script</code>) runs Lua checks — <code>default</code>, <code>vuln</code>, targeted enum scripts; output flags <code>-oN</code>/<code>-oX</code>/<code>-oG</code>/<code>-oA</code> save results for reporting and later phases.</li>
+    <li>Every tool choice is a deliberate point on the <strong>stealth vs. speed vs. accuracy</strong> spectrum, picked from the Rules of Engagement: a full <code>-p-</code> SYN scan is thorough but loud and slow, high-<code>--rate</code> masscan is fast but easy for an IDS to fingerprint and can overwhelm a network, <code>-T0</code> is quiet but can take hours.</li>
+    <li>Everything here is <strong>active</strong>: every probe lands in firewall logs and IDS/IPS alerts, so only ever scan your lab or an authorized, in-scope target.</li>
+    <li>masscan/rustscan sweep huge ranges for open ports fast, then hand the narrow port list to nmap for the slow <code>-sV</code>/<code>-O</code>/NSE deep dive.</li>
+    <li>Per-service enum tools: SMB (enum4linux-ng, smbclient, smbmap, nmblookup), SNMP (snmpwalk, onesixtyone), LDAP (ldapsearch), NFS (showmount), SMTP (smtp-user-enum), plus nc for manual banner grabs.</li>
+    <li>Version detection matters because "Samba 3.0.20" maps to a specific CVE while "port 445 open" does not.</li>
+    <li>MITRE ATT&amp;CK: external/no-foothold scanning is Reconnaissance → Active Scanning (T1595); the same commands from an already-compromised host are Discovery → Network Service Discovery (T1046).</li>
+    <li>Defenses: default-deny firewalls (filtered ports return no clean state), IDS/IPS rate/pattern signatures, and service hardening — most deep findings are misconfigurations, not protocol flaws.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Calling external network scanning "Discovery" in ATT&amp;CK. The tactic depends entirely on whether you already have a foothold — outsider probing is Reconnaissance (T1595); the identical nmap command from inside a compromised host is Discovery (T1046).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A SYN scan never completes the handshake so many app-level logs never see it, but it needs root; a connect scan is fully logged but needs no privileges."</div>
+  <div class="revision-say">"A scan result is a lead, not a finding — enumeration is the step that turns 'port 445 open' into 'anonymous SMB session lists a writable share.'"</div>
+  <div class="revision-say">"Same nmap command maps to Reconnaissance or Discovery in ATT&amp;CK depending only on whether I already have a foothold."</div>
 </div>
-<p><strong>Scanning &amp; enumeration</strong> is the phase where reconnaissance's "who and what is out there" turns into a concrete technical map: which hosts on a network are alive, which ports are open on them, which services and versions are running behind those ports, which OS the host is likely running, and — critically — what those services will hand over if you simply ask nicely (a null SMB session, a public SNMP community string, an anonymous NFS export, an LDAP anonymous bind). Everything in later exploitation-focused topics starts from the map this phase produces.</p>
-<ul>
-  <li><strong>Scanning</strong> answers "what's there?" — live hosts, open ports, running services/versions, and (best-effort) the OS. The core tools are <strong>nmap</strong> (the deep, flexible standard), plus fast large-range scanners <strong>masscan</strong> and <strong>rustscan</strong>.</li>
-  <li><strong>Enumeration</strong> goes one level deeper per-service: once you know port 445 is open, <em>what</em> does SMB actually expose — shares, users, OS build? Once 161/UDP answers, what does SNMP's community string unlock? This topic covers the standard tool for each of the classic enumerable services: SMB, SNMP, LDAP, NFS, and SMTP.</li>
-  <li><strong>MITRE ATT&amp;CK nuance worth remembering for interviews:</strong> scanning an <em>external</em> target you don't yet have a foothold in maps to the <strong>Reconnaissance</strong> tactic's <strong>Active Scanning (T1595)</strong> technique. It's easy to mislabel this as "Discovery" — but ATT&amp;CK's <strong>Discovery</strong> tactic (e.g. T1046 Network Service Discovery) specifically describes an attacker who <em>already has a foothold</em> mapping the internal environment from the inside. Same activity, different tactic, depending entirely on whether you're already on the network.</li>
-  <li><strong>The core trade-off running through every tool here is stealth vs. speed vs. accuracy</strong> — a full <code>-p-</code> SYN scan with default timing is thorough but loud and slow; <code>masscan</code> at a high <code>--rate</code> is blisteringly fast but easy for an IDS to fingerprint and easy to overwhelm a target/network with; a <code>-T0</code> paranoid nmap scan is quiet but can take hours. Every real engagement picks a point on that spectrum deliberately, based on the Rules of Engagement agreed in eh-foundations.</li>
-</ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why this phase exists: you can't attack what you can't see</h3>
 <p>Reconnaissance (the previous topic) is largely passive — OSINT, WHOIS, DNS, search engines, social media, never a packet touching the target directly. Scanning &amp; enumeration is where testing turns active: you send traffic straight at the target's infrastructure and read back what it tells you. The output is a concrete attack surface: a list of live hosts, each with a list of open ports, each port tagged with a service and (ideally) a version number, and for the handful of services that are historically chatty by design (SMB, SNMP, LDAP, NFS, SMTP), a much deeper dump of what they'll disclose to an unauthenticated or lightly-authenticated caller. Every later exploitation topic in this module — web, network, Active Directory, passwords — starts by picking a target off this map.</p>
 
@@ -40,10 +55,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why version detection and OS fingerprinting matter beyond curiosity</h3>
 <p>"Port 445 is open" tells you almost nothing actionable. "Port 445 is open running Samba 3.0.20, Debian" tells you the exact service and version to cross-reference against known vulnerabilities (this specific example famously maps to the "username map script" backdoor, CVE-2007-2447) — turning a scan line into an exploitation lead. OS fingerprinting similarly narrows which exploit families, default credentials, and privilege-escalation techniques are even plausible before you spend time trying them.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The scanning pipeline: each stage narrows the next</h3>
 <pre><code class="language-text">Host Discovery  →  Port Scanning  →  Service/Version  →  OS Fingerprint  →  Deep Enumeration
  (who's alive?)     (which ports        Detection            (-O)          (SMB/SNMP/LDAP/
@@ -88,10 +103,10 @@ window.PREP_SITE.registerTopic({
   </ul>
   <p>Same nmap command, run from two different starting points, maps to two different ATT&amp;CK tactics. On an external pentest engagement, the scanning phase in this topic is Reconnaissance; the same techniques run again later, from inside a compromised host during Post-Exploitation, become Discovery.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Tools & Techniques', html: `
+{ id: "mechanics", title: "⚙️ Tools & Techniques", collapsible: true, html: `
 <h3>1. Host discovery — find what's alive before you scan ports</h3>
 <p>On a local (same-broadcast-domain) network, ARP is faster and more reliable than ICMP, since it can't be firewalled off the way ping often is:</p>
 <pre><code class="language-bash"># arp-scan: sweep the local subnet via ARP (needs root for raw sockets)
@@ -194,10 +209,10 @@ nc -nv &lt;target&gt; 25        # SMTP banner
 nc -nv &lt;target&gt; 21        # FTP banner
 # For HTTP, send a request manually since the server won't speak first:
 printf 'HEAD / HTTP/1.0\\r\\n\\r\\n' | nc -nv &lt;target&gt; 80</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — From "unknown subnet" to a prioritized nmap target list</h3>
 <p>Walking a lab subnet (e.g. the host-only network from eh-foundations, with a Metasploitable2 VM on it) from nothing to a saved, deep scan result:</p>
 <pre><code class="language-bash"># 1. Discover what's alive on the isolated lab subnet (ARP is fastest/most reliable on-LAN)
@@ -243,10 +258,11 @@ snmpwalk -c public -v1 192.168.56.102
 # → sysDescr, running processes, installed software, network interfaces — often a full system inventory
 # for free, from an unauthenticated read-only community string.</code></pre>
 <p>The pattern worth keeping: a scan result ("port open") is a lead, not a finding — enumeration is the step that turns it into something reportable (an anonymous-writable share, a public SNMP string dumping the process list), which is exactly the kind of evidence a pentest report (covered at the end of this module) needs to be credible.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Defenses & Legal', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <div class="callout danger">
   <div class="callout-title">⚠️ Authorization reminder — active scanning is not passive recon</div>
   <p>Every technique in this topic sends traffic directly at a target's infrastructure and will show up in firewall, IDS/IPS, and target-side logs. The authorization requirement from eh-foundations (written, in-scope, signed) applies in full here — running <code>nmap -sS</code>, <code>masscan</code>, or any of the enumeration tools above against a system you don't own or aren't authorized to test is unauthorized computer access in most jurisdictions the moment the first packet is sent, regardless of whether you find or exploit anything afterward. Confirm the agreed scanning window and any explicitly excluded techniques (aggressive <code>-T4</code>/<code>-T5</code> scans and UDP floods risk availability on fragile devices — printers, IoT, older embedded systems — and are sometimes excluded by the RoE for exactly that reason) before running anything beyond your own lab.</p>
@@ -260,10 +276,10 @@ snmpwalk -c public -v1 192.168.56.102
 
 <h3>Service hardening reduces what enumeration can actually extract</h3>
 <p>Most of Mechanics' deep findings (anonymous SMB null sessions, public SNMP community strings, anonymous LDAP binds, world-exported NFS shares, VRFY-enabled SMTP) are misconfigurations, not inherent protocol flaws — and each has a direct, standard fix: disable SMBv1 and null-session access; change default/public SNMP community strings (or move to SNMPv3 with real authentication); require authenticated LDAP binds; restrict NFS exports to specific trusted client IPs with <code>no_root_squash</code> disabled; and disable or rate-limit SMTP's VRFY/EXPN commands on the mail server. Every tool covered in Mechanics doubles as a defender's own audit checklist — running <code>enum4linux-ng</code> or <code>onesixtyone</code> against your own estate, with authorization, is a legitimate and common way to verify these fixes actually landed.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'cheat-sheet', title: '📋 Cheat Sheet', html: `
+{ id: "cheat-sheet", title: "📋 Cheat Sheet", collapsible: true, html: `
 <table>
   <thead><tr><th>Category</th><th>Tool / Flag</th><th>What it does</th></tr></thead>
   <tbody>
@@ -298,10 +314,10 @@ snmpwalk -c public -v1 192.168.56.102
     <tr><td>Defense</td><td>Service hardening</td><td>Disable SMB null sessions/SMBv1, change default SNMP strings, require authenticated LDAP binds, restrict NFS exports, disable SMTP VRFY/EXPN</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What's the difference between a TCP connect scan, a SYN scan, and a UDP scan?</div>
 <div class="qa-a">
@@ -350,49 +366,14 @@ snmpwalk -c public -v1 192.168.56.102
 <p>Layered: a default-deny firewall reduces the open surface itself and makes many ports show as "filtered" rather than giving a scanner a clean open/closed answer. IDS/IPS systems (Snort, Suricata) detect scanning through rate and pattern signatures — a high volume of unanswered SYNs or sequential port touches from one source — which is exactly what nmap's slow timing templates try to evade. But the highest-leverage fix is usually service hardening at the target itself: disabling SMB null sessions and SMBv1, changing default/public SNMP community strings (or moving to SNMPv3), requiring authenticated LDAP binds, restricting NFS exports to specific trusted client IPs, and disabling or rate-limiting SMTP's VRFY/EXPN commands — since most of what deep enumeration extracts is a misconfiguration, not an inherent flaw in the protocol.</p>
 </div>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Scanning &amp; enumeration is the active phase that turns passive recon into a concrete attack map — live hosts, open ports, service versions, OS, and what chatty services (SMB/SNMP/LDAP/NFS/SMTP) hand over when asked.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Scanning answers "what's there?" (hosts, ports, services/versions, OS); enumeration goes one level deeper per-service to turn "port open" into a reportable finding.</li>
-    <li>The pipeline narrows each stage: host discovery → port scanning → service/version detection → OS fingerprint → deep enumeration.</li>
-    <li><code>-sT</code> (TCP connect) completes the full handshake, needs no root, but is fully logged by the target app; <code>-sS</code> (SYN "half-open") needs raw sockets/root, is nmap's default when privileged, and is stealthier.</li>
-    <li><code>-sU</code> (UDP) is slow and ambiguous — no reply means open|filtered — because UDP has no handshake, yet SNMP/DNS/NFS/TFTP live there.</li>
-    <li>Timing templates run <code>-T0</code> Paranoid (a probe every 5 min) through <code>-T5</code> Insane; <code>-T4</code> is the common lab/internal choice, slow templates exist to fall under IDS rate thresholds.</li>
-    <li>NSE (<code>--script</code>) runs Lua checks — <code>default</code>, <code>vuln</code>, targeted enum scripts; output flags <code>-oN</code>/<code>-oX</code>/<code>-oG</code>/<code>-oA</code> save results for reporting and later phases.</li>
-    <li>masscan/rustscan sweep huge ranges for open ports fast, then hand the narrow port list to nmap for the slow <code>-sV</code>/<code>-O</code>/NSE deep dive.</li>
-    <li>Per-service enum tools: SMB (enum4linux-ng, smbclient, smbmap, nmblookup), SNMP (snmpwalk, onesixtyone), LDAP (ldapsearch), NFS (showmount), SMTP (smtp-user-enum), plus nc for manual banner grabs.</li>
-    <li>Version detection matters because "Samba 3.0.20" maps to a specific CVE while "port 445 open" does not.</li>
-    <li>MITRE ATT&amp;CK: external/no-foothold scanning is Reconnaissance → Active Scanning (T1595); the same commands from an already-compromised host are Discovery → Network Service Discovery (T1046).</li>
-    <li>Defenses: default-deny firewalls (filtered ports return no clean state), IDS/IPS rate/pattern signatures, and service hardening — most deep findings are misconfigurations, not protocol flaws.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Calling external network scanning "Discovery" in ATT&amp;CK. The tactic depends entirely on whether you already have a foothold — outsider probing is Reconnaissance (T1595); the identical nmap command from inside a compromised host is Discovery (T1046).</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A SYN scan never completes the handshake so many app-level logs never see it, but it needs root; a connect scan is fully logged but needs no privileges."</div>
-  <div class="revision-say">"A scan result is a lead, not a finding — enumeration is the step that turns 'port 445 open' into 'anonymous SMB session lists a writable share.'"</div>
-  <div class="revision-say">"Same nmap command maps to Reconnaissance or Discovery in ATT&amp;CK depending only on whether I already have a foothold."</div>
+<div class="qa-block">
+  <div class="qa-question">Q8. Walk through the scanning pipeline. What does each stage hand to the next, from host discovery to deep enumeration?</div>
+  <div class="qa-answer">
+    <p>Each stage exists to narrow the work of the next. <strong>Host discovery</strong> (<code>arp-scan</code>, <code>netdiscover</code>, <code>nmap -sn</code>) turns "the whole subnet" into a list of live hosts. <strong>Port scanning</strong> (<code>nmap -sS/-sT/-sU</code>, masscan, rustscan) turns each live host into a handful of open ports, e.g. "host .15 has 445, 161, 389 open". <strong>Service/version detection</strong> (<code>-sV</code>, NSE) turns each port into exact software and version ("Samba 3.0.20"), which maps to CVEs, and <strong>OS fingerprinting</strong> (<code>-O</code>) narrows which exploit families and privilege-escalation paths are plausible. <strong>Deep enumeration</strong> (enum4linux-ng, smbmap, snmpwalk, ldapsearch, showmount, smtp-user-enum) then goes deep on exactly those services, turning "port open" into a reportable finding instead of blindly probing everything everywhere.</p>
+  </div>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain the difference between a TCP connect scan, a SYN scan, and a UDP scan — including which needs root and which is stealthier?</li>
-    <li>Can you describe what each stage of the scanning pipeline hands to the next, from host discovery through to deep enumeration?</li>
-    <li>Can you say why external network scanning maps to ATT&amp;CK Reconnaissance (T1595) and not Discovery (T1046)?</li>
-    <li>Can you walk through enumerating SMB once nmap shows port 445 open, and name which tool tells you shares exist vs. what you can do with them?</li>
-    <li>Can you explain the practical division of labor between nmap, masscan, and rustscan?</li>
-    <li>Can you name the defenses that actually reduce what scanning and enumeration find, and why most deep findings are misconfigurations?</li>
-  </ul>
-</div>
-`}
-
-]});
+  ]
+});

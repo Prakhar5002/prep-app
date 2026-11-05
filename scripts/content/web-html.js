@@ -1,33 +1,41 @@
 window.PREP_SITE.registerTopic({
-  id: 'web-html',
-  module: 'web',
-  title: 'HTML',
-  estimatedReadTime: '40 min',
-  tags: ['html', 'semantic-html', 'forms', 'meta', 'doctype', 'parsing', 'preload', 'aria', 'web'],
+  id: "web-html",
+  module: "web",
+  title: "HTML",
+  estimatedReadTime: "40 min",
+  tags: ["html","semantic-html","forms","meta","doctype","parsing","preload","aria","web"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>HTML</strong> is not just markup — it's the document model the browser parses into the DOM, the contract for accessibility, the surface for SEO, and the configuration layer for everything from caching to security policies. Senior frontend engineers treat HTML deliberately: choosing semantic elements, structuring forms correctly, adding the right meta tags, controlling resource loading priority.</p>
-<ul>
-  <li><strong>Doctype matters:</strong> <code>&lt;!DOCTYPE html&gt;</code> triggers standards mode; missing it = quirks mode + bugs.</li>
-  <li><strong>Semantic elements</strong> (<code>&lt;header&gt;</code>, <code>&lt;nav&gt;</code>, <code>&lt;main&gt;</code>, <code>&lt;article&gt;</code>, <code>&lt;section&gt;</code>) signal structure to assistive tech and search engines for free.</li>
-  <li><strong>Forms have rich semantics:</strong> <code>label</code>, <code>fieldset</code>, <code>autocomplete</code>, <code>inputmode</code>, validation attributes — most "form bugs" come from skipping these.</li>
-  <li><strong>Meta tags</strong> control SEO, social sharing, viewport, theme color, and security headers (CSP).</li>
-  <li><strong>Resource hints:</strong> <code>preload</code>, <code>prefetch</code>, <code>preconnect</code>, <code>dns-prefetch</code> — when used right, shave hundreds of ms.</li>
-  <li><strong>Loading attributes:</strong> <code>defer</code> vs <code>async</code> on scripts; <code>loading="lazy"</code> on images and iframes.</li>
-  <li><strong>The blocking model:</strong> CSS blocks render; sync scripts block parse + render; <code>defer</code> scripts wait for parse to complete.</li>
-  <li><strong>HTML for mobile:</strong> viewport meta, theme-color, app icons, touch handling, native-app banners.</li>
-</ul>
-<p><strong>Mantra:</strong> "Semantic, accessible, performance-aware. HTML is the foundation; get it right or fight it forever in CSS and JS."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>HTML is the foundation — semantic elements buy you accessibility, SEO, and free keyboard behavior; get it right or fight it forever in CSS and JS.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Start every document with <code>&lt;!DOCTYPE html&gt;</code></strong> — it triggers standards mode; without it the browser falls into quirks mode and layout breaks.</li>
+    <li><strong>Reach for semantic elements first:</strong> <code>&lt;header&gt;</code>, <code>&lt;nav&gt;</code>, <code>&lt;main&gt;</code>, <code>&lt;article&gt;</code>, <code>&lt;section&gt;</code>, <code>&lt;button&gt;</code> signal structure to assistive tech and search engines and bring free behavior (Enter/Space, focus, ARIA defaults). A <code>&lt;div&gt;</code> says nothing.</li>
+    <li><strong>Forms carry rich semantics:</strong> pair every input with a <code>&lt;label&gt;</code>, and add <code>autocomplete</code>, <code>inputmode</code>, and validation attributes (<code>required</code>, <code>minlength</code>, <code>type</code>) — most "form bugs" come from skipping these.</li>
+    <li><strong>The blocking model:</strong> CSS blocks render; a synchronous <code>&lt;script&gt;</code> blocks both parse and render; <code>&lt;link rel="stylesheet"&gt;</code> blocks render but not parse.</li>
+    <li><strong>defer vs async:</strong> both download in parallel with parsing — <code>defer</code> runs after parse in document order (use for app code); <code>async</code> runs as soon as it downloads in any order (use for independent scripts like analytics). Modules are deferred by default.</li>
+    <li><strong>Resource hints save real time:</strong> <code>preload</code> ("need this now"), <code>prefetch</code> ("might need it next page"), <code>preconnect</code> (open DNS+TCP+TLS early), <code>dns-prefetch</code>.</li>
+    <li>Image loading: <code>loading="lazy"</code> below the fold, <code>fetchpriority="high"</code> on the LCP image, <code>srcset</code>/<code>sizes</code> for resolution, <code>&lt;picture&gt;</code> for format or art-direction — and always set <code>width</code>/<code>height</code> to prevent layout shift.</li>
+    <li><strong>Prefer native elements over hand-built widgets:</strong> <code>&lt;dialog&gt;</code> (free focus trap + Escape), <code>&lt;details&gt;/&lt;summary&gt;</code> (free disclosure), <code>&lt;output&gt;</code> (live region).</li>
+    <li>Meta essentials: <code>&lt;meta charset="UTF-8"&gt;</code> in the first 1024 bytes, viewport <code>width=device-width, initial-scale=1</code>, <code>&lt;html lang&gt;</code>, plus Open Graph / Twitter cards and JSON-LD for SEO.</li>
+    <li><strong>Mobile HTML:</strong> viewport meta, <code>theme-color</code>, app icons / web app manifest, touch handling and native-app banners; meta tags can also set security policy (CSP).</li>
+    <li>Security hygiene: <code>rel="noopener"</code> on <code>target="_blank"</code> links, and <code>sandbox</code> + <code>title</code> on iframes.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>A <code>&lt;button&gt;</code> inside a <code>&lt;form&gt;</code> defaults to <code>type="submit"</code></strong> — so a "Click me" button with an <code>onclick</code> handler silently submits (and reloads) the form. Fix: add <code>type="button"</code> to any non-submit button. Sibling traps: building interactive controls from <code>&lt;div onClick&gt;</code> instead of <code>&lt;button&gt;</code> (not focusable, no keyboard), and putting a synchronous <code>&lt;script&gt;</code> in the <code>&lt;head&gt;</code> without <code>defer</code>, blocking parse.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Semantic HTML first — <code>&lt;button&gt;</code>, <code>&lt;nav&gt;</code>, <code>&lt;main&gt;</code>, <code>&lt;article&gt;</code> give me accessibility, SEO, and free keyboard behavior; I only reach for a <code>&lt;div&gt;</code> when there's genuinely no meaning to convey."</div>
+  <div class="revision-say">"defer runs after parse in document order — that's my default for app code; async runs whenever it downloads in any order, which is right for independent scripts like analytics."</div>
+  <div class="revision-say">"Every input gets a label, and I lean on autocomplete and inputmode so password managers and mobile keyboards just work — most form bugs are really missing HTML semantics."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What HTML actually is</h3>
 <p>HTML (HyperText Markup Language) is a markup language that describes the structure of web documents. The browser parses HTML into a DOM tree, applies CSS to style it, runs JS to make it interactive. HTML is the seed; everything else is downstream.</p>
 
@@ -83,12 +91,10 @@ window.PREP_SITE.registerTopic({
   <li>Your meta tags cover viewport, charset, theme-color, social cards.</li>
   <li>You know when to use <code>&lt;dialog&gt;</code>, <code>&lt;details&gt;</code>, <code>&lt;datalist&gt;</code>, <code>&lt;output&gt;</code>.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The document structure</h3>
 <pre><code class="language-html">&lt;!DOCTYPE html&gt;
 &lt;html lang="en"&gt;
@@ -267,12 +273,10 @@ window.PREP_SITE.registerTopic({
 &lt;link rel="apple-touch-icon" href="/apple-touch-icon.png" /&gt;
 &lt;link rel="manifest" href="/manifest.json" /&gt;
 </code></pre>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Semantic vs div-soup</h3>
 <pre><code class="language-html">&lt;!-- div-soup --&gt;
 &lt;div class="header"&gt;
@@ -473,12 +477,10 @@ dlg.addEventListener('close', () =&gt; console.log(dlg.returnValue));
   ]
 }
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Login form done right</h3>
 <pre><code class="language-html">&lt;form action="/login" method="POST"&gt;
   &lt;label for="email"&gt;Email&lt;/label&gt;
@@ -676,12 +678,11 @@ dlg.addEventListener('close', () =&gt; {
 &gt;&lt;/iframe&gt;
 </code></pre>
 <p>The sandbox prevents form submission, top-level navigation, popups, etc. Add only the capabilities needed.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Quirks mode</h3>
 <p>Missing or wrong doctype triggers quirks mode (legacy IE behaviors). Box model differs, layout breaks. Always start documents with <code>&lt;!DOCTYPE html&gt;</code>.</p>
 
@@ -784,12 +785,9 @@ dlg.addEventListener('close', () =&gt; {
 
 <h3>Speculation Rules cost</h3>
 <p>Prerendering eats CPU and bandwidth. Don't speculate "all links"; target high-confidence next-clicks.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: div+onClick instead of button</h3>
 <pre><code class="language-html">&lt;!-- BAD — not focusable, not announced as interactive --&gt;
 &lt;div onClick={handle}&gt;Click me&lt;/div&gt;
@@ -890,12 +888,10 @@ dlg.addEventListener('close', () =&gt; {
 
 <h3>Anti-pattern 10: no hreflang for multi-lingual</h3>
 <p>Multi-lingual sites need <code>&lt;link rel="alternate" hreflang="..."&gt;</code> and proper <code>lang</code> on root. Without these, search engines may serve the wrong locale.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 14 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -989,52 +985,26 @@ dlg.addEventListener('close', () =&gt; {
   <li>"I'd build a meta-tag template module so SEO meta is consistent across pages."</li>
   <li>"I'd add an 'HTML linter' to flag common mistakes (div+onClick, missing labels, wrong button types)."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>HTML is the foundation — semantic elements buy you accessibility, SEO, and free keyboard behavior; get it right or fight it forever in CSS and JS.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Start every document with <code>&lt;!DOCTYPE html&gt;</code></strong> — it triggers standards mode; without it the browser falls into quirks mode and layout breaks.</li>
-    <li><strong>Reach for semantic elements first:</strong> <code>&lt;header&gt;</code>, <code>&lt;nav&gt;</code>, <code>&lt;main&gt;</code>, <code>&lt;article&gt;</code>, <code>&lt;section&gt;</code>, <code>&lt;button&gt;</code> signal structure to assistive tech and search engines and bring free behavior (Enter/Space, focus, ARIA defaults). A <code>&lt;div&gt;</code> says nothing.</li>
-    <li><strong>Forms carry rich semantics:</strong> pair every input with a <code>&lt;label&gt;</code>, and add <code>autocomplete</code>, <code>inputmode</code>, and validation attributes (<code>required</code>, <code>minlength</code>, <code>type</code>) — most "form bugs" come from skipping these.</li>
-    <li><strong>The blocking model:</strong> CSS blocks render; a synchronous <code>&lt;script&gt;</code> blocks both parse and render; <code>&lt;link rel="stylesheet"&gt;</code> blocks render but not parse.</li>
-    <li><strong>defer vs async:</strong> both download in parallel with parsing — <code>defer</code> runs after parse in document order (use for app code); <code>async</code> runs as soon as it downloads in any order (use for independent scripts like analytics). Modules are deferred by default.</li>
-    <li><strong>Resource hints save real time:</strong> <code>preload</code> ("need this now"), <code>prefetch</code> ("might need it next page"), <code>preconnect</code> (open DNS+TCP+TLS early), <code>dns-prefetch</code>.</li>
-    <li>Image loading: <code>loading="lazy"</code> below the fold, <code>fetchpriority="high"</code> on the LCP image, <code>srcset</code>/<code>sizes</code> for resolution, <code>&lt;picture&gt;</code> for format or art-direction — and always set <code>width</code>/<code>height</code> to prevent layout shift.</li>
-    <li><strong>Prefer native elements over hand-built widgets:</strong> <code>&lt;dialog&gt;</code> (free focus trap + Escape), <code>&lt;details&gt;/&lt;summary&gt;</code> (free disclosure), <code>&lt;output&gt;</code> (live region).</li>
-    <li>Meta essentials: <code>&lt;meta charset="UTF-8"&gt;</code> in the first 1024 bytes, viewport <code>width=device-width, initial-scale=1</code>, <code>&lt;html lang&gt;</code>, plus Open Graph / Twitter cards and JSON-LD for SEO.</li>
-    <li>Security hygiene: <code>rel="noopener"</code> on <code>target="_blank"</code> links, and <code>sandbox</code> + <code>title</code> on iframes.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>A <code>&lt;button&gt;</code> inside a <code>&lt;form&gt;</code> defaults to <code>type="submit"</code></strong> — so a "Click me" button with an <code>onclick</code> handler silently submits (and reloads) the form. Fix: add <code>type="button"</code> to any non-submit button. Sibling traps: building interactive controls from <code>&lt;div onClick&gt;</code> instead of <code>&lt;button&gt;</code> (not focusable, no keyboard), and putting a synchronous <code>&lt;script&gt;</code> in the <code>&lt;head&gt;</code> without <code>defer</code>, blocking parse.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Semantic HTML first — <code>&lt;button&gt;</code>, <code>&lt;nav&gt;</code>, <code>&lt;main&gt;</code>, <code>&lt;article&gt;</code> give me accessibility, SEO, and free keyboard behavior; I only reach for a <code>&lt;div&gt;</code> when there's genuinely no meaning to convey."</div>
-  <div class="revision-say">"defer runs after parse in document order — that's my default for app code; async runs whenever it downloads in any order, which is right for independent scripts like analytics."</div>
-  <div class="revision-say">"Every input gets a label, and I lean on autocomplete and inputmode so password managers and mobile keyboards just work — most form bugs are really missing HTML semantics."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain how semantic HTML builds the accessibility tree screen readers consume?</li>
-    <li>Can you compare <code>async</code> and <code>defer</code> and their effect on parsing?</li>
-    <li>Can you use <code>rel=preload</code> and <code>preconnect</code> and say when each helps?</li>
-    <li>Can you set the viewport meta and explain why it matters on mobile?</li>
-    <li>Can you associate a label with an input and use <code>autocomplete</code> and <code>inputmode</code> correctly?</li>
-    <li>Can you explain <code>rel=noopener</code> and why <code>target=_blank</code> without it is a risk?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. How does semantic HTML build the accessibility tree that screen readers use?</div>
+  <div class="qa-answer">
+    <p>Besides the DOM, the browser derives an accessibility tree from your markup, and screen readers, voice control and switch access consume that tree rather than the pixels. Semantic elements carry implicit ARIA roles: <code>&lt;nav&gt;</code> is navigation, <code>&lt;main&gt;</code> is main, <code>&lt;aside&gt;</code> is complementary, a top-level <code>&lt;header&gt;</code> is banner, a labelled <code>&lt;section&gt;</code> is a region, and <code>&lt;button&gt;</code> is a focusable button with Enter/Space behaviour. A <code>&lt;div&gt;</code> contributes no role, so assistive tech sees nothing meaningful. Hence the first rule of ARIA: don't add ARIA when native HTML suffices; <code>&lt;button role="button"&gt;</code> is redundant.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q2. When do rel=preload and rel=preconnect each help?</div>
+  <div class="qa-answer">
+    <p><code>preload</code> says "I will use this resource imminently, fetch it with high priority" and suits late-discovered critical resources such as a font (<code>as="font" type="font/woff2" crossorigin</code>) or the LCP hero image. It is wasted, and Chrome warns, if the URL doesn't match exactly what the page later requests. <code>preconnect</code> opens DNS + TCP + TLS to another origin before you know the exact file, e.g. your API host or <code>fonts.gstatic.com</code>. A classic fix: an LCP image needing three round trips because there was no preconnect and no preload.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. How do you correctly label an input and use autocomplete and inputmode?</div>
+  <div class="qa-answer">
+    <p>Associate the label explicitly with <code>&lt;label for="email"&gt;</code> matching <code>id="email"</code>, so screen readers announce it and clicking the label focuses the input. <code>autocomplete</code> hints autofill: <code>username</code> and <code>current-password</code> enable password managers, and <code>one-time-code</code> lets iOS suggest SMS codes. <code>inputmode</code> picks the soft keyboard, e.g. <code>email</code> or <code>numeric</code> for an OTP. Combine them with a meaningful <code>type</code> and validation attributes (<code>required</code>, <code>minlength</code>); for emails, also turn off <code>autocapitalize</code>, <code>autocorrect</code> and <code>spellcheck</code>.</p>
+  </div>
+</div>
+` },
 
-]
+  ]
 });

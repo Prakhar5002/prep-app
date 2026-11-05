@@ -1,25 +1,39 @@
 window.PREP_SITE.registerTopic({
-  id: 'linux-text-pipelines',
-  module: 'linux',
-  title: 'Text Processing & Pipelines',
-  estimatedReadTime: '30 min',
-  tags: ['linux', 'cli', 'shell', 'text-processing', 'grep', 'regex'],
+  id: "linux-text-pipelines",
+  module: "linux",
+  title: "Text Processing & Pipelines",
+  estimatedReadTime: "30 min",
+  tags: ["linux","cli","shell","text-processing","grep","regex"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Almost everything on a Linux system talks in <strong>plain text streams</strong> — a program reads a stream of bytes in, writes a stream of bytes out, and (separately) writes errors to a third stream. The shell lets you rewire those streams: send output to a file (<strong>redirection</strong>), or feed the output of one program straight into the input of the next (<strong>piping</strong>). A small set of tiny, single-purpose programs — <code>grep</code>, <code>sed</code>, <code>awk</code>, <code>sort</code>, <code>uniq</code>, <code>cut</code>, <code>tr</code>, and friends — each do one job on a text stream extremely well, and you compose them into pipelines to do real work.</p>
-<ul>
-  <li><strong>Three standard streams, numbered:</strong> every command has <strong>stdin</strong> (fd 0, input), <strong>stdout</strong> (fd 1, normal output), and <strong>stderr</strong> (fd 2, errors/diagnostics) — kept separate on purpose so you can capture results without capturing warnings, or vice versa.</li>
-  <li><strong>Redirection</strong> (<code>&gt;</code>, <code>&gt;&gt;</code>, <code>&lt;</code>, <code>2&gt;</code>, <code>2&gt;&amp;1</code>, <code>&amp;&gt;</code>) wires a stream to a <em>file</em>. <strong>Piping</strong> (<code>|</code>) wires the stdout of one process directly to the stdin of the next, with no file in between.</li>
-  <li><strong>Filters do one job each:</strong> <code>grep</code> searches, <code>sed</code> edits a stream line by line, <code>awk</code> does field-aware processing, <code>sort</code>/<code>uniq</code> order and dedupe/count, <code>cut</code>/<code>tr</code>/<code>paste</code>/<code>join</code>/<code>comm</code> slice and combine columns, and <code>xargs</code> turns a stream of lines into arguments for another command.</li>
-  <li><strong>This is topic 3 of the Linux module.</strong> It assumes you can already navigate the filesystem (topic 1: Fundamentals & Navigation) and are comfortable with permissions and users (topic 2: Files, Permissions & Users). Later topics build on this: processes & jobs, shell scripting, and networking/sysadmin all lean heavily on piping commands together.</li>
-</ul>
-<p><strong>Mantra:</strong> "Everything is a stream of lines; redirection points a stream at a file, a pipe points it at the next program, and each small tool transforms the stream a little before passing it on."</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Everything is a <strong>stream of lines</strong>; <strong>redirection</strong> points a stream at a file and a <strong>pipe</strong> points it at the next program, while small single-purpose <strong>filters</strong> each transform the stream a little.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Three standard streams: <strong>stdin</strong> (fd 0), <strong>stdout</strong> (fd 1), <strong>stderr</strong> (fd 2) — kept separate on purpose.</li>
+    <li>Redirection (<code>&gt;</code>, <code>&gt;&gt;</code>, <code>&lt;</code>, <code>2&gt;</code>, <code>2&gt;&amp;1</code>, <code>&amp;&gt;</code>) wires a stream to a <em>file</em>; a pipe (<code>|</code>) wires stdout of one process into stdin of the next, with no file in between.</li>
+    <li>Filters do one job each: <code>grep</code> searches, <code>sed</code> edits line by line, <code>awk</code> does field-aware processing, <code>sort</code>/<code>uniq</code> order and dedupe/count, <code>cut</code>/<code>tr</code>/<code>paste</code>/<code>join</code>/<code>comm</code> slice and combine columns.</li>
+    <li><code>xargs</code> turns a stream of lines into arguments for another command — needed because <code>rm</code>, <code>cp</code>, <code>mkdir</code> read targets from arguments, not stdin, so piping filenames straight into them does nothing.</li>
+    <li><code>grep -F</code> treats the pattern as a literal fixed string — faster and immune to regex surprises like <code>.</code> meaning "any character".</li>
+    <li><code>&gt;</code> truncates then writes; <code>&gt;&gt;</code> appends. A pipe's two processes run concurrently, the second consuming lines as the first produces them.</li>
+    <li>Top-N idiom: <code>awk '{print $N}' file | sort | uniq -c | sort -rn | head -10</code>.</li>
+    <li><strong><code>uniq</code> only collapses <em>adjacent</em> duplicates</strong> — always <code>sort</code> first, or <code>uniq -c</code> reports scattered repeats as separate counts of 1.</li>
+    <li><code>cut -d</code> splits on every single delimiter (breaks on runs of spaces); <code>awk</code> treats any run of whitespace as one separator — the safer default for ragged, human-formatted columns.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Order matters in <code>2&gt;&amp;1</code>.</strong> The shell reads redirections left to right, so <code>command &gt; out.log 2&gt;&amp;1</code> captures both, but <code>command 2&gt;&amp;1 &gt; out.log</code> leaves stderr on the terminal — it followed stdout's <em>old</em> destination. Redirect stdout to its final target first, then say <code>2&gt;&amp;1</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Every tool reads a text stream and writes one; I compose small filters with pipes to do real work."</div>
+  <div class="revision-say">"There are three streams — stdin, stdout, stderr — and redirection points them at files while pipes point them at the next command."</div>
+  <div class="revision-say">"2 to 1 means send stderr wherever stdout points right now, so order matters — I redirect stdout first, then combine."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The Unix philosophy: small tools, composed</h3>
 <p>Linux's text-processing tools weren't designed as one giant do-everything program — they were designed around a philosophy summed up (by Doug McIlroy, who invented the pipe) roughly as: write programs that do one thing well; write programs to work together; write programs that handle text streams, because that's a universal interface. <code>grep</code> only searches. <code>sort</code> only sorts. <code>cut</code> only extracts columns. None of them alone is impressive — but chained together with pipes, they let you answer questions in one line of typing that would otherwise take a small custom program.</p>
 
@@ -33,10 +47,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>The stream model, in one sentence</h3>
 <p>Every running program is handed three open connections by default — one to read from (stdin), and two to write to (stdout for normal results, stderr for errors/diagnostics) — and the shell's redirection and piping syntax exists entirely to let <em>you</em> decide, per command, where those three connections actually go: the keyboard/screen (the default), a file, <code>/dev/null</code> (a black hole, discussed below), or another program's stdin.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>Three numbered streams, not one</h3>
 <p>Every process has three standard file descriptors open before it even starts, each with a small integer number:</p>
 <table>
@@ -69,10 +83,10 @@ window.PREP_SITE.registerTopic({
   <li><strong><code>cut</code> / <code>tr</code> / <code>paste</code> / <code>join</code> / <code>comm</code></strong> — column- and set-level operations: extract fields, translate characters, merge files side by side, relational-join or diff two sorted lists.</li>
   <li><strong><code>xargs</code></strong> — the odd one out: it doesn't transform text, it turns a stream of lines into <em>arguments</em> for a command that doesn't itself read from stdin.</li>
 </ul>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Redirecting stdout: <code>&gt;</code> and <code>&gt;&gt;</code></h3>
 <pre><code class="language-bash"># Overwrite: create the file (or replace its contents) with this command's stdout:
 &lt;command&gt; &gt; &lt;file&gt;
@@ -365,10 +379,10 @@ echo "file1.txt file2.txt" | xargs rm
 find . -name "*.tmp" | xargs -I{} rm {}
 cat urls.txt | xargs -I{} curl -o {}.html {}</code></pre>
 <p><code>xargs</code> exists because many commands (<code>rm</code>, <code>cp</code>, <code>mkdir</code>, <code>curl</code>...) take their targets as command-line <em>arguments</em>, not as a stream on stdin — so piping a list of filenames straight into them does nothing useful on its own. <code>xargs</code> bridges that gap by reading lines from stdin and using them to build and run another command. Without <code>-I</code>, it just appends the lines as trailing arguments (and may batch several per invocation for efficiency); with <code>-I{}</code>, you name a placeholder (<code>{}</code> is conventional but any string works) and it substitutes one line in for it per run — letting the input slot into the <em>middle</em> of a command, and letting you use it more than once in the same command line.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Count how many ERROR lines are in a log file</h3>
 <pre><code class="language-bash">grep "ERROR" app.log | wc -l
 # 47
@@ -429,10 +443,11 @@ join active-users.txt user-emails.txt
 # blee blee@example.com
 # jsmith jsmith@example.com</code></pre>
 <p><code>comm -12</code> suppresses the "only in file1" and "only in file2" columns, leaving just the lines common to both files — a quick sanity check for overlap between two sets. <code>join</code> then takes one of those files and stitches in matching data from a second file by shared key, exactly like a lightweight relational join — provided (as always with <code>join</code> and <code>comm</code>) both inputs are pre-sorted on the field being compared.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3><code>2&gt;&amp;1</code> order matters — a lot</h3>
 <p>The shell processes redirections strictly left to right, and <code>2&gt;&amp;1</code> means "point fd 2 at whatever fd 1 <em>currently</em> points at" — not "keep them linked forever." That makes the order you write things in change the result completely:</p>
 <pre><code class="language-bash"># CORRECT — both stdout and stderr end up in out.log:
@@ -484,10 +499,10 @@ echo "alice  25  engineer" | cut -d' ' -f2
 echo "alice  25  engineer" | awk '{print $2}'
 # 25</code></pre>
 <p>Reach for <code>cut</code> only when the delimiter is single-character and consistent (true CSV, colon-delimited <code>/etc/passwd</code>-style files); reach for <code>awk</code> the moment field widths or spacing are irregular.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'cheat-sheet', title: '📋 Cheat Sheet', html: `
+{ id: "cheat-sheet", title: "📋 Cheat Sheet", collapsible: true, html: `
 <table>
   <thead><tr><th>Command</th><th>Purpose</th><th>Key flags</th></tr></thead>
   <tbody>
@@ -514,10 +529,10 @@ echo "alice  25  engineer" | awk '{print $2}'
     <tr><td><code>xargs</code></td><td>Turn stdin lines into arguments for another command</td><td><code>-I{}</code> placeholder, one invocation per line</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What's the difference between stdout and stderr, and why does Linux keep them separate?</div>
 <div class="qa-a">
@@ -573,40 +588,26 @@ echo "alice  25  engineer" | awk '{print $2}'
 <p>A pipe only connects one command's stdout to the next command's <em>stdin</em> — but many commands (<code>rm</code>, <code>cp</code>, <code>mkdir</code>, <code>curl</code>) don't read their targets from stdin at all; they expect them as command-line <em>arguments</em>. Piping a list of filenames into <code>rm</code> directly does nothing, because <code>rm</code> never looks at stdin for filenames. <code>xargs</code> bridges that gap: it reads lines from stdin and uses them to construct and run another command, appending them as arguments (or, with <code>-I{}</code>, substituting a placeholder anywhere in the command, once per input line) — e.g. <code>find . -name "*.tmp" | xargs -I{} rm {}</code> deletes every matched file even though <code>rm</code> itself never reads a stream.</p>
 </div>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Everything is a <strong>stream of lines</strong>; <strong>redirection</strong> points a stream at a file and a <strong>pipe</strong> points it at the next program, while small single-purpose <strong>filters</strong> each transform the stream a little.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Three standard streams: <strong>stdin</strong> (fd 0), <strong>stdout</strong> (fd 1), <strong>stderr</strong> (fd 2) — kept separate on purpose.</li>
-    <li>Redirection (<code>&gt;</code>, <code>&gt;&gt;</code>, <code>&lt;</code>, <code>2&gt;</code>, <code>2&gt;&amp;1</code>, <code>&amp;&gt;</code>) wires a stream to a <em>file</em>; a pipe (<code>|</code>) wires stdout of one process into stdin of the next, with no file in between.</li>
-    <li>Filters do one job each: <code>grep</code> searches, <code>sed</code> edits line by line, <code>awk</code> does field-aware processing, <code>sort</code>/<code>uniq</code> order and dedupe/count, <code>cut</code>/<code>tr</code>/<code>paste</code>/<code>join</code>/<code>comm</code> slice and combine columns.</li>
-    <li><code>xargs</code> turns a stream of lines into arguments for another command.</li>
-    <li><code>grep -F</code> treats the pattern as a literal fixed string — faster and immune to regex surprises like <code>.</code> meaning "any character".</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Order matters in <code>2&gt;&amp;1</code>.</strong> The shell reads redirections left to right, so <code>command &gt; out.log 2&gt;&amp;1</code> captures both, but <code>command 2&gt;&amp;1 &gt; out.log</code> leaves stderr on the terminal — it followed stdout's <em>old</em> destination. Redirect stdout to its final target first, then say <code>2&gt;&amp;1</code>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Every tool reads a text stream and writes one; I compose small filters with pipes to do real work."</div>
-  <div class="revision-say">"There are three streams — stdin, stdout, stderr — and redirection points them at files while pipes point them at the next command."</div>
-  <div class="revision-say">"2 to 1 means send stderr wherever stdout points right now, so order matters — I redirect stdout first, then combine."</div>
+<div class="qa-block">
+  <div class="qa-question">Q9. Name the three standard streams and their file descriptor numbers.</div>
+  <div class="qa-answer">
+    <p>stdin is fd 0 (input), stdout is fd 1 (normal output), and stderr is fd 2 (errors and diagnostics). Redirection works by unplugging one of those numbered streams from the keyboard or screen and plugging it into a file instead. The program never knows the difference: it just writes to fd 1, and the shell has decided in advance where that leads. That's why the operators use the numbers, as in <code>2&gt;</code> and <code>2&gt;&amp;1</code>.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the three standard streams and their file descriptor numbers?</li>
-    <li>Can you send both stdout and stderr to the same file, and explain why order matters?</li>
-    <li>Can you say what <code>grep</code>, <code>sed</code>, <code>awk</code>, <code>sort</code>, <code>uniq</code>, and <code>cut</code> each do in one line?</li>
-    <li>Can you explain when to reach for <code>grep -F</code> over a normal <code>grep</code>?</li>
-    <li>Can you use <code>xargs</code> to turn a list of lines into arguments for another command?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q10. In one line each, what do grep, sed, awk, sort, uniq, and cut do?</div>
+  <div class="qa-answer">
+    <p><code>grep</code> keeps only the lines matching a pattern. <code>sed</code> is a stream editor that substitutes or deletes line by line. <code>awk</code> splits each line into fields and acts on them, and is a small programming language in its own right. <code>sort</code> reorders lines. <code>uniq</code> collapses or counts <em>adjacent</em> duplicates, so sort first. <code>cut</code> extracts fields by delimiter. They all share the same filter shape: read lines from stdin, transform them, and write to stdout.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q11. When would you use grep -F instead of a normal grep?</div>
+  <div class="qa-answer">
+    <p>Use it whenever the pattern is a literal string rather than a regex. In a normal grep, characters like <code>.</code>, <code>*</code>, <code>[</code>, <code>^</code> and <code>$</code> are regex syntax, so <code>grep "3.14"</code> also matches "3x14" or "3-14", because <code>.</code> means any character. That bites with file paths, version numbers, and IP addresses. <code>grep -F</code> ("fixed strings") treats the whole pattern as literal text, and it's also generally faster because it skips the regex engine.</p>
+  </div>
+</div>
+` },
 
-]});
+  ]
+});

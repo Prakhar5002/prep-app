@@ -1,32 +1,46 @@
 window.PREP_SITE.registerTopic({
-  id: 'beh-stories',
-  module: 'behavioral',
-  title: 'Story Bank (10 stories)',
-  estimatedReadTime: '40 min',
-  tags: ['behavioral', 'story-bank', 'star', 'interview-prep', 'competencies', 'examples', 'mobile', 'react-native'],
+  id: "beh-stories",
+  module: "behavioral",
+  title: "Story Bank (10 stories)",
+  estimatedReadTime: "40 min",
+  tags: ["behavioral","story-bank","star","interview-prep","competencies","examples","mobile","react-native"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>A <strong>story bank</strong> is your prepared inventory of 8–12 incidents from your career, each tagged to multiple competencies. Behavioral interviews ask ~15 questions across a loop; with a well-built bank, every question has a story you can tell in 3 minutes.</p>
-<ul>
-  <li><strong>5–8 stories cover 90% of questions</strong> if each is tagged with 3–4 competencies.</li>
-  <li><strong>Diversity matters more than count.</strong> One story per major theme (conflict, ownership, failure, complex tech, leadership, ambiguity, influence, working under pressure, mentorship, principled disagreement).</li>
-  <li><strong>Recency matters.</strong> Stories from the last 3 years are easier to recall and more relevant. Older stories work if the lesson still applies.</li>
-  <li><strong>Tag and rehearse.</strong> Each story has a tag matrix ("can answer Q1, Q3, Q7, Q12") and 5 follow-ups pre-rehearsed.</li>
-  <li><strong>One signature story.</strong> Your "go-to" — most polished, most quantified, easy to expand or compress on demand.</li>
-  <li><strong>Mobile candidates' edge:</strong> stories about device-specific bugs, native bridge issues, App Store rejections, performance investigations on real users translate uniquely well.</li>
-  <li><strong>Update yearly.</strong> A bank gets stale; refresh stories from new work; retire old ones whose lessons you've outgrown.</li>
-</ul>
-<p><strong>This page provides 10 archetype stories</strong> tagged across 30 common questions — adapt them to your own experience. The shapes are real; the names, numbers, and details should be yours.</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A story bank is <strong>8&ndash;12 career incidents drafted in STAR-L and tagged to multiple competencies</strong>, so every behavioral question is answered by recall rather than real-time invention.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>A <strong>story bank</strong> is 8&ndash;12 career incidents, each drafted in STAR-L and tagged to multiple competencies &mdash; you recall stories cued by competency, you don't memorize 60 answers.</li>
+    <li><strong>5&ndash;8 stories cover ~90% of questions</strong> if each is tagged with 3&ndash;4 competencies; a loop asks ~15 behavioral questions. Diversity of theme matters more than raw count &mdash; one story per major theme (conflict, ownership, failure, complex tech, leadership, ambiguity, influence, pressure, mentorship, principled disagreement).</li>
+    <li>Build a <strong>tag matrix</strong> (stories &times; competencies) and make sure <em>every</em> column has at least 2 strong stories &mdash; especially conflict and failure, which often get asked twice.</li>
+    <li><strong>Recency wins:</strong> prefer the last 3 years and mix in at least one from the last 12 months; old-only stories signal "I peaked."</li>
+    <li>Every real story has a <strong>3-act arc</strong>: setup &rarr; complication &rarr; resolution. No Act 2 (surprise, pivot, pushback) means it's a project description, not a story &mdash; add "I expected X but discovered Y."</li>
+    <li>Make the Action a path through <strong>2&ndash;3 decision points</strong>; fewer than that and the story is too thin.</li>
+    <li>Keep <strong>70&ndash;80% of the Action as "I-lines"</strong> &mdash; rewrite any beat dominated by "we" until your slice is unambiguous.</li>
+    <li>End with a <strong>real lesson</strong>: tactical ("I now do X earlier") or, for seniority, strategic ("I now treat X as a team-design problem"). Vague lessons like "communication is important" don't score.</li>
+    <li><strong>Defer secondary detail to follow-ups</strong> ("happy to go into the techniques") &mdash; it keeps the answer crisp and invites the interviewer to direct depth.</li>
+    <li>Pre-rehearse <strong>~5 follow-ups per story</strong>, and <strong>update the bank yearly</strong>: refresh from new work, retire stories whose lessons you've outgrown.</li>
+    <li><strong>Mobile edge:</strong> device-specific bugs, native-bridge issues, App Store rejections and real-user perf investigations translate uniquely well.</li>
+    <li>Keep <strong>one signature story</strong>: most polished, most quantified, expandable to 5 min or compressible to 90s on demand.</li>
+    <li>Always give <strong>numbers with a baseline</strong> ("p95 from 1.4s to 1.2s"), and if you don't remember the exact figure, say so &mdash; never fabricate.</li>
+    <li>Have <strong>backups per competency</strong> so you don't repeat one incident across a note-sharing loop; retire stories that no longer show your current level.</li>
+    <li><strong>Preview and close:</strong> offer the 30-second version first, and land the plane with Result + Learning &mdash; don't trail off.</li>
+    <li>Behavioral is often <strong>1/3 of the loop</strong> (decisive at staff+); prep it over ~2 weeks with out-loud rehearsal and mocks, not the night before.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">The #1 mistake is telling a smooth project description with no Act 2 &mdash; no surprise, pivot, or pushback &mdash; and narrating it as "we" throughout. Fix it: add a real complication ("I expected X but discovered Y"), keep 70&ndash;80% of the Action as "I-lines" so your slice is unambiguous, and close on a concrete lesson instead of trailing off.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Before I dive in &mdash; would it help if I gave you the 30-second version first, then went deeper wherever you'd like?"</div>
+  <div class="revision-say">"I expected the leak to be event listeners, but the heap dump showed it was uncached images &mdash; that surprise is what reframed my whole approach."</div>
+  <div class="revision-say">"The result was a crash rate cut from 2.1% to 0.4%; what stuck with me is to measure before optimizing. Happy to go deeper on any part."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a story bank?</h3>
 <p>A list of work incidents, each prepared in STAR-L form, tagged with the behavioral competencies they answer. When the interviewer asks "tell me about a time you..." you mentally scan your bank for a fit, then tell the story.</p>
 
@@ -83,12 +97,10 @@ window.PREP_SITE.registerTopic({
   <li>You have at least 2 stories that can answer "conflict" and 2 for "failure" — common ones, often asked twice.</li>
   <li>You can articulate, for any story, what the lesson taught you that you still apply today.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "tag matrix"</h3>
 <p>Make a grid: stories down the left, competencies across the top. Cell value = strength of the story for that competency (high / medium / low). Goal: every column has at least 2 high-strength cells.</p>
 <pre><code class="language-text">                   Conflict  Failure  Lead  Tech  Influence  Ambiguity  Pressure
@@ -158,12 +170,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>Pressure</td><td>"We had a tight deadline." Pick a real escalation or incident.</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>How to build your bank in one weekend</h3>
 <ol>
   <li><strong>Saturday morning (90 min):</strong> List every project, incident, decision, conflict, and lesson from the last 3-5 years. ~30-50 entries. Don't filter yet.</li>
@@ -265,12 +275,10 @@ Adaptations:
   <li>After failures: write the lesson while it's fresh. The cleanest "what I learned" lines come from contemporaneous notes.</li>
   <li>Annually: prune. If a story is &gt; 3 years old and you have a newer one, replace it.</li>
 </ul>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples (10 Archetype Stories)',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <p>Each story below is generic enough to adapt; the structure is real. Replace specifics with your own experience.</p>
 
 <h3>Story 1: Complex technical investigation — "Chat memory leak"</h3>
@@ -458,12 +466,11 @@ Adaptations:
 
 [L] During the incident I felt panicked, but the playbook took over. The lesson wasn't about the technical fix — it was that having a rehearsed playbook was the difference between a 38-minute outage and a 3-hour one. I now insist that every team has and rehearses a runbook for their top 3 failure modes.
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>"My career has been mostly maintenance"</h3>
 <p>Plenty of strong stories live in maintenance work: a bug you tracked across 3 systems, a refactor that unblocked a 5-person team, a deprecation you executed without breaking customers. Reframe maintenance as <em>care</em>; senior engineers value it.</p>
 
@@ -521,12 +528,9 @@ Adaptations:
 
 <h3>"I get nervous and forget the details"</h3>
 <p>Keep a 1-page bank summary in your line of sight (during phone or video). Use a notepad with the 10 story titles + key metrics. Don't read scripts; do glance for cues. Many candidates have this; few admit it.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Same story for "conflict" and "leadership"</h3>
 <p>Loop interviewers compare notes. If two of them hear the same incident, you appear thin. Have at least 2 distinct stories per major theme.</p>
 
@@ -586,12 +590,10 @@ Adaptations:
 
 <h3>Anti-pattern 10: Treating behavioral as an afterthought</h3>
 <p>Many engineering candidates over-prep technical and under-prep behavioral. At staff+ levels, behavioral often decides the loop. Treat it as 1/3 of total prep, not 1/10.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The story-to-question mapping</h3>
 <p>Each of the 10 archetype stories above maps to multiple common questions:</p>
 <table>
@@ -681,59 +683,44 @@ Adaptations:
   <li>"I'd build a 'tag matrix' spreadsheet to confirm I have 2+ strong stories per competency."</li>
   <li>"I'd update the bank quarterly so it doesn't go stale between job searches."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A story bank is <strong>8&ndash;12 career incidents drafted in STAR-L and tagged to multiple competencies</strong>, so every behavioral question is answered by recall rather than real-time invention.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>A <strong>story bank</strong> is 8&ndash;12 career incidents, each drafted in STAR-L and tagged to multiple competencies &mdash; you recall stories cued by competency, you don't memorize 60 answers.</li>
-    <li><strong>5&ndash;8 stories cover ~90% of questions</strong> if each is tagged with 3&ndash;4 competencies. Diversity of theme matters more than raw count.</li>
-    <li>Build a <strong>tag matrix</strong> (stories &times; competencies) and make sure <em>every</em> column has at least 2 strong stories &mdash; especially conflict and failure, which often get asked twice.</li>
-    <li><strong>Recency wins:</strong> prefer the last 3 years and mix in at least one from the last 12 months; old-only stories signal "I peaked."</li>
-    <li>Every real story has a <strong>3-act arc</strong>: setup &rarr; complication &rarr; resolution. No Act 2 (surprise, pivot, pushback) means it's a project description, not a story &mdash; add "I expected X but discovered Y."</li>
-    <li>Make the Action a path through <strong>2&ndash;3 decision points</strong>; fewer than that and the story is too thin.</li>
-    <li>Keep <strong>70&ndash;80% of the Action as "I-lines"</strong> &mdash; rewrite any beat dominated by "we" until your slice is unambiguous.</li>
-    <li>End with a <strong>real lesson</strong>: tactical ("I now do X earlier") or, for seniority, strategic ("I now treat X as a team-design problem"). Vague lessons like "communication is important" don't score.</li>
-    <li><strong>Defer secondary detail to follow-ups</strong> ("happy to go into the techniques") &mdash; it keeps the answer crisp and invites the interviewer to direct depth.</li>
-    <li>Keep <strong>one signature story</strong>: most polished, most quantified, expandable to 5 min or compressible to 90s on demand.</li>
-    <li>Always give <strong>numbers with a baseline</strong> ("p95 from 1.4s to 1.2s"), and if you don't remember the exact figure, say so &mdash; never fabricate.</li>
-    <li>Have <strong>backups per competency</strong> so you don't repeat one incident across a note-sharing loop; retire stories that no longer show your current level.</li>
-    <li><strong>Preview and close:</strong> offer the 30-second version first, and land the plane with Result + Learning &mdash; don't trail off.</li>
-    <li>Behavioral is often <strong>1/3 of the loop</strong> (decisive at staff+); prep it over ~2 weeks with out-loud rehearsal and mocks, not the night before.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">The #1 mistake is telling a smooth project description with no Act 2 &mdash; no surprise, pivot, or pushback &mdash; and narrating it as "we" throughout. Fix it: add a real complication ("I expected X but discovered Y"), keep 70&ndash;80% of the Action as "I-lines" so your slice is unambiguous, and close on a concrete lesson instead of trailing off.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Before I dive in &mdash; would it help if I gave you the 30-second version first, then went deeper wherever you'd like?"</div>
-  <div class="revision-say">"I expected the leak to be event listeners, but the heap dump showed it was uncached images &mdash; that surprise is what reframed my whole approach."</div>
-  <div class="revision-say">"The result was a crash rate cut from 2.1% to 0.4%; what stuck with me is to measure before optimizing. Happy to go deeper on any part."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Which story themes should a behavioral story bank cover?</div>
+  <div class="qa-answer">
+    <p>Ten archetype themes, each drafted as a STAR-L story: (1) a complex technical investigation, (2) disagreeing with a senior person on a technical decision, (3) a project you led that failed, (4) spotting a problem before it hit users, (5) influencing cross-functional partners without authority, (6) a major decision with incomplete data, (7) mentoring a teammate or growing an underperformer, (8) driving a long migration or large initiative, (9) pivoting strategy mid-project, and (10) recovering from an incident or outage. This set covers roughly 95% of FAANG behavioral questions, including Amazon's 16 LPs, Google's "Googleyness" rubric and Meta's values, so every question has at least one story that fits cleanly. Use the shapes, but the names, numbers and details must be yours.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you tell a STAR-L story for each of the 10 archetype themes &mdash; complex tech, disagreement with a senior, a real failure, spotting a problem early, influencing without authority, deciding under ambiguity, mentorship, a long migration, a mid-project pivot, and incident response?</li>
-    <li>Can you point to a tag matrix where every competency column &mdash; especially conflict and failure &mdash; has at least 2 strong stories so you never repeat one incident across a note-sharing loop?</li>
-    <li>Can you name the 3-act arc (setup &rarr; complication &rarr; resolution) and the 2&ndash;3 decision points in each of your stories, and confirm 70&ndash;80% of the Action is "I-lines"?</li>
-    <li>Can you articulate a concrete lesson for each story &mdash; tactical or strategic &mdash; and how you still apply it today, without falling back on "communication is important"?</li>
-    <li>Can you quote your results with a baseline (from-what-to-what), and say honestly when you don't remember an exact number instead of fabricating?</li>
-    <li>Can you deliver your signature story at 90 seconds, 3 minutes, and 5 minutes, previewing with the 30-second version and closing on Result + Learning?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. How do you make sure you never run out of stories or repeat one across a loop?</div>
+  <div class="qa-answer">
+    <p>Build a tag matrix: stories down the left, competencies across the top, and each cell rated high, medium or low for how well that story answers that competency. The goal is at least 2 high-strength stories in every column, especially conflict and failure, which are often asked twice. Loop interviewers compare notes, so hearing the same incident twice makes you look thin. Between rounds, note which stories you used and rotate to backups. If you must repeat, flag it: "I told this in a previous round, but happy to give a different angle."</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. What structure makes a story memorable rather than a project description?</div>
+  <div class="qa-answer">
+    <p>A 3-act arc. Act 1 is the setup, a situation that looked manageable but hid a complication; Act 2 is the complication, where something went wrong, surprised you or revealed itself; Act 3 is the resolution: what you did, the outcome and what you learned. With no Act 2 (no surprise, conflict or pivot) it's a project description, so add a beat like "I expected X, but discovered Y." Make the Action a path through 2&ndash;3 decision points ("I had two paths, A or B; I picked A because..."); fewer than that is too thin. Mark the sentences that are specifically about you and keep 70&ndash;80% of the Action as these "I-lines".</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. What makes a good lesson at the end of a story?</div>
+  <div class="qa-answer">
+    <p>A lesson tied to a behaviour change you still apply. It can be tactical ("I now do X earlier in the project") or strategic ("I now think about X as a team-design problem, not just a technical one"); the strategic kind signals seniority because you've abstracted from incident to principle. "I learned that communication is important" is vague and ungradeable. Compare: "I now write a 1-page proposal before any cross-team initiative because last time I skipped that step and ended up redoing the work." Write the lesson down soon after a failure while it's fresh.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. How should you quote results, and what if you don't remember the number?</div>
+  <div class="qa-answer">
+    <p>Always give the baseline, from what to what. "We reduced latency by 200ms" invites "from what?"; "We reduced p95 from 1.4s to 1.2s, a 14% improvement on a key user journey" is concrete. If you don't remember an exact figure, say so: "I don't remember the exact number" is honest and acceptable. Fabricating is worse, because interviewers often probe specifically to test honesty.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. How do you adjust the length of a story, and how do you open and close it?</div>
+  <div class="qa-answer">
+    <p>Rehearse three versions of each story, especially your signature one: a 90-second "elevator", a 3-minute default and a 5-minute deep dive with full tradeoff narration. Time it aloud: over 4 minutes, compress S and group the Action bullets; under 2, add tradeoff and stakeholder beats. Open by offering a preview, "Before I dive in, would it help if I gave you the 30-second version first?", which lets the interviewer direct depth. Defer secondary detail ("happy to go into the specific techniques"), and land the plane instead of trailing off: "The result was X; what I'd do differently is Y. Happy to go deeper on any part."</p>
+  </div>
+</div>
+` },
+
   ]
 });

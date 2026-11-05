@@ -1,24 +1,35 @@
 window.PREP_SITE.registerTopic({
-  id: 'linux-command-reference',
-  module: 'linux',
-  title: 'Command Reference',
-  estimatedReadTime: '15 min',
-  tags: ['linux', 'cli', 'reference', 'cheat-sheet'],
+  id: "linux-command-reference",
+  module: "linux",
+  title: "Command Reference",
+  estimatedReadTime: "15 min",
+  tags: ["linux","cli","reference","cheat-sheet"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>This is a <strong>reference</strong>, not a lesson — a single scannable lookup for every command taught across the six Linux teaching topics (Fundamentals &amp; Navigation, Files/Permissions/Users, Text Processing &amp; Pipelines, Processes/Jobs/Services, Shell Scripting, and Networking/Packages/Sysadmin). Nothing here is new; it's the same commands, flags, and examples from those topics, aggregated into one place organized by category instead of by lesson.</p>
-<ul>
-  <li><strong>How to use it:</strong> scan the category table for the command you half-remember, check its <em>Key flags</em> column for the specific option you need, and copy the <em>Example</em> column as a starting point. If you need the "why" behind a command — the mental model, the edge cases, the interview framing — that lives in the corresponding teaching topic, not here.</li>
-  <li><strong>Six categories, one table each:</strong> 📁 File &amp; Navigation, 🔒 Permissions &amp; Users, ✂️ Text &amp; Pipelines, ⚙️ Processes &amp; Services, 📜 Shell Scripting, 🌐 Networking &amp; Packages.</li>
-  <li><strong>Placeholders</strong> like <code>&lt;file&gt;</code>, <code>&lt;dir&gt;</code>, <code>&lt;pid&gt;</code>, or <code>&lt;pattern&gt;</code> in the Example column stand in for whatever you'd actually type — a real filename, process ID, or search term.</li>
-</ul>
-<p><strong>Mantra:</strong> "Don't memorize this page — memorize where to find it."</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">A single scannable <strong>lookup</strong> of every command from the six Linux teaching topics — organized by <strong>category, not by lesson</strong>; nothing here is new.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>It's a <strong>reference, not a lesson</strong> — the same commands, flags, and examples from the teaching topics, aggregated in one place.</li>
+    <li>Six categories, one table each: File &amp; Navigation, Permissions &amp; Users, Text &amp; Pipelines, Processes &amp; Services, Shell Scripting, Networking &amp; Packages.</li>
+    <li><strong>How to use it:</strong> scan the category table for the command you half-remember, check its <em>Key flags</em> column, and copy the <em>Example</em> column as a starting point.</li>
+    <li>Placeholders like <code>&lt;file&gt;</code>, <code>&lt;dir&gt;</code>, <code>&lt;pid&gt;</code>, <code>&lt;pattern&gt;</code> stand in for whatever you'd actually type.</li>
+    <li>The "why" — the mental model, the edge cases, the interview framing — lives in the corresponding teaching topic, not here.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Don't try to memorize a reference page.</strong> Memorize where to find it. The lookup gives you the <em>what</em>; the reasoning and the gotchas that make an answer sound senior live in the six teaching topics, not in the table.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"This is a lookup organized by category — I scan for the command I half-remember and copy the example."</div>
+  <div class="revision-say">"The reference has the what; the why and the edge cases live in the six teaching topics."</div>
+  <div class="revision-say">"I don't memorize the page, I memorize where to find it."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-files', title: '📁 File & Navigation', html: `
+{ id: "ref-files", title: "📁 File & Navigation", collapsible: true, html: `
 <table>
   <thead><tr><th>Command</th><th>Purpose</th><th>Key flags</th><th>Example</th></tr></thead>
   <tbody>
@@ -50,10 +61,10 @@ window.PREP_SITE.registerTopic({
     <tr><td><code>clear</code></td><td>Clear the terminal screen</td><td>scrollback is preserved, just scrolled away</td><td><code>clear</code></td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-permissions', title: '🔒 Permissions & Users', html: `
+{ id: "ref-permissions", title: "🔒 Permissions & Users", collapsible: true, html: `
 <table>
   <thead><tr><th>Command</th><th>Purpose</th><th>Key flags</th><th>Example</th></tr></thead>
   <tbody>
@@ -76,10 +87,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>Globs</td><td>Shell-expanded filename patterns</td><td><code>*</code> any chars · <code>?</code> one char · <code>[abc]</code>/<code>[0-9]</code> one of a set · <code>{a,b}</code> brace expansion (literal, not disk-matched)</td><td><code>ls *.txt</code></td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-text', title: '✂️ Text & Pipelines', html: `
+{ id: "ref-text", title: "✂️ Text & Pipelines", collapsible: true, html: `
 <table>
   <thead><tr><th>Command</th><th>Purpose</th><th>Key flags</th><th>Example</th></tr></thead>
   <tbody>
@@ -106,10 +117,10 @@ window.PREP_SITE.registerTopic({
     <tr><td><code>xargs</code></td><td>Turn stdin lines into arguments for another command</td><td><code>-I{}</code> placeholder, one invocation per line</td><td><code>find . -name "*.tmp" | xargs -I{} rm {}</code></td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-processes', title: '⚙️ Processes & Services', html: `
+{ id: "ref-processes", title: "⚙️ Processes & Services", collapsible: true, html: `
 <table>
   <thead><tr><th>Command</th><th>Purpose</th><th>Key flags</th><th>Example</th></tr></thead>
   <tbody>
@@ -140,10 +151,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>systemd timers</td><td>systemd-native recurring scheduling</td><td><code>.timer</code> unit paired with a <code>.service</code> unit</td><td><code>systemctl enable --now &lt;name&gt;.timer</code></td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-scripting', title: '📜 Shell Scripting', html: `
+{ id: "ref-scripting", title: "📜 Shell Scripting", collapsible: true, html: `
 <table>
   <thead><tr><th>Command</th><th>Purpose</th><th>Key flags</th><th>Example</th></tr></thead>
   <tbody>
@@ -187,10 +198,10 @@ window.PREP_SITE.registerTopic({
     <tr><td><code>export VAR=value</code></td><td>Export to child processes</td><td>makes VAR visible to programs this shell launches</td><td><code>export PATH="$PATH:/opt/mytool/bin"</code></td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'ref-networking', title: '🌐 Networking & Packages', html: `
+{ id: "ref-networking", title: "🌐 Networking & Packages", collapsible: true, html: `
 <table>
   <thead><tr><th>Command</th><th>Purpose</th><th>Key flags</th><th>Example</th></tr></thead>
   <tbody>
@@ -231,40 +242,41 @@ window.PREP_SITE.registerTopic({
     <tr><td><code>hostnamectl</code></td><td>Show/set the system hostname and OS info</td><td>systemd-based; replaces plain <code>hostname</code></td><td><code>hostnamectl</code></td></tr>
   </tbody>
 </table>
-`},
+` },
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">A single scannable <strong>lookup</strong> of every command from the six Linux teaching topics — organized by <strong>category, not by lesson</strong>; nothing here is new.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>It's a <strong>reference, not a lesson</strong> — the same commands, flags, and examples from the teaching topics, aggregated in one place.</li>
-    <li>Six categories, one table each: File &amp; Navigation, Permissions &amp; Users, Text &amp; Pipelines, Processes &amp; Services, Shell Scripting, Networking &amp; Packages.</li>
-    <li><strong>How to use it:</strong> scan the category table for the command you half-remember, check its <em>Key flags</em> column, and copy the <em>Example</em> column as a starting point.</li>
-    <li>Placeholders like <code>&lt;file&gt;</code>, <code>&lt;dir&gt;</code>, <code>&lt;pid&gt;</code>, <code>&lt;pattern&gt;</code> stand in for whatever you'd actually type.</li>
-    <li>The "why" — the mental model, the edge cases, the interview framing — lives in the corresponding teaching topic, not here.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Don't try to memorize a reference page.</strong> Memorize where to find it. The lookup gives you the <em>what</em>; the reasoning and the gotchas that make an answer sound senior live in the six teaching topics, not in the table.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"This is a lookup organized by category — I scan for the command I half-remember and copy the example."</div>
-  <div class="revision-say">"The reference has the what; the why and the edge cases live in the six teaching topics."</div>
-  <div class="revision-say">"I don't memorize the page, I memorize where to find it."</div>
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
+<div class="qa-block">
+  <div class="qa-question">Q1. What are the six categories the Linux command reference is organized into?</div>
+  <div class="qa-answer">
+    <p>File &amp; Navigation, Permissions &amp; Users, Text &amp; Pipelines, Processes &amp; Services, Shell Scripting, and Networking &amp; Packages, with one table each. They mirror the six teaching topics, but the reference is organized by category rather than by lesson.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the six command categories the reference is organized into?</li>
-    <li>Can you find a half-remembered command by scanning its category table?</li>
-    <li>Can you say what the <em>Key flags</em> and <em>Example</em> columns are for?</li>
-    <li>Can you say what the <code>&lt;file&gt;</code> / <code>&lt;pid&gt;</code> / <code>&lt;pattern&gt;</code> placeholders stand for?</li>
-    <li>Can you say where the reasoning and edge cases live when the table isn't enough?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. How do you use the reference to find a command you only half-remember?</div>
+  <div class="qa-answer">
+    <p>Go to the category the task belongs to (for example Text &amp; Pipelines for filtering a log) and scan that table for the command. Then check its Key flags column for the specific option you need, and copy the Example column as a starting point. It's a lookup, not a lesson: nothing in it is new, it just collects in one place the same commands, flags, and examples from the teaching topics.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q3. What are the Key flags and Example columns for?</div>
+  <div class="qa-answer">
+    <p>Key flags lists the options you're most likely to need for that command, so you can find the specific switch without opening the full man page. Example gives a ready-to-adapt invocation you can copy as your starting point and then edit.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. What do placeholders like &lt;file&gt;, &lt;pid&gt;, and &lt;pattern&gt; in the examples mean?</div>
+  <div class="qa-answer">
+    <p>They stand in for whatever you'd actually type: a real filename or directory, a real process ID, or a real search term. You replace the whole placeholder, angle brackets included, with your own value before running the command.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. When the table isn't enough, where do the reasoning and edge cases live?</div>
+  <div class="qa-answer">
+    <p>In the corresponding teaching topic: Fundamentals &amp; Navigation, Files/Permissions/Users, Text Processing &amp; Pipelines, Processes/Jobs/Services, Shell Scripting, or Networking/Packages/Sysadmin. The reference gives you the <em>what</em>. The mental model, edge cases, and interview framing that make an answer sound senior live in those topics. As the mantra puts it: don't memorize the page, memorize where to find it.</p>
+  </div>
+</div>
+` },
 
-]});
+  ]
+});

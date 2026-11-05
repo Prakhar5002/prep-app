@@ -1,34 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'ts-advanced',
-  module: 'typescript',
-  title: 'Advanced Tricks',
-  estimatedReadTime: '50 min',
-  tags: ['typescript', 'advanced', 'variance', 'higher-kinded', 'recursive-types', 'compiler-api', 'type-level-programming', 'performance'],
+  id: "ts-advanced",
+  module: "typescript",
+  title: "Advanced Tricks",
+  estimatedReadTime: "50 min",
+  tags: ["typescript","advanced","variance","higher-kinded","recursive-types","compiler-api","type-level-programming","performance"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>This is the upper crust of TypeScript: the type-level features you reach for when normal techniques run out. Most product code never needs these. Library authors, framework builders, and people writing the type-level glue under tools like <code>zod</code>, <code>tRPC</code>, <code>react-router</code>, and <code>react-query</code> live here.</p>
-<ul>
-  <li><strong>Variance annotations</strong> (<code>in</code>, <code>out</code>) — control whether a generic is co-/contra-/in-variant.</li>
-  <li><strong>Recursive types &amp; tail-recursive conditional types</strong> — string parsing, object paths, deep transforms, all type-level.</li>
-  <li><strong>Higher-kinded type encodings</strong> — TS doesn't have HKTs natively, but you can simulate them.</li>
-  <li><strong>Type-level state machines</strong> — phantom types track which methods are legal at compile time.</li>
-  <li><strong>Compiler API &amp; transformers</strong> — programmatic codegen, custom lints, and type-aware refactors.</li>
-  <li><strong>Decorators</strong> — TS 5+ aligned with the TC39 stage-3 spec; useful for class metadata, validation, DI.</li>
-  <li><strong>Performance:</strong> deep recursive types, huge unions, and conditional explosions are real costs — diagnose with <code>--extendedDiagnostics</code>, <code>--generateTrace</code>, and the type-tree viewer.</li>
-  <li><strong>The unsoundness map:</strong> there are five well-known intentional holes in TS's soundness — know them so you can avoid relying on them.</li>
-</ul>
-<p><strong>Mantra:</strong> "Power and cost. Use these tools when the API surface justifies them. Otherwise prefer ordinary patterns."</p>
-<p><strong>Version note:</strong> current stable is <strong>TypeScript 6.0</strong> (GA March 2026); the per-feature attributions below (variance 4.7, <code>infer extends</code> 4.8, stage-3 decorators 5.0, etc.) still hold. The Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026) with ~10× faster type-checking.</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Advanced TypeScript is <strong>type-level computation with a real CPU cost</strong> — reach for it only when the API surface justifies it, and learn to <em>read</em> it fluently even when you never write it.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Mantra:</strong> "Power and cost." Most product code never needs these; library and framework authors (the type glue under <code>zod</code>, <code>tRPC</code>, <code>react-router</code>, <code>react-query</code>) live here.</li>
+    <li><strong>The type system is a pure, lazy functional language:</strong> conditional types are <code>if/else</code>, mapped types are <code>map</code>, template literals are <code>concat</code>, <code>infer</code> is destructuring, and recursion replaces loops.</li>
+    <li><strong>Variance annotations (4.7):</strong> <code>out</code> = covariant (read/return positions), <code>in</code> = contravariant (write/argument positions), <code>in out</code> = invariant. TS verifies the body actually exhibits that variance and errors if it contradicts the annotation.</li>
+    <li><strong>Recursive conditional types need tail position.</strong> TS unrolls tail-recursive form (accumulator parameter) efficiently; non-tail recursion hits a hard depth cap (~50) → <code>Type instantiation is excessively deep and possibly infinite</code>.</li>
+    <li>TS has no native higher-kinded types — encode them with a keyed interface registry (<code>URI2HKT</code>) lookup. Almost never needed in product code; libraries like <code>fp-ts</code> use it.</li>
+    <li><strong>Phantom types</strong> are type parameters that appear in no runtime field — used to track state (builder phases, open/closed file) at compile time with zero runtime cost.</li>
+    <li>The <strong>compiler API + custom transformers</strong> power lints, codemods, and type-aware refactors; note the Go-native TS 7 compiler doesn't yet expose the full JS compiler API, so transformer tooling targets TS 6.x.</li>
+    <li><strong>Decorators:</strong> the TS 5.0 stage-3 form aligns with the TC39 spec (class metadata, validation, DI); legacy <code>experimentalDecorators</code> is still required for Angular/Nest/TypeORM — pick one per project.</li>
+    <li><strong>Performance is a real budget:</strong> huge cartesian template-literal unions, deep non-tail recursion, and wide mapped types tank tsserver — diagnose with <code>--extendedDiagnostics</code>, <code>--generateTrace</code>, and analyze-trace.</li>
+    <li><strong>Five intentional unsoundness holes:</strong> method-parameter bivariance, <code>any</code> assignability, <code>as</code> assertions, fresh-only excess-property checks, and mutable-array covariance — know them, never rely on them in load-bearing code.</li>
+    <li><code>infer N extends number</code> (4.8) coerces an inferred substring to a numeric literal type when valid.</li>
+    <li><strong>Versions:</strong> variance 4.7, <code>infer extends</code> 4.8, stage-3 decorators 5.0 still hold on <strong>TS 6.0</strong> (current stable, March 2026); the Go-native <strong>TS 7.0</strong> ("tsgo") is at RC with ~10× faster checking.</li>
+    <li><strong>Pragmatism is the meta-skill:</strong> if three engineers can solve it with a discriminated union, that is the answer.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Reaching for advanced types by reflex, and writing recursion that isn't tail-recursive.</strong> A route/parser type compiles fine on a small example but blows the ~50 depth cap on production data, and deep types tank IDE perf while emitting tooltips nobody can read. Fix by restructuring to tail position with an accumulator parameter, wrapping public results in a named alias, and only paying the cost when the API surface truly justifies it.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"TypeScript's type system is a Turing-complete functional language — conditional types are if/else, mapped types are map, infer is destructuring, and recursion replaces loops."</div>
+  <div class="revision-say">"Variance annotations let me assert co- or contravariance with in/out, but TS still checks the body exhibits it; and recursive types need tail position or they hit the ~50 depth cap."</div>
+  <div class="revision-say">"The real skill is pragmatism — I only reach for advanced types when the API surface justifies the IDE-perf and readability cost; otherwise a discriminated union wins."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What "advanced" means in TypeScript</h3>
 <p>Advanced TS is type-level <em>computation</em>. Mapped, conditional, template literal, and recursive types form a Turing-complete sublanguage. You can implement a JSON parser, route extractor, SQL builder, or state machine that lives entirely in the type system. The output: better autocompletion, fewer runtime checks, and stronger contracts at module boundaries.</p>
 
@@ -69,12 +78,10 @@ window.PREP_SITE.registerTopic({
     <tr><td>Mutable arrays as covariant</td><td>Type-theoretically unsound but ergonomic; rarely bites in practice.</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>"Types as a small functional language"</h3>
 <p>Think of TS's type system as a pure, lazy functional language whose values are types. Conditional types are <code>if/else</code>. Mapped types are <code>map</code>. Template literal types are <code>concat</code>. <code>infer</code> is destructuring. Recursion replaces loops. Once you internalize this, every advanced trick maps to a familiar functional idiom.</p>
 
@@ -134,12 +141,10 @@ class Q&lt;P extends "init" | "ready" = "init"&gt; {
 new Q().ready().fire();   // ✅
 new Q().fire();            // ❌
 </code></pre>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Variance annotations (TS 4.7+)</h3>
 <pre><code class="language-ts">interface Producer&lt;out T&gt; { make(): T; }
 interface Consumer&lt;in T&gt; { take(x: T): void; }
@@ -306,12 +311,10 @@ tsc --generateTrace ./trace                      # per-symbol traces
 npx @typescript/analyze-trace ./trace            # inspect &amp; rank slow types
 </code></pre>
 <p>Common offenders: huge string-literal cartesian products, recursive types without tail calls, deeply-nested mapped types over wide unions.</p>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Type-safe SQL-like builder (compile-time joins)</h3>
 <pre><code class="language-ts">type Schema = {
   users: { id: string; name: string };
@@ -483,12 +486,11 @@ const fileCount = program.getSourceFiles().filter(sf =&gt; !sf.isDeclarationFile
 
 ts.sys.writeFile("metrics.json", JSON.stringify({ errorCount, fileCount }, null, 2));
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Recursion depth limit</h3>
 <p>TS hard-caps non-tail-recursive instantiation at depth ~50. Symptom: <code>Type instantiation is excessively deep and possibly infinite.</code> Fix:</p>
 <ul>
@@ -553,12 +555,9 @@ interface Comp&lt;T extends Comp&lt;T&gt;&gt; {
 class N implements Comp&lt;N&gt; { cmp(o: N) { return 0; } }
 // Works, but more complex variants cause "Type 'X' is not assignable to type 'Comp&lt;X&gt;'."
 </code></pre>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: variance annotation contradicts the type body</h3>
 <pre><code class="language-ts">interface X&lt;in T&gt; { make(): T; }   // ❌ — make returns T, that's covariant, not contravariant
 </code></pre>
@@ -643,12 +642,10 @@ export function api(): _InternalShape { /*...*/ }
 
 <h3>Anti-pattern 7: relying on intentional unsoundness</h3>
 <p>"It works because of array covariance" — for now. TS may tighten the rules; your code rests on a known hole.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 advanced questions worth being ready for</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -726,56 +723,20 @@ export function api(): _InternalShape { /*...*/ }
   <li><em>"Why is your variance annotation rejected?"</em> — TS verifies that the body actually exhibits that variance; a contradicting position causes the error.</li>
   <li><em>"Why is the IDE slow in this file?"</em> — Likely a huge cartesian template literal type or an unbounded recursive type; trace and decompose.</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Advanced TypeScript is <strong>type-level computation with a real CPU cost</strong> — reach for it only when the API surface justifies it, and learn to <em>read</em> it fluently even when you never write it.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>The type system is a pure, lazy functional language:</strong> conditional types are <code>if/else</code>, mapped types are <code>map</code>, template literals are <code>concat</code>, <code>infer</code> is destructuring, and recursion replaces loops.</li>
-    <li><strong>Variance annotations (4.7):</strong> <code>out</code> = covariant (read/return positions), <code>in</code> = contravariant (write/argument positions), <code>in out</code> = invariant. TS verifies the body actually exhibits that variance and errors if it contradicts the annotation.</li>
-    <li><strong>Recursive conditional types need tail position.</strong> TS unrolls tail-recursive form (accumulator parameter) efficiently; non-tail recursion hits a hard depth cap (~50) → <code>Type instantiation is excessively deep and possibly infinite</code>.</li>
-    <li>TS has no native higher-kinded types — encode them with a keyed interface registry (<code>URI2HKT</code>) lookup. Almost never needed in product code; libraries like <code>fp-ts</code> use it.</li>
-    <li><strong>Phantom types</strong> are type parameters that appear in no runtime field — used to track state (builder phases, open/closed file) at compile time with zero runtime cost.</li>
-    <li>The <strong>compiler API + custom transformers</strong> power lints, codemods, and type-aware refactors; note the Go-native TS 7 compiler doesn't yet expose the full JS compiler API, so transformer tooling targets TS 6.x.</li>
-    <li><strong>Decorators:</strong> the TS 5 stage-3 form aligns with the TC39 spec; legacy <code>experimentalDecorators</code> is still required for Angular/Nest/TypeORM — pick one per project.</li>
-    <li><strong>Performance is a real budget:</strong> huge cartesian template-literal unions, deep non-tail recursion, and wide mapped types tank tsserver — diagnose with <code>--extendedDiagnostics</code>, <code>--generateTrace</code>, and analyze-trace.</li>
-    <li><strong>Five intentional unsoundness holes:</strong> method-parameter bivariance, <code>any</code> assignability, <code>as</code> assertions, fresh-only excess-property checks, and mutable-array covariance — know them, never rely on them in load-bearing code.</li>
-    <li><code>infer N extends number</code> (4.8) coerces an inferred substring to a numeric literal type when valid.</li>
-    <li><strong>Pragmatism is the meta-skill:</strong> if three engineers can solve it with a discriminated union, that is the answer.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Reaching for advanced types by reflex, and writing recursion that isn't tail-recursive.</strong> A route/parser type compiles fine on a small example but blows the ~50 depth cap on production data, and deep types tank IDE perf while emitting tooltips nobody can read. Fix by restructuring to tail position with an accumulator parameter, wrapping public results in a named alias, and only paying the cost when the API surface truly justifies it.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"TypeScript's type system is a Turing-complete functional language — conditional types are if/else, mapped types are map, infer is destructuring, and recursion replaces loops."</div>
-  <div class="revision-say">"Variance annotations let me assert co- or contravariance with in/out, but TS still checks the body exhibits it; and recursive types need tail position or they hit the ~50 depth cap."</div>
-  <div class="revision-say">"The real skill is pragmatism — I only reach for advanced types when the API surface justifies the IDE-perf and readability cost; otherwise a discriminated union wins."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. How does TypeScript's type system map onto a functional programming language?</div>
+  <div class="qa-answer">
+    <p>Treat it as a pure, lazy functional language whose values are types. Conditional types (<code>T extends U ? A : B</code>) are <code>if/else</code>, mapped types are <code>map</code> over keys, template literal types are string <code>concat</code>, <code>infer</code> is destructuring a matched sub-type, and since there are no loops, recursion replaces them (ideally tail-recursive with an accumulator). Once you see it that way, every advanced trick maps to a familiar functional idiom. The catch is that every one of these operations costs CPU in tsc and tsserver, so there is a real type budget.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain how the type system maps to a functional language — conditional as if/else, mapped as map, <code>infer</code> as destructuring, recursion as loops?</li>
-    <li>Can you explain what the variance annotations <code>in</code>/<code>out</code>/<code>in out</code> mean and which positions each describes?</li>
-    <li>Can you explain why recursive conditional types need tail position, and what the "excessively deep" error means?</li>
-    <li>Can you explain what phantom types are and give a zero-runtime-cost use for them?</li>
-    <li>Can you name the tools you'd use to diagnose slow type-checking (<code>--extendedDiagnostics</code>, <code>--generateTrace</code>)?</li>
-    <li>Can you name a couple of TypeScript's intentional unsoundness holes and why you'd never rely on them?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. What do the variance annotations in, out and in out mean, and which positions does each describe?</div>
+  <div class="qa-answer">
+    <p>Given <code>Cat</code> is a subtype of <code>Animal</code>: <code>out T</code> declares covariance, so <code>F&lt;Cat&gt;</code> is assignable to <code>F&lt;Animal&gt;</code>; it fits read/return positions like <code>read(): T</code>. <code>in T</code> declares contravariance (<code>F&lt;Animal&gt;</code> assignable to <code>F&lt;Cat&gt;</code>), which fits write/argument positions like <code>write(x: T): void</code>. <code>in out T</code> is invariant, for types that both read and write T, like a mutable array or a channel with <code>send</code> and <code>recv</code>. The annotations (TS 4.7) are checked: <code>interface X&lt;in T&gt; { make(): T }</code> errors because T is used covariantly.</p>
+  </div>
 </div>
-`
-    }
+` },
+
   ]
 });

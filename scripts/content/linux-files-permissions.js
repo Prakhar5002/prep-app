@@ -1,25 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'linux-files-permissions',
-  module: 'linux',
-  title: 'Files, Permissions & Users',
-  estimatedReadTime: '26 min',
-  tags: ['linux', 'permissions', 'chmod', 'users', 'security', 'find'],
+  id: "linux-files-permissions",
+  module: "linux",
+  title: "Files, Permissions & Users",
+  estimatedReadTime: "26 min",
+  tags: ["linux","permissions","chmod","users","security","find"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Every file and directory on Linux has an <strong>owner</strong> (a user), a <strong>group</strong>, and three sets of <strong>read/write/execute</strong> permissions — one set each for the owner, the group, and everyone else. That's the entire permission model: three "who"s times three "what"s, nine bits total, and almost every access-control question on a Linux box comes down to reading or changing those bits.</p>
-<ul>
-  <li><strong>Everything is owned by someone.</strong> Every file has exactly one owning user and one owning group. <code>chown</code> changes the owner, <code>chgrp</code> changes the group, and <code>chmod</code> changes what each of the three "who" categories (owner/group/other) is allowed to do.</li>
-  <li><strong>Permissions are just 9 bits (plus a few special ones).</strong> <code>rwx</code> for the owner, <code>rwx</code> for the group, <code>rwx</code> for everyone else — read as three numbers (0–7) in <code>chmod 755</code>, or as three letter-triplets in <code>ls -l</code>'s <code>-rwxr-xr-x</code>.</li>
-  <li><strong>Root is the one account permissions don't apply to.</strong> The <code>root</code> user (UID 0) bypasses permission checks almost entirely. <code>sudo</code> is how ordinary users borrow root's power for a single command, safely and with an audit trail — which is why modern systems discourage logging in as root directly.</li>
-  <li><strong>This is topic 2 of the Linux module.</strong> It builds directly on Topic 1 (navigation) and covers: reading and setting permissions, ownership, users/groups, <code>sudo</code>/<code>su</code>, symbolic vs. hard links (a deeper look than Topic 1's intro), and finding files with <code>find</code> and shell globs. Later topics build on this: text processing & pipelines, processes & services, shell scripting, and networking/sysadmin.</li>
-</ul>
-<p><strong>Mantra:</strong> "Owner, group, other — read, write, execute. Nine bits decide almost everything; root (and <code>sudo</code>) is the escape hatch."</p>
-`},
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Every file has an <strong>owner</strong>, a <strong>group</strong>, and three <strong>read/write/execute</strong> sets (owner / group / other) — nine bits that decide almost all access, with <strong>root</strong> (and <code>sudo</code>) as the escape hatch.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>Three "who"s (owner, group, other) times three "what"s (read, write, execute) = <strong>nine permission bits</strong>.</li>
+    <li>Read them as three octal digits (<code>chmod 755</code>) or three letter-triplets in <code>ls -l</code> (<code>-rwxr-xr-x</code>).</li>
+    <li><code>chown</code> changes the owner, <code>chgrp</code> changes the group, <code>chmod</code> changes what each who-category is allowed to do.</li>
+    <li><strong>root (UID 0) bypasses permission checks;</strong> <code>sudo &lt;command&gt;</code> borrows root's power for one command with an audit trail — safer than a standing root shell.</li>
+    <li><code>sudo &lt;command&gt;</code> elevates and logs one command; <code>su</code> / <code>sudo -i</code> opens a standing root shell with no per-command audit — prefer <code>sudo</code> per action.</li>
+    <li>A <strong>symlink</strong> stores only a path, so moving or deleting its target leaves a "dangling" link; a <strong>hard link</strong> points at the inode and survives renames.</li>
+    <li>Each octal digit sums <strong>read 4 + write 2 + execute 1</strong>: <code>755</code> = <code>rwxr-xr-x</code> (scripts, shared dirs), <code>644</code> = <code>rw-r--r--</code> (documents), <code>600</code> = owner-only (required for private SSH keys).</li>
+    <li><strong>Numeric mode</strong> restates all nine bits; <strong>symbolic mode</strong> (<code>u+x</code>, <code>go-w</code>) changes only the named bits — safer for one targeted change like <code>chmod +x script.sh</code>.</li>
+    <li><code>chown alice:staff &lt;file&gt;</code> sets owner and group at once, <code>chown -R</code> recurses; both <code>chown</code> and <code>chgrp</code> almost always need <code>sudo</code>.</li>
+    <li>A hard link shares the inode (data lives until the last name is removed), works only within one filesystem and can't target a directory; a symlink can cross filesystems and point at directories.</li>
+    <li><code>usermod -aG &lt;group&gt; &lt;user&gt;</code> — without <code>-a</code>, <code>-G</code> <em>replaces</em> the user's whole supplementary group list and silently revokes their other access.</li>
+    <li>Look before you act with <code>find</code>: <code>find &lt;path&gt; -type f -size +100M -mtime -7</code> first, add <code>-exec rm {} +</code> only once the list looks right.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong><code>chmod 777</code> is almost never the right fix.</strong> It makes a file readable, writable, and executable by anyone on the machine — removing all access control, a real security hole on a shared or internet-facing box. Grant only the specific bucket that needs access instead (e.g. <code>chmod 770</code> for a team).</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Permissions are nine bits — read/write/execute for owner, group, and other — chmod sets them and chown/chgrp set who owns them."</div>
+  <div class="revision-say">"Root bypasses the checks; sudo lets a normal user borrow that power for one command with an audit trail."</div>
+  <div class="revision-say">"chmod 777 isn't a fix, it's removing the lock — I grant only the bucket that actually needs access."</div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why does Linux bother with permissions at all?</h3>
 <p>Linux was designed from day one as a <strong>multi-user</strong> system — many people (or many services) sharing one machine, at the same time, without being able to read each other's private files or accidentally (or maliciously) break each other's stuff. Permissions are the mechanism that makes that possible:</p>
 <ul>
@@ -40,10 +57,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>root: the account permissions don't apply to</h3>
 <p>The <strong>root</strong> user (always user ID, or UID, <code>0</code>) is the traditional Linux superuser. Permission checks are, for almost all purposes, simply skipped for root — it can read, write, or execute any file, kill any process, and reconfigure anything on the system. This is powerful and dangerous in equal measure: there's no permission system left to save you from your own mistakes while acting as root, which is exactly why modern practice avoids logging in <em>as</em> root directly and instead uses <code>sudo</code> to grant root's power one command at a time (covered in Mechanics).</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>rwx × three — the whole permission model in one picture</h3>
 <p>Every file and directory carries exactly nine permission bits, grouped into three triplets — one triplet per "who" bucket from What &amp; Why, each triplet made of the same three letters:</p>
 <pre><code class="language-text">      owner     group     other
@@ -75,10 +92,10 @@ type owner group other
 
 <h3>umask: the "default permission subtractor"</h3>
 <p>Newly created files and directories don't start from nothing — they start from a base (666 for files, 777 for directories) and the shell's <strong>umask</strong> subtracts bits from that base to decide the actual starting permissions. Think of umask as a mask of bits to <em>turn off</em>, not turn on — a umask of <code>022</code> (the common default) removes write permission for group and other, so a new file lands at <code>644</code> and a new directory at <code>755</code>. This is why every new file you create doesn't come out world-writable by accident.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Changing permissions: <code>chmod</code></h3>
 <pre><code class="language-bash"># Numeric (absolute) mode — set the exact permission bits directly:
 chmod &lt;mode&gt; &lt;file&gt;
@@ -262,10 +279,10 @@ ls file[0-9].txt   # any single digit
 cp file.{txt,bak}   # expands to: cp file.txt file.bak
 mkdir -p project/{src,tests,docs}</code></pre>
 <p>These patterns are expanded by the <strong>shell itself</strong>, before the command ever runs — <code>ls *.txt</code> never actually gives <code>ls</code> the literal string <code>*.txt</code>; the shell first replaces it with the real list of matching filenames, and <code>ls</code> only ever sees plain filenames as arguments. <code>*</code> and <code>?</code> and <code>[...]</code> are true globs, matched only against filenames that actually exist (a glob with no matches is typically left as the literal pattern text, or errors, depending on shell options); <code>{...}</code> brace expansion is different — it's pure text substitution that happens regardless of whether anything matching exists on disk, which is exactly why it's useful for generating multiple directories or filenames from a template in one shot, as in the <code>mkdir -p project/{src,tests,docs}</code> example above.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Lock down a private SSH key correctly</h3>
 <pre><code class="language-bash">ls -l ~/.ssh/id_rsa
 # -rw-r--r-- 1 alice staff 2610 Jul  4 10:02 id_rsa
@@ -320,10 +337,11 @@ find /tmp -type f -name "*.cache" -mtime +14 -exec rm {} \\;
 find /tmp -type f -name "*.cache" -mtime +14
 # (no output — nothing left matching)</code></pre>
 <p>The pattern here — run the <code>find</code> with no <code>-exec</code> first to see exactly what would be affected, narrow the tests until the result looks right, and only <em>then</em> add <code>-exec</code> — is the standard safe way to use <code>find</code> for any destructive cleanup, for the same reason covered for <code>rm -rf</code> in Topic 1: there's no undo.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <div class="callout danger">
   <div class="callout-title">⚠️ <code>chmod 777</code> is (almost) never the right fix</div>
   <p><code>chmod 777</code> — rwx for owner, group, <em>and</em> other — makes a file or directory fully readable, writable, and executable by literally anyone with any access to the machine at all. It's a common "quick fix" beginners reach for when they hit a permission error, because it always makes the error go away — but it does so by removing all access control, which on a shared system or an internet-facing server is a serious security hole (anyone who can reach the file can modify or replace it). The right fix is almost always narrower: figure out which specific bucket (owner/group/other) actually needs the access, and grant only that — e.g. the earlier <code>chmod 770</code> example gave a whole team full access without opening it to the rest of the world. Treat any <code>777</code> you encounter in the wild as worth a second look.</p>
@@ -355,10 +373,10 @@ find . -name "*.log" -exec gzip {} +
 # Piping into xargs — a separate tool, similar batching behavior to "+":
 find . -name "*.log" | xargs gzip</code></pre>
 <p><code>find ... -exec &lt;cmd&gt; {} \\;</code> is the simplest form but the slowest at scale: it starts a brand-new process for every single match, which is wasteful when there are thousands of matches. <code>-exec &lt;cmd&gt; {} +</code> (ending in <code>+</code> instead of <code>\\;</code>) fixes that by passing as many matched paths as will fit onto one command line, launching far fewer processes — functionally close to piping into <code>xargs</code>, which does the same batching but as a separate, more configurable tool (its own flags for parallelism, batch size, and handling filenames with spaces — covered properly in the Text Processing &amp; Pipelines topic). One correctness gotcha with piping to <code>xargs</code> in its plain form: filenames containing spaces or newlines can be split incorrectly, since <code>xargs</code> by default treats whitespace as a separator between arguments — <code>find ... -exec ... +</code> doesn't have this problem, since it never re-tokenizes filenames as text.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'cheat-sheet', title: '📋 Cheat Sheet', html: `
+{ id: "cheat-sheet", title: "📋 Cheat Sheet", collapsible: true, html: `
 <table>
   <thead><tr><th>Command</th><th>Purpose</th><th>Key flags</th></tr></thead>
   <tbody>
@@ -382,10 +400,10 @@ find . -name "*.log" | xargs gzip</code></pre>
     <tr><td>Globs</td><td>Shell-expanded filename patterns</td><td><code>*</code> any chars · <code>?</code> one char · <code>[abc]</code>/<code>[0-9]</code> one of a set · <code>{a,b}</code> brace expansion (literal, not disk-matched)</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">What does <code>chmod 755</code> actually mean? Walk through the numbers.</div>
 <div class="qa-a">
@@ -434,41 +452,14 @@ find . -name "*.log" | xargs gzip</code></pre>
 <p><code>777</code> grants read, write, and execute to owner, group, <em>and</em> other — every single account on the machine (or, on a misconfigured internet-facing service, potentially every remote request that reaches the file) gets full read/write/execute access. It reliably "fixes" permission-denied errors because it removes all access control, not because it identifies the actual cause — the real fix is almost always to grant access to just the specific bucket (owner, or a specific group) that genuinely needs it, which is why <code>777</code> in a codebase or server configuration is a near-universal red flag during a security review.</p>
 </div>
 </div>
-`},
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Every file has an <strong>owner</strong>, a <strong>group</strong>, and three <strong>read/write/execute</strong> sets (owner / group / other) — nine bits that decide almost all access, with <strong>root</strong> (and <code>sudo</code>) as the escape hatch.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Three "who"s (owner, group, other) times three "what"s (read, write, execute) = <strong>nine permission bits</strong>.</li>
-    <li>Read them as three octal digits (<code>chmod 755</code>) or three letter-triplets in <code>ls -l</code> (<code>-rwxr-xr-x</code>).</li>
-    <li><code>chown</code> changes the owner, <code>chgrp</code> changes the group, <code>chmod</code> changes what each who-category is allowed to do.</li>
-    <li><strong>root (UID 0) bypasses permission checks;</strong> <code>sudo &lt;command&gt;</code> borrows root's power for one command with an audit trail — safer than a standing root shell.</li>
-    <li><code>sudo &lt;command&gt;</code> elevates and logs one command; <code>su</code> / <code>sudo -i</code> opens a standing root shell with no per-command audit — prefer <code>sudo</code> per action.</li>
-    <li>A <strong>symlink</strong> stores only a path, so moving or deleting its target leaves a "dangling" link; a <strong>hard link</strong> points at the inode and survives renames.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong><code>chmod 777</code> is almost never the right fix.</strong> It makes a file readable, writable, and executable by anyone on the machine — removing all access control, a real security hole on a shared or internet-facing box. Grant only the specific bucket that needs access instead (e.g. <code>chmod 770</code> for a team).</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Permissions are nine bits — read/write/execute for owner, group, and other — chmod sets them and chown/chgrp set who owns them."</div>
-  <div class="revision-say">"Root bypasses the checks; sudo lets a normal user borrow that power for one command with an audit trail."</div>
-  <div class="revision-say">"chmod 777 isn't a fix, it's removing the lock — I grant only the bucket that actually needs access."</div>
+<div class="qa-block">
+  <div class="qa-question">Q8. What do chmod, chown, and chgrp each change?</div>
+  <div class="qa-answer">
+    <p><code>chmod</code> changes the permission bits, meaning what the owner, group, and others may read, write, or execute. <code>chown</code> changes which user owns the file, and its <code>user:group</code> form changes the group too, as in <code>chown alice:staff notes.txt</code>. Add <code>-R</code> to apply it recursively to a directory. <code>chgrp</code> does the narrower job of changing only the group, as in <code>chgrp staff notes.txt</code>. Both <code>chown</code> and <code>chgrp</code> almost always need <code>sudo</code>.</p>
+  </div>
 </div>
-`},
+` },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you read <code>-rwxr-xr-x</code> and give its octal equivalent?</li>
-    <li>Can you name what <code>chmod</code>, <code>chown</code>, and <code>chgrp</code> each change?</li>
-    <li>Can you explain why <code>sudo &lt;command&gt;</code> is preferred over a standing root shell?</li>
-    <li>Can you explain why <code>chmod 777</code> is a red flag and what to do instead?</li>
-    <li>Can you explain the difference between a symlink and a hard link when the target is moved?</li>
-  </ul>
-</div>
-`}
-
-]});
+  ]
+});

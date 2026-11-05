@@ -1,33 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'ts-generics',
-  module: 'typescript',
-  title: 'Generics',
-  estimatedReadTime: '40 min',
-  tags: ['typescript', 'generics', 'type-parameters', 'inference', 'constraints', 'variance', 'higher-kinded'],
+  id: "ts-generics",
+  module: "typescript",
+  title: "Generics",
+  estimatedReadTime: "40 min",
+  tags: ["typescript","generics","type-parameters","inference","constraints","variance","higher-kinded"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Generics</strong> are functions for the type system. They take types as inputs and produce types as outputs, letting one piece of code work safely with many shapes without losing precision.</p>
-<ul>
-  <li><strong>Why:</strong> a function that takes any value and returns it should not erase the value's type. <code>identity&lt;T&gt;(x: T): T</code> preserves it.</li>
-  <li><strong>Constraints (<code>extends</code>):</strong> "T must be at least this shape." Lets you call <code>.length</code>, <code>.id</code>, etc. on the parameter while staying generic.</li>
-  <li><strong>Defaults:</strong> <code>&lt;T = string&gt;</code> for ergonomic call-sites that don't specify.</li>
-  <li><strong>Inference</strong> picks T from the call site. You should rarely write the type argument explicitly.</li>
-  <li><strong>Generic constraints with <code>keyof</code></strong> are the bread and butter of type-safe property access.</li>
-  <li><strong>Variance:</strong> generic positions can be covariant (read), contravariant (write), or invariant (both). TS 4.7+ supports explicit <code>in</code>/<code>out</code> annotations.</li>
-  <li><strong>Don't reach for generics by reflex.</strong> If T appears once, it's not generic — it's <code>any</code> in disguise.</li>
-</ul>
-<p><strong>Mantra:</strong> "Type parameters preserve information across boundaries. Constrain them, infer them, never widen them by hand."</p>
-<p><strong>Version note:</strong> the per-feature versions below (variance annotations 4.7, <code>NoInfer</code> 5.4) are accurate. Current stable is <strong>TypeScript 6.0</strong> (GA March 2026); the Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026, ~10× faster type-checking).</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Generics are <strong>functions for the type system</strong> — they take types in and produce types out, preserving type information across a boundary that <code>any</code> would erase.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>A generic preserves the caller's type; <code>any</code> discards it.</strong> <code>head&lt;T&gt;(xs: T[]): T | undefined</code> keeps <code>number | undefined</code>; the <code>any</code> version is a bug nursery — the difference shows the moment you compose the result.</li>
+    <li><strong>The rule of two:</strong> a type parameter earns its cost only if it appears in at least two positions to <em>relate</em> them. If <code>T</code> appears once, it's "secretly <code>any</code>" — use <code>unknown</code>.</li>
+    <li><strong>Constraints (<code>T extends X</code>)</strong> narrow what <code>T</code> can be so the body can use <code>X</code>'s members (<code>{ length: number }</code>, <code>keyof T</code>).</li>
+    <li>The <strong><code>keyof T</code> + <code>T[K]</code> pattern</strong> is the bread-and-butter of type-safe property access: <code>get&lt;T, K extends keyof T&gt;(o, k): T[K]</code>.</li>
+    <li><strong>Inference picks the most general type</strong> satisfying all positions; <code>pair(1, "x")</code> widens <code>T</code> to <code>string | number</code>. <code>NoInfer</code> (5.4) fixes <code>T</code> from only chosen positions.</li>
+    <li><strong>Defaults</strong> (<code>&lt;T = unknown&gt;</code>) are for ergonomic call sites — prefer <code>unknown</code> over <code>any</code> as the default.</li>
+    <li><strong>Constrain to the minimum the body needs</strong> — too loose and the body can't operate, too tight and you exclude valid callers. Return <code>T</code> (not the constraint) so subclass info survives.</li>
+    <li><strong>Method-level generics</strong> (<code>map&lt;U&gt;</code>) are independent of the class-level <code>T</code>; static members can't see the class's <code>T</code>.</li>
+    <li><strong>Variance annotations (4.7):</strong> <code>out</code> = covariant (read positions), <code>in</code> = contravariant (write positions), <code>in out</code> = invariant.</li>
+    <li>In <code>.tsx</code>, a <code>&lt;T&gt;</code> arrow clashes with JSX — use <code>&lt;T,&gt;</code> or a function declaration.</li>
+    <li>Naked type parameters <strong>distribute</strong> over unions in conditional types — the frequent "why is my type a union of 12 things?" surprise.</li>
+    <li><strong>Version note:</strong> current stable is <strong>TypeScript 6.0</strong> (GA March 2026); the Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026, ~10× faster type-checking).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>A type parameter that appears only once.</strong> <code>logIt&lt;T&gt;(x: T): void</code> looks generic but behaves exactly like <code>any</code> and gives a false sense of safety, because <code>T</code> relates nothing. Fix: if <code>T</code> doesn't connect two positions, use <code>unknown</code>; and constrain <code>T</code> to exactly what the body needs, returning <code>T</code> so subtype precision is preserved.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A generic preserves type information across a boundary; any throws it away — and the difference shows the moment you compose the result."</div>
+  <div class="revision-say">"My rule of two: a type parameter is only justified if it appears in at least two places to relate them, otherwise it's secretly any."</div>
+  <div class="revision-say">"I let inference pick T, constrain to the minimum the body needs, and return T rather than the constraint so subclass information survives."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is a generic?</h3>
 <p>A generic is a parameterized type. Just like a regular function takes runtime values as parameters and returns a value, a generic takes <em>types</em> as parameters and returns a <em>type</em> (or a function whose signature uses those type parameters).</p>
 <pre><code class="language-ts">// Runtime function
@@ -77,12 +86,10 @@ function head2&lt;T&gt;(xs: T[]): T | undefined { return xs[0]; }
 const a = head1([1, 2, 3]);     // any — bug nursery
 const b = head2([1, 2, 3]);     // number | undefined — useful
 </code></pre>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>"Generics are functions in the type universe"</h3>
 <p>Read <code>type Box&lt;T&gt; = { value: T }</code> as: "I'm defining a function called Box that takes one type T and returns the type <code>{ value: T }</code>." When you write <code>Box&lt;string&gt;</code>, you're calling that function. This single mental shift makes everything downstream click.</p>
 
@@ -144,12 +151,10 @@ const r2: ApiResponse&lt;User&gt; = { ok: true, data: { id: "1", name: "x" } };
 interface Consumer&lt;in T&gt; { take(x: T): void; }
 interface Channel&lt;in out T&gt; { send(x: T): void; recv(): T; }
 </code></pre>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Generic functions</h3>
 <pre><code class="language-ts">// Single param
 function identity&lt;T&gt;(x: T): T { return x; }
@@ -308,12 +313,10 @@ const dogConsumer: Consumer&lt;Dog&gt; = { take: (d) =&gt; {} };
 const animalConsumer: Consumer&lt;Animal&gt; = dogConsumer;  // ❌
 const dogConsumer2: Consumer&lt;Dog&gt; = { take: (a: Animal) =&gt; {} } as Consumer&lt;Animal&gt;; // ✅ Animal-consumer is also a Dog-consumer
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Type-safe Object.entries / fromEntries</h3>
 <pre><code class="language-ts">// Object.entries returns [string, T][] which loses keyof info
 type Entries&lt;T&gt; = { [K in keyof T]: [K, T[K]] }[keyof T][];
@@ -476,12 +479,11 @@ function useAsync&lt;T&gt;(fn: () =&gt; Promise&lt;T&gt;): AsyncState&lt;T&gt; {
 const r = useAsync(() =&gt; fetch("/u").then(r =&gt; r.json() as Promise&lt;User&gt;));
 if (r.status === "success") r.data.name;   // narrowed
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Inference picks the widest common type</h3>
 <pre><code class="language-ts">function pair&lt;T&gt;(a: T, b: T): [T, T] { return [a, b]; }
 const p = pair(1, "x");   // T = number | string  — TS unifies upward
@@ -566,12 +568,9 @@ type W = Wrap&lt;string | number&gt;;   // { value: string } | { value: number }
 type W2 = Wrap&lt;[string | number]&gt;[0]; // { value: string | number }   — does not distribute (tuple)
 </code></pre>
 <p>Distribution happens when the type parameter is "naked" (not wrapped). It's powerful — and a frequent source of "why is my type a union of 12 things?" surprises.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: T appears once → it's secretly any</h3>
 <pre><code class="language-ts">// USELESS
 function logIt&lt;T&gt;(x: T): void { console.log(x); }
@@ -694,12 +693,10 @@ function List&lt;T extends { id: string }&gt;({ items, render }: { items: T[]; r
 
 <h3>Anti-pattern 7: hand-rolling utilities that already exist</h3>
 <p>Before writing <code>type MyPick&lt;T, K&gt;</code>, <code>MyOmit</code>, <code>MyPartial</code> — use the built-ins (<code>Pick</code>, <code>Omit</code>, <code>Partial</code>, <code>Required</code>, <code>Readonly</code>, <code>Record</code>, <code>NonNullable</code>, <code>ReturnType</code>, <code>Parameters</code>, <code>Awaited</code>).</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 10 questions you should rehearse out loud</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -792,56 +789,20 @@ function List&lt;T extends { id: string }&gt;({ items, render }: { items: T[]; r
   <li><em>"Why does <code>Wrap&lt;A | B&gt;</code> distribute?"</em> — Naked type parameters in the check position of a conditional type distribute across union members. Wrap in a tuple to suppress.</li>
   <li><em>"Why is my generic React component complaining about the key prop?"</em> — Because the constraint doesn't guarantee an id; either constrain to <code>{ id: string }</code> or pass a <code>getKey</code> prop.</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Generics are <strong>functions for the type system</strong> — they take types in and produce types out, preserving type information across a boundary that <code>any</code> would erase.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>A generic preserves the caller's type; <code>any</code> discards it.</strong> <code>head&lt;T&gt;(xs: T[]): T | undefined</code> keeps <code>number | undefined</code>; the <code>any</code> version is a bug nursery — the difference shows the moment you compose the result.</li>
-    <li><strong>The rule of two:</strong> a type parameter earns its cost only if it appears in at least two positions to <em>relate</em> them. If <code>T</code> appears once, it's "secretly <code>any</code>" — use <code>unknown</code>.</li>
-    <li><strong>Constraints (<code>T extends X</code>)</strong> narrow what <code>T</code> can be so the body can use <code>X</code>'s members (<code>{ length: number }</code>, <code>keyof T</code>).</li>
-    <li>The <strong><code>keyof T</code> + <code>T[K]</code> pattern</strong> is the bread-and-butter of type-safe property access: <code>get&lt;T, K extends keyof T&gt;(o, k): T[K]</code>.</li>
-    <li><strong>Inference picks the most general type</strong> satisfying all positions; <code>pair(1, "x")</code> widens <code>T</code> to <code>string | number</code>. <code>NoInfer</code> (5.4) fixes <code>T</code> from only chosen positions.</li>
-    <li><strong>Defaults</strong> (<code>&lt;T = unknown&gt;</code>) are for ergonomic call sites — prefer <code>unknown</code> over <code>any</code> as the default.</li>
-    <li><strong>Constrain to the minimum the body needs</strong> — too loose and the body can't operate, too tight and you exclude valid callers. Return <code>T</code> (not the constraint) so subclass info survives.</li>
-    <li><strong>Method-level generics</strong> (<code>map&lt;U&gt;</code>) are independent of the class-level <code>T</code>; static members can't see the class's <code>T</code>.</li>
-    <li><strong>Variance annotations (4.7):</strong> <code>out</code> = covariant (read positions), <code>in</code> = contravariant (write positions), <code>in out</code> = invariant.</li>
-    <li>In <code>.tsx</code>, a <code>&lt;T&gt;</code> arrow clashes with JSX — use <code>&lt;T,&gt;</code> or a function declaration.</li>
-    <li>Naked type parameters <strong>distribute</strong> over unions in conditional types — the frequent "why is my type a union of 12 things?" surprise.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>A type parameter that appears only once.</strong> <code>logIt&lt;T&gt;(x: T): void</code> looks generic but behaves exactly like <code>any</code> and gives a false sense of safety, because <code>T</code> relates nothing. Fix: if <code>T</code> doesn't connect two positions, use <code>unknown</code>; and constrain <code>T</code> to exactly what the body needs, returning <code>T</code> so subtype precision is preserved.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A generic preserves type information across a boundary; any throws it away — and the difference shows the moment you compose the result."</div>
-  <div class="revision-say">"My rule of two: a type parameter is only justified if it appears in at least two places to relate them, otherwise it's secretly any."</div>
-  <div class="revision-say">"I let inference pick T, constrain to the minimum the body needs, and return T rather than the constraint so subclass information survives."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. What is the "rule of two" for generics, and why is a type parameter used only once secretly <code>any</code>?</div>
+  <div class="qa-answer">
+    <p>A type parameter is justified only when it appears in at least two places — parameter and return, or two parameters — because its job is to <em>relate</em> them: whatever T is for the input, the output is the same T. If T appears once, as in <code>function logIt&lt;T&gt;(x: T): void</code>, it relates nothing, so it constrains nothing and preserves nothing; it just looks safe. Write <code>logIt(x: unknown): void</code> instead. Contrast <code>head&lt;T&gt;(xs: T[]): T | undefined</code>, where T links the array and the result, so <code>head([1, 2, 3])</code> is <code>number | undefined</code> rather than <code>any</code>.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain how a generic preserves the caller's type where <code>any</code> would erase it?</li>
-    <li>Can you state the "rule of two" and why a type parameter used once is secretly <code>any</code>?</li>
-    <li>Can you explain why you constrain <code>T</code>, and how <code>keyof T</code> + <code>T[K]</code> gives type-safe property access?</li>
-    <li>Can you explain why you return <code>T</code> rather than the constraint?</li>
-    <li>Can you explain how inference picks <code>T</code> and what <code>NoInfer</code> changes?</li>
-    <li>Can you explain the <code>&lt;T,&gt;</code> trick for a generic arrow in <code>.tsx</code>?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. How do you write a generic arrow function in a <code>.tsx</code> file?</div>
+  <div class="qa-answer">
+    <p>In <code>.tsx</code>, <code>const id = &lt;T&gt;(x: T) =&gt; x;</code> is a syntax error because <code>&lt;T&gt;</code> is parsed as a JSX tag. Add a trailing comma — <code>const id = &lt;T,&gt;(x: T) =&gt; x;</code> — so the parser sees a type-parameter list. Alternatives are annotating the variable with a generic function type (<code>const id: &lt;T&gt;(x: T) =&gt; T = (x) =&gt; x;</code>) or using a function declaration, <code>function id&lt;T&gt;(x: T): T</code>, which is always fine.</p>
+  </div>
 </div>
-`
-    }
+` },
+
   ]
 });

@@ -1,33 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'mprod-iap',
-  module: 'mobile-prod',
-  title: 'In-App Purchases',
-  estimatedReadTime: '45 min',
-  tags: ['iap', 'in-app-purchases', 'subscriptions', 'storekit', 'play-billing', 'revenuecat', 'receipt-validation', 'react-native'],
+  id: "mprod-iap",
+  module: "mobile-prod",
+  title: "In-App Purchases",
+  estimatedReadTime: "45 min",
+  tags: ["iap","in-app-purchases","subscriptions","storekit","play-billing","revenuecat","receipt-validation","react-native"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>In-App Purchases (IAP)</strong> are how mobile apps charge users — for digital goods, subscriptions, consumables, and access to features. Apple and Google enforce that all <em>digital</em> purchases use their billing systems (StoreKit on iOS, Play Billing on Android). They take 15–30%; you live with it — except that since May 2025 the US App Store must allow external purchase links app-wide at 0% commission (post <em>Epic v. Apple</em>), and the EU allows alternative processing under the DMA. Physical goods, ads, and many services route through normal payment processors.</p>
-<ul>
-  <li><strong>Three product types.</strong> <em>Consumable</em> (coins, lives — buy again), <em>non-consumable</em> (one-time unlock, lifetime), <em>auto-renewing subscription</em> (most revenue for most apps).</li>
-  <li><strong>Always validate receipts on your server.</strong> Client-side validation is trivially bypassable; treat every device receipt as untrusted input.</li>
-  <li><strong>Restore is mandatory.</strong> Apple rejects apps without a "Restore Purchases" affordance. Subscriptions must work after reinstall, fresh login, new device.</li>
-  <li><strong>Default tools:</strong> <strong>RevenueCat</strong> (the de facto wrapper — handles receipts, server-to-server, entitlements, analytics; free up to $2,500 monthly tracked revenue (MTR), then 1% of MTR), <strong>Apphud</strong>, <strong>Adapty</strong>, or roll-your-own with Apple/Google's SDKs and webhooks.</li>
-  <li><strong>Subscription state is async.</strong> Renewals, cancellations, refunds happen on the server (S2S notifications). Don't trust the client view of "is this user active."</li>
-  <li><strong>Pricing tiers.</strong> Apple/Google use price tier matrices; you don't pick arbitrary numbers. Localized pricing is automatic per country tier.</li>
-  <li><strong>Family Sharing</strong> (iOS) and <strong>Family Library</strong> (Google) — non-consumable purchases share across the family by default unless disabled.</li>
-  <li><strong>Tax + foreign-exchange handled by the platform.</strong> Net payout is in your developer account currency, after taxes withheld.</li>
-</ul>
-<p><strong>Mantra:</strong> "Server is truth. Client is hint. Validate every receipt. Subscribe to webhooks. Always offer Restore."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Server is truth, client is a hint</strong> — validate every receipt on your backend, drive entitlements from server-to-server webhooks, and always offer Restore Purchases.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Digital goods must use IAP</strong> (StoreKit on iOS, Play Billing on Android); Apple/Google take 15–30%. US App Store allows external purchase links app-wide at 0% since May 2025 (post <em>Epic v. Apple</em>); EU allows alternative processing under the DMA.</li>
+    <li><strong>Three product types:</strong> consumable (coins, buy again), non-consumable (one-time lifetime unlock), and auto-renewing subscription (most revenue).</li>
+    <li><strong>Always validate receipts server-side.</strong> Client receipts can be forged, patched, or replayed on a jailbroken OS — Apple/Google are the only authority. Client is a hint; server is the source of truth.</li>
+    <li><strong>Subscription state is async</strong> — renewals, cancellations, refunds arrive via S2S webhooks (Apple App Store Server Notifications V2, Google Real-Time Developer Notifications). Subscribe and process them; don't trust the client's "is active" view.</li>
+    <li><strong>Restore Purchases is mandatory</strong> — Apple rejects paywalls without it; subscriptions must work after reinstall, fresh login, or new device.</li>
+    <li><strong>Entitlement vs product:</strong> the product is the SKU (<code>premium_monthly</code>), the entitlement is the unlocked feature (<code>premium</code>); multiple products can grant one entitlement.</li>
+    <li><strong>Sandbox vs production:</strong> Apple's <code>verifyReceipt</code> returns status <code>21007</code> for a sandbox receipt hit against production — try prod first, fall back to sandbox, or TestFlight purchases never validate.</li>
+    <li><strong>Respect grace periods</strong> — after a failed renewal the user keeps entitlement while the platform retries (~16 days Apple, ~30 Google). Gating strictly on "active" kicks paying users out.</li>
+    <li><strong>Finish/acknowledge only after the server persists</strong> — Google auto-refunds unacknowledged purchases after 3 days; Apple redelivers unfinished transactions. On a network blip mid-purchase, recover via <code>Transaction.unfinished</code> / <code>queryPurchases</code>.</li>
+    <li><strong>Pricing, tax and FX are the platform's job:</strong> you pick a price tier (no arbitrary numbers), the store localizes per country, withholds tax and pays out net in your account currency.</li>
+    <li><strong>Family Sharing</strong> (iOS) / Family Library (Google): non-consumables and subscriptions share across the family by default unless disabled per product.</li>
+    <li><strong>RevenueCat</strong> (free to $2,500 MTR, then 1%; alternatives Apphud, Adapty) wraps validation, webhooks, entitlements, and analytics — most teams shouldn't roll their own.</li>
+    <li>Show <strong>localized prices from the SDK</strong> (<code>product.priceString</code>), never compute them by hand; cross-platform entitlements key to <code>user_id</code> (use <code>appAccountToken</code> in StoreKit 2).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Granting entitlement from the client's local <code>customerInfo</code> instead of a server-validated receipt — a user can toggle offline, edit storage, or crash the SDK to get premium for free. The mirror trap: validating only against the production endpoint, so every sandbox/TestFlight purchase fails with status 21007. Validate server-side, and try-prod-then-sandbox.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"My rule is server is truth, client is a hint: the app sends the raw receipt to my backend, the backend validates it directly with Apple or Google, persists the entitlement, and the client reads it back — never grants access locally."</div>
+  <div class="revision-say">"Subscription state is asynchronous, so I drive entitlements from S2S webhooks — renew, cancel, refund — with idempotent handlers plus a daily reconciliation cron to catch any missed delivery."</div>
+  <div class="revision-say">"Every paywall gets a Restore Purchases button, respects the grace period so paying users aren't kicked out on a failed renewal, and I only finish or acknowledge the transaction after the server has durably persisted the entitlement."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is IAP, technically?</h3>
 <p>A managed payment flow where the user enters their Apple ID / Google account password (or biometric), the platform charges their card, and your app gets a <em>receipt</em> — an opaque, signed blob proving the purchase happened. You translate that receipt into "this user has access to feature X" and persist it to your backend.</p>
 
@@ -86,12 +96,10 @@ window.PREP_SITE.registerTopic({
   <li>Sandbox + production paths are tested before release.</li>
   <li>Refund webhook revokes entitlement immediately.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The end-to-end flow</h3>
 <pre><code class="language-text">USER TAPS BUY
    ↓
@@ -172,12 +180,10 @@ LATER:
     <tr><td>TestFlight: production-like; users get TestFlight Apple ID.</td><td>Closed/Open Testing tracks: production billing in test mode.</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>RevenueCat (the recommended path) — RN setup</h3>
 <pre><code class="language-bash">yarn add react-native-purchases
 cd ios &amp;&amp; pod install
@@ -432,12 +438,10 @@ app.post('/iap/apple/webhook', async (req, res) =&gt; {
 }
 </code></pre>
 <p>Apple <strong>requires</strong> a "Restore Purchases" button on every paywall. Without one, your app gets rejected during review.</p>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: A complete paywall</h3>
 <pre><code class="language-tsx">function PremiumPaywall({ onPurchased }: { onPurchased: () =&gt; void }) {
   const [offering, setOffering] = useState&lt;PurchasesOffering | null&gt;(null);
@@ -614,12 +618,11 @@ Decide: do you want to grant entitlement to both? (RevenueCat default: yes.)
 
 // Track conversion via the SAME 'iap_purchased' event so funnels by variant work.
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Sandbox vs production</h3>
 <p>Apple's <code>verifyReceipt</code> with a sandbox receipt against production endpoint returns status <code>21007</code>; you must fall back to sandbox endpoint. Wrap as a try-prod-then-sandbox pattern. Ignoring this means TestFlight purchases never validate.</p>
 
@@ -689,12 +692,9 @@ Decide: do you want to grant entitlement to both? (RevenueCat default: yes.)
 
 <h3>Receipt for an account on a different device</h3>
 <p>User logs into their account on a colleague's iPhone. The Apple ID on that phone is the colleague's. StoreKit returns the colleague's transactions, not your user's. You must reconcile: the receipt's <code>originalTransactionId</code> tied to <code>appAccountToken</code> is the truth — not "what's on this phone."</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Trusting client-only validation</h3>
 <pre><code class="language-tsx">// BAD — checks the receipt locally, grants entitlement
 const r = await Purchases.purchasePackage(pkg);
@@ -735,7 +735,7 @@ catch (e: any) {
 
 <h3>Bug 6: Localized price display by hand</h3>
 <pre><code class="language-tsx">// BAD — math goes wrong; missing locale-specific symbols
-&lt;Text&gt;${price.toFixed(2)} / month&lt;/Text&gt;
+&lt;Text&gt;\${price.toFixed(2)} / month&lt;/Text&gt;
 
 // GOOD
 &lt;Text&gt;{product.priceString}&lt;/Text&gt;   // platform-localized
@@ -795,12 +795,10 @@ const products = await api.fetchProductCatalog();
 
 <h3>Anti-pattern 10: Going DIY on receipt validation when you don't have to</h3>
 <p>RevenueCat's free tier (up to $2,500 MTR, then 1%) covers most small apps. You're trading a small revenue percentage at scale for entire categories of bugs you'd otherwise own. Most teams should not roll their own.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 12 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -907,56 +905,26 @@ const products = await api.fetchProductCatalog();
   <li>"I'd add region-specific pricing experiments to find local maxima."</li>
   <li>"I'd add a 'subscription management' screen that deep-links to App Store / Play subscription settings."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Server is truth, client is a hint</strong> — validate every receipt on your backend, drive entitlements from server-to-server webhooks, and always offer Restore Purchases.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Digital goods must use IAP</strong> (StoreKit on iOS, Play Billing on Android); Apple/Google take 15–30%. US App Store allows external purchase links app-wide at 0% since May 2025 (post <em>Epic v. Apple</em>); EU allows alternative processing under the DMA.</li>
-    <li><strong>Three product types:</strong> consumable (coins, buy again), non-consumable (one-time lifetime unlock), and auto-renewing subscription (most revenue).</li>
-    <li><strong>Always validate receipts server-side.</strong> Client receipts can be forged, patched, or replayed on a jailbroken OS — Apple/Google are the only authority. Client is a hint; server is the source of truth.</li>
-    <li><strong>Subscription state is async</strong> — renewals, cancellations, refunds arrive via S2S webhooks (Apple App Store Server Notifications V2, Google Real-Time Developer Notifications). Subscribe and process them; don't trust the client's "is active" view.</li>
-    <li><strong>Restore Purchases is mandatory</strong> — Apple rejects paywalls without it; subscriptions must work after reinstall, fresh login, or new device.</li>
-    <li><strong>Entitlement vs product:</strong> the product is the SKU (<code>premium_monthly</code>), the entitlement is the unlocked feature (<code>premium</code>); multiple products can grant one entitlement.</li>
-    <li><strong>Sandbox vs production:</strong> Apple's <code>verifyReceipt</code> returns status <code>21007</code> for a sandbox receipt hit against production — try prod first, fall back to sandbox, or TestFlight purchases never validate.</li>
-    <li><strong>Respect grace periods</strong> — after a failed renewal the user keeps entitlement while the platform retries (~16 days Apple, ~30 Google). Gating strictly on "active" kicks paying users out.</li>
-    <li><strong>Finish/acknowledge only after the server persists</strong> — Google auto-refunds unacknowledged purchases after 3 days; Apple redelivers unfinished transactions. On a network blip mid-purchase, recover via <code>Transaction.unfinished</code> / <code>queryPurchases</code>.</li>
-    <li><strong>RevenueCat</strong> (free to $2,500 MTR, then 1%) wraps validation, webhooks, entitlements, and analytics — most teams shouldn't roll their own.</li>
-    <li>Show <strong>localized prices from the SDK</strong> (<code>product.priceString</code>), never compute them by hand; cross-platform entitlements key to <code>user_id</code> (use <code>appAccountToken</code> in StoreKit 2).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Granting entitlement from the client's local <code>customerInfo</code> instead of a server-validated receipt — a user can toggle offline, edit storage, or crash the SDK to get premium for free. The mirror trap: validating only against the production endpoint, so every sandbox/TestFlight purchase fails with status 21007. Validate server-side, and try-prod-then-sandbox.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"My rule is server is truth, client is a hint: the app sends the raw receipt to my backend, the backend validates it directly with Apple or Google, persists the entitlement, and the client reads it back — never grants access locally."</div>
-  <div class="revision-say">"Subscription state is asynchronous, so I drive entitlements from S2S webhooks — renew, cancel, refund — with idempotent handlers plus a daily reconciliation cron to catch any missed delivery."</div>
-  <div class="revision-say">"Every paywall gets a Restore Purchases button, respects the grace period so paying users aren't kicked out on a failed renewal, and I only finish or acknowledge the transaction after the server has durably persisted the entitlement."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. What are the IAP product types, why must digital purchases go through Apple/Google billing, and what are the recent US and EU carve-outs?</div>
+  <div class="qa-answer">
+    <p>The three main types are <strong>consumable</strong> (coins, lives, buy again), <strong>non-consumable</strong> (lifetime unlock, ad removal) and <strong>auto-renewing subscription</strong> (most revenue); non-renewing subscriptions like a season pass exist but are rare. Store policy requires digital goods to use StoreKit / Play Billing (physical goods and services can use normal processors), at 30% standard, dropping to 15% in year 2 of a subscription and for the small-business tier. The carve-outs: under the EU DMA Apple allows alternative payment processing with reduced commission plus a Core Technology Fee, and since May 2025, after <em>Epic v. Apple</em>, the US App Store must allow external purchase links app-wide at 0% commission. Elsewhere, side-loading payment links can still get the app removed.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the three product types and explain why digital purchases must go through Apple/Google billing (and the recent US/EU carve-outs)?</li>
-    <li>Can you explain why receipt validation must happen server-side and walk the full validate-and-persist flow?</li>
-    <li>Do you know the key S2S notification events and why webhook handlers must be idempotent plus reconciled by a cron?</li>
-    <li>Can you handle the sandbox-vs-production fallback (status 21007) and grace-period gating correctly?</li>
-    <li>Can you design Restore Purchases and cross-platform entitlements keyed to a user_id?</li>
-    <li>Can you defend RevenueCat versus rolling your own, and describe recovery when the server is down mid-purchase?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Which server-to-server notification events matter, and why must webhook handlers be idempotent and backed by a reconciliation cron?</div>
+  <div class="qa-answer">
+    <p>The key lifecycle events are renewal (Apple <code>DID_RENEW</code> / Google <code>SUBSCRIPTION_RENEWED</code>), cancel (<code>DID_CHANGE_RENEWAL_STATUS</code> with auto-renew off / <code>SUBSCRIPTION_CANCELED</code>), refund (<code>REFUND</code> / <code>SUBSCRIPTION_REVOKED</code>), billing failure (<code>DID_FAIL_TO_RENEW</code> / <code>SUBSCRIPTION_ON_HOLD</code>), grace period and recovery (<code>DID_RECOVER</code> / <code>SUBSCRIPTION_RECOVERED</code>). Apple sends App Store Server Notifications V2 as a signed JWS you verify before processing; Google publishes Real-Time Developer Notifications to Pub/Sub. Handlers must be idempotent because the same event can arrive more than once, and a handler that returns 500 on a duplicate event id triggers retries and inconsistent state. Webhooks can also be missed, so a daily cron finds subscriptions with stale state (e.g. <code>expires_at</code> in the past with no renewal), queries Apple/Google directly and refreshes the DB.</p>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. Would you use RevenueCat or roll your own IAP backend, and how do you recover when your server is down mid-purchase?</div>
+  <div class="qa-answer">
+    <p>Most teams should use RevenueCat (or Apphud/Adapty): it's free up to &#36;2,500 monthly tracked revenue, then 1%, and in exchange you avoid owning fiddly receipt validation, the edge cases of S2S renewals, grace periods, refunds and billing retries, cross-platform entitlements, and subscription analytics like MRR, churn and LTV. Rolling your own makes sense only with the team size and operational readiness to run that reliably. If the server is down during a purchase, Apple/Google still charge and the transaction stays unfinished: don't call <code>finish()</code> / acknowledge until the server has persisted the entitlement, then on next launch query <code>Transaction.unfinished</code> / <code>queryPurchases</code> and retry validation. If it keeps failing, tell the user, queue it for retry and escalate, remembering Google auto-refunds purchases left unacknowledged for 3 days.</p>
+  </div>
+</div>
+` },
+
   ]
 });

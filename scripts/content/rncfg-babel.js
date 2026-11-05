@@ -1,29 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'rncfg-babel',
-  module: 'RN Project & Config (Deep)',
-  title: 'Babel Config',
-  estimatedReadTime: '22 min',
-  tags: ['babel', 'babel-config', 'babel.config.js', 'presets', 'plugins', 'reanimated-plugin', 'react-native-worklets', 'module-resolver', 'worklets', 'transpilation', 'jsx', 'hermes', 'metro', 'babel-preset-expo', 'metro-react-native-babel-preset', 'transform-remove-console', 'react-native-dotenv', 'babel-jest', 'decorators', 'path-aliases'],
+  id: "rncfg-babel",
+  module: "RN Project & Config (Deep)",
+  title: "Babel Config",
+  estimatedReadTime: "22 min",
+  tags: ["babel","babel-config","babel.config.js","presets","plugins","reanimated-plugin","react-native-worklets","module-resolver","worklets","transpilation","jsx","hermes","metro","babel-preset-expo","metro-react-native-babel-preset","transform-remove-console","react-native-dotenv","babel-jest","decorators","path-aliases"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Babel is the compiler that turns the modern JS/TS/JSX you write into plain JavaScript your RN engine (Hermes) can actually run. In React Native it is invoked <strong>per module by Metro's transformer</strong> — every file that gets bundled passes through Babel first.</p>
-<p>You configure it in one file at the project root: <code>babel.config.js</code>. It has two arrays that matter — <strong>presets</strong> (bundles of plugins) and <strong>plugins</strong> (individual transforms) — plus caching and per-environment overrides.</p>
-<ul>
-  <li><strong>Bare RN</strong> uses the preset <code>module:metro-react-native-babel-preset</code>. <strong>Expo</strong> uses <code>babel-preset-expo</code>. Either one gives you JSX, TypeScript, class properties, optional chaining, object spread, and Hermes-parser support out of the box.</li>
-  <li><strong>Plugin ORDER matters.</strong> The single most famous rule in the whole RN ecosystem: <code>react-native-reanimated/plugin</code> (now <code>react-native-worklets/plugin</code>) MUST be the <strong>LAST</strong> entry in the plugins array or worklets silently break.</li>
-  <li>Babel <strong>strips</strong> TypeScript types — it does NOT type-check. That is <code>tsc</code>'s job (cross-reference the TypeScript config topic).</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Babel transpiles (JSX/TS/modern JS → Hermes-runnable JS) and strips types but never type-checks; Metro runs it on every module; presets bundle transforms and plugins run one-by-one — and the Reanimated / worklets plugin must be dead last.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Babel transpiles JSX/TS/modern JS into Hermes-runnable JavaScript and <strong>strips types without checking them</strong>; Metro runs it per module; presets bundle transforms, plugins run in array order — and the <strong>reanimated / worklets plugin must be LAST</strong>.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Babel = transpiler.</strong> JSX → <code>React.createElement</code>/<code>jsx()</code>, TypeScript/Flow types stripped, modern syntax (<code>?.</code>, <code>??</code>, class fields, spread) lowered for Hermes.</li>
+    <li><strong>Strips types, never type-checks.</strong> That's <code>tsc --noEmit</code>'s job and it's not in the runtime path — an app can bundle while <code>tsc</code> shows errors. Cross-ref the TypeScript config topic.</li>
+    <li><strong>Metro invokes Babel per module</strong> via <code>@react-native/metro-babel-transformer</code> in the transform step (resolve → transform → serialize), and caches results — so config or <code>.env</code> changes need a cache reset (<code>expo start -c</code> / <code>--reset-cache</code>).</li>
+    <li><strong>babel.config.js anatomy:</strong> function form with <code>api.cache(true)</code>, <code>presets</code> array, <code>plugins</code> array, <code>env</code> overrides (production/test), and <code>overrides</code> globs.</li>
+    <li><strong>Presets:</strong> bare RN uses <code>module:metro-react-native-babel-preset</code>; Expo uses <code>babel-preset-expo</code>. Both bundle JSX, TS strip, class fields, optional chaining. <code>@babel/preset-env</code> targets Hermes (configured for you).</li>
+    <li><strong>ORDER rule:</strong> plugins run first and in array order (top→bottom); presets run after and in REVERSE order (bottom→top). So the last plugin listed runs last.</li>
+    <li><strong>Reanimated / worklets plugin (<code>react-native-reanimated/plugin</code> → <code>react-native-worklets/plugin</code>) MUST be last</strong> — it needs the final code shape to find <code>'worklet'</code> functions and serialize their closures for the UI-thread runtime.</li>
+    <li><strong>module-resolver:</strong> path aliases like <code>@/…</code> must mirror tsconfig <code>paths</code> exactly, or it "resolves in TS but crashes at runtime" (or the reverse).</li>
+    <li><strong>Other plugins:</strong> <code>react-native-dotenv</code> / <code>transform-inline-environment-variables</code> (build-time inlined env, NOT secret), <code>transform-remove-console</code> (prod only, exclude error/warn), <code>@babel/plugin-proposal-decorators</code> (MobX, order/legacy-sensitive), <code>expo-router/babel</code> (removed in SDK 50+, folded into preset).</li>
+    <li><strong>Env-specific:</strong> Babel reads <code>NODE_ENV</code>/<code>BABEL_ENV</code> to pick the <code>env</code> key; strip logs under <code>env.production</code>; Jest uses <code>babel-jest</code> + <code>env.test</code> (via <code>jest-expo</code>).</li>
+    <li><strong>api.cache gotcha:</strong> <code>api.cache(true)</code> while reading <code>process.env</code> freezes the first value — use <code>api.cache.using(() =&gt; process.env.NODE_ENV)</code>.</li>
+    <li><strong>Expo reality:</strong> the preset does most of the work and absorbs former standalone plugins; <code>npx expo customize babel.config.js</code> to extend; the file survives <code>expo prebuild --clean</code> (only <code>android/</code>/<code>ios/</code> are regenerated); worklets plugin still last.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Putting the reanimated/worklets plugin anywhere but last</strong> — or editing babel.config.js and not clearing the Metro cache, so your fix appears to do nothing. Everything else goes ABOVE <code>react-native-worklets/plugin</code>, and every config change ends with <code>expo start -c</code> / <code>--reset-cache</code>.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Babel transpiles JSX and TypeScript into Hermes-runnable JS and strips types, but it never type-checks — that's <code>tsc</code>'s separate job. Metro runs Babel on every module and caches the result."</div>
+  <div class="revision-say">"Plugins run in array order and presets in reverse; the reanimated/worklets plugin must be last because it needs the final code shape to serialize worklets for the UI thread."</div>
+  <div class="revision-say">"module-resolver aliases must mirror tsconfig paths, console-stripping goes under env.production with error/warn excluded, and I clear the Metro cache after any Babel config change."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What Babel actually does</h3>
 <p>Babel is a source-to-source compiler (a "transpiler"). It parses your source into an AST, applies a pipeline of transforms, and prints JavaScript back out. In a React Native project it handles four categories of input the JS engine cannot run directly:</p>
 <ul>
@@ -43,10 +56,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why this matters for you</h3>
 <p>Every "unexpected token", "plugin must be last", "alias can't be resolved", and "why is <code>console.log</code> still in my release build" bug lives in this one file. Knowing the anatomy turns a 40-minute head-scratch into a 30-second fix.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The pipeline: where Babel sits</h3>
 <div class="diagram">
 <pre>
@@ -114,10 +127,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"Babel compiles my whole app." No — Babel sees exactly <strong>one file at a time</strong>, with zero knowledge of the other files. That is precisely why it can strip types (no cross-file checking needed) but cannot type-check, and why aliases must be re-declared for Babel even though TypeScript already knows them from <code>tsconfig.json</code>.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Anatomy of babel.config.js — bare React Native</h3>
 <pre><code class="language-js">// babel.config.js  (bare RN)
 module.exports = {
@@ -260,10 +273,10 @@ overrides: [
 <pre><code class="language-bash">npx expo start -c          # Expo: -c clears Metro cache
 npx react-native start --reset-cache   # bare RN
 rm -rf node_modules/.cache  # nuke Babel's on-disk cache if stuck</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — minimal Expo config (correct order)</h3>
 <pre><code class="language-js">module.exports = function (api) {
   api.cache(true);
@@ -364,10 +377,11 @@ function add(a, b) { return a + b; }</code></pre>
 <pre><code class="language-bash"># Expo ships a working babel.config.js after prebuild, but to customize it:
 npx expo customize babel.config.js</code></pre>
 <p>This writes a starter <code>babel.config.js</code> with <code>babel-preset-expo</code> that you then extend. Reanimated / worklets plugin still goes last.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Reanimated plugin not last</h3>
 <p>Any plugin after <code>react-native-worklets/plugin</code> can invalidate worklet transforms. Symptom: animations don't run, gestures do nothing, or a hard error telling you the plugin must be last. Fix: move it to the end, clear cache.</p>
 
@@ -417,10 +431,9 @@ npx expo customize babel.config.js</code></pre>
   <div class="callout-title">🧩 Expo note — don't fight the preset</div>
   <p>In Expo prebuild apps (sw-mobile, sw-ticketing), <code>babel-preset-expo</code> already handles JSX, TS, class fields, and most syntax. Since SDK 50 it also absorbed plugins that used to be listed separately (like <code>expo-router/babel</code>). Your <code>babel.config.js</code> lives at the JS root and is NOT wiped by <code>expo prebuild --clean</code> (that only regenerates <code>android/</code> and <code>ios/</code>). So Babel config is safe to hand-edit — but keep it minimal, let the preset do the heavy lifting, and remember the worklets plugin still must be last.</p>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — putting the reanimated/worklets plugin anywhere but last</h3>
 <p>The number-one RN config bug. It must be the final plugin array entry. Everything else in your config that adds a plugin goes ABOVE it.</p>
 
@@ -456,10 +469,10 @@ npx expo customize babel.config.js</code></pre>
 
 <h3>Anti-pattern 12 — decorators plugin order/version mismatch</h3>
 <p>Wrong <code>legacy</code>/<code>version</code> option or wrong ordering vs class-properties produces confusing parse errors. Match your library's expected decorator spec.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. What does Babel do in a React Native project?</div>
   <div class="qa-answer">
@@ -579,51 +592,7 @@ npx expo customize babel.config.js</code></pre>
     <li>You know Expo's preset absorbs most plugins and that config survives prebuild.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Babel transpiles JSX/TS/modern JS into Hermes-runnable JavaScript and <strong>strips types without checking them</strong>; Metro runs it per module; presets bundle transforms, plugins run in array order — and the <strong>reanimated / worklets plugin must be LAST</strong>.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Babel = transpiler.</strong> JSX → <code>React.createElement</code>/<code>jsx()</code>, TypeScript/Flow types stripped, modern syntax (<code>?.</code>, <code>??</code>, class fields, spread) lowered for Hermes.</li>
-    <li><strong>Strips types, never type-checks.</strong> That's <code>tsc --noEmit</code>'s job and it's not in the runtime path — an app can bundle while <code>tsc</code> shows errors. Cross-ref the TypeScript config topic.</li>
-    <li><strong>Metro invokes Babel per module</strong> via <code>@react-native/metro-babel-transformer</code> in the transform step (resolve → transform → serialize), and caches results — so config or <code>.env</code> changes need a cache reset (<code>expo start -c</code> / <code>--reset-cache</code>).</li>
-    <li><strong>babel.config.js anatomy:</strong> function form with <code>api.cache(true)</code>, <code>presets</code> array, <code>plugins</code> array, <code>env</code> overrides (production/test), and <code>overrides</code> globs.</li>
-    <li><strong>Presets:</strong> bare RN uses <code>module:metro-react-native-babel-preset</code>; Expo uses <code>babel-preset-expo</code>. Both bundle JSX, TS strip, class fields, optional chaining. <code>@babel/preset-env</code> targets Hermes (configured for you).</li>
-    <li><strong>ORDER rule:</strong> plugins run first and in array order (top→bottom); presets run after and in REVERSE order (bottom→top). So the last plugin listed runs last.</li>
-    <li><strong>Reanimated / worklets plugin (<code>react-native-reanimated/plugin</code> → <code>react-native-worklets/plugin</code>) MUST be last</strong> — it needs the final code shape to find <code>'worklet'</code> functions and serialize their closures for the UI-thread runtime.</li>
-    <li><strong>module-resolver:</strong> path aliases like <code>@/…</code> must mirror tsconfig <code>paths</code> exactly, or it "resolves in TS but crashes at runtime" (or the reverse).</li>
-    <li><strong>Other plugins:</strong> <code>react-native-dotenv</code> / <code>transform-inline-environment-variables</code> (build-time inlined env, NOT secret), <code>transform-remove-console</code> (prod only, exclude error/warn), <code>@babel/plugin-proposal-decorators</code> (MobX, order/legacy-sensitive), <code>expo-router/babel</code> (removed in SDK 50+, folded into preset).</li>
-    <li><strong>Env-specific:</strong> Babel reads <code>NODE_ENV</code>/<code>BABEL_ENV</code> to pick the <code>env</code> key; strip logs under <code>env.production</code>; Jest uses <code>babel-jest</code> + <code>env.test</code> (via <code>jest-expo</code>).</li>
-    <li><strong>api.cache gotcha:</strong> <code>api.cache(true)</code> while reading <code>process.env</code> freezes the first value — use <code>api.cache.using(() =&gt; process.env.NODE_ENV)</code>.</li>
-    <li><strong>Expo reality:</strong> the preset does most of the work and absorbs former standalone plugins; <code>npx expo customize babel.config.js</code> to extend; the file survives <code>expo prebuild --clean</code> (only <code>android/</code>/<code>ios/</code> are regenerated); worklets plugin still last.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Putting the reanimated/worklets plugin anywhere but last</strong> — or editing babel.config.js and not clearing the Metro cache, so your fix appears to do nothing. Everything else goes ABOVE <code>react-native-worklets/plugin</code>, and every config change ends with <code>expo start -c</code> / <code>--reset-cache</code>.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Babel transpiles JSX and TypeScript into Hermes-runnable JS and strips types, but it never type-checks — that's <code>tsc</code>'s separate job. Metro runs Babel on every module and caches the result."</div>
-  <div class="revision-say">"Plugins run in array order and presets in reverse; the reanimated/worklets plugin must be last because it needs the final code shape to serialize worklets for the UI thread."</div>
-  <div class="revision-say">"module-resolver aliases must mirror tsconfig paths, console-stripping goes under env.production with error/warn excluded, and I clear the Metro cache after any Babel config change."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain what Babel does in RN and why it strips types but doesn't type-check?</li>
-    <li>Can you describe how Metro invokes Babel per module and why config changes need a cache reset?</li>
-    <li>Can you state the plugin-vs-preset difference and the exact ordering rules for each?</li>
-    <li>Can you explain why the reanimated / worklets plugin must be the last plugin, in terms of what it does?</li>
-    <li>Can you set up path aliases so they work in both TypeScript and at runtime?</li>
-    <li>Can you strip console.* in production only while keeping error logs, and pick the right env key?</li>
-    <li>Can you explain the <code>api.cache(true)</code> trap and how to fix env-dependent config?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

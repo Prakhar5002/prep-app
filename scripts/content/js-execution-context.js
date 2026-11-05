@@ -1,27 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'js-execution-context',
-  module: 'JavaScript Deep',
-  title: 'Execution Context',
-  estimatedReadTime: '25 min',
-  tags: ['execution-context', 'memory-phase', 'execution-phase', 'hoisting', 'call-stack', 'fundamentals'],
+  id: "js-execution-context",
+  module: "JavaScript Deep",
+  title: "Execution Context",
+  estimatedReadTime: "25 min",
+  tags: ["execution-context","memory-phase","execution-phase","hoisting","call-stack","fundamentals"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>An <strong>Execution Context</strong> (EC) is the sealed environment JavaScript creates to run a piece of code — global code, a function call, or an <code>eval</code>. Each EC has its own <em>Variable Environment</em>, <em>Scope Chain</em>, and <em>this</em>. The engine creates every EC in <strong>two phases</strong>:</p>
-<ol>
-  <li><strong>Memory / Creation Phase</strong> — scan the code, allocate memory, hoist declarations.</li>
-  <li><strong>Execution Phase</strong> — run the code line by line using the pre-allocated memory.</li>
-</ol>
-<p>Execution contexts are pushed on and off the <strong>Call Stack</strong> (LIFO). The global EC sits at the bottom; every function call pushes a new EC on top; returning pops it off.</p>
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>JavaScript <em>prepares</em> the memory first, then <em>runs</em> the code — that's the whole reason <code>var</code> hoists to <code>undefined</code>, function declarations can be called above their definition, and <code>let</code>/<code>const</code> throw in the TDZ.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The engine builds <strong>every execution context in two phases</strong> — memory/creation (hoist declarations) then execution (run line by line) — and those contexts stack LIFO on the call stack.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Execution Context = the environment the engine builds to run code</strong> (global, function, eval, or module). It bundles a Variable Environment, a scope chain (outer-environment reference), and a <code>this</code> binding.</li>
+    <li><strong>Every EC is created in two phases:</strong> Memory/Creation (scan the source, allocate, hoist) then Execution (run line by line).</li>
+    <li>Memory phase: <code>var</code> → hoisted as <code>undefined</code>; <strong>function declarations → fully hoisted</strong> (callable above their definition); <code>let</code>/<code>const</code>/<code>class</code> → hoisted but <em>uninitialized</em> in the TDZ.</li>
+    <li>A Function EC is created on every <strong>call</strong>, not on definition — defining a function pushes nothing onto the stack.</li>
+    <li>ECs live on the <strong>Call Stack (LIFO)</strong>: global at the bottom, each call pushes, each return pops; runaway recursion = stack overflow.</li>
+    <li><strong>Hoisting vs initialization are separate:</strong> the declaration is known before execution, but the assignment only happens when its line runs.</li>
+    <li>Name collision: in the memory phase a <strong>function declaration wins</strong>, but a later <code>var x = ...</code> assignment overwrites it during execution.</li>
+    <li><code>var</code> is <strong>function-scoped</strong> (ignores blocks); <code>let</code>/<code>const</code> are <strong>block-scoped</strong> (each <code>{ }</code> creates a lexical environment).</li>
+    <li>Loop trap: <code>var i</code> is <strong>one shared binding</strong> → deferred callbacks log the final value; <code>let i</code> creates a new binding per iteration and fixes it.</li>
+    <li><strong>TDZ is real:</strong> accessing a <code>let</code>/<code>const</code> before its declaration line throws <code>ReferenceError</code> — even <code>typeof</code>.</li>
+    <li>In sloppy mode, assigning to an undeclared identifier creates a <strong>global</strong>; strict mode (and ES modules, which are always strict) makes it a ReferenceError.</li>
+    <li>Top-level <code>this</code> in an ES module is <code>undefined</code> (NOT <code>window</code>/<code>globalThis</code>).</li>
+    <li>Closures work <em>because</em> the EC stores a reference to its outer lexical environment.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Assuming <strong>all declarations hoist to <code>undefined</code></strong>. Only <code>var</code> does — <code>let</code>/<code>const</code>/<code>class</code> hoist <em>uninitialized</em> and throw in the TDZ, and a function <em>declaration</em> is callable above its line while a function <em>expression</em> is not.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"The engine builds every execution context in two phases — it prepares memory and hoists declarations first, then runs the code line by line."</div>
+  <div class="revision-say">"That two-phase model is exactly why <code>var</code> hoists to <code>undefined</code>, function declarations are callable above their definition, and <code>let</code>/<code>const</code> throw in the temporal dead zone."</div>
+  <div class="revision-say">"A function's context is created when it's called, not when it's defined, and those contexts stack up LIFO on the call stack."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is an Execution Context, precisely?</h3>
 <p>An Execution Context is a <em>data structure</em> maintained internally by the JavaScript engine (V8, SpiderMonkey, JavaScriptCore, Hermes). Conceptually it bundles three things:</p>
 <ul>
@@ -54,10 +70,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">⚠️ Misconception alert</div>
   <p>A function's EC is created when the function is <em>called</em>, not when it's defined. Defining a function doesn't push anything on the call stack. Only <em>invocation</em> does.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🪜 Mental Model', html: `
+{ id: "mental-model", title: "🪜 Mental Model", collapsible: true, html: `
 <h3>The two-phase mental model</h3>
 <p>For any block of JS that's about to run (the whole file, a function body, or an eval), picture the engine doing this:</p>
 
@@ -121,10 +137,10 @@ window.PREP_SITE.registerTopic({
   │                                                   │
   └───────────────────────────────────────────────────┘
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Step-by-Step Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Step-by-Step Mechanics", collapsible: true, html: `
 <h3>The two phases in detail</h3>
 
 <h4>Phase 1 — Memory Creation</h4>
@@ -174,10 +190,10 @@ console.log(a);       // 10</code></pre>
   console.log(a);   // 1
   console.log(b);   // ReferenceError — b not in this scope
 }</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '📦 Examples (progressive)', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Classic <code>var</code> hoisting</h3>
 <pre><code class="language-js">console.log(x);
 var x = 5;
@@ -312,10 +328,11 @@ foo(10);</code></pre>
 obj.m();   // 10</code></pre>
 
 <p>Arrow functions DO create a new EC when called, but they <strong>don't have their own <code>this</code> / <code>arguments</code> / <code>super</code> / <code>new.target</code></strong>. They inherit those from the enclosing EC. This is the whole secret of arrow functions.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🔍 All Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. <code>function</code> declarations vs function expressions</h3>
 <pre><code class="language-js">foo();  // ✅ works
 function foo() { console.log('decl'); }
@@ -443,10 +460,9 @@ count(100000);  // ❌ stack overflow in V8 anyway</code></pre>
 
 <h3>15. Hermes (React Native) behaves the same way conceptually</h3>
 <p>Hermes is bytecode-based and doesn't have a traditional interpreter loop, but the EC model is the same. TDZ, hoisting, two phases — all identical.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-anti', title: '🐛 Common Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1 — Assuming <code>var</code> is block-scoped</h3>
 <pre><code class="language-js">for (var i = 0; i &lt; 3; i++) {
   setTimeout(() =&gt; console.log(i), 0);
@@ -502,10 +518,10 @@ setTimeout(function () {
 console.log(api);  // ❌ ReferenceError — good, IIFE scoped it
 </code></pre>
 <p>Pre-ES6, IIFEs were the standard way to create scope. Post-ES6, just use <code>let</code>/<code>const</code> in a block or an ES module.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>How this topic gets asked</h3>
 <p>Execution Context rarely comes up as "explain execution context". Instead interviewers test it via hoisting puzzles and scope traps. Your job is to <em>walk through the two phases out loud</em> as the interviewer watches.</p>
 
@@ -625,50 +641,32 @@ outer();</code></pre>
   <li>The mental separation between <em>declaration</em> and <em>initialization</em></li>
 </ul>
 <p>Mastering this topic makes every subsequent JS question easier. It's the foundation of closures, hoisting, scope, and <code>this</code>.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">The engine builds <strong>every execution context in two phases</strong> — memory/creation (hoist declarations) then execution (run line by line) — and those contexts stack LIFO on the call stack.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Execution Context = the environment the engine builds to run code</strong> (global, function, eval, or module). It bundles a Variable Environment, a scope chain (outer-environment reference), and a <code>this</code> binding.</li>
-    <li><strong>Every EC is created in two phases:</strong> Memory/Creation (scan the source, allocate, hoist) then Execution (run line by line).</li>
-    <li>Memory phase: <code>var</code> → hoisted as <code>undefined</code>; <strong>function declarations → fully hoisted</strong> (callable above their definition); <code>let</code>/<code>const</code>/<code>class</code> → hoisted but <em>uninitialized</em> in the TDZ.</li>
-    <li>A Function EC is created on every <strong>call</strong>, not on definition — defining a function pushes nothing onto the stack.</li>
-    <li>ECs live on the <strong>Call Stack (LIFO)</strong>: global at the bottom, each call pushes, each return pops; runaway recursion = stack overflow.</li>
-    <li><strong>Hoisting vs initialization are separate:</strong> the declaration is known before execution, but the assignment only happens when its line runs.</li>
-    <li>Name collision: in the memory phase a <strong>function declaration wins</strong>, but a later <code>var x = ...</code> assignment overwrites it during execution.</li>
-    <li><code>var</code> is <strong>function-scoped</strong> (ignores blocks); <code>let</code>/<code>const</code> are <strong>block-scoped</strong> (each <code>{ }</code> creates a lexical environment).</li>
-    <li>Loop trap: <code>var i</code> is <strong>one shared binding</strong> → deferred callbacks log the final value; <code>let i</code> creates a new binding per iteration and fixes it.</li>
-    <li><strong>TDZ is real:</strong> accessing a <code>let</code>/<code>const</code> before its declaration line throws <code>ReferenceError</code> — even <code>typeof</code>.</li>
-    <li>In sloppy mode, assigning to an undeclared identifier creates a <strong>global</strong>; strict mode (and ES modules, which are always strict) makes it a ReferenceError.</li>
-    <li>Top-level <code>this</code> in an ES module is <code>undefined</code> (NOT <code>window</code>/<code>globalThis</code>).</li>
-    <li>Closures work <em>because</em> the EC stores a reference to its outer lexical environment.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Assuming <strong>all declarations hoist to <code>undefined</code></strong>. Only <code>var</code> does — <code>let</code>/<code>const</code>/<code>class</code> hoist <em>uninitialized</em> and throw in the TDZ, and a function <em>declaration</em> is callable above its line while a function <em>expression</em> is not.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"The engine builds every execution context in two phases — it prepares memory and hoists declarations first, then runs the code line by line."</div>
-  <div class="revision-say">"That two-phase model is exactly why <code>var</code> hoists to <code>undefined</code>, function declarations are callable above their definition, and <code>let</code>/<code>const</code> throw in the temporal dead zone."</div>
-  <div class="revision-say">"A function's context is created when it's called, not when it's defined, and those contexts stack up LIFO on the call stack."</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. What are the two phases in which the engine builds every execution context, and what does each do?</div>
+  <div class="qa-answer">
+    <p>First the <strong>Memory / Creation phase</strong>: the engine scans the code, allocates memory and hoists declarations — <code>var</code> variables are stored as <code>undefined</code>, function declarations are stored with their full body, and <code>let</code>/<code>const</code>/<code>class</code> bindings are created but left uninitialized (the TDZ). It also sets up the scope chain (outer-environment reference) and the <code>this</code> binding. Then the <strong>Execution phase</strong> runs the code line by line using that pre-allocated memory, performing assignments such as moving <code>x</code> from <code>undefined</code> to <code>5</code> when <code>var x = 5</code> is reached.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you name the two phases the engine builds every execution context in, and say what each phase does?</li>
-    <li>Can you explain why <code>var</code> hoists to <code>undefined</code>, a function declaration is callable above its line, but <code>let</code>/<code>const</code> throw in the TDZ?</li>
-    <li>Can you predict the output of a trap where a function declaration and a <code>var</code> share the same name?</li>
-    <li>Can you draw the call stack at any point during a recursive call and explain what causes a stack overflow?</li>
-    <li>Can you explain why a function's execution context is created when it's called, not when it's defined?</li>
-    <li>Can you explain the <code>var</code>-in-a-loop trap in terms of one shared binding versus a new binding per iteration?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q7. Why does <code>var</code> hoist to <code>undefined</code>, a function declaration work above its line, but <code>let</code>/<code>const</code> throw?</div>
+  <div class="qa-answer">
+    <p>All three come from what the memory phase stores before any code runs. A <code>var</code> binding is created and initialized to <code>undefined</code>, so reading it early gives <code>undefined</code>. A function declaration is stored with its whole body, so it's callable above its definition. A <code>let</code>/<code>const</code> binding is also hoisted, but marked uninitialized; any access before its declaration line — even <code>typeof</code> — throws a <code>ReferenceError</code> (the temporal dead zone). That's also why a <code>const</code> arrow function can't be called above its line: only function <em>declarations</em> are fully hoisted, and expressions follow the rules of the variable they're assigned to.</p>
+  </div>
 </div>
-`}
+<div class="qa-block">
+  <div class="qa-question">Q8. Walk through the call stack during a recursive call. What causes a stack overflow?</div>
+  <div class="qa-answer">
+    <p>The global execution context sits at the bottom of the call stack (LIFO). Every call pushes a new function execution context on top, and each recursive call gets its own context with its own independent locals, so one function can have many live contexts at once. The top context is the one running; the ones below are paused, waiting for it to return, and each return pops one off. A stack overflow means too many contexts stacked up without returning — usually infinite recursion or a missing base case.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q9. Why is a function's execution context created when it's called rather than when it's defined?</div>
+  <div class="qa-answer">
+    <p>Defining a function only creates a function object (which remembers its outer lexical environment); it pushes nothing onto the call stack. Only invocation creates a Function Execution Context, because each call needs its own fresh variables, arguments and <code>this</code> — that's how recursion produces independent stack frames with independent locals. The definition site still matters for scope: the new context's outer reference points to where the function was written, which is what makes closures work.</p>
+  </div>
+</div>
+` },
 
-]});
+  ]
+});

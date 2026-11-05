@@ -1,33 +1,46 @@
 window.PREP_SITE.registerTopic({
-  id: 'react-typescript',
-  module: 'React Deep',
-  title: 'TypeScript + React',
-  estimatedReadTime: '26 min',
-  tags: ['react', 'typescript', 'types', 'props', 'generics', 'discriminated-union', 'inference'],
+  id: "react-typescript",
+  module: "React Deep",
+  title: "TypeScript + React",
+  estimatedReadTime: "26 min",
+  tags: ["react","typescript","types","props","generics","discriminated-union","inference"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>TypeScript + React is the default stack for most modern frontends. The value isn't type annotations — it's <strong>structural correctness at the boundary between components</strong>: props have known shapes, events have known types, refs resolve to specific DOM elements, context has a non-undefined value.</p>
-<ul>
-  <li><strong>Component props</strong>: <code>type Props = { ... }</code> with <code>React.FC&lt;Props&gt;</code> OR <code>(props: Props) =&gt; JSX.Element</code>. The latter is preferred.</li>
-  <li><strong>Children typing</strong>: <code>ReactNode</code> is the most permissive; <code>ReactElement</code> if you need to restrict to a single element.</li>
-  <li><strong>Event handlers</strong>: <code>React.ChangeEvent&lt;HTMLInputElement&gt;</code>, <code>React.MouseEvent&lt;HTMLButtonElement&gt;</code>. Or use <code>React.ComponentProps</code> to borrow from a DOM element.</li>
-  <li><strong>Refs</strong>: <code>useRef&lt;HTMLInputElement&gt;(null)</code> then <code>ref.current?.focus()</code>.</li>
-  <li><strong>Generics</strong>: generic components (<code>&lt;T,&gt;(props: { items: T[] }) =&gt; ...</code>) for reusable patterns like selects and tables.</li>
-  <li><strong>Discriminated unions</strong>: the idiomatic way to model loading / error / success states.</li>
-  <li><strong>useState typing</strong>: <code>useState&lt;User | null&gt;(null)</code> when the initial value doesn't fully describe the shape.</li>
-  <li><strong>Context</strong>: <code>createContext&lt;T | null&gt;(null)</code> + a hook that throws if null, giving callers a non-null type.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Let TypeScript <em>infer</em> what it can; explicitly annotate function signatures and exported types. Use discriminated unions instead of multiple booleans for state. Never sprinkle <code>any</code>; each <code>any</code> is a bug waiting to happen.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">The real value is <strong>structural correctness at component boundaries</strong> (props, events, refs, context) — type props with a plain function signature, not <code>React.FC</code>, and validate runtime data at the edges.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The real value is structural correctness at component boundaries</strong> — props, events, refs, and context all have known shapes checked at compile time.</li>
+    <li><strong>Type props with a plain function signature</strong> <code>function Button(props: Props)</code>, NOT <code>React.FC</code> (legacy: it used to inject <code>children</code>, doesn't do generics cleanly).</li>
+    <li><strong>Declare <code>children</code> explicitly</strong> as <code>React.ReactNode</code> — React 18 types removed the implicit children from <code>FC</code>.</li>
+    <li><strong>children types:</strong> <code>ReactNode</code> = anything renderable (most permissive, use for children); <code>ReactElement</code> = one concrete element; <code>JSX.Element</code> = return type of JSX, ~interchangeable with ReactElement.</li>
+    <li><strong>Discriminated unions over boolean soup</strong> — 3 flags = 8 combinations but only ~3 valid; a union with a <code>status</code>/<code>kind</code> tag makes invalid states unrepresentable and narrows fields per case.</li>
+    <li><strong>Exhaustiveness check:</strong> in the <code>default</code> branch, <code>const _: never = state</code> — adding an unhandled union case becomes a compile error.</li>
+    <li><strong>Event handler types:</strong> <code>React.ChangeEvent&lt;HTMLInputElement&gt;</code>, <code>React.FormEvent&lt;HTMLFormElement&gt;</code>, <code>React.MouseEvent&lt;HTMLButtonElement&gt;</code> — these are React's synthetic events, not the native ones.</li>
+    <li><strong>Refs:</strong> <code>useRef&lt;HTMLInputElement&gt;(null)</code> → <code>current</code> is <code>HTMLInputElement | null</code>, use <code>?.</code>. (React 19: <code>ref</code> is a normal prop; <code>forwardRef</code> deprecated.)</li>
+    <li><strong>useState:</strong> let inference handle primitives; use an explicit generic when the initial value doesn't describe the full shape — <code>useState&lt;User | null&gt;(null)</code>, <code>useState&lt;Item[]&gt;([])</code>.</li>
+    <li><strong>Context pattern:</strong> <code>createContext&lt;T | null&gt;(null)</code> + a custom hook that throws if null → callers get a non-null type and never see a fake default.</li>
+    <li><strong>Generic components:</strong> <code>function Select&lt;T,&gt;(props)</code> — the trailing comma <code>&lt;T,&gt;</code> disambiguates from a JSX tag in .tsx files.</li>
+    <li><strong>Borrow DOM props with <code>React.ComponentProps&lt;'button'&gt;</code></strong> (and <code>ComponentProps&lt;typeof X&gt;</code> to steal a component's props) instead of re-declaring HTML attributes.</li>
+    <li><strong>Polymorphic <code>as</code> prop:</strong> <code>&lt;T extends React.ElementType&gt;</code> + <code>Omit&lt;ComponentProps&lt;T&gt;, 'as'&gt;</code> so element-specific props (<code>href</code>, <code>onClick</code>) autocomplete.</li>
+    <li><strong>Types are erased at runtime</strong> — they do NOT validate API/form/localStorage data. Validate at boundaries with Zod/Valibot and bridge with <code>z.infer</code>.</li>
+    <li><strong>Prefer <code>unknown</code> over <code>any</code></strong> — <code>unknown</code> forces narrowing before use; every <code>any</code> and every <code>as</code> cast is a bug waiting to happen. Use <code>@ts-expect-error</code> (not <code>@ts-ignore</code>) with a linked reason.</li>
+    <li><strong>TypeScript is structural</strong> (same shape = interchangeable) — use branded types (<code>string &amp; { __brand }</code>) for nominal typing. Turn on <code>strict</code> and <code>noUncheckedIndexedAccess</code> (<code>arr[i]</code> → <code>T | undefined</code>).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Trusting types for <strong>runtime</strong> data — types are <em>erased</em>, so they never validate API / form / <code>localStorage</code> input. Validate at the boundary with Zod/Valibot and derive the type via <code>z.infer</code>. And prefer <code>unknown</code> over <code>any</code> — every <code>any</code> and every <code>as</code> cast is a bug waiting to happen.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I type props with a plain function signature, not React.FC, and let TypeScript infer what it can — I only annotate exported signatures and cases where inference is too wide."</div>
+  <div class="revision-say">"For loading/error/success I use a discriminated union instead of separate booleans, so invalid states are unrepresentable and I get exhaustiveness checking with never."</div>
+  <div class="revision-say">"Types are erased at runtime, so I validate API and form data at the boundary with Zod and derive the TS type via z.infer — and I prefer unknown over any everywhere."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why TypeScript for React?</h3>
 <p>React's component API is structural — props are objects. TypeScript's structural typing fits perfectly: given a <code>Props</code> type, the compiler verifies every call-site passes compatible data. Mistakes caught at compile time: wrong prop name, missing required field, wrong element type in events, null access on a ref that's only bound after mount.</p>
 
@@ -80,10 +93,10 @@ function Select&lt;T,&gt;(props: SelectProps&lt;T&gt;) { ... }
 
 <h3>Why strict mode?</h3>
 <p><code>"strict": true</code> in tsconfig enables noImplicitAny, strictNullChecks, strictFunctionTypes, strictBindCallApply, alwaysStrict, strictPropertyInitialization, noImplicitThis, useUnknownInCatchVariables. Every flag prevents a real bug class. Strict mode is non-negotiable in production codebases.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "types are API contracts" picture</h3>
 <p>The <code>Props</code> type for a component is its public API. Consumers read it like documentation: "this component needs an id, an optional onClick, and children." Changing props requires a versioned migration. Treat exported types as stable contracts.</p>
 
@@ -137,10 +150,10 @@ type PostId = string &amp; { __brand: 'PostId' };
   <div class="callout-title">Common misconception</div>
   <p>"TypeScript makes code safer at runtime." It doesn't. Types are erased at compile time. Runtime data (form inputs, API responses) is still untyped. Use a validator (Zod, Valibot) at boundaries to turn runtime JSON into typed data.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Component props</h3>
 <pre><code class="language-tsx">type ButtonProps = {
   label: string;
@@ -303,10 +316,10 @@ async function getUser(id: string): Promise&lt;User&gt; {
   }
 }</code></pre>
 <p><code>noUncheckedIndexedAccess</code> is particularly valuable: <code>arr[0]</code> becomes <code>T | undefined</code>, catching off-by-one bugs.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — basic typed component</h3>
 <pre><code class="language-tsx">type BadgeProps = { label: string; color?: 'red' | 'blue' };
 function Badge({ label, color = 'blue' }: BadgeProps) {
@@ -438,10 +451,11 @@ type ButtonProps = React.ComponentProps&lt;typeof MyButton&gt;; // steal MyButto
 }
 const parsed: unknown = JSON.parse(raw);
 if (isUser(parsed)) { parsed.name; } // narrowed to User</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. JSX expects JSX.Element or string, not <code>string | null</code> for children directly</h3>
 <p><code>ReactNode</code> includes null/undefined/boolean which are safe to render (React skips them). If a child type is narrower, update to <code>ReactNode</code>.</p>
 
@@ -524,10 +538,9 @@ const ok: Hex = '#fff'; const bad: Hex = 'red'; // error</code></pre>
 
 <h3>20. @types packages can lag</h3>
 <p>If you use a newly-released library, <code>@types/...</code> might be missing features or wrong. Options: contribute upstream, augment types locally via <code>declare module</code>, or <code>@ts-expect-error</code> with a TODO link.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — any sprinkled everywhere</h3>
 <pre><code class="language-tsx">function handle(e: any) { e.target.value }</code></pre>
 <p>Each <code>any</code> defeats type safety. Prefer <code>unknown</code> with narrowing. <code>no-explicit-any</code> lint rule catches them.</p>
@@ -590,10 +603,10 @@ dodgy();</code></pre>
 <h3>Anti-pattern 15 — readonly everywhere</h3>
 <pre><code class="language-tsx">type Props = Readonly&lt;{ name: string, data: Readonly&lt;User[]&gt; }&gt;;</code></pre>
 <p>React props are already treated as immutable by convention. Over-use of <code>Readonly</code> clutters types without adding value unless you've been bitten by mutation bugs.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How do you type a React component's props?</div>
   <div class="qa-answer">
@@ -754,54 +767,20 @@ function Box&lt;T extends React.ElementType = 'div'&gt;({ as, ...rest }: BoxProp
     <li>You use exhaustiveness checks with <code>never</code>.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">The real value is <strong>structural correctness at component boundaries</strong> (props, events, refs, context) — type props with a plain function signature, not <code>React.FC</code>, and validate runtime data at the edges.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>The real value is structural correctness at component boundaries</strong> — props, events, refs, and context all have known shapes checked at compile time.</li>
-    <li><strong>Type props with a plain function signature</strong> <code>function Button(props: Props)</code>, NOT <code>React.FC</code> (legacy: it used to inject <code>children</code>, doesn't do generics cleanly).</li>
-    <li><strong>Declare <code>children</code> explicitly</strong> as <code>React.ReactNode</code> — React 18 types removed the implicit children from <code>FC</code>.</li>
-    <li><strong>children types:</strong> <code>ReactNode</code> = anything renderable (most permissive, use for children); <code>ReactElement</code> = one concrete element; <code>JSX.Element</code> = return type of JSX, ~interchangeable with ReactElement.</li>
-    <li><strong>Discriminated unions over boolean soup</strong> — 3 flags = 8 combinations but only ~3 valid; a union with a <code>status</code>/<code>kind</code> tag makes invalid states unrepresentable and narrows fields per case.</li>
-    <li><strong>Exhaustiveness check:</strong> in the <code>default</code> branch, <code>const _: never = state</code> — adding an unhandled union case becomes a compile error.</li>
-    <li><strong>Event handler types:</strong> <code>React.ChangeEvent&lt;HTMLInputElement&gt;</code>, <code>React.FormEvent&lt;HTMLFormElement&gt;</code>, <code>React.MouseEvent&lt;HTMLButtonElement&gt;</code> — these are React's synthetic events, not the native ones.</li>
-    <li><strong>Refs:</strong> <code>useRef&lt;HTMLInputElement&gt;(null)</code> → <code>current</code> is <code>HTMLInputElement | null</code>, use <code>?.</code>. (React 19: <code>ref</code> is a normal prop; <code>forwardRef</code> deprecated.)</li>
-    <li><strong>useState:</strong> let inference handle primitives; use an explicit generic when the initial value doesn't describe the full shape — <code>useState&lt;User | null&gt;(null)</code>, <code>useState&lt;Item[]&gt;([])</code>.</li>
-    <li><strong>Context pattern:</strong> <code>createContext&lt;T | null&gt;(null)</code> + a custom hook that throws if null → callers get a non-null type and never see a fake default.</li>
-    <li><strong>Generic components:</strong> <code>function Select&lt;T,&gt;(props)</code> — the trailing comma <code>&lt;T,&gt;</code> disambiguates from a JSX tag in .tsx files.</li>
-    <li><strong>Borrow DOM props with <code>React.ComponentProps&lt;'button'&gt;</code></strong> (and <code>ComponentProps&lt;typeof X&gt;</code> to steal a component's props) instead of re-declaring HTML attributes.</li>
-    <li><strong>Polymorphic <code>as</code> prop:</strong> <code>&lt;T extends React.ElementType&gt;</code> + <code>Omit&lt;ComponentProps&lt;T&gt;, 'as'&gt;</code> so element-specific props (<code>href</code>, <code>onClick</code>) autocomplete.</li>
-    <li><strong>Types are erased at runtime</strong> — they do NOT validate API/form/localStorage data. Validate at boundaries with Zod/Valibot and bridge with <code>z.infer</code>.</li>
-    <li><strong>Prefer <code>unknown</code> over <code>any</code></strong> — <code>unknown</code> forces narrowing before use; every <code>any</code> and every <code>as</code> cast is a bug waiting to happen. Use <code>@ts-expect-error</code> (not <code>@ts-ignore</code>) with a linked reason.</li>
-    <li><strong>TypeScript is structural</strong> (same shape = interchangeable) — use branded types (<code>string &amp; { __brand }</code>) for nominal typing. Turn on <code>strict</code> and <code>noUncheckedIndexedAccess</code> (<code>arr[i]</code> → <code>T | undefined</code>).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Trusting types for <strong>runtime</strong> data — types are <em>erased</em>, so they never validate API / form / <code>localStorage</code> input. Validate at the boundary with Zod/Valibot and derive the type via <code>z.infer</code>. And prefer <code>unknown</code> over <code>any</code> — every <code>any</code> and every <code>as</code> cast is a bug waiting to happen.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I type props with a plain function signature, not React.FC, and let TypeScript infer what it can — I only annotate exported signatures and cases where inference is too wide."</div>
-  <div class="revision-say">"For loading/error/success I use a discriminated union instead of separate booleans, so invalid states are unrepresentable and I get exhaustiveness checking with never."</div>
-  <div class="revision-say">"Types are erased at runtime, so I validate API and form data at the boundary with Zod and derive the TS type via z.infer — and I prefer unknown over any everywhere."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. Why do you avoid React.FC for typing components?</div>
+  <div class="qa-answer">
+    <p><code>React.FC</code> is mostly legacy today. It historically injected an implicit <code>children: ReactNode</code> into every component's props, even ones that don't take children (React 18 types removed that, so you now declare <code>children</code> explicitly either way), and it doesn't support generic components cleanly. A plain function signature, <code>function Button({ label, onClick }: Props)</code>, is simpler, works with generics like <code>function Select&lt;T,&gt;(props: SelectProps&lt;T&gt;)</code>, and makes <code>children?: React.ReactNode</code> an explicit part of the contract.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you type component props with a plain function signature and explain why you avoid <code>React.FC</code>?</li>
-    <li>Can you model loading/error/success with a discriminated union and get exhaustiveness checking via <code>never</code>?</li>
-    <li>Can you explain why you still validate data at runtime with Zod even though you have TypeScript types?</li>
-    <li>Can you explain the difference between <code>unknown</code> and <code>any</code> and why you prefer <code>unknown</code>?</li>
-    <li>Can you write a generic reusable component or hook that infers its type from usage?</li>
-    <li>Can you say where you let inference work versus where you annotate an exported signature?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. Where do you let TypeScript infer types, and where do you annotate?</div>
+  <div class="qa-answer">
+    <p>TypeScript infers bottom-up: unannotated return types are computed, and variables take their initializer's type. So let inference work for locals, primitives in <code>useState</code>, <code>useMemo</code> results and generic call sites (<code>&lt;List items={users} /&gt;</code> infers <code>T = User</code>). Annotate in three cases: functions exported from a module, to stabilize the public API; where inference is too wide or too narrow, such as an empty array or <code>useState&lt;User | null&gt;(null)</code>; and parameters with no initializer. Never fill the gaps with <code>any</code>.</p>
+  </div>
 </div>
-`}
+` },
 
-]
+  ]
 });

@@ -1,32 +1,46 @@
 window.PREP_SITE.registerTopic({
-  id: 'react-testing',
-  module: 'React Deep',
-  title: 'Testing',
-  estimatedReadTime: '26 min',
-  tags: ['react', 'testing', 'jest', 'rtl', 'testing-library', 'e2e', 'mocking', 'msw'],
+  id: "react-testing",
+  module: "React Deep",
+  title: "Testing",
+  estimatedReadTime: "26 min",
+  tags: ["react","testing","jest","rtl","testing-library","e2e","mocking","msw"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>React testing follows the "test what the user experiences" philosophy popularized by Testing Library. Unit-test pure functions and hooks; integration-test components via the DOM they render; E2E-test critical flows in a real browser.</p>
-<ul>
-  <li><strong>Jest / Vitest</strong> run your tests, mocking modules, providing <code>expect</code>, running in JSDOM or Node.</li>
-  <li><strong>React Testing Library (RTL)</strong> renders a component and provides queries (<code>getByRole</code>, <code>findByText</code>, etc.) that encourage accessibility-first selectors.</li>
-  <li><strong>MSW (Mock Service Worker)</strong> intercepts HTTP at the network layer — use the real fetch code path in tests, return canned responses.</li>
-  <li><strong>user-event</strong> simulates real user interactions (typing, clicking) more realistically than <code>fireEvent</code>.</li>
-  <li><strong>Playwright / Cypress</strong> for E2E tests in real browsers. Slower, more expensive, reserve for critical paths.</li>
-  <li>Golden rule: avoid testing <em>implementation details</em> (state names, internal method calls). Test behavior: "when I click X, I see Y."</li>
-  <li>For React Native: <strong>Jest + RNTL</strong> for unit/integration; <strong>Detox</strong> or <strong>Maestro</strong> for E2E.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Test the component the way a user uses it, not the way it's implemented. Selectors should reflect accessibility; assertions should reflect user-visible outcomes. If a refactor changes internal state but the UI behaves the same, the test should still pass.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Test what the user experiences</strong> ("click X, see Y"), not implementation details — a refactor that keeps the same UI should keep the tests green.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Golden rule:</strong> test what the user experiences ("click X, see Y"), NOT implementation details (state names, internal method calls). A refactor that keeps the same UI should keep tests green.</li>
+    <li><strong>Testing trophy (Kent C. Dodds):</strong> static (TS/ESLint) → many integration tests (best bugs-caught per cost) → fewer unit tests → a few E2E on critical flows. Integration gets the heaviest investment, unlike the classic pyramid.</li>
+    <li><strong>Tools:</strong> Jest/Vitest run tests (JSDOM/Node); RTL renders + queries; user-event simulates interactions; MSW mocks HTTP at the network layer; Playwright/Cypress for real-browser E2E.</li>
+    <li><strong>RTL query priority:</strong> <code>getByRole</code> &gt; <code>getByLabelText</code> &gt; <code>getByPlaceholderText</code> &gt; <code>getByText</code> &gt; ... &gt; <code>getByTestId</code> (last resort). Semantic queries test accessibility for free.</li>
+    <li><strong>Three query variants:</strong> <code>getBy</code> throws if absent (use when it should exist); <code>queryBy</code> returns null (use to assert absence); <code>findBy</code> is async, waits ~1s (use for async UI).</li>
+    <li><strong>user-event over fireEvent:</strong> <code>fireEvent.click</code> fires one event; <code>userEvent.click</code> fires the full sequence (mousedown→mouseup→click + focus), catching bugs that only appear in real sequences.</li>
+    <li><strong>MSW mocks at the network layer</strong> — your real fetch/axios runs, MSW returns canned responses. Same handlers work in tests, Storybook, and dev. Beats module-mocking fetch (which leaves your HTTP code untested).</li>
+    <li><strong>Mock what you don't own</strong> — HTTP, analytics, time. Don't module-mock your own hooks/components (you'd test a fake, not your code).</li>
+    <li><strong>renderHook</strong> tests custom hooks: read <code>result.current</code> (rebuilt each render), wrap state changes in <code>act()</code>, pass a <code>wrapper</code> for context-dependent hooks.</li>
+    <li><strong>"not wrapped in act" warning = a real bug:</strong> async state updates after the test thinks it's done. Fix with <code>findBy</code>/<code>waitFor</code> or <code>await act(async () =&gt; ...)</code> — never suppress.</li>
+    <li><strong>Never sleep with <code>setTimeout</code></strong> for async — flaky. Use <code>findBy</code>/<code>waitFor</code>. Reset mocks and shared state (store, MSW handlers, localStorage) in <code>afterEach</code>/<code>beforeEach</code>.</li>
+    <li><strong>Fake timers</strong> for debounce/delays; wire <code>userEvent.setup({ advanceTimers })</code> so typing works with fake timers.</li>
+    <li><strong>JSDOM has no layout</strong> — <code>getBoundingClientRect</code> returns zeros; <code>IntersectionObserver</code>/<code>ResizeObserver</code>/<code>matchMedia</code> need polyfills. Layout/visibility bugs belong in Playwright.</li>
+    <li><strong>Coverage % is not quality</strong> — 100% coverage can have zero meaningful assertions. Snapshots confirm "nothing changed," not "correct"; use sparingly on stable subtrees, never as behavior assertions.</li>
+    <li><strong>E2E is expensive</strong> — reserve for 5-15 business-critical flows (login, checkout, signup) that only a real browser catches; variations go in integration/unit.</li>
+    <li><strong>React Native:</strong> Jest + <code>@testing-library/react-native</code> for unit/integration; Detox or Maestro for E2E.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Suppressing the <strong>"not wrapped in <code>act</code>" warning</strong> — it's a real bug: async state updating after the test thinks it's done. Fix it at the source with <code>findBy</code>/<code>waitFor</code> (never a <code>setTimeout</code> sleep), and prefer <code>userEvent</code> over <code>fireEvent</code> so real event sequences run.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I test the component the way a user uses it — semantic role/label queries and user-visible assertions — so refactors that don't change behavior don't break tests."</div>
+  <div class="revision-say">"My default is RTL + MSW for integration tests, findBy/waitFor for async UI, and userEvent over fireEvent because real interactions are event sequences."</div>
+  <div class="revision-say">"I follow the testing trophy — most effort in integration, a thin layer of E2E for critical flows — and I fix act warnings at the source instead of suppressing them."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The testing pyramid (or trophy)</h3>
 <p>Classic advice: many unit tests, fewer integration tests, few E2E. Kent C. Dodds popularized the "testing trophy": heavy investment in integration tests (which exercise several units together and catch more real bugs) with fewer unit tests and some E2E at the top.</p>
 <ul>
@@ -55,10 +69,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>Why E2E in a real browser?</h3>
 <p>JSDOM is a fake DOM — no layout, no rendering, limited CSS, no real events. A button visible in JSDOM might be off-screen in a real browser. Playwright/Cypress launch a real Chrome/Firefox, run your app, interact with real events, take screenshots. Catches integration issues invisible to unit tests.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "priorities of queries" (RTL)</h3>
 <ol>
   <li><code>getByRole</code> — how assistive tech locates elements.</li>
@@ -118,10 +132,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"100% code coverage means the code is well-tested." Coverage counts executed lines, not asserted behavior. You can have 100% coverage with zero meaningful assertions. Focus on critical user flows and edge cases, not chasing a number.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Jest / Vitest setup</h3>
 <p>Jest is the classic React runner (bundled with CRA). Vitest is the Vite-native equivalent — faster, Jest-compatible APIs, better ESM. For React 18+ and modern stacks, Vitest is often the default choice.</p>
 <pre><code class="language-js">// vite.config.ts
@@ -140,7 +154,7 @@ import Counter from './Counter';
 test('counter', async () =&gt; {
   render(&lt;Counter/&gt;);
   expect(screen.getByText(/count: 0/i)).toBeInTheDocument();
-  await userEvent.click(screen.getByRole('button', { name: /\+/ }));
+  await userEvent.click(screen.getByRole('button', { name: /+/ }));
   expect(screen.getByText(/count: 1/i)).toBeInTheDocument();
 });</code></pre>
 
@@ -258,10 +272,10 @@ test('tap increments', () =&gt; {
   expect(getByRole('text')).toHaveTextContent('1');
 });</code></pre>
 <p>For E2E: Detox (iOS/Android, deterministic sync), Maestro (YAML flows, works cross-platform).</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — simple interaction</h3>
 <pre><code class="language-js">import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -404,10 +418,11 @@ test('checkout', async ({ page }) =&gt; {
 
 <h3>Example 15 — snapshot diff with reviewer</h3>
 <p>Prefer reviewing snapshots as actual HTML changes, not "just press -u." Chromatic / Percy make this a visual diff PR review experience.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. "not wrapped in act" warnings</h3>
 <p>Almost always means async state updates after the test thinks it's done. Use <code>findBy</code>, <code>waitFor</code>, or explicit <code>act(async () =&gt; ...)</code> wrappers.</p>
 
@@ -484,10 +499,9 @@ userEvent.type(input, 'foo'); // realistic sequence</code></pre>
 
 <h3>20. Testing components that use <code>useSyncExternalStore</code></h3>
 <p>Provide a matching server snapshot in tests, and ensure your store updates inside <code>act()</code> so React flushes.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — testing implementation details</h3>
 <pre><code class="language-js">// BAD
 expect(wrapper.state().count).toBe(1);
@@ -537,10 +551,10 @@ expect(component.instance().handleSubmit).toHaveBeenCalled();</code></pre>
 
 <h3>Anti-pattern 15 — relying on <code>beforeAll</code> fixtures that mutate</h3>
 <p>Tests that run in isolation pass; the suite fails. Prefer <code>beforeEach</code> for setup; make fixtures immutable; share only genuinely read-only data.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How do you decide what to test?</div>
   <div class="qa-answer">
@@ -698,54 +712,20 @@ test('boundary', () =&gt; {
     <li>You fix "act" warnings at the source rather than suppressing.</li>
   </ul>
 </div>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Test what the user experiences</strong> ("click X, see Y"), not implementation details — a refactor that keeps the same UI should keep the tests green.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Golden rule:</strong> test what the user experiences ("click X, see Y"), NOT implementation details (state names, internal method calls). A refactor that keeps the same UI should keep tests green.</li>
-    <li><strong>Testing trophy (Kent C. Dodds):</strong> static (TS/ESLint) → many integration tests (best bugs-caught per cost) → fewer unit tests → a few E2E on critical flows. Integration gets the heaviest investment, unlike the classic pyramid.</li>
-    <li><strong>Tools:</strong> Jest/Vitest run tests (JSDOM/Node); RTL renders + queries; user-event simulates interactions; MSW mocks HTTP at the network layer; Playwright/Cypress for real-browser E2E.</li>
-    <li><strong>RTL query priority:</strong> <code>getByRole</code> &gt; <code>getByLabelText</code> &gt; <code>getByPlaceholderText</code> &gt; <code>getByText</code> &gt; ... &gt; <code>getByTestId</code> (last resort). Semantic queries test accessibility for free.</li>
-    <li><strong>Three query variants:</strong> <code>getBy</code> throws if absent (use when it should exist); <code>queryBy</code> returns null (use to assert absence); <code>findBy</code> is async, waits ~1s (use for async UI).</li>
-    <li><strong>user-event over fireEvent:</strong> <code>fireEvent.click</code> fires one event; <code>userEvent.click</code> fires the full sequence (mousedown→mouseup→click + focus), catching bugs that only appear in real sequences.</li>
-    <li><strong>MSW mocks at the network layer</strong> — your real fetch/axios runs, MSW returns canned responses. Same handlers work in tests, Storybook, and dev. Beats module-mocking fetch (which leaves your HTTP code untested).</li>
-    <li><strong>Mock what you don't own</strong> — HTTP, analytics, time. Don't module-mock your own hooks/components (you'd test a fake, not your code).</li>
-    <li><strong>renderHook</strong> tests custom hooks: read <code>result.current</code> (rebuilt each render), wrap state changes in <code>act()</code>, pass a <code>wrapper</code> for context-dependent hooks.</li>
-    <li><strong>"not wrapped in act" warning = a real bug:</strong> async state updates after the test thinks it's done. Fix with <code>findBy</code>/<code>waitFor</code> or <code>await act(async () =&gt; ...)</code> — never suppress.</li>
-    <li><strong>Never sleep with <code>setTimeout</code></strong> for async — flaky. Use <code>findBy</code>/<code>waitFor</code>. Reset mocks and shared state (store, MSW handlers, localStorage) in <code>afterEach</code>/<code>beforeEach</code>.</li>
-    <li><strong>Fake timers</strong> for debounce/delays; wire <code>userEvent.setup({ advanceTimers })</code> so typing works with fake timers.</li>
-    <li><strong>JSDOM has no layout</strong> — <code>getBoundingClientRect</code> returns zeros; <code>IntersectionObserver</code>/<code>ResizeObserver</code>/<code>matchMedia</code> need polyfills. Layout/visibility bugs belong in Playwright.</li>
-    <li><strong>Coverage % is not quality</strong> — 100% coverage can have zero meaningful assertions. Snapshots confirm "nothing changed," not "correct"; use sparingly on stable subtrees, never as behavior assertions.</li>
-    <li><strong>E2E is expensive</strong> — reserve for 5-15 business-critical flows (login, checkout, signup) that only a real browser catches; variations go in integration/unit.</li>
-    <li><strong>React Native:</strong> Jest + <code>@testing-library/react-native</code> for unit/integration; Detox or Maestro for E2E.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Suppressing the <strong>"not wrapped in <code>act</code>" warning</strong> — it's a real bug: async state updating after the test thinks it's done. Fix it at the source with <code>findBy</code>/<code>waitFor</code> (never a <code>setTimeout</code> sleep), and prefer <code>userEvent</code> over <code>fireEvent</code> so real event sequences run.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I test the component the way a user uses it — semantic role/label queries and user-visible assertions — so refactors that don't change behavior don't break tests."</div>
-  <div class="revision-say">"My default is RTL + MSW for integration tests, findBy/waitFor for async UI, and userEvent over fireEvent because real interactions are event sequences."</div>
-  <div class="revision-say">"I follow the testing trophy — most effort in integration, a thin layer of E2E for critical flows — and I fix act warnings at the source instead of suppressing them."</div>
+<div class="qa-block">
+  <div class="qa-question">Q16. What is the testing trophy, and where should most of your testing effort go?</div>
+  <div class="qa-answer">
+    <p>The classic pyramid says many unit tests, fewer integration, few E2E. Kent C. Dodds' testing trophy shifts the weight: <strong>static</strong> checks at the base (TypeScript, ESLint, free and always on), then <strong>integration</strong> tests as the largest layer (a component plus its children with external services mocked by MSW), then fewer <strong>unit</strong> tests for pure functions and hooks, and a thin <strong>E2E</strong> layer for critical flows in a real browser. Most effort goes to integration (roughly 50% versus ~40% unit and ~5% E2E in the topic's allocation) because it has the best ratio of bugs caught to test cost; it catches the wiring bugs unit tests miss without E2E's slowness.</p>
+  </div>
 </div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why you query by role and label instead of by test IDs or class names?</li>
-    <li>Can you explain the difference between <code>userEvent</code> and <code>fireEvent</code> and why one is preferred?</li>
-    <li>Can you test async UI with <code>findBy</code>/<code>waitFor</code> instead of arbitrary timeouts?</li>
-    <li>Can you explain the testing trophy and where most of your effort should go?</li>
-    <li>Can you explain what an <code>act</code> warning means and how you'd fix it at the source?</li>
-    <li>Can you explain why you mock at the network boundary with MSW rather than mocking child components?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q17. Why mock at the network boundary with MSW instead of mocking child components or your own modules?</div>
+  <div class="qa-answer">
+    <p>The principle is "mock what you don't own". If you module-mock your own hooks or child components, the test exercises the mock, not your code, so real wiring bugs slip through and refactors break tests for no reason. Mock only external boundaries: HTTP (via MSW), side-effectful modules like analytics, and time (fake timers). With MSW your real fetch/axios code runs, including retries, error mapping and headers, and the same handlers work in tests, Storybook and local dev. If code is hard to test without a module mock, refactor it to isolate the boundary instead.</p>
+  </div>
 </div>
-`}
+` },
 
-]
+  ]
 });

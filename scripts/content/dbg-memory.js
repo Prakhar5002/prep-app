@@ -1,34 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'dbg-memory',
-  module: 'Debugging',
-  title: 'Memory Leak Hunt',
-  estimatedReadTime: '24 min',
-  tags: ['debugging', 'memory', 'leak', 'heap-snapshot', 'devtools', 'detached-dom', 'retainers'],
+  id: "dbg-memory",
+  module: "Debugging",
+  title: "Memory Leak Hunt",
+  estimatedReadTime: "24 min",
+  tags: ["debugging","memory","leak","heap-snapshot","devtools","detached-dom","retainers"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>Memory leak hunting is the process of finding objects that should have been garbage-collected but weren't — because some reference still points to them. Single most common debugging shape: take snapshot, reproduce action, take snapshot, compare, trace retainers.</p>
-<ul>
-  <li><strong>DevTools Memory panel</strong> — three modes: heap snapshot, allocation timeline, allocation sampling.</li>
-  <li><strong>Snapshot + diff</strong> — baseline snapshot → reproduce action 5-10x → snapshot 2 → comparison view → growing object types.</li>
-  <li><strong>Detached DOM</strong> — filter <code>"Detached"</code> in heap snapshot to find DOM trees still in JS but removed from page.</li>
-  <li><strong>Retainer chain</strong> — for any object, expand "Retainers" panel to find what holds it alive.</li>
-  <li><strong>Force GC</strong> — trash icon. Critical: snapshot AFTER force-GC for clean baseline.</li>
-  <li><strong>queryObjects</strong> in console — find all instances of a class.</li>
-  <li><strong>fuite / memlab</strong> — automated memory leak detection in CI.</li>
-  <li><strong>performance.measureUserAgentSpecificMemory()</strong> — modern API for production memory tracking.</li>
-  <li><strong>Common culprits</strong>: detached DOM in arrays, unremoved listeners, uncleared intervals, undisconnected observers, closures over big state.</li>
-</ul>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Snapshot, repeat, snapshot, compare. Sort by Δ. Detached &gt; 0 = leak. Trace the retainer chain to find the holder. Cut it. Verify with another snapshot.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>Snapshot, repeat the action, snapshot, compare, sort by delta, filter Detached, and trace the retainer chain to the holder</strong> — a leak is an object still reachable that should have been garbage-collected.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The canonical shape:</strong> force GC → snapshot S1 → reproduce the action 5-10× → force GC → snapshot S2 → <strong>Comparison</strong> view → sort by count/size delta → growing types are leak candidates.</li>
+    <li><strong>Force GC before every snapshot</strong> (trash icon) — otherwise uncollected garbage looks like growth, a false positive.</li>
+    <li><strong>Detached DOM</strong> is the most common browser leak: a node removed from the page but still referenced from JS (array, Map, closure, listener). Filter <code>Detached</code> in the snapshot to find them.</li>
+    <li><strong>Shallow vs retained size:</strong> shallow = the object's own bytes; <strong>retained = shallow + everything it exclusively keeps alive.</strong> A 200-byte object holding a 40MB array has retained size 40MB — sort by retained to find leak anchors.</li>
+    <li><strong>Retainer chain:</strong> for any object, expand Retainers and walk up to a GC root (Window, etc.) to find the named property in your code that holds it.</li>
+    <li>Five canonical leaks: <strong>detached DOM in arrays, listeners not removed, timers not cleared, observers not disconnected, closures over big state</strong> (plus workers not terminated, pending promises, unbounded module-level caches).</li>
+    <li><strong>Leak vs bloat:</strong> a leak grows monotonically across repeated identical actions AND survives forced GC; bloat grows then plateaus (warm caches, lazy modules) — different fix (bound caches).</li>
+    <li>Three Memory modes: <strong>heap snapshot</strong> (what's alive → diff for leaks), <strong>allocation timeline</strong> (what's allocated + stacks), <strong>allocation sampling</strong> (lighter, per-function).</li>
+    <li><code>queryObjects(MyClass)</code> in the console lists all live instances — confirm "1 mounted but 50 exist," and verify the count after a fix.</li>
+    <li>Fixes: <code>removeEventListener</code> / <code>clearInterval</code> / <code>obs.disconnect()</code> in cleanup; capture only needed primitives in closures; <strong>WeakMap</strong> for object keys (auto-cleanup); LRU for bounded caches.</li>
+    <li><strong>Verify the fix</strong> with another snapshot diff — and remember multiple retainer paths can hold one object, so cutting one may not be enough.</li>
+    <li>Production: you can't snapshot users, but track <code>performance.memory</code> (quantized) or <code>measureUserAgentSpecificMemory()</code> in RUM; automate leak detection with <strong>fuite / memlab</strong> in CI.</li>
+    <li>Mantra: <strong>"Snapshot, repeat, snapshot, compare. Sort by Δ. Detached &gt; 0 = leak. Trace the holder, cut it, verify."</strong></li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Snapshotting without forcing GC first (and diffing from a single snapshot).</strong> Un-collected garbage inflates the "after" snapshot and every type looks like it's growing, so you chase phantom leaks. Fix: click the trash icon to force a major GC immediately before each snapshot, always take at least two, and confirm growth survives GC and repeats across identical actions before calling it a leak.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Snapshot, repeat the action, snapshot, compare — I force GC before each one, sort by delta, filter Detached for DOM leaks, then trace the retainer chain to the holder and verify with another diff."</div>
+  <div class="revision-say">"Retained size is what matters — a tiny object can retain 40MB, so cutting that one reference frees it all; I sort by retained size to find the anchor."</div>
+  <div class="revision-say">"Most web leaks are one of five: detached DOM, unremoved listeners, uncleared timers, undisconnected observers, or closures over big state — so I audit useEffect cleanups first."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why memory leaks are hard</h3>
 <ul>
   <li>Symptoms appear gradually — slow tab over hours.</li>
@@ -70,10 +79,10 @@ window.PREP_SITE.registerTopic({
   <li><code>performance.measureUserAgentSpecificMemory()</code>: modern, more accurate, rate-limited.</li>
 </ul>
 <p>Track in RUM; spot leaks at scale before user complaints.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "leak hunt" workflow</h3>
 <div class="diagram">
 <pre>
@@ -146,10 +155,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"Memory grew, so there's a leak." Memory growth can be normal: cache filling, image decoding, lazy-loaded modules. Real leak: memory keeps growing across repeated identical actions, AND survives forced GC.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Memory panel — three modes</h3>
 <ol>
   <li><strong>Heap snapshot</strong>: full graph at a point in time. Best for diff-based hunts.</li>
@@ -293,10 +302,10 @@ setInterval(reportMemory, 60000);</code></pre>
 
 <h3>Profiler retains too</h3>
 <p>While Profiler is recording, every commit's snapshot stays in memory. Stop Profiler before measuring leaks; otherwise normal app growth looks like a leak.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — modal leak hunt</h3>
 <pre><code>// Reproducer:
 function openModal() {
@@ -523,10 +532,11 @@ function checkHeapDelta(label) {
 checkHeapDelta('before route change');
 nav.navigate('/posts');
 setTimeout(() =&gt; checkHeapDelta('after route change'), 100);</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. GC isn't synchronous</h3>
 <p>Memory grows visible after dropping a reference until GC runs. Force GC before measuring.</p>
 
@@ -586,10 +596,9 @@ setTimeout(() =&gt; checkHeapDelta('after route change'), 100);</code></pre>
 
 <h3>20. Performance memory quantization</h3>
 <p><code>performance.memory.usedJSHeapSize</code> is rounded for security. Small leaks invisible. Use modern <code>measureUserAgentSpecificMemory()</code> for accuracy.</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — snapshot without force GC</h3>
 <p>"Memory grew" includes garbage. Force GC before each snapshot.</p>
 
@@ -634,10 +643,10 @@ setTimeout(() =&gt; checkHeapDelta('after route change'), 100);</code></pre>
 
 <h3>Anti-pattern 15 — tab restart as the fix</h3>
 <p>"User reports memory issues; tell them to refresh." Real fix: identify + cut the leak. Restart hides the bug.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. Walk me through finding a memory leak.</div>
   <div class="qa-answer">
@@ -814,49 +823,7 @@ setTimeout(() =&gt; checkHeapDelta('after route change'), 100);</code></pre>
     <li>You run automated leak detection (fuite / memlab) in CI.</li>
   </ul>
 </div>
-`},
+` },
 
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>Snapshot, repeat the action, snapshot, compare, sort by delta, filter Detached, and trace the retainer chain to the holder</strong> — a leak is an object still reachable that should have been garbage-collected.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>The canonical shape:</strong> force GC → snapshot S1 → reproduce the action 5-10× → force GC → snapshot S2 → <strong>Comparison</strong> view → sort by count/size delta → growing types are leak candidates.</li>
-    <li><strong>Force GC before every snapshot</strong> (trash icon) — otherwise uncollected garbage looks like growth, a false positive.</li>
-    <li><strong>Detached DOM</strong> is the most common browser leak: a node removed from the page but still referenced from JS (array, Map, closure, listener). Filter <code>Detached</code> in the snapshot to find them.</li>
-    <li><strong>Shallow vs retained size:</strong> shallow = the object's own bytes; <strong>retained = shallow + everything it exclusively keeps alive.</strong> A 200-byte object holding a 40MB array has retained size 40MB — sort by retained to find leak anchors.</li>
-    <li><strong>Retainer chain:</strong> for any object, expand Retainers and walk up to a GC root (Window, etc.) to find the named property in your code that holds it.</li>
-    <li>Five canonical leaks: <strong>detached DOM in arrays, listeners not removed, timers not cleared, observers not disconnected, closures over big state</strong> (plus workers not terminated, pending promises, unbounded module-level caches).</li>
-    <li><strong>Leak vs bloat:</strong> a leak grows monotonically across repeated identical actions AND survives forced GC; bloat grows then plateaus (warm caches, lazy modules) — different fix (bound caches).</li>
-    <li>Three Memory modes: <strong>heap snapshot</strong> (what's alive → diff for leaks), <strong>allocation timeline</strong> (what's allocated + stacks), <strong>allocation sampling</strong> (lighter, per-function).</li>
-    <li><code>queryObjects(MyClass)</code> in the console lists all live instances — confirm "1 mounted but 50 exist," and verify the count after a fix.</li>
-    <li>Fixes: <code>removeEventListener</code> / <code>clearInterval</code> / <code>obs.disconnect()</code> in cleanup; capture only needed primitives in closures; <strong>WeakMap</strong> for object keys (auto-cleanup); LRU for bounded caches.</li>
-    <li><strong>Verify the fix</strong> with another snapshot diff — and remember multiple retainer paths can hold one object, so cutting one may not be enough.</li>
-    <li>Production: you can't snapshot users, but track <code>performance.memory</code> (quantized) or <code>measureUserAgentSpecificMemory()</code> in RUM; automate leak detection with <strong>fuite / memlab</strong> in CI.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Snapshotting without forcing GC first (and diffing from a single snapshot).</strong> Un-collected garbage inflates the "after" snapshot and every type looks like it's growing, so you chase phantom leaks. Fix: click the trash icon to force a major GC immediately before each snapshot, always take at least two, and confirm growth survives GC and repeats across identical actions before calling it a leak.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Snapshot, repeat the action, snapshot, compare — I force GC before each one, sort by delta, filter Detached for DOM leaks, then trace the retainer chain to the holder and verify with another diff."</div>
-  <div class="revision-say">"Retained size is what matters — a tiny object can retain 40MB, so cutting that one reference frees it all; I sort by retained size to find the anchor."</div>
-  <div class="revision-say">"Most web leaks are one of five: detached DOM, unremoved listeners, uncleared timers, undisconnected observers, or closures over big state — so I audit useEffect cleanups first."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you walk through the snapshot → reproduce → snapshot → compare workflow for isolating a leak?</li>
-    <li>Can you explain why you must force GC before taking a baseline snapshot?</li>
-    <li>Can you find detached DOM nodes in a heap snapshot and say why they signal a leak?</li>
-    <li>Can you trace a retainer chain to identify exactly what is holding an object alive?</li>
-    <li>Can you name the most common culprits — unremoved listeners, uncleared intervals, undisconnected observers, closures over big state?</li>
-    <li>Can you use <code>queryObjects</code>, or memlab/fuite, to enumerate instances or catch leaks in CI?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

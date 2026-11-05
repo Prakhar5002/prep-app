@@ -1,32 +1,48 @@
 window.PREP_SITE.registerTopic({
-  id: 'dsa-binary-search',
-  module: 'dsa',
-  title: 'Binary Search',
-  estimatedReadTime: '40 min',
-  tags: ['binary-search', 'sorted-array', 'lower-bound', 'upper-bound', 'binary-search-on-answer', 'search-rotated', 'invariant'],
+  id: "dsa-binary-search",
+  module: "dsa",
+  title: "Binary Search",
+  estimatedReadTime: "40 min",
+  tags: ["binary-search","sorted-array","lower-bound","upper-bound","binary-search-on-answer","search-rotated","invariant"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p><strong>Binary search</strong> finds an item in a sorted sequence in O(log n) by repeatedly halving the search space. It looks deceptively simple — and is famously where ~80% of seasoned engineers introduce off-by-one bugs. The trick: pick an <em>invariant</em> and stick to it.</p>
-<ul>
-  <li><strong>Three classic forms:</strong> exact-match (does X exist?), <em>lower bound</em> (smallest index with value ≥ target), <em>upper bound</em> (smallest index with value &gt; target).</li>
-  <li><strong>The invariant decides everything.</strong> "lo and hi point to..." — keep the meaning identical at every loop iteration.</li>
-  <li><strong>Use <code>lo + (hi - lo) / 2</code></strong> if your language has integer overflow concerns. JS doesn't (within safe integer range), but <code>(lo + hi) &gt;&gt; 1</code> is idiomatic and fast.</li>
-  <li><strong>Binary search on the answer:</strong> not just for sorted arrays. If the predicate "is k a feasible answer?" is monotone, binary-search the answer space.</li>
-  <li><strong>Rotated sorted arrays, peak finding, search-in-2D-matrix, capacity-to-ship</strong> — all binary search variants.</li>
-  <li><strong>Common bugs:</strong> wrong loop condition (<code>&lt;</code> vs <code>&lt;=</code>), wrong update (<code>mid</code> vs <code>mid+1</code>), wrong return on miss, infinite loop when shrinking by 0.</li>
-  <li><strong>Always pick a template that you can defend.</strong> The "less than, mid + 1 / mid" template handles both lower-bound and exact-match cleanly.</li>
-</ul>
-<p><strong>Mantra:</strong> "State the invariant. Stick to one template. Test on size 0, 1, 2 always."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline"><strong>State the invariant, then stick to ONE template</strong> — binary search is trivial in theory but where ~80% of engineers ship off-by-one bugs, and switching templates mid-solve is the cause.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Halve the search space each step</strong> → O(log n) on a sorted sequence. n = 1B → ~30 comparisons.</li>
+    <li><strong>The four classic bugs:</strong> wrong loop condition (<code>&lt;</code> vs <code>&lt;=</code>), wrong update (<code>mid</code> vs <code>mid + 1</code>), wrong return on a miss, and an infinite loop when the range shrinks by 0. Pin the invariant ("what do <code>lo</code> and <code>hi</code> mean?") and keep it identical every iteration.</li>
+    <li><strong>Prefer the half-open template</strong> <code>[lo, hi)</code>: <code>lo = 0, hi = arr.length</code>; <code>while (lo &lt; hi)</code>; <code>hi = mid</code> or <code>lo = mid + 1</code>. After the loop, <code>lo</code> is the answer position (or <code>arr.length</code> if no match).</li>
+    <li><strong>Three shapes, and every question is one of them:</strong> exact-match, lower bound (first index with <code>arr[i] ≥ target</code>), upper bound (first index with <code>arr[i] &gt; target</code>).</li>
+    <li><strong>Frame it as a monotone predicate:</strong> "smallest index where <code>pred(arr[i])</code> is true." The predicate must be monotone — once true, true for all larger indices.</li>
+    <li><strong>Exact match via lower bound:</strong> after the loop, <code>return lo &lt; n &amp;&amp; arr[lo] === target ? lo : -1;</code></li>
+    <li><strong>Binary search on the answer</strong> when input isn't sorted but the answer space is monotone (Koko, capacity-to-ship, split-array): search the answer range, predicate = feasibility.</li>
+    <li><strong>Infinite-loop trap:</strong> <code>lo = mid</code> can fail to advance → always use <code>lo = mid + 1</code>, or round mid up with <code>(lo + hi + 1) &gt;&gt; 1</code> when shrinking via <code>lo = mid</code>.</li>
+    <li>Compute mid as <code>lo + ((hi - lo) &gt;&gt; 1)</code> to dodge overflow (a non-issue in JS under ~1B elements, but expected in interviews).</li>
+    <li><strong>Rotated sorted array:</strong> each step, find which half is sorted, then check if the target lies inside it. Peak finding, search-in-2D-matrix, and capacity-to-ship are other variants of the same idea.</li>
+    <li><strong>Floating-point answer:</strong> terminate on <code>hi - lo &gt; epsilon</code>, not <code>lo &lt; hi</code>.</li>
+    <li><strong>Always test n = 0, 1, 2</strong> and target before / after / equal to everything. Mantra: "State the invariant. Stick to one template. Test on size 0, 1, 2 always."</li>
+  </ul>
+  <h4>Complexity &amp; when to reach for it</h4>
+  <ul>
+    <li><strong>Time:</strong> O(log n) for the search. BS-on-answer is O(n log A), where A is the size of the answer range (each feasibility check is O(n)).</li>
+    <li><strong>Space:</strong> O(1) iterative.</li>
+    <li><strong>Signal → reach for it:</strong> sorted array + "find / insert" → lower bound · "first / last occurrence" → lower + upper bound · "smallest / largest x such that pred(x)" → BS on answer · rotated array → modified BS comparing halves.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>The infinite loop from <code>lo = mid</code>:</strong> when the search shrinks with <code>lo = mid</code>, a floored mid never advances past <code>lo</code> and the loop spins forever — use <code>lo = mid + 1</code>, or round mid <em>up</em> with <code>(lo + hi + 1) &gt;&gt; 1</code>. The other perennial slips are mixing <code>&lt;</code> vs <code>&lt;=</code> against the wrong <code>hi</code> initialization, and the wrong return on a miss — pin down your invariant ("what do <code>lo</code> and <code>hi</code> mean?") and test n = 0, 1, 2.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I'll use the half-open template: <code>lo</code> is the smallest index that could be the answer, <code>hi</code> is one past the largest — one loop condition, one update rule, predictable termination."</div>
+  <div class="revision-say">"I frame binary search as 'find the smallest index where a monotone predicate is true' — that one abstraction covers exact match, lower/upper bound, and binary-search-on-the-answer."</div>
+  <div class="revision-say">"Even when the array isn't sorted, if feasibility is monotone in the answer I binary-search the answer space — that's Koko, capacity-to-ship, and split-array."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What is binary search?</h3>
 <p>An algorithm that locates a target value in a <em>sorted</em> sequence by:</p>
 <ol>
@@ -75,12 +91,10 @@ window.PREP_SITE.registerTopic({
   <li>For "binary search on answer," you state the predicate explicitly and verify monotonicity.</li>
   <li>You quote O(log n) time, O(1) space.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The half-open invariant template</h3>
 <p>One template covers everything. Use it.</p>
 <pre><code class="language-js">// Invariant: answer (if exists) is in [lo, hi)
@@ -157,12 +171,10 @@ Binary search capacity in [max(weights), sum(weights)]:
 
 <h3>Two-pointer vs binary search</h3>
 <p>Both halve work, but differently. Two-pointer (left + right meeting in the middle) is for finding pairs/triples in a sorted array. Binary search is for "find this one thing." Don't confuse them.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Lower bound (smallest index with arr[i] ≥ target)</h3>
 <pre><code class="language-js">function lowerBound(arr, target) {
   let lo = 0, hi = arr.length;     // half-open: [lo, hi)
@@ -385,12 +397,10 @@ function exponentialSearch(reader, target) {
   return reader.get(lo) === target ? lo : -1;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Find Position to Insert (lower_bound applied)</h3>
 <pre><code class="language-js">function searchInsert(nums, target) {
   let lo = 0, hi = nums.length;
@@ -582,12 +592,11 @@ function allocateBooks(pages, m) {
   return lo;
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Empty array</h3>
 <p>Half-open template handles it: <code>lo = hi = 0</code>, loop doesn't enter, returns 0 (lower bound) or -1 (after exact-match check). Always test.</p>
 
@@ -668,12 +677,9 @@ else lo = mid + 1;
   <li>"Largest x where pred(x) is true": <code>pred(mid) → lo = mid</code>; <code>else → hi = mid - 1</code>; round mid up.</li>
 </ul>
 <p>Mixing these up produces infinite loops or wrong answers.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Wrong loop condition</h3>
 <pre><code class="language-js">// Half-open template uses lo &lt; hi
 while (lo &lt;= hi) {           // ❌ for half-open
@@ -789,12 +795,10 @@ const ok = predicate(mid);
 
 <h3>Anti-pattern 10: using <code>Math.floor((lo + hi) / 2)</code> when <code>(lo + hi) &gt;&gt; 1</code> works</h3>
 <p>JS: both work for arrays under 1 billion entries. Bit shift is faster and more idiomatic.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 14 problems worth memorizing patterns for</h3>
 <table>
   <thead><tr><th>Problem</th><th>Pattern</th></tr></thead>
@@ -894,59 +898,46 @@ const ok = predicate(mid);
   <li>"I'd handle the rotated-with-duplicates case with the explicit O(n) worst case documented."</li>
   <li>"For BS-on-answer, I'd verify the answer's feasibility post-loop in case the predicate had a bug or the bounds were too tight."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline"><strong>State the invariant, then stick to ONE template</strong> — binary search is trivial in theory but where ~80% of engineers ship off-by-one bugs, and switching templates mid-solve is the cause.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Halve the search space each step</strong> → O(log n) on a sorted sequence. n = 1B → ~30 comparisons.</li>
-    <li><strong>State the invariant, then stick to ONE template.</strong> ~80% of off-by-one bugs come from switching templates mid-solve.</li>
-    <li><strong>Prefer the half-open template</strong> <code>[lo, hi)</code>: <code>lo = 0, hi = arr.length</code>; <code>while (lo &lt; hi)</code>; <code>hi = mid</code> or <code>lo = mid + 1</code>. After the loop, <code>lo</code> is the answer position (or <code>arr.length</code> if no match).</li>
-    <li><strong>Three shapes, and every question is one of them:</strong> exact-match, lower bound (first index with <code>arr[i] ≥ target</code>), upper bound (first index with <code>arr[i] &gt; target</code>).</li>
-    <li><strong>Frame it as a monotone predicate:</strong> "smallest index where <code>pred(arr[i])</code> is true." The predicate must be monotone — once true, true for all larger indices.</li>
-    <li><strong>Exact match via lower bound:</strong> after the loop, <code>return lo &lt; n &amp;&amp; arr[lo] === target ? lo : -1;</code></li>
-    <li><strong>Binary search on the answer</strong> when input isn't sorted but the answer space is monotone (Koko, capacity-to-ship, split-array): search the answer range, predicate = feasibility.</li>
-    <li><strong>Infinite-loop trap:</strong> <code>lo = mid</code> can fail to advance → always use <code>lo = mid + 1</code>, or round mid up with <code>(lo + hi + 1) &gt;&gt; 1</code> when shrinking via <code>lo = mid</code>.</li>
-    <li>Compute mid as <code>lo + ((hi - lo) &gt;&gt; 1)</code> to dodge overflow (a non-issue in JS under ~1B elements, but expected in interviews).</li>
-    <li><strong>Rotated sorted array:</strong> each step, find which half is sorted, then check if the target lies inside it.</li>
-    <li><strong>Floating-point answer:</strong> terminate on <code>hi - lo &gt; epsilon</code>, not <code>lo &lt; hi</code>.</li>
-    <li><strong>Always test n = 0, 1, 2</strong> and target before / after / equal to everything.</li>
-  </ul>
-  <h4>Complexity &amp; when to reach for it</h4>
-  <ul>
-    <li><strong>Time:</strong> O(log n) for the search. BS-on-answer is O(n log A), where A is the size of the answer range (each feasibility check is O(n)).</li>
-    <li><strong>Space:</strong> O(1) iterative.</li>
-    <li><strong>Signal → reach for it:</strong> sorted array + "find / insert" → lower bound · "first / last occurrence" → lower + upper bound · "smallest / largest x such that pred(x)" → BS on answer · rotated array → modified BS comparing halves.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>The infinite loop from <code>lo = mid</code>:</strong> when the search shrinks with <code>lo = mid</code>, a floored mid never advances past <code>lo</code> and the loop spins forever — use <code>lo = mid + 1</code>, or round mid <em>up</em> with <code>(lo + hi + 1) &gt;&gt; 1</code>. The other perennial slips are mixing <code>&lt;</code> vs <code>&lt;=</code> against the wrong <code>hi</code> initialization, and the wrong return on a miss — pin down your invariant ("what do <code>lo</code> and <code>hi</code> mean?") and test n = 0, 1, 2.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I'll use the half-open template: <code>lo</code> is the smallest index that could be the answer, <code>hi</code> is one past the largest — one loop condition, one update rule, predictable termination."</div>
-  <div class="revision-say">"I frame binary search as 'find the smallest index where a monotone predicate is true' — that one abstraction covers exact match, lower/upper bound, and binary-search-on-the-answer."</div>
-  <div class="revision-say">"Even when the array isn't sorted, if feasibility is monotone in the answer I binary-search the answer space — that's Koko, capacity-to-ship, and split-array."</div>
-</div>
-`
-    },
 
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you code the standard binary-search template from memory?</li>
-    <li>Can you name the classic off-by-one / infinite-loop trap in the bounds?</li>
-    <li>Can you recognize &quot;binary search on the answer&quot; when the array isn't sorted?</li>
-    <li>Can you state its time and space complexity?</li>
-    <li>Can you find the leftmost / rightmost boundary (lower/upper bound)?</li>
-    <li>Can you name 2 problems it solves?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. Write the standard binary-search template from memory.</div>
+  <div class="qa-answer">
+    <p>Use the half-open template, whose invariant is "the answer, if it exists, is in <code>[lo, hi)</code>". It finds the smallest index where a monotone predicate is true:</p>
+    <pre><code class="language-js">let lo = 0, hi = arr.length;
+while (lo &lt; hi) {
+  const mid = (lo + hi) &gt;&gt; 1;
+  if (predicate(arr[mid])) hi = mid;   // answer is mid or to the left
+  else lo = mid + 1;                   // answer is to the right
+}
+return lo;  // arr.length if no element matches</code></pre>
+    <p>One loop condition and one update rule cover exact match, lower bound and upper bound — only the predicate changes.</p>
+  </div>
 </div>
-`}
-]
+<div class="qa-block">
+  <div class="qa-question">Q2. What is the classic off-by-one / infinite-loop trap in binary search?</div>
+  <div class="qa-answer">
+    <p>Shrinking with <code>lo = mid</code> while computing a floored mid: when <code>hi = lo + 1</code>, <code>mid</code> equals <code>lo</code>, the range never shrinks, and the loop spins forever. Fix it by always using <code>lo = mid + 1</code> with the half-open template, or by rounding mid up with <code>(lo + hi + 1) &gt;&gt; 1</code> when you must shrink via <code>lo = mid</code>. The other off-by-ones come from mixing <code>&lt;</code> and <code>&lt;=</code> against the wrong <code>hi</code> initialization (<code>arr.length</code> vs <code>arr.length - 1</code>) and returning the wrong value on a miss — test n = 0, 1, 2 to catch them.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q3. How can you use binary search when the input array isn't sorted?</div>
+  <div class="qa-answer">
+    <p>Binary-search the <em>answer space</em> instead of the array. If the predicate "is k a feasible answer?" is monotone — once feasible, every larger k is feasible too — search the range of possible answers with that predicate. In Koko Eating Bananas you search speeds from 1 to <code>max(piles)</code> and the predicate is "hours needed at this speed is at most h"; capacity-to-ship and split-array-largest-sum work the same way. Signal: "find the smallest / largest x such that ..." Cost is O(n log A), where A is the size of the answer range and each feasibility check is O(n).</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. What are the time and space complexity of binary search?</div>
+  <div class="qa-answer">
+    <p>Time is O(log n), because each step halves the search space — about 30 comparisons for a billion elements. Space is O(1) for the iterative version. Binary search on the answer is O(n log A), where A is the size of the answer range, because every step runs an O(n) feasibility check.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. How do you find the leftmost and rightmost occurrence of a target?</div>
+  <div class="qa-answer">
+    <p>The leftmost occurrence is the <strong>lower bound</strong>: the smallest index with <code>arr[i] &gt;= target</code>. The <strong>upper bound</strong> is the smallest index with <code>arr[i] &gt; target</code>, so the rightmost occurrence is <code>upperBound - 1</code>. Both use the same half-open template with a different predicate. Check that the lower bound is in range and actually equals the target (<code>lo &lt; arr.length &amp;&amp; arr[lo] === target</code>), otherwise return <code>[-1, -1]</code>.</p>
+  </div>
+</div>
+` },
+
+  ]
 });

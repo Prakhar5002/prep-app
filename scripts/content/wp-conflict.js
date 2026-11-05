@@ -1,33 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'wp-conflict',
-  module: 'workplace',
-  title: 'Conflict & Productive Disagreement',
-  estimatedReadTime: '35 min',
-  tags: ['conflict', 'disagreement', 'feedback', 'difficult-conversations', 'escalation', 'mediation', 'dac'],
+  id: "wp-conflict",
+  module: "workplace",
+  title: "Conflict & Productive Disagreement",
+  estimatedReadTime: "35 min",
+  tags: ["conflict","disagreement","feedback","difficult-conversations","escalation","mediation","dac"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Conflict at work is inevitable; <em>productive</em> conflict is not. Most engineers either suppress disagreement (avoid + smile) or detonate it (vent + escalate). Both fail. The goal is structured disagreement: name the issue cleanly, separate person from problem, work to a decision, commit to the outcome — even one you don't love.</p>
-<ul>
-  <li><strong>Disagreement is signal.</strong> Teams without disagreement are usually teams where people stopped speaking up. Silence is more dangerous than friction.</li>
-  <li><strong>Separate person from problem.</strong> "I disagree with this design" ≠ "I disagree with you." Don't conflate.</li>
-  <li><strong>Disagree-and-commit (DAC).</strong> Once a decision is made, even if you opposed it, you commit fully. Sandbagging or "I told you so" later is corrosive.</li>
-  <li><strong>Most conflicts are about facts, framing, or values.</strong> Diagnose the type before responding. Different conflict types have different resolutions.</li>
-  <li><strong>Escalation is a tool, not a weapon.</strong> Use it when peer-level resolution genuinely failed; don't use it as a power move.</li>
-  <li><strong>Bad behavior (yelling, dismissiveness, exclusion) is a separate problem</strong> from disagreement. Address it directly or via manager — don't quietly tolerate.</li>
-  <li><strong>Written disagreement aids resolution</strong> — forces precision and creates a record. Spoken disagreements drift, repeat, and create politics.</li>
-  <li><strong>Mobile / RN angle:</strong> conflict often shows up between mobile and web/backend over priorities, constraints, "why is this slow." Educate + push back without burning relationships.</li>
-</ul>
-<p><strong>Mantra:</strong> "Diagnose the conflict type. Argue the problem, not the person. Push for decision in writing. Commit fully after the decision. Escalate only when peer-level genuinely failed."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Disagree <strong>clearly, early, in writing, with respect</strong> — argue the problem not the person — then <strong>commit fully</strong> once the decision is made, even one you lost.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Disagreement is signal.</strong> Teams without disagreement are usually teams where people stopped speaking up — silence is more dangerous than friction.</li>
+    <li>Suppression (avoid + smile) and detonation (vent + escalate) both fail. The middle path is <strong>structured disagreement</strong>: name the issue cleanly, separate person from problem, drive to a decision, commit to the outcome.</li>
+    <li><strong>Diagnose the conflict type first:</strong> fact-based (get data), framing-based (surface trade-offs, pick a frame deliberately), or values-based (compromise hard, sometimes leadership decides, sometimes you walk). Misdiagnosing makes resolution impossible.</li>
+    <li><strong>Disagree-and-commit:</strong> opinions matter while the decision is open; execution matters once it is made. The hardest step is committing when you were right — no sandbagging, no "I told you so".</li>
+    <li>Stay <strong>above the line</strong> — curious, assumes good intent, focused on the problem and the outcome — not below it (defensive, needing to be right, focused on the person and the points).</li>
+    <li>Look past positions to <strong>interests</strong>: "ship Friday" vs "need testing time" is intractable at the position level, often resolvable at the interest level (both want a successful launch).</li>
+    <li>Climb the <strong>resolution funnel</strong> slowly: self-talk → direct conversation → written disagreement → tech-lead/facilitator → manager → skip-level. Skipping levels damages relationships.</li>
+    <li><strong>Escalation is a tool, not a weapon</strong> — use it to get a decision (be prepared to lose), tell the peer first, only after peer-level genuinely failed.</li>
+    <li>Use <strong>writing for high-stakes</strong> disagreements: it forces precision, creates a record, reduces drift, and often resolves the issue before you hit send. Spoken disagreements drift, repeat, and create politics.</li>
+    <li><strong>Bad behavior is a separate problem</strong> from disagreement — address yelling, dismissiveness, or exclusion directly and loop your manager; do not frame it as "robust debate" or quietly tolerate it.</li>
+    <li>Hold the line on what matters (customer harm, security, major debt); yield freely on style, naming, and calls that are not yours to make.</li>
+    <li><strong>Mobile / RN angle:</strong> conflict often shows up between mobile and web/backend over priorities, constraints, and "why is this slow" — educate and push back without burning relationships.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Relitigating a closed decision (or "I told you so" after losing).</strong> Sandbagging the direction you opposed, dragging it up in every retro, or slow-walking the work all destroy the disagree-and-commit contract — and the trust that gets you weight in the next decision. Log your dissent once, then bring full energy to executing the call.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I argue the problem, not the person — and once the decision is made, even if I lost, I commit fully. Sandbagging or saying 'I told you so' just guarantees I get less weight next time."</div>
+  <div class="revision-say">"For high-stakes disagreements I go to writing: it forces me to be precise, it steel-mans their view, and half the time I resolve my own concern before I even send it."</div>
+  <div class="revision-say">"I escalate to get a decision, not to win — I try peer-level first, I tell the person I'm escalating, and I go in prepared to lose."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The conflicts engineers face</h3>
 <table>
   <thead><tr><th>Conflict</th><th>Typical with</th><th>What it looks like</th></tr></thead>
@@ -112,12 +121,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>Cross-platform parity disputes.</strong> "iOS got the feature first; Android team is slow." Surface the actual constraints.</li>
   <li><strong>Backend disputes:</strong> "API isn't ready"; "Mobile takes too long to consume new APIs." Push for contracts upfront.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "above-the-line / below-the-line" model</h3>
 <p>Every interaction in conflict happens at one of two levels:</p>
 <table>
@@ -219,12 +226,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>Don't sandbag.</strong> No malicious compliance. No "told you so" if it fails. You're owning the decision now.</li>
 </ol>
 <p>The hardest step is 5. Especially when you were right. The discipline is: opinions matter while the decision is open; execution matters once it's made. You don't get to keep relitigating after the door closes.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>The disagreement script</h3>
 <p>For most engineering disagreements, this template works:</p>
 <pre><code>1. Acknowledge their position.
@@ -400,12 +405,10 @@ To resolve, we'd need [data / decision / alignment on priority]."</code></pre>
     <tr><td>Backend "API isn't ready"</td><td>Pre-empt with API contract upfront; co-author OpenAPI spec.</td></tr>
   </tbody>
 </table>
-`
-    },
-    {
-      id: 'examples',
-      title: '🔍 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Design disagreement with peer engineer</h3>
 <p><strong>Setup:</strong> Peer proposes using a new state management library. You think the existing pattern is fine and the new lib is overkill.</p>
 
@@ -618,12 +621,11 @@ through next steps with you."</code></pre>
 </ol>
 
 <p><strong>Note:</strong> This is rare. Most "ethical" disagreements at work are actually framing or values disagreements that can be resolved via discussion. Reserve "I quit over this" for genuinely values-violating territory.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>The asymmetric power dynamic</h3>
 <p>Disagreeing with someone several levels above you (skip, VP, CEO). Power asymmetry is real:</p>
 <ul>
@@ -738,12 +740,9 @@ through next steps with you."</code></pre>
   <li><strong>Use editing.</strong> Drafts > impulse posts.</li>
   <li><strong>Re-read before sending.</strong> Cool off if needed.</li>
 </ul>
-`
-    },
-    {
-      id: 'bugs',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern: passive aggression</h3>
 <p><strong>Looks like:</strong> Agree publicly, drag feet privately. Sigh in meetings. Slow PR reviews on people you disagree with.</p>
 <p><strong>Why bad:</strong> Trust erodes. Coworkers see it. Pattern reads as immature.</p>
@@ -829,12 +828,10 @@ through next steps with you."</code></pre>
 <p><strong>Looks like:</strong> Peer is yelling, dismissive, exclusionary; you frame it as "robust debate."</p>
 <p><strong>Why bad:</strong> Bad behavior is not productive disagreement. Letting it slide normalizes it.</p>
 <p><strong>Fix:</strong> Address bad behavior directly. Loop manager / HR if pattern persists. Don't conflate.</p>
-`
-    },
-    {
-      id: 'interview',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>"Tell me about a time you disagreed with [PM / manager / peer]"</h3>
 <p>Almost every senior+ interview asks this. They're checking: do you have spine + skill?</p>
 
@@ -1025,55 +1022,14 @@ seriously."</code></pre>
 <h3>The 30-second mantra</h3>
 <p><em>"Argue the problem, not the person. Use writing for high-stakes. Disagree-and-commit. Escalate as a tool, not a weapon. Address bad behavior separately."</em></p>
 <p>Productive disagreement is a senior-level skill that compounds. Engineers who never disagree become invisible; engineers who detonate become liabilities; engineers who disagree well become indispensable.</p>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Disagree <strong>clearly, early, in writing, with respect</strong> — argue the problem not the person — then <strong>commit fully</strong> once the decision is made, even one you lost.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>Suppression and detonation both fail. The middle path is <strong>structured disagreement</strong>: name the issue cleanly, separate person from problem, drive to a decision, commit to the outcome.</li>
-    <li><strong>Diagnose the conflict type first:</strong> fact-based (get data), framing-based (surface trade-offs, pick a frame deliberately), or values-based (compromise hard, sometimes leadership decides, sometimes you walk). Misdiagnosing makes resolution impossible.</li>
-    <li><strong>Disagree-and-commit:</strong> opinions matter while the decision is open; execution matters once it is made. The hardest step is committing when you were right — no sandbagging, no "I told you so".</li>
-    <li>Stay <strong>above the line</strong> — curious, assumes good intent, focused on the problem and the outcome — not below it (defensive, needing to be right, focused on the person and the points).</li>
-    <li>Look past positions to <strong>interests</strong>: "ship Friday" vs "need testing time" is intractable at the position level, often resolvable at the interest level (both want a successful launch).</li>
-    <li>Climb the <strong>resolution funnel</strong> slowly: self-talk → direct conversation → written disagreement → tech-lead/facilitator → manager → skip-level. Skipping levels damages relationships.</li>
-    <li><strong>Escalation is a tool, not a weapon</strong> — use it to get a decision (be prepared to lose), tell the peer first, only after peer-level genuinely failed.</li>
-    <li>Use <strong>writing for high-stakes</strong> disagreements: it forces precision, creates a record, reduces drift, and often resolves the issue before you hit send.</li>
-    <li><strong>Bad behavior is a separate problem</strong> from disagreement — address yelling, dismissiveness, or exclusion directly and loop your manager; do not frame it as "robust debate".</li>
-    <li>Hold the line on what matters (customer harm, security, major debt); yield freely on style, naming, and calls that are not yours to make.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Relitigating a closed decision (or "I told you so" after losing).</strong> Sandbagging the direction you opposed, dragging it up in every retro, or slow-walking the work all destroy the disagree-and-commit contract — and the trust that gets you weight in the next decision. Log your dissent once, then bring full energy to executing the call.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I argue the problem, not the person — and once the decision is made, even if I lost, I commit fully. Sandbagging or saying 'I told you so' just guarantees I get less weight next time."</div>
-  <div class="revision-say">"For high-stakes disagreements I go to writing: it forces me to be precise, it steel-mans their view, and half the time I resolve my own concern before I even send it."</div>
-  <div class="revision-say">"I escalate to get a decision, not to win — I try peer-level first, I tell the person I'm escalating, and I go in prepared to lose."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. How do you tell whether a conflict is about facts, framing, or values, and why does the resolution differ?</div>
+  <div class="qa-answer">
+    <p>I diagnose the source first. Fact-based conflicts come from different information ("X is the right DB" versus "Y has better latency for our case"), so I get evidence: a 2-day prototype spike, a benchmark, production data, or reading the docs and source. Framing-based conflicts come from optimizing different functions, such as ship speed versus maintainability. Neither side is wrong, so I name both frames, look for the shared higher goal, have the DRI pick a frame deliberately, and document it for next time. Values-based conflicts ("this exploits users" versus "it drives revenue") don't yield to data: find a workable middle, defer to the DRI or leadership, disagree-and-commit if it isn't fundamental, or, rarely, walk if an ethical line is crossed. Most engineering conflicts are fact or framing; misdiagnosing one type as another makes resolution impossible.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you tell a concise STAR story about a time you disagreed with a peer, PM, or manager — raised it clearly, proposed an alternative, and committed to the outcome?</li>
-    <li>Can you explain how you diagnose whether a conflict is fact-based, framing-based, or values-based, and why the resolution differs?</li>
-    <li>Can you describe how you practice disagree-and-commit — including a time you committed fully to a decision you had argued against?</li>
-    <li>Can you explain when you would escalate a conflict, and how you do it without weaponizing your manager or blindsiding the peer?</li>
-    <li>Can you tell a story about receiving disagreement or harsh feedback without getting defensive — and updating your view when convinced?</li>
-    <li>Can you describe how you would handle bad behavior (yelling, dismissiveness, exclusion) differently from a genuine disagreement?</li>
-  </ul>
-</div>
-`
-    }
+` },
+
   ]
 });

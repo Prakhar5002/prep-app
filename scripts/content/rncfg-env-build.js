@@ -1,29 +1,42 @@
 window.PREP_SITE.registerTopic({
-  id: 'rncfg-env-build',
-  module: 'RN Project & Config (Deep)',
-  title: 'Environments & Build Config',
-  estimatedReadTime: '24 min',
-  tags: ['eas-json', 'env-vars', 'dotenv', 'react-native-config', 'react-native-dotenv', 'babel-plugin-dotenv-import', 'expo-constants', 'expo-public-env', 'build-profiles', 'distribution', 'channel', 'eas-secret', 'eas-env', 'app-config-js', 'app-json', 'product-flavors', 'xcconfig', 'schemes', 'gemfile', 'nvmrc', 'node-version', 'ruby-version', 'expo-updates', 'runtime-version', 'codepush', 'ota-updates', 'secrets', 'uat-prod-switch'],
+  id: "rncfg-env-build",
+  module: "RN Project & Config (Deep)",
+  title: "Environments & Build Config",
+  estimatedReadTime: "24 min",
+  tags: ["eas-json","env-vars","dotenv","react-native-config","react-native-dotenv","babel-plugin-dotenv-import","expo-constants","expo-public-env","build-profiles","distribution","channel","eas-secret","eas-env","app-config-js","app-json","product-flavors","xcconfig","schemes","gemfile","nvmrc","node-version","ruby-version","expo-updates","runtime-version","codepush","ota-updates","secrets","uat-prod-switch"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<p>One codebase has to run against many <strong>environments</strong> — dev, staging/UAT, production — each with a different API base URL, keys, app name, bundle id, and set of feature flags. The job of "environments &amp; build config" is to feed the right values into the JS bundle and the native build for each environment, <strong>without committing secrets</strong>.</p>
-<ul>
-  <li><strong>Where values live</strong>: <code>.env</code> files (git-ignored), <code>eas.json</code> build profiles, EAS secrets, <code>app.config.js</code> reading <code>process.env</code>, and native config (Android product flavors, iOS schemes/xcconfig).</li>
-  <li><strong>The RN reality</strong>: there is <strong>no built-in dotenv</strong> like on the web — you need a library (<code>react-native-config</code>, <code>react-native-dotenv</code>) or Expo's <code>EXPO_PUBLIC_</code> / <code>expo-constants</code> mechanism.</li>
-  <li><strong>The hard rule</strong>: anything shipped inside the JS bundle is <strong>readable, not secret</strong>. Real secrets live server-side or in EAS secrets, injected only at build time.</li>
-</ul>
-<p>Expo 53 apps like <code>sw-mobile</code> and <code>sw-ticketing</code> use <code>app.config.js</code> + <code>eas.json</code> profiles; a runtime <strong>UAT/PROD switch</strong> (the developer-options toggle) rides on top of the same values baked into the bundle.</p>
-
-<div class="callout insight">
-  <div class="callout-title">🧠 The one-liner to remember</div>
-  <p>Pick the environment at <strong>build time</strong> via a profile (<code>eas.json</code> / flavor / scheme) that sets an <code>APP_ENV</code>, keep secrets out of the bundle (EAS secrets, server-side), and remember that RN has no free dotenv — a library or Expo's <code>EXPO_PUBLIC_</code> inlines the values.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Select the environment at <strong>build time</strong> via a profile that sets <code>APP_ENV</code> (<code>eas.json</code> / Android flavors / iOS schemes), feed non-secret values through <code>.env</code> or <code>EXPO_PUBLIC_</code>/<code>extra</code>, and keep real secrets out of the bundle (EAS secrets / server) — because anything shipped in the JS is readable, not secret.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The problem:</strong> one codebase, many environments — API URL, keys, app name/id, icon, feature flags — with secrets kept out of version control.</li>
+    <li><strong>No built-in dotenv in RN.</strong> Bare RN needs a library: <code>react-native-config</code> (native-level, <code>Config.API_URL</code>, exposed to Android/iOS build too) or <code>react-native-dotenv</code>/<code>babel-plugin-dotenv-import</code> (Babel inlines a virtual <code>@env</code> module).</li>
+    <li><strong>Expo has dotenv built in:</strong> <code>EXPO_PUBLIC_*</code> vars inline as <code>process.env.EXPO_PUBLIC_*</code>; structured config goes in <code>extra</code> and is read via <code>Constants.expoConfig.extra</code> (<code>expo-constants</code>).</li>
+    <li><strong>Bundle = public.</strong> Every inlined value ships in readable JS. <code>.gitignore</code> protects the repo, not the bundle. Publishable keys only; private secrets never inlined.</li>
+    <li><strong><code>eas.json</code> profiles:</strong> <code>development</code> (<code>developmentClient</code>), <code>preview</code> (<code>distribution: internal</code>, apk), <code>production</code> (<code>distribution: store</code>, app-bundle). Fields: <code>channel</code>, per-profile <code>env</code>, <code>android.buildType</code>, <code>ios.simulator</code>/<code>resourceClass</code>, <code>cli.appVersionSource</code>, <code>submit</code> profiles.</li>
+    <li><strong>Three tiers of secrecy:</strong> public (URL/flags → <code>.env</code>/<code>EXPO_PUBLIC_</code>/<code>extra</code>), build-only (Sentry token, service-account → EAS secrets via <code>eas secret:create</code>/<code>eas env</code>, used at build, not bundled), true runtime secret (DB/private key → server only).</li>
+    <li><strong>App variants side by side:</strong> distinct <code>applicationId</code>/bundle id + name + icon per env, from <code>process.env.APP_ENV</code> in <code>app.config.js</code>, or Android product flavors / iOS schemes+configs+xcconfig in bare RN.</li>
+    <li><strong>UAT/PROD runtime switch:</strong> compile both (non-secret) URLs in, persist the choice (AsyncStorage/MMKV), API client reads current base URL each request — flips without reinstall. Prakhar's Expo 53 apps (<code>sw-mobile</code>, <code>sw-ticketing</code>) use exactly this: <code>app.config.js</code> + <code>eas.json</code> profiles, with the developer-options UAT/PROD toggle riding on the values baked into the bundle.</li>
+    <li><strong>Toolchain pinning:</strong> <code>.nvmrc</code>/<code>.node-version</code> (Node), <code>.ruby-version</code> (Ruby), <code>Gemfile</code>+<code>Gemfile.lock</code> (CocoaPods/Fastlane) → reproducible <code>bundle exec pod install</code>.</li>
+    <li><strong>OTA:</strong> <code>expo-updates</code>/EAS Update ships JS + assets only, no native. <code>runtimeVersion</code> is the native contract; channels (build) map to branches (<code>eas update</code>). CodePush is legacy/retired.</li>
+    <li><strong>Env is inlined at build/transform time:</strong> change JS env → reset Metro cache (<code>--clear</code>/<code>--reset-cache</code>); change native env → rebuild. <code>process.env</code> in app code is a compile-time shim.</li>
+    <li><strong>Expo prebuild reality:</strong> don't hand-edit <code>android/</code>/<code>ios/</code> (wiped by <code>expo prebuild --clean</code>) — use config plugins / <code>expo-build-properties</code>; <code>app.config.js</code> runs on the build host, not the device.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Putting a real secret behind <code>EXPO_PUBLIC_</code> (or in <code>extra</code>) and thinking <code>.gitignore</code> keeps it safe.</strong> The bundler inlines it into the JS and it ships to every device in plain text — grep-able from the apk/ipa. Fix: only publishable/public values in the bundle; build-only secrets in EAS secrets consumed at build time; true secrets on the server. (Second trap: editing <code>.env</code> and expecting a hot reload — you must reset Metro cache for JS env or rebuild for native env.)</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I select the environment at build time with a profile that sets <code>APP_ENV</code> — <code>eas.json</code> in Expo, product flavors and schemes in bare RN — and <code>app.config.js</code> reads it to set the URL, name, bundle id, icon, and flags."</div>
+  <div class="revision-say">"Anything in the JS bundle is public, so <code>EXPO_PUBLIC_</code> and <code>extra</code> are for URLs and publishable keys; real secrets go in EAS secrets used only at build time, or stay on the server. Git-ignore protects the repo, not the bundle."</div>
+  <div class="revision-say">"For a QA UAT/PROD switch I compile both URLs in and flip a persisted flag at runtime — legit because URLs aren't secret. And RN has no built-in dotenv, so it's a library or Expo's <code>EXPO_PUBLIC_</code>, inlined at build time."</div>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The core problem</h3>
 <p>A single React Native codebase must talk to different backends and wear different identities depending on where it runs:</p>
 <ul>
@@ -56,10 +69,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">Common misconception</div>
   <p>"I put the API secret in <code>.env</code> and <code>.gitignore</code>'d it, so it's safe." Git-ignoring only keeps it out of the repo. If a bundler inlines that value into the JS (which is exactly what dotenv libraries and <code>EXPO_PUBLIC_</code> do), it ships to every device in plain text. Git-ignore protects the repo; it does not make a bundled value secret.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "where does a value come from" picture</h3>
 <div class="diagram">
 <pre>
@@ -121,10 +134,10 @@ window.PREP_SITE.registerTopic({
   <div class="callout-title">🧩 Expo note — app.config.js runs on the build machine, not the device</div>
   <p><code>app.config.js</code> is evaluated by the Expo CLI during <code>expo prebuild</code> / <code>eas build</code>, in Node, on the build host. So <code>process.env.APP_ENV</code> there reads the <em>build machine's</em> environment (your shell, or the EAS profile's <code>env</code>). Whatever it returns is frozen into <code>app.json</code>/native files and into <code>Constants.expoConfig</code>. It does not re-run on the phone — there is no "read env at runtime" here.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Mechanics', html: `
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>1. The <code>.env</code> files and why they need a library</h3>
 <p>Convention (borrowed from web / twelve-factor):</p>
 <pre><code class="language-text">.env            # committed defaults OR shared non-secret keys (team choice)
@@ -308,10 +321,10 @@ gem 'fastlane'</code></pre>
   <div class="callout-title">🧩 Expo note — OTA cannot change native code</div>
   <p>EAS Update ships the <em>JS bundle and assets</em> only. Adding a native module, changing an <code>Info.plist</code> permission, or bumping a native dependency needs a new binary through the store — you cannot OTA it. Mismatch is exactly what <code>runtimeVersion</code> guards against.</p>
 </div>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — a UAT/PROD runtime switch (Prakhar's dev-options)</h3>
 <p>Both URLs are compiled in; a persisted flag chooses. This is the pattern behind the 5-tap developer-options toggle.</p>
 <pre><code class="language-ts">// config/endpoints.ts
@@ -376,8 +389,7 @@ eas build --profile production --platform ios
 eas submit --profile production --platform ios</code></pre>
 
 <h3>Example 5 — a build-only secret used by a plugin, never bundled</h3>
-<pre><code class="language-bash">eas env:create --name SENTRY_AUTH_TOKEN --value "s3cr3t" \
-  --environment production --visibility secret</code></pre>
+<pre><code class="language-bash">eas env:create --name SENTRY_AUTH_TOKEN --value "s3cr3t"   --environment production --visibility secret</code></pre>
 <pre><code class="language-js">// app.config.js — the token is read on the build host to configure the plugin;
 // it is NOT placed into extra / EXPO_PUBLIC_, so it never reaches the JS bundle.
 export default ({ config }) => ({
@@ -427,10 +439,11 @@ SENTRY_AUTH_TOKEN=   # build-only, set via EAS secret</code></pre>
 const { env } = Constants.expoConfig.extra;
 const SHOW_CHECKIN = env !== 'production';   // enable half-built feature only in dev/staging
 </code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '🕳️ Edge Cases', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>1. Env not reloading after you edit <code>.env</code></h3>
 <p>Babel/Metro cache the inlined values. After changing a JS-level env (<code>react-native-dotenv</code>, <code>EXPO_PUBLIC_</code>) restart Metro with <code>npx expo start --clear</code> or <code>npx react-native start --reset-cache</code>. For native-level env (<code>react-native-config</code>, flavors) you must <strong>rebuild the app</strong>, not just reload JS.</p>
 
@@ -478,10 +491,9 @@ const SHOW_CHECKIN = env !== 'production';   // enable half-built feature only i
 
 <h3>16. Extra bloating the manifest</h3>
 <p><code>extra</code> ships inside the update manifest and bundle; dumping large blobs there wastes size and exposes them. Keep it to small scalars (env name, url, ids).</p>
-`},
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'bugs-antipatterns', title: '🐛 Bugs & Anti-Patterns', html: `
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern 1 — a real secret behind <code>EXPO_PUBLIC_</code> / in <code>extra</code></h3>
 <p>Any secret you inline ships to every device in readable form. Publishable/public keys only in the bundle; private keys stay server-side or in build-only EAS secrets.</p>
 
@@ -526,10 +538,10 @@ const SHOW_CHECKIN = env !== 'production';   // enable half-built feature only i
 
 <h3>Anti-pattern 15 — submitting a simulator or wrong-profile build</h3>
 <p>An <code>ios.simulator</code> or <code>preview</code> (internal) artifact cannot go to the store. Match the build profile to the intended distribution.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
   <div class="qa-question">Q1. How do you manage dev / staging / production in one RN codebase?</div>
   <div class="qa-answer">
@@ -648,51 +660,7 @@ const SHOW_CHECKIN = env !== 'production';   // enable half-built feature only i
     <li>You know env is inlined at build time and needs a cache reset / rebuild to change.</li>
   </ul>
 </div>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Select the environment at <strong>build time</strong> via a profile that sets <code>APP_ENV</code> (<code>eas.json</code> / Android flavors / iOS schemes), feed non-secret values through <code>.env</code> or <code>EXPO_PUBLIC_</code>/<code>extra</code>, and keep real secrets out of the bundle (EAS secrets / server) — because anything shipped in the JS is readable, not secret.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>The problem:</strong> one codebase, many environments — API URL, keys, app name/id, icon, feature flags — with secrets kept out of version control.</li>
-    <li><strong>No built-in dotenv in RN.</strong> Bare RN needs a library: <code>react-native-config</code> (native-level, <code>Config.API_URL</code>, exposed to Android/iOS build too) or <code>react-native-dotenv</code>/<code>babel-plugin-dotenv-import</code> (Babel inlines a virtual <code>@env</code> module).</li>
-    <li><strong>Expo has dotenv built in:</strong> <code>EXPO_PUBLIC_*</code> vars inline as <code>process.env.EXPO_PUBLIC_*</code>; structured config goes in <code>extra</code> and is read via <code>Constants.expoConfig.extra</code> (<code>expo-constants</code>).</li>
-    <li><strong>Bundle = public.</strong> Every inlined value ships in readable JS. <code>.gitignore</code> protects the repo, not the bundle. Publishable keys only; private secrets never inlined.</li>
-    <li><strong><code>eas.json</code> profiles:</strong> <code>development</code> (<code>developmentClient</code>), <code>preview</code> (<code>distribution: internal</code>, apk), <code>production</code> (<code>distribution: store</code>, app-bundle). Fields: <code>channel</code>, per-profile <code>env</code>, <code>android.buildType</code>, <code>ios.simulator</code>/<code>resourceClass</code>, <code>cli.appVersionSource</code>, <code>submit</code> profiles.</li>
-    <li><strong>Three tiers of secrecy:</strong> public (URL/flags → <code>.env</code>/<code>EXPO_PUBLIC_</code>/<code>extra</code>), build-only (Sentry token, service-account → EAS secrets via <code>eas secret:create</code>/<code>eas env</code>, used at build, not bundled), true runtime secret (DB/private key → server only).</li>
-    <li><strong>App variants side by side:</strong> distinct <code>applicationId</code>/bundle id + name + icon per env, from <code>process.env.APP_ENV</code> in <code>app.config.js</code>, or Android product flavors / iOS schemes+configs+xcconfig in bare RN.</li>
-    <li><strong>UAT/PROD runtime switch:</strong> compile both (non-secret) URLs in, persist the choice (AsyncStorage/MMKV), API client reads current base URL each request — flips without reinstall.</li>
-    <li><strong>Toolchain pinning:</strong> <code>.nvmrc</code>/<code>.node-version</code> (Node), <code>.ruby-version</code> (Ruby), <code>Gemfile</code>+<code>Gemfile.lock</code> (CocoaPods/Fastlane) → reproducible <code>bundle exec pod install</code>.</li>
-    <li><strong>OTA:</strong> <code>expo-updates</code>/EAS Update ships JS + assets only, no native. <code>runtimeVersion</code> is the native contract; channels (build) map to branches (<code>eas update</code>). CodePush is legacy/retired.</li>
-    <li><strong>Env is inlined at build/transform time:</strong> change JS env → reset Metro cache (<code>--clear</code>/<code>--reset-cache</code>); change native env → rebuild. <code>process.env</code> in app code is a compile-time shim.</li>
-    <li><strong>Expo prebuild reality:</strong> don't hand-edit <code>android/</code>/<code>ios/</code> (wiped by <code>expo prebuild --clean</code>) — use config plugins / <code>expo-build-properties</code>; <code>app.config.js</code> runs on the build host, not the device.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Putting a real secret behind <code>EXPO_PUBLIC_</code> (or in <code>extra</code>) and thinking <code>.gitignore</code> keeps it safe.</strong> The bundler inlines it into the JS and it ships to every device in plain text — grep-able from the apk/ipa. Fix: only publishable/public values in the bundle; build-only secrets in EAS secrets consumed at build time; true secrets on the server. (Second trap: editing <code>.env</code> and expecting a hot reload — you must reset Metro cache for JS env or rebuild for native env.)</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I select the environment at build time with a profile that sets <code>APP_ENV</code> — <code>eas.json</code> in Expo, product flavors and schemes in bare RN — and <code>app.config.js</code> reads it to set the URL, name, bundle id, icon, and flags."</div>
-  <div class="revision-say">"Anything in the JS bundle is public, so <code>EXPO_PUBLIC_</code> and <code>extra</code> are for URLs and publishable keys; real secrets go in EAS secrets used only at build time, or stay on the server. Git-ignore protects the repo, not the bundle."</div>
-  <div class="revision-say">"For a QA UAT/PROD switch I compile both URLs in and flip a persisted flag at runtime — legit because URLs aren't secret. And RN has no built-in dotenv, so it's a library or Expo's <code>EXPO_PUBLIC_</code>, inlined at build time."</div>
-</div>
-`},
-
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain why RN has no built-in dotenv and name the libraries (plus Expo's <code>EXPO_PUBLIC_</code>) that fill the gap?</li>
-    <li>Can you state why a value in the JS bundle is not secret, and where real secrets should live instead?</li>
-    <li>Can you describe the main <code>eas.json</code> build-profile fields and what <code>distribution</code>, <code>channel</code>, and <code>buildType</code> control?</li>
-    <li>Can you set up dev/staging/prod as side-by-side installs with distinct bundle ids, names, and icons?</li>
-    <li>Can you implement a runtime UAT/PROD switch and justify why it's safe for URLs but not for keys?</li>
-    <li>Can you explain what OTA (EAS Update) can and cannot ship, and the role of <code>runtimeVersion</code>, channels, and branches?</li>
-    <li>Can you say why <code>.nvmrc</code>/<code>.ruby-version</code>/<code>Gemfile.lock</code> matter and when a changed env needs a cache reset vs a rebuild?</li>
-  </ul>
-</div>
-`}
-
-]
+  ]
 });

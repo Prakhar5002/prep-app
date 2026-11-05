@@ -1,33 +1,39 @@
 window.PREP_SITE.registerTopic({
-  id: 'anim-css-js',
-  module: 'animation',
-  title: 'CSS vs JS Animation',
-  estimatedReadTime: '40 min',
-  tags: ['animation', 'css', 'transition', 'keyframes', 'requestanimationframe', 'jank', 'compositor', 'will-change', 'performance'],
+  id: "anim-css-js",
+  module: "animation",
+  title: "CSS vs JS Animation",
+  estimatedReadTime: "40 min",
+  tags: ["animation","css","transition","keyframes","requestanimationframe","jank","compositor","will-change","performance"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>The choice between CSS and JS animation isn't either/or — it's about <strong>which thread runs the work</strong> and <strong>what the browser can optimize</strong>. CSS animations and transitions of compositor-only properties (transform, opacity) are handed to the GPU and run on the compositor thread; everything else (top, left, width, color, layout-affecting properties) runs on the main thread and competes with your JS.</p>
-<ul>
-  <li><strong>The 60fps budget = 16.67ms per frame.</strong> Anything that pushes a frame past this drops it.</li>
-  <li><strong>Animate only <code>transform</code> and <code>opacity</code></strong> for guaranteed compositor-thread acceleration. <code>filter</code> sometimes works (browser-dependent).</li>
-  <li><strong>CSS transitions:</strong> for state-driven simple animations (hover, theme switch). One-shot only.</li>
-  <li><strong>CSS keyframes:</strong> for declarative loops, named sequences, more control.</li>
-  <li><strong>JS animation (rAF / WAAPI / libs):</strong> for dynamic values, timeline scrubbing, gesture-driven, complex orchestration.</li>
-  <li><strong>The "JS is slower" myth is false.</strong> CSS and WAAPI both go through the compositor when animating compositor properties; rAF-driven JS animation of <code>transform</code> is just as fast.</li>
-  <li><strong><code>will-change</code> is a hint, not a fix.</strong> Promotes to its own layer; overuse blows up memory.</li>
-  <li><strong>Mobile reality:</strong> CSS animations on RN web don't apply to native; React Native uses Animated API, Reanimated, or the Animations API — covered later in this module.</li>
-</ul>
-<p><strong>Mantra:</strong> "Animate transform and opacity. Stay on the compositor. Profile every animation. CSS for state changes; JS for dynamic; libraries for choreography."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">CSS vs JS is the wrong axis — the real question is <strong>which thread runs the work: animate <code>transform</code> and <code>opacity</code> to stay on the compositor/GPU, and everything else fights your JS on the main thread.</strong></div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>The 60fps budget is 16.67ms per frame.</strong> Every stage — JS, style recalc, layout, paint, composite — must fit, or the frame drops (visible jank).</li>
+    <li><strong>Only <code>transform</code> and <code>opacity</code> are composite-only</strong> — they skip layout AND paint and run on the compositor thread, so they animate smoothly even when your JS is busy. <code>filter</code> sometimes qualifies (browser-dependent).</li>
+    <li><strong>Animating <code>top</code>/<code>left</code>/<code>width</code>/<code>height</code> re-layouts every frame; color/background re-paints every frame</strong> — both on the main thread, competing with JS. Express moves as <code>translate</code>, resizes as <code>scale</code>, fades as <code>opacity</code>.</li>
+    <li><strong>"JS is slower" is a myth.</strong> rAF-driven <code>transform</code> goes through the same compositor as CSS — same speed. CSS is declarative (browser can prepare ahead); JS is imperative and needed for dynamic values, scrubbing, gestures, and orchestration.</li>
+    <li>Use CSS <strong>transitions</strong> for state changes (hover, class toggle), CSS <strong>keyframes</strong> for loops/named sequences, and <strong>rAF/WAAPI/libraries</strong> for dynamic or choreographed motion. Mantra: animate transform and opacity, stay on the compositor, profile every animation.</li>
+    <li><strong><code>will-change</code> is a promote-to-layer hint, not a fix</strong> — promote just before animating and remove after; blanket usage causes a layer explosion that eats GPU memory and can hurt performance.</li>
+    <li><strong>Schedule animation work with <code>requestAnimationFrame</code>, never <code>setInterval</code>/<code>setTimeout</code></strong> (which drift and aren't frame-synced), and always <code>cancelAnimationFrame</code> on cleanup.</li>
+    <li>Respect <strong><code>prefers-reduced-motion</code></strong> as a baseline, and profile on real low-end devices — not your dev machine.</li>
+    <li><strong>React Native has no CSS:</strong> the same principles map onto the Animated API (<code>useNativeDriver: true</code> = run on the native/UI thread), Reanimated worklets (UI thread), and LayoutAnimation.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Animating layout properties like <code>left</code>/<code>top</code>/<code>width</code> instead of <code>transform</code>.</strong> It looks identical but forces a re-layout + re-paint every frame on the main thread, squeezing JS and dropping frames. Fix: swap to <code>transform: translate</code>/<code>scale</code> so the change is composite-only. The related trap is the first-frame jump — applying the target and the transition in the same paint skips the animation; force layout (read <code>offsetHeight</code>) or use the double-rAF trick.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I default to animating transform and opacity because they're composite-only — no layout, no paint, and they run on the compositor thread even when the main thread is busy."</div>
+  <div class="revision-say">"CSS vs JS isn't a speed question — both go through the compositor for transform/opacity. CSS is declarative for state changes; I reach for rAF or a library when values are dynamic, gesture-driven, or need a timeline."</div>
+  <div class="revision-say">"will-change is a hint to promote a layer, not a fix — I add it right before animating and remove it after, otherwise a layer explosion eats GPU memory."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>The browser's frame loop</h3>
 <p>Modern browsers target 60fps (some 90/120fps). Each frame has a fixed budget: at 60fps, ~16.67ms. Within that budget the browser must:</p>
 <ol>
@@ -120,12 +126,10 @@ window.PREP_SITE.registerTopic({
   <li>For RN: you reach for Reanimated worklets when animation is gesture-driven or complex.</li>
   <li>You test on real low-end devices, not just your dev machine.</li>
 </ul>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The render pipeline (5 stages)</h3>
 <pre><code class="language-text">JS / event → Style recalc → Layout → Paint → Composite → Pixels on screen
                               │            │
@@ -246,12 +250,10 @@ animate(0, 300, (t) =&gt; {
 
 <h3>The "JS is slow" myth</h3>
 <p>JS-driven <code>transform</code>/<code>opacity</code> animations run on the same compositor as CSS — same speed, same characteristics. The difference: CSS is declarative (the browser knows it can prepare ahead); JS is imperative (each frame's value comes from your code). For static animations, declarative is slightly cheaper. For dynamic animations, JS is needed regardless.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>CSS transitions — for state changes</h3>
 <pre><code class="language-css">.card {
   transform: translateY(0);
@@ -421,12 +423,10 @@ requestAnimationFrame(() =&gt; {
   <li>JS measure the natural height, set explicit <code>height: 200px</code>, transition.</li>
   <li>Modern: <code>interpolate-size: allow-keywords;</code> (Chrome 129+) finally enables animating to/from auto.</li>
 </ul>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Hover with transform (compositor-only)</h3>
 <pre><code class="language-css">.button {
   transform: scale(1);
@@ -618,12 +618,11 @@ function expand(el) {
 });
 </code></pre>
 <p>For larger lists, prefer a single rAF loop staggering through items rather than dozens of setTimeouts.</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Animating display: none → block</h3>
 <p>You can't transition display. Workarounds:</p>
 <ul>
@@ -690,12 +689,9 @@ function expand(el) {
 
 <h3>RN-specific: the "JS thread" myth</h3>
 <p>RN's Animated.timing() with <code>useNativeDriver: false</code> runs on the JS thread; with <code>useNativeDriver: true</code>, it runs on the UI thread. Confusing the two leads to "why is my animation jankky" investigations.</p>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Animating layout properties</h3>
 <pre><code class="language-css">/* BAD — re-layouts every frame */
 .card { left: 0; transition: left 300ms; }
@@ -819,12 +815,10 @@ function stop() { cancelAnimationFrame(rafId); }
 
 <h3>Anti-pattern 10: Treating animation as an afterthought</h3>
 <p>Adding animations to a finished feature often surfaces jank that's expensive to fix. Profile during development, not after release.</p>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The 14 questions worth rehearsing</h3>
 <table>
   <thead><tr><th>Question</th><th>One-liner</th></tr></thead>
@@ -917,50 +911,14 @@ function stop() { cancelAnimationFrame(rafId); }
   <li>"I'd consolidate animation tokens (durations, easings) into design tokens for cross-team consistency."</li>
   <li>"I'd add a feature flag to disable heavy animations in low-power mode."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">CSS vs JS is the wrong axis — the real question is <strong>which thread runs the work: animate <code>transform</code> and <code>opacity</code> to stay on the compositor/GPU, and everything else fights your JS on the main thread.</strong></div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>The 60fps budget is 16.67ms per frame.</strong> Every stage — JS, style recalc, layout, paint, composite — must fit, or the frame drops (visible jank).</li>
-    <li><strong>Only <code>transform</code> and <code>opacity</code> are composite-only</strong> — they skip layout AND paint and run on the compositor thread, so they animate smoothly even when your JS is busy. <code>filter</code> sometimes qualifies (browser-dependent).</li>
-    <li><strong>Animating <code>top</code>/<code>left</code>/<code>width</code>/<code>height</code> re-layouts every frame; color/background re-paints every frame</strong> — both on the main thread, competing with JS. Express moves as <code>translate</code>, resizes as <code>scale</code>, fades as <code>opacity</code>.</li>
-    <li><strong>"JS is slower" is a myth.</strong> rAF-driven <code>transform</code> goes through the same compositor as CSS — same speed. CSS is declarative (browser can prepare ahead); JS is imperative and needed for dynamic values, scrubbing, gestures, and orchestration.</li>
-    <li>Use CSS <strong>transitions</strong> for state changes (hover, class toggle), CSS <strong>keyframes</strong> for loops/named sequences, and <strong>rAF/WAAPI/libraries</strong> for dynamic or choreographed motion.</li>
-    <li><strong><code>will-change</code> is a promote-to-layer hint, not a fix</strong> — promote just before animating and remove after; blanket usage causes a layer explosion that eats GPU memory and can hurt performance.</li>
-    <li><strong>Schedule animation work with <code>requestAnimationFrame</code>, never <code>setInterval</code>/<code>setTimeout</code></strong> (which drift and aren't frame-synced), and always <code>cancelAnimationFrame</code> on cleanup.</li>
-    <li>Respect <strong><code>prefers-reduced-motion</code></strong> as a baseline, and profile on real low-end devices — not your dev machine.</li>
-    <li><strong>React Native has no CSS:</strong> the same principles map onto the Animated API (<code>useNativeDriver: true</code> = run on the native/UI thread), Reanimated worklets (UI thread), and LayoutAnimation.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Animating layout properties like <code>left</code>/<code>top</code>/<code>width</code> instead of <code>transform</code>.</strong> It looks identical but forces a re-layout + re-paint every frame on the main thread, squeezing JS and dropping frames. Fix: swap to <code>transform: translate</code>/<code>scale</code> so the change is composite-only. The related trap is the first-frame jump — applying the target and the transition in the same paint skips the animation; force layout (read <code>offsetHeight</code>) or use the double-rAF trick.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I default to animating transform and opacity because they're composite-only — no layout, no paint, and they run on the compositor thread even when the main thread is busy."</div>
-  <div class="revision-say">"CSS vs JS isn't a speed question — both go through the compositor for transform/opacity. CSS is declarative for state changes; I reach for rAF or a library when values are dynamic, gesture-driven, or need a timeline."</div>
-  <div class="revision-say">"will-change is a hint to promote a layer, not a fix — I add it right before animating and remove it after, otherwise a layer explosion eats GPU memory."</div>
-</div>
-`
-    },
 
-    { id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you say what the 60fps frame budget is in milliseconds and what happens when a frame blows past it?</li>
-    <li>Can you explain why only <code>transform</code> and <code>opacity</code> get compositor-thread acceleration, while <code>top</code>/<code>left</code>/<code>width</code>/<code>color</code> stay on the main thread?</li>
-    <li>Can you decide between a CSS transition, CSS keyframes, and JS/rAF animation for a given requirement?</li>
-    <li>Can you debunk the "JS animation is slower than CSS" myth and explain why both hit the compositor?</li>
-    <li>Can you explain what <code>will-change</code> actually does and why overusing it hurts memory?</li>
-    <li>Can you say what changes about your animation approach when you move from web to React Native?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q1. How do you decide between a CSS transition, CSS keyframes and JS/rAF animation for a given requirement?</div>
+  <div class="qa-answer">
+    <p>Use a <strong>CSS transition</strong> for a one-shot change between two states driven by a class or state toggle, like hover effects, a theme switch or a card that slides and fades when <code>.hidden</code> is toggled. Use <strong>CSS keyframes</strong> for loops and named multi-step sequences whose values are known at write time, like a spinner (<code>animation: spin 1s linear infinite</code>) or an error shake. Reach for <strong>JS (rAF, WAAPI or a library)</strong> when values are dynamic or input-driven: drag-and-drop and gestures, scroll-linked effects (or modern CSS scroll-driven animations), timeline scrubbing, complex branching sequences (GSAP, Framer Motion) and layout-aware FLIP transitions. Whichever you choose, animate <code>transform</code> and <code>opacity</code>, because speed is decided by the property, not by CSS versus JS.</p>
+  </div>
 </div>
-`}
+` },
+
   ]
 });

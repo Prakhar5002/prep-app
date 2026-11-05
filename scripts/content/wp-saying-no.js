@@ -1,33 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'wp-saying-no',
-  module: 'workplace',
-  title: 'Saying No & Scope Pushback',
-  estimatedReadTime: '35 min',
-  tags: ['saying-no', 'scope', 'pushback', 'prioritization', 'boundaries', 'negotiation', 'workload', 'senior-ic'],
+  id: "wp-saying-no",
+  module: "workplace",
+  title: "Saying No & Scope Pushback",
+  estimatedReadTime: "35 min",
+  tags: ["saying-no","scope","pushback","prioritization","boundaries","negotiation","workload","senior-ic"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>Saying yes to everything is the fastest way to underperform. Senior engineers are judged by the <em>quality</em> of what they ship, not the volume; saying yes to a low-leverage ask <strong>costs</strong> you the high-leverage ask you can no longer fit. Saying no is not a soft skill — it is a prioritization skill executed with words.</p>
-<ul>
-  <li><strong>Default no, justify yes.</strong> Reverse the polarity. The question isn't "any reason I can't do this?" but "why is this the highest-leverage thing I could be doing right now?"</li>
-  <li><strong>Almost never say "no" alone.</strong> Say "not now," "yes-when," "yes-if," "yes-but-smaller," "yes-and-here-is-what-it-displaces," "no-because-X-is-better." Naked no creates conflict; framed no creates trade-off conversations.</li>
-  <li><strong>The cost of yes is invisible.</strong> Whatever you accept displaces something else. If you can't name what got displaced, you don't have capacity for the new thing.</li>
-  <li><strong>Saying no is a manager's job — and yours.</strong> If your manager can't or won't say no for you, you must learn to. Your output is finite; pretending otherwise damages everyone.</li>
-  <li><strong>Pushback in code review is different from pushback on scope.</strong> Code review pushback debates a specific decision; scope pushback debates the entire ask.</li>
-  <li><strong>Senior leadership "drive-by" requests are the most dangerous.</strong> They feel like high-status work but often aren't your highest-leverage work; the ask carries no team commitment.</li>
-  <li><strong>Recovering from over-commitment</strong> is its own skill: triage what's already on your plate, surface to manager early, drop with grace.</li>
-  <li><strong>Mobile / RN context:</strong> mobile teams are constantly asked to "just add this small thing" by web/backend teams; mobile changes have ship cycles, app review, OS-version testing — most "small" asks are not small.</li>
-</ul>
-<p><strong>Mantra:</strong> "Default no, justify yes. Name what gets displaced. Say no with an alternative. Recover early when you over-commit."</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Saying no is a <strong>prioritization skill executed with words</strong> — default no and justify yes, name what each yes displaces, and almost never give a naked no: frame it as a trade-off with an alternative.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Saying yes to everything is the fastest way to underperform.</strong> Seniors are judged on the quality of what they ship, not the volume; a low-leverage yes costs you the high-leverage ask you can no longer fit.</li>
+    <li><strong>Default no, justify yes.</strong> At senior level the question isn't "any reason I can't?" but "why is this the highest-leverage thing I could be doing?" Juniors default yes; seniors default no.</li>
+    <li><strong>The cost of yes is invisible.</strong> Every yes displaces something. If you can't name what got displaced, you're already over-committed and someone else pays for it later.</li>
+    <li><strong>Almost never say a naked "no."</strong> Use the pushback ladder: yes-and, yes-when, yes-if, yes-but-smaller, no-because-instead, no-because-priorities, no-because-bad-idea, hard no. Most engineers under-use levels 1-4 and over-use silence.</li>
+    <li><strong>Buy time.</strong> "Let me look at my plate and get back to you by EOD." The pressure to answer in the moment is fake.</li>
+    <li><strong>Score the ask on 4 axes:</strong> strategic fit, leverage, cost, asker reputation. 0-1/4 = no; 2/4 = yes-if; 3-4/4 = yes.</li>
+    <li><strong>The trade-off framing is the workhorse.</strong> "Sure, here's what it displaces — want that swap?" moves the decision from "will Prakhar do this?" to "are these the right priorities?", which is the manager's / PM's job.</li>
+    <li><strong>Saying no upward = informed consent.</strong> Never refuse without naming the cost of yes; put it in writing; if the manager still says do it, they own the decision. If your manager can't or won't say no for you, you must learn to.</li>
+    <li><strong>Drive-by exec asks are the most dangerous</strong> — high status, no team commitment. Get the ask in writing, scope it, time-box it, and loop your manager.</li>
+    <li><strong>Code-review pushback is not scope pushback:</strong> review pushback debates one specific decision; scope pushback debates the entire ask.</li>
+    <li><strong>Recover from over-commitment early:</strong> audit reality, triage by priority x asker, surface to your manager, notify dropped owners with grace, don't hide. Quiet slippage does ~5x the damage of an early honest "I can't."</li>
+    <li>Two failure modes: yes-to-everything (burnout, dropped commitments) and no-to-everything (the "blocker"). The sweet spot is a clear yes to the high-leverage and a framed no to the rest.</li>
+    <li><strong>Mobile / RN context:</strong> most "just add this small thing" asks aren't small — ship cycles, app review, version-gating, OS-version testing, both platforms, offline. Educate and offer an alternative rather than just refusing.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>The silent / slow yes.</strong> Not responding, or a vague "I'll try to look at it", reads as a commitment to the asker — then becomes a broken commitment when you slip 4 weeks later. A clear early no is being a good colleague; a slow yes is bad-colleague behavior dressed up as nice.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"A director asked me to lead a project that didn't fit my half-goals while I was committed to a firm launch. Instead of saying yes immediately, I mapped the real cost, checked strategic fit, and went back with three options and a recommendation. He picked the advisory route — both things shipped on schedule."</div>
+  <div class="revision-say">"I almost never give a flat no. I say 'I can do this — here's what gets displaced, want to confirm the trade-off?' That puts the prioritization decision back where it belongs, and the relationship survives because I'm transparent about trade-offs, not obstructive."</div>
+  <div class="revision-say">"When I over-committed once, the migration ask had grown to half my time. I surfaced it fast, brought my manager and the peer lead three options, and we landed on a clean handoff. The lesson I took: attach an explicit checkpoint to every open-ended 'help out' yes."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why this is hard</h3>
 <p>Engineers are conditioned from school onwards to be helpful, agreeable, and to "show willingness." The implicit contract is: say yes, work hard, get rewarded. This breaks at the senior level for three reasons:</p>
 <ol>
@@ -84,12 +94,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>"Why can't you ship today like web does?"</strong> — Because app stores exist.</li>
 </ul>
 <p>Educating cross-team peers on mobile constraints is part of the job; saying no <em>and</em> teaching is more effective than saying no.</p>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "yes-budget" model</h3>
 <p>Imagine you have a finite weekly yes-budget. Every commitment subtracts. When you hit zero, the next yes is impossible — except your brain doesn't tell you that, it just lets you over-commit, and you find out when something slips.</p>
 <pre><code>Weekly capacity (40 hrs nominal, ~28 hrs deep work after meetings)
@@ -152,12 +160,10 @@ You have negative time. Saying yes means displacing something.</code></pre>
   </tbody>
 </table>
 <p>The senior-IC sweet spot: clear yes to the high-leverage, regular framed-no to the rest, with explanations that build trust and demonstrate prioritization judgment.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>The 5-step ask evaluation</h3>
 <ol>
   <li><strong>Buy time.</strong> "Let me look at my plate and get back to you by EOD." Almost never give an immediate yes/no on anything non-trivial. The pressure to answer in the moment is fake.</li>
@@ -299,12 +305,10 @@ Good: "I can pick this up if we move [project Y] from this sprint to
   <li>Reference them when an ask comes: "This isn't on my top-3 for the half. Want to help me decide if it should bump something off?"</li>
   <li>Now the conversation isn't about you saying no — it's about whether to reshuffle priorities, which is your manager's call.</li>
 </ul>
-`
-    },
-    {
-      id: 'examples',
-      title: '🔍 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: The "small mobile feature" ask from web team</h3>
 <p><strong>Setup:</strong> A web PM Slacks you: "Hey, our web team is shipping a new promo banner next week. Can you also add it to the app? Should be just a few lines, the design system has the component."</p>
 
@@ -477,12 +481,11 @@ about any of this from anyone.</code></pre>
   <li><strong>Yes to:</strong> a manager ask in a crisis ("we need this for the customer call tomorrow").</li>
 </ul>
 <p>The skill isn't "say no more." It's "say no to the wrong things, with full intentionality, so you can say yes to the right things at full force."</p>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>The "you can't say no, you're new"</h3>
 <p>If you're in your first 6 months, your default should be yes (with smarts about overload). You're building reputation, learning the org, finding which asks matter. Junior-default-yes is the right pattern; switching to senior-default-no comes after you've earned context. But: even as a new hire, "yes-and-here-is-when-I-can-deliver" is always appropriate.</p>
 
@@ -576,12 +579,9 @@ about any of this from anyone.</code></pre>
   <li>Forward-compat for users on older app versions.</li>
 </ul>
 <p>Defense: build a generic deeplink router + remote config of routes (one-time investment) so future "just add a deeplink" asks become server config changes, not app releases. Until that exists, every deeplink is a real ask, not a small one.</p>
-`
-    },
-    {
-      id: 'bugs',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Anti-pattern: silent yes</h3>
 <p><strong>Looks like:</strong> Don't respond to ask, hope they forget. Or vague "yeah I'll try to look at it."</p>
 <p><strong>Why bad:</strong> Asker assumes commitment. When you don't deliver, it's a broken commitment, not a no.</p>
@@ -661,12 +661,10 @@ about any of this from anyone.</code></pre>
 <p><strong>Looks like:</strong> Take on everything for 6 months; burn out; quit; everyone surprised.</p>
 <p><strong>Why bad:</strong> The org loses you; you lose money and momentum; the work doesn't get done; everyone learns nothing.</p>
 <p><strong>Fix:</strong> Calibrate continuously. Drop the small plate-spinning before it becomes survival. Burnout is not a badge.</p>
-`
-    },
-    {
-      id: 'interview',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>The "tell me about a time you said no" question</h3>
 <p>Common in senior interviews. They're checking: do you have the judgment + courage to push back, and do you do it well?</p>
 
@@ -803,56 +801,20 @@ obstructive."</code></pre>
 <h3>The 30-second mantra to keep in your back pocket</h3>
 <p><em>"Default no, justify yes. Name what gets displaced. Always offer an alternative. Recover early."</em></p>
 <p>If you can't articulate why a yes serves your top priorities, the answer is no. If you can't say what gets displaced, you're already over-committed. If you don't have an alternative path, you haven't thought hard enough about the asker's problem. If you've over-committed, surface fast — every day you wait makes recovery harder.</p>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Saying no is a <strong>prioritization skill executed with words</strong> — default no and justify yes, name what each yes displaces, and almost never give a naked no: frame it as a trade-off with an alternative.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Default no, justify yes.</strong> At senior level the question isn't "any reason I can't?" but "why is this the highest-leverage thing I could be doing?" Juniors default yes; seniors default no.</li>
-    <li><strong>The cost of yes is invisible.</strong> Every yes displaces something. If you can't name what got displaced, you're already over-committed and someone else pays for it later.</li>
-    <li><strong>Almost never say a naked "no."</strong> Use the pushback ladder: yes-and, yes-when, yes-if, yes-but-smaller, no-because-instead, no-because-priorities, no-because-bad-idea, hard no. Most engineers under-use levels 1-4 and over-use silence.</li>
-    <li><strong>Buy time.</strong> "Let me look at my plate and get back to you by EOD." The pressure to answer in the moment is fake.</li>
-    <li><strong>Score the ask on 4 axes:</strong> strategic fit, leverage, cost, asker reputation. 0-1/4 = no; 2/4 = yes-if; 3-4/4 = yes.</li>
-    <li><strong>The trade-off framing is the workhorse.</strong> "Sure, here's what it displaces — want that swap?" moves the decision from "will Prakhar do this?" to "are these the right priorities?", which is the manager's / PM's job.</li>
-    <li><strong>Saying no upward = informed consent.</strong> Never refuse without naming the cost of yes; put it in writing; if the manager still says do it, they own the decision.</li>
-    <li><strong>Drive-by exec asks are the most dangerous</strong> — high status, no team commitment. Get the ask in writing, scope it, time-box it, and loop your manager.</li>
-    <li><strong>Recover from over-commitment early:</strong> audit reality, triage by priority x asker, surface to your manager, notify dropped owners with grace, don't hide. Quiet slippage does ~5x the damage of an early honest "I can't."</li>
-    <li>Two failure modes: yes-to-everything (burnout, dropped commitments) and no-to-everything (the "blocker"). The sweet spot is a clear yes to the high-leverage and a framed no to the rest.</li>
-    <li><strong>Mobile / RN context:</strong> most "just add this small thing" asks aren't small — app review, version-gating, both platforms, offline. Educate and offer an alternative rather than just refusing.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>The silent / slow yes.</strong> Not responding, or a vague "I'll try to look at it", reads as a commitment to the asker — then becomes a broken commitment when you slip 4 weeks later. A clear early no is being a good colleague; a slow yes is bad-colleague behavior dressed up as nice.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"A director asked me to lead a project that didn't fit my half-goals while I was committed to a firm launch. Instead of saying yes immediately, I mapped the real cost, checked strategic fit, and went back with three options and a recommendation. He picked the advisory route — both things shipped on schedule."</div>
-  <div class="revision-say">"I almost never give a flat no. I say 'I can do this — here's what gets displaced, want to confirm the trade-off?' That puts the prioritization decision back where it belongs, and the relationship survives because I'm transparent about trade-offs, not obstructive."</div>
-  <div class="revision-say">"When I over-committed once, the migration ask had grown to half my time. I surfaced it fast, brought my manager and the peer lead three options, and we landed on a clean handoff. The lesson I took: attach an explicit checkpoint to every open-ended 'help out' yes."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. Walk me through the pushback ladder. How do you pick the right level for a given ask?</div>
+  <div class="qa-answer">
+    <p>I match the form of the response to the situation and only move down the ladder when the higher levels don't fit. Yes-and ("yes, and here's what drops") when the ask is reasonable but I'm full. Yes-when ("after Q3 ships") when the ask is good but the timing is wrong. Yes-if ("if you give me X resource or remove this dependency") when it's doable with conditions. Yes-but-smaller ("I can do 30% of it") when scope can shrink. Then the framed nos: no-because-instead (a cheaper path gets the same outcome), no-because-priorities (wrong owner — here's who to ask), no-because-bad-idea (the asker would be hurt by a yes). A hard no is the last resort, for ethical or load violations. Most engineers under-use levels 1-4 and over-use silence, which the asker reads as yes.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you tell a concise STAR story about a time you said no well — with the ask evaluated, a trade-off named, and an alternative offered instead of a naked refusal?</li>
-    <li>Can you walk through the pushback ladder and pick the right level for a given ask (yes-and / yes-when / yes-if / yes-but-smaller / framed no)?</li>
-    <li>Can you explain how you'd say no upward to a manager as informed consent, and what you'd do if they said "do it anyway"?</li>
-    <li>Can you describe how you'd handle a high-status drive-by ask from an exec without blowing up your roadmap?</li>
-    <li>Can you tell a story about recovering from over-commitment — triaging, surfacing early, and dropping with grace?</li>
-    <li>Can you explain the framework you use to decide what to work on when several stakeholders all want something?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. An exec drops a high-status "can you take 30 minutes to look at X" ask on you. How do you handle it without blowing up your roadmap?</div>
+  <div class="qa-answer">
+    <p>Drive-by asks feel like high-status work but carry no team commitment, so I treat them carefully. First, get it in writing: "Sure, can you send me what you're looking for?" Half the time the ask dies there because it wasn't articulated. Second, scope it explicitly: "30 minutes for this specific deliverable; anything beyond that we should re-scope." Third, loop in my manager so they can defend me if it grows. Fourth, time-box ruthlessly: if I'm 90 minutes into a 30-minute ask, I stop, send what I have, and flag that it's bigger than 30 minutes and I'm happy to invest more if it's useful.</p>
+  </div>
 </div>
-`
-    }
+` },
+
   ]
 });

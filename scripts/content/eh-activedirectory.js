@@ -1,30 +1,43 @@
 window.PREP_SITE.registerTopic({
-  id: 'eh-activedirectory',
-  module: 'eh',
-  title: 'Active Directory Attacks',
-  estimatedReadTime: '34 min',
-  tags: ['ethical-hacking', 'security', 'pentest', 'active-directory', 'kerberos', 'kerberoasting', 'bloodhound', 'impacket', 'dcsync', 'adcs'],
+  id: "eh-activedirectory",
+  module: "eh",
+  title: "Active Directory Attacks",
+  estimatedReadTime: "34 min",
+  tags: ["ethical-hacking","security","pentest","active-directory","kerberos","kerberoasting","bloodhound","impacket","dcsync","adcs"],
   sections: [
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `
-<div class="callout danger">
-  <div class="callout-title">⚠️ Domain Controllers are the crown jewel — treat this topic accordingly</div>
-  <p>Everything in this topic targets a domain's actual trust fabric — Kerberos, LDAP, and the domain controllers (DCs) that arbitrate both. Compromising a single low-privileged domain account can, through the techniques here, chain into full domain compromise, and some of these techniques (DCSync, golden tickets) grant persistent, domain-wide access that survives ordinary remediation like password resets. That makes this the single highest-blast-radius topic in the module. Only ever practice it in your own isolated lab domain (built per Foundations, Ethics &amp; Legal) or under a Rules of Engagement that explicitly names domain-controller-targeting techniques as in scope — many organizations treat "tester obtained DCSync rights" or "tester forged a ticket" as a critical finding requiring immediate, separate notification, not something to wait for the final report.</p>
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">From a low-privileged foothold, AD attacks abuse the normal Kerberos/LDAP trust fabric and everyday misconfigurations to answer one question — can a domain user reach Domain Admin?</div>
+  <h4>Key points</h4>
+  <ul>
+    <li>AD centralizes authentication and policy for users, computers, and groups on domain controllers — compromise the directory and you effectively compromise the whole environment.</li>
+    <li>The Kerberos KDC runs on every DC and combines the AS (issues a TGT encrypted with the <code>krbtgt</code> key) and the TGS (issues a service ticket encrypted with the target service account's own key).</li>
+    <li>An SPN names a service instance bound to the account running it; any authenticated user can request a service ticket for any SPN — that is by-design behavior, not a bug.</li>
+    <li>Kerberoasting requests TGS tickets for SPN accounts and cracks them offline (<code>hashcat -m 13100</code>, RC4); the real vulnerability is a weak, human-chosen service-account password.</li>
+    <li>AS-REP roasting targets accounts with Kerberos pre-auth disabled — their AS-REP is crackable offline (<code>hashcat -m 18200</code>) and the unauthenticated variant needs no credentials at all.</li>
+    <li>BloodHound + SharpHound model AD as an attack-path graph (shortest path to Domain Admins); PowerView and ldapdomaindump pull the same LDAP data; netexec (crackmapexec's maintained successor) sweeps for creds and shares.</li>
+    <li>Pass-the-Hash reuses an NTLM hash and Pass-the-Ticket reuses a Kerberos ticket — both authenticate without the plaintext password, via Impacket (<code>psexec.py</code>/<code>wmiexec.py</code>) or evil-winrm.</li>
+    <li>Delegation abuse: unconstrained (host caches connecting users' TGTs in memory), constrained (S4U to a fixed service list), and RBCD (write access over a computer object grants delegation onto it).</li>
+    <li>ADCS ESC1 needs three conditions together — enrollable template, <code>ENROLLEE_SUPPLIES_SUBJECT</code>, and a Client Authentication EKU — letting a low-priv user request a certificate naming any UPN.</li>
+    <li>DCSync abuses the MS-DRSR replication rights (Replicating Directory Changes / All) to pull account secrets including <code>krbtgt</code> via <code>secretsdump.py</code> — treat a successful DCSync as a critical finding.</li>
+    <li>Golden ticket = a forged TGT (needs the <code>krbtgt</code> key); silver ticket = a forged service ticket (needs one service account's key, never touches the KDC) — both bypass the KDC's real-time checks (disablement, expiry, group changes). Remediation for an exposed <code>krbtgt</code> is rotating it <strong>twice</strong> in succession, because one rotation leaves the previous key valid for a grace period.</li>
+    <li>Mantra: Kerberos trusts whoever holds the right key — enumerate to find the weakest key in the domain; every defense exists to make keys harder to steal, shorter-lived, and easier to notice being misused.</li>
+    <li>Top defenses map to specific attacks: gMSA defeats Kerberoasting, LAPS stops local-admin hash reuse, tiering/PAW isolates Tier 0 credentials, disabling unconstrained delegation removes TGT caching, and event IDs 4768/4769/4771/4662 detect the activity.</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap">Kerberoasting and AS-REP roasting are not Kerberos protocol bugs — they are legitimate, by-design Kerberos exchanges. The vulnerability is weak passwords and misconfiguration, so "patch Kerberos" is the wrong fix; strong/auto-rotated passwords (gMSA) and not disabling pre-auth are the real fixes.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"Almost every AD attack is really abusing one step of the normal Kerberos flow, not exploiting a flaw in the protocol itself."</div>
+  <div class="revision-say">"Kerberoasting works because a service ticket is encrypted with the service account's own password-derived key, so I can crack it offline with no lockout or rate limiting."</div>
+  <div class="revision-say">"DCSync and golden tickets are domain-dominance techniques — I treat them as critical findings and only touch a DC when the Rules of Engagement name those techniques explicitly."</div>
 </div>
-<p>This topic covers the internal, credential-and-trust-abuse techniques a tester runs once they have a foothold inside an Active Directory environment — the classic "assumed breach" starting point for an internal engagement — and wants to answer the question every AD assessment ultimately asks: <em>can a low-privileged domain user reach Domain Admin, and how?</em></p>
-<ul>
-  <li><strong>Enumeration</strong> — <strong>BloodHound</strong> (with the <strong>SharpHound</strong> collector) maps the domain as an attack-path graph; <strong>PowerView</strong> and <strong>ldapdomaindump</strong> pull the same underlying LDAP data in script- and report-friendly forms; <strong>netexec</strong> (the actively maintained successor to the now-archived <strong>crackmapexec</strong>) sweeps hosts for access, shares, and credential validity.</li>
-  <li><strong>Kerberos credential attacks</strong> — <strong>Kerberoasting</strong> (Impacket's <code>GetUserSPNs.py</code>) and <strong>AS-REP roasting</strong> (<code>GetNPUsers.py</code>) both extract offline-crackable material straight out of normal Kerberos ticket exchanges, no exploit required.</li>
-  <li><strong>Lateral movement</strong> — <strong>Pass-the-Hash</strong> and <strong>Pass-the-Ticket</strong> reuse captured credential material instead of a plaintext password, driven through Impacket's <code>psexec.py</code>/<code>wmiexec.py</code> or <strong><code>evil-winrm</code></strong>.</li>
-  <li><strong>Escalation</strong> — Kerberos <strong>delegation abuse</strong> (unconstrained, constrained, resource-based) and <strong>ADCS ESC1</strong> (a certificate-template misconfiguration) are both covered conceptually, as the mechanics behind a large share of real-world AD privilege-escalation findings.</li>
-  <li><strong>Domain dominance</strong> — <strong>DCSync</strong> (Impacket's <code>secretsdump.py</code>) and <strong>golden/silver tickets</strong> are covered <em>conceptually</em> here — what they are, why they're dangerous, and how to defend against them — deliberately without turnkey forge recipes, since these are the techniques that turn a test into domain-wide, hard-to-remediate persistence.</li>
-</ul>
-<p><strong>Mantra:</strong> "Kerberos trusts whoever holds the right key — enumerate to find the weakest key in the domain, and every defense in this topic exists to make keys harder to steal, shorter-lived, and easier to notice being misused."</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'what-why', title: '🧠 What & Why', html: `
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>What Active Directory actually is</h3>
 <p><strong>Active Directory (AD)</strong> is Microsoft's directory service for Windows-centric networks: a hierarchical database of users, computers, groups, and policies (organized into <strong>domains</strong>, which can be grouped into a <strong>forest</strong> with trust relationships between them), served by one or more <strong>domain controllers (DCs)</strong>. Every domain-joined machine and user authenticates against a DC, and every access-control decision in the domain — who can log into which machine, who's a member of which group, who can read or write which object — ultimately traces back to data AD stores and Kerberos tickets AD issues. That centrality is exactly why AD is the top target in almost every internal engagement: compromise the directory, and you've effectively compromised policy enforcement for the entire environment.</p>
 
@@ -43,10 +56,10 @@ window.PREP_SITE.registerTopic({
 
 <h3>The credential-abuse pattern underneath almost every technique here</h3>
 <p>Zoom out far enough and nearly every technique in this topic is a variation on one idea: <strong>Kerberos tickets and NTLM credential material are just bytes secured by an account's secret key — if you can get a copy, you can attack that copy offline, or replay it, without ever needing the account's actual plaintext password.</strong> Kerberoasting and AS-REP roasting get a copy through completely legitimate-looking Kerberos traffic. Pass-the-Hash and Pass-the-Ticket reuse material already captured (from a memory dump, a previous compromise, or Responder — covered in Network Attacks). DCSync gets a copy by asking a DC to replicate it, the same way DCs do for each other. Golden and silver tickets go one step further and fabricate that material from scratch once the right secret key is already known. Recognizing this shared shape makes the specific tool syntax in Mechanics much easier to retain.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mental-model', title: '🗺️ Mental Model', html: `
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The Kerberos flow, and exactly where each attack hooks in</h3>
 <pre><code class="language-text">Client                              KDC (on a Domain Controller)
   │                                        │
@@ -89,10 +102,10 @@ DCSync         = unrelated to this flow — it asks a DC directly, via the
 
 <h3>Why domain-dominance techniques get a different level of caution</h3>
 <p>Every other technique in this topic targets one account or one host at a time. DCSync and golden/silver tickets are qualitatively different: they can grant access to <em>any</em> account, on <em>any</em> host, for as long as the attacker chooses — and, in the golden-ticket case, that access can persist even through a full password reset of the impersonated account, because what was forged is trust in the <code>krbtgt</code> key itself, not any single user's password. That's the reason this module treats them conceptually (what they are, why they work, how to defend) rather than as commands to run — the goal is to recognize and defend against them, not to hand over a copy-paste path to unremediable domain compromise.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'mechanics', title: '⚙️ Tools & Techniques', html: `
+{ id: "mechanics", title: "⚙️ Tools & Techniques", collapsible: true, html: `
 <h3>Enumeration: BloodHound (Community Edition) + SharpHound</h3>
 <p><strong>BloodHound Community Edition (BHCE)</strong>, the actively developed, Docker/Neo4j-based current version, replaced the older desktop "BloodHound Legacy" — the two use incompatible collector formats, so match the collector version to whichever BloodHound server is running. <strong>SharpHound</strong> is the C# data collector that walks LDAP and, optionally, individual hosts to gather sessions, group memberships, and ACLs:</p>
 <pre><code class="language-bash"># Run the SharpHound CE collector from a domain-joined (or domain-reachable) host:
@@ -218,10 +231,10 @@ secretsdump.py -just-dc-user &lt;target-user&gt; &lt;domain&gt;/&lt;user&gt;:&lt
 <p>A <strong>golden ticket</strong> is a forged TGT, built entirely offline without ever contacting a KDC — possible once an attacker already holds the <code>krbtgt</code> account's secret key (commonly obtained via DCSync, above). Because a TGT is just data encrypted and signed with that one key, whoever holds it can fabricate a TGT asserting <em>any</em> identity, <em>any</em> group memberships, and <em>any</em> validity window they choose, and every service in the domain will accept it exactly as if the KDC had issued it — because cryptographically, nothing distinguishes a forged ticket from a real one.</p>
 <p>A <strong>silver ticket</strong> is the narrower sibling: instead of forging a TGT with the <code>krbtgt</code> key, it forges a service ticket directly, using one specific service account's own key. Its reach is limited to whatever service that one account runs, but it's arguably stealthier still, because using a forged service ticket never involves the KDC at all (see the Mental Model diagram) — no AS-REQ or TGS-REQ traffic to a DC is generated by presenting it.</p>
 <p>What makes both genuinely dangerous is that they bypass the KDC's real-time policy checks entirely — a disabled account, an expired password, or a removed group membership doesn't invalidate an already-forged ticket, because the KDC is never consulted again once the ticket exists. The only real remediation for a golden ticket, once <code>krbtgt</code> is confirmed exposed, is rotating the <code>krbtgt</code> secret <em>twice</em> in succession (a single rotation still leaves the previous key valid for a grace period) — which is exactly why any suspected DCSync or credential-dump event against a DC has to be treated as urgently as a confirmed golden ticket, covered further in Defenses &amp; Legal.</p>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'examples', title: '🧪 Worked Examples', html: `
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1 — Enumerating a shortest path to Domain Admin with BloodHound (lab domain)</h3>
 <p>Continuing the isolated lab pattern from Foundations, Ethics &amp; Legal, with a small lab domain (one DC, a couple of member servers) and one intentionally low-privileged foothold account:</p>
 <pre><code class="language-bash"># 1. Collect data from a domain-joined foothold host:
@@ -292,10 +305,10 @@ secretsdump.py lab.local/svc_sql:CrackedPassword123@192.168.56.20
 #   (common when a golden image ships an identical local admin password),
 #   that single foothold credential just became a much larger one —
 #   exactly the risk LAPS (Defenses &amp; Legal) exists to close off.</code></pre>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'interview-patterns', title: '🎤 Interview Patterns', html: `
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <div class="qa-block">
 <div class="qa-q">Walk me through the Kerberos AS-REQ/AS-REP/TGS-REQ/TGS-REP flow, and where Kerberoasting and AS-REP roasting each hook in.</div>
 <div class="qa-a">
@@ -344,10 +357,23 @@ secretsdump.py lab.local/svc_sql:CrackedPassword123@192.168.56.20
 <p>crackmapexec was the tool that pioneered sweeping a network for valid credentials, shares, and lightweight remote command execution across many hosts at once, but its original maintainer retired from the project and it's been archived and unmaintained since 2023. netexec is a community-driven continuation of that same codebase and command surface, actively maintained and extended since. Day to day, the workflow doesn't really change — the command syntax carried over closely enough that older crackmapexec write-ups still translate almost directly — the main practical point is to reach for netexec going forward for active development, bug fixes, and new protocol modules, while recognizing crackmapexec commands in older material as the same tool under its previous name.</p>
 </div>
 </div>
-`},
+
+<div class="qa-block">
+  <div class="qa-question">Q8. Why can a Kerberos service ticket be cracked offline, and what actually makes an account Kerberoastable?</div>
+  <div class="qa-answer">
+    <p>The TGS-REP service ticket is encrypted with the target service account's own password-derived key, not the <code>krbtgt</code> key. Since any authenticated domain user can request a ticket for any SPN by design, an attacker can request one (e.g. with Impacket's <code>GetUserSPNs.py</code>) and guess passwords against it completely offline (<code>hashcat -m 13100</code> for RC4; 19600/19700 for AES), with no lockout or rate limiting. An account is Kerberoastable if it has an SPN set, so you enumerate SPN-bearing users (<code>Get-DomainUser -SPN</code>). It is only <em>crackable</em> when its human-chosen password is weak, which is why gMSA (a 120-character auto-rotated random password) or a 25+ character random password is the real fix.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q9. Which top AD defenses shut down which attacks?</div>
+  <div class="qa-answer">
+    <p><strong>gMSA</strong> (or 25+ character random passwords on SPN accounts) makes Kerberoasted tickets practically uncrackable. <strong>LAPS</strong> randomizes and rotates each machine's local Administrator password, stopping one dumped local hash from working across the whole fleet via Pass-the-Hash. <strong>Tiering and PAWs</strong> keep Tier 0 credentials (Domain Admins, DCs, ADCS) only on dedicated hardened workstations, so compromising an everyday laptop never exposes them. <strong>Disabling unconstrained delegation</strong> (moving to constrained/RBCD and marking sensitive accounts "cannot be delegated") stops hosts from caching connecting users' TGTs for harvesting. Alongside these, ADCS template hardening closes ESC1, and monitoring event IDs 4768/4769/4771/4662 detects the activity.</p>
+  </div>
+</div>
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'cheat-sheet', title: '📋 Cheat Sheet', html: `
+{ id: "cheat-sheet", title: "📋 Cheat Sheet", collapsible: true, html: `
 <table>
   <thead><tr><th>Category</th><th>Tool / Concept</th><th>What it does / key command</th></tr></thead>
   <tbody>
@@ -378,10 +404,11 @@ secretsdump.py lab.local/svc_sql:CrackedPassword123@192.168.56.20
     <tr><td>Legal must-have</td><td>Explicit written scope for DC-targeting techniques</td><td>DCSync/ticket-forging capability named specifically in the RoE, or lab-only</td></tr>
   </tbody>
 </table>
-`},
+` },
 
 // ─────────────────────────────────────────────────────────────
-{ id: 'edge-cases', title: '⚠️ Defenses & Legal', html: `
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <div class="callout danger">
   <div class="callout-title">⚠️ Authorization for domain-controller-targeting techniques must be explicit</div>
   <p>DCSync and any technique that depends on it (including golden ticket forgery) can grant persistent, domain-wide access, and delegation/ADCS abuse can silently escalate a single low-privileged account to Domain Admin. Per the Rules of Engagement guidance in Foundations, Ethics &amp; Legal, a generic "internal AD testing authorized" scope statement is not sufficient for these — the RoE should name domain-controller-targeting techniques (DCSync, ticket forgery, ADCS certificate abuse) explicitly, and many organizations require immediate, out-of-band notification the moment one of these is proven, rather than waiting for the final report, precisely because remediation (e.g. a double krbtgt rotation) is disruptive and time-sensitive. Outside of an authorized engagement, keep every technique in this topic inside your own isolated lab domain.</p>
@@ -417,50 +444,7 @@ secretsdump.py lab.local/svc_sql:CrackedPassword123@192.168.56.20
 
 <h3>Authorization is the constant</h3>
 <p>None of the defenses above change the core rule from Foundations, Ethics &amp; Legal: only run any technique from this topic against systems you own, or that you have explicit, written, in-scope authorization to test — with domain-controller-targeting techniques (DCSync, ticket forgery, ADCS abuse) named specifically, given how far-reaching and how difficult to fully remediate their effects can be.</p>
-`},
+` },
 
-// ─────────────────────────────────────────────────────────────
-{ id: 'revision', title: '⚡ Revision — Points to Remember', collapsible: true, html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">From a low-privileged foothold, AD attacks abuse the normal Kerberos/LDAP trust fabric and everyday misconfigurations to answer one question — can a domain user reach Domain Admin?</div>
-  <h4>Key points</h4>
-  <ul>
-    <li>AD centralizes authentication and policy for users, computers, and groups on domain controllers — compromise the directory and you effectively compromise the whole environment.</li>
-    <li>The Kerberos KDC runs on every DC and combines the AS (issues a TGT encrypted with the <code>krbtgt</code> key) and the TGS (issues a service ticket encrypted with the target service account's own key).</li>
-    <li>An SPN names a service instance bound to the account running it; any authenticated user can request a service ticket for any SPN — that is by-design behavior, not a bug.</li>
-    <li>Kerberoasting requests TGS tickets for SPN accounts and cracks them offline (<code>hashcat -m 13100</code>, RC4); the real vulnerability is a weak, human-chosen service-account password.</li>
-    <li>AS-REP roasting targets accounts with Kerberos pre-auth disabled — their AS-REP is crackable offline (<code>hashcat -m 18200</code>) and the unauthenticated variant needs no credentials at all.</li>
-    <li>BloodHound + SharpHound model AD as an attack-path graph (shortest path to Domain Admins); PowerView and ldapdomaindump pull the same LDAP data; netexec (crackmapexec's maintained successor) sweeps for creds and shares.</li>
-    <li>Pass-the-Hash reuses an NTLM hash and Pass-the-Ticket reuses a Kerberos ticket — both authenticate without the plaintext password, via Impacket (<code>psexec.py</code>/<code>wmiexec.py</code>) or evil-winrm.</li>
-    <li>Delegation abuse: unconstrained (host caches connecting users' TGTs in memory), constrained (S4U to a fixed service list), and RBCD (write access over a computer object grants delegation onto it).</li>
-    <li>ADCS ESC1 needs three conditions together — enrollable template, <code>ENROLLEE_SUPPLIES_SUBJECT</code>, and a Client Authentication EKU — letting a low-priv user request a certificate naming any UPN.</li>
-    <li>DCSync abuses the MS-DRSR replication rights (Replicating Directory Changes / All) to pull account secrets including <code>krbtgt</code> via <code>secretsdump.py</code> — treat a successful DCSync as a critical finding.</li>
-    <li>Golden ticket = a forged TGT (needs the <code>krbtgt</code> key); silver ticket = a forged service ticket (needs one service account's key, never touches the KDC) — both bypass the KDC's real-time checks.</li>
-    <li>Top defenses map to specific attacks: gMSA defeats Kerberoasting, LAPS stops local-admin hash reuse, tiering/PAW isolates Tier 0 credentials, disabling unconstrained delegation removes TGT caching, and event IDs 4768/4769/4771/4662 detect the activity.</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap">Kerberoasting and AS-REP roasting are not Kerberos protocol bugs — they are legitimate, by-design Kerberos exchanges. The vulnerability is weak passwords and misconfiguration, so "patch Kerberos" is the wrong fix; strong/auto-rotated passwords (gMSA) and not disabling pre-auth are the real fixes.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"Almost every AD attack is really abusing one step of the normal Kerberos flow, not exploiting a flaw in the protocol itself."</div>
-  <div class="revision-say">"Kerberoasting works because a service ticket is encrypted with the service account's own password-derived key, so I can crack it offline with no lockout or rate limiting."</div>
-  <div class="revision-say">"DCSync and golden tickets are domain-dominance techniques — I treat them as critical findings and only touch a DC when the Rules of Engagement name those techniques explicitly."</div>
-</div>
-`},
-
-// ─────────────────────────────────────────────────────────────
-{ id: 'checklist', title: '✅ Interview Checklist', collapsible: true, html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you draw the AS-REQ/AS-REP/TGS-REQ/TGS-REP flow and point to exactly where Kerberoasting and AS-REP roasting each hook in?</li>
-    <li>Can you explain why a service ticket can be cracked offline, and what actually makes an account Kerberoastable?</li>
-    <li>Can you contrast Pass-the-Hash and Pass-the-Ticket, including what credential material each one reuses?</li>
-    <li>Can you explain what DCSync abuses and why a successful DCSync is treated as a critical finding on its own?</li>
-    <li>Can you distinguish a golden ticket from a silver ticket, and say why rotating <code>krbtgt</code> twice is the remediation?</li>
-    <li>Can you name the top AD defenses (gMSA, LAPS, tiering/PAW, disabling unconstrained delegation) and which attack each one shuts down?</li>
-  </ul>
-</div>
-`}
-
-]});
+  ]
+});

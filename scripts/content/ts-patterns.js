@@ -1,36 +1,44 @@
 window.PREP_SITE.registerTopic({
-  id: 'ts-patterns',
-  module: 'typescript',
-  title: 'Common Patterns',
-  estimatedReadTime: '45 min',
-  tags: ['typescript', 'patterns', 'discriminated-union', 'branded-types', 'builder', 'enums', 'state-machines', 'result-type'],
+  id: "ts-patterns",
+  module: "typescript",
+  title: "Common Patterns",
+  estimatedReadTime: "45 min",
+  tags: ["typescript","patterns","discriminated-union","branded-types","builder","enums","state-machines","result-type"],
   sections: [
-    {
-      id: 'tldr',
-      title: '🎯 TL;DR',
-      collapsible: false,
-      html: `
-<p>This is the working library of TypeScript patterns that show up in real product code, on real PR reviews, and in real interviews. Each one solves a specific problem; together they cover ~80% of the type-modeling decisions you make weekly.</p>
-<ul>
-  <li><strong>Discriminated unions</strong> for state, results, events.</li>
-  <li><strong>Branded types</strong> for IDs and trusted strings.</li>
-  <li><strong>Const-as-union</strong> instead of <code>enum</code>.</li>
-  <li><strong>Builder pattern</strong> with <code>this</code> chaining.</li>
-  <li><strong>Result/Either</strong> instead of throwing for expected errors.</li>
-  <li><strong>State machines</strong> as discriminated unions of states with typed transitions.</li>
-  <li><strong>Type-safe events / route maps</strong> — keyof + indexed access.</li>
-  <li><strong>Validation at boundaries</strong> with <code>zod</code> or hand-rolled guards.</li>
-  <li><strong>Builder of public API</strong> using <code>satisfies</code> + <code>as const</code>.</li>
-  <li><strong>Type predicate functions</strong> (<code>x is T</code>) over assertions.</li>
-</ul>
-<p><strong>Mantra:</strong> "Don't model with optionality and any. Model with shape, narrow with discriminators, validate at the seam."</p>
-<p><strong>Version note:</strong> these patterns are version-stable. Current stable is <strong>TypeScript 6.0</strong> (GA March 2026); the Go-native compiler ("tsgo" / <strong>TypeScript 7.0</strong>) is at Release Candidate (June 2026) with ~10× faster type-checking.</p>
-`
-    },
-    {
-      id: 'what-why',
-      title: '🧠 What & Why',
-      html: `
+
+// ─────────────────────────────────────────────────────────────
+{ id: "revision", title: "⚡ Revision — Points to Remember", collapsible: false, html: `
+<div class="revision-card">
+  <h4>In one line</h4>
+  <div class="revision-oneline">Model with <strong>shape, not optionality</strong> — make illegal states unrepresentable with discriminated unions, narrow at the boundary, and validate every value crossing in.</div>
+  <h4>Key points</h4>
+  <ul>
+    <li><strong>Mantra:</strong> "Don't model with optionality and <code>any</code>. Model with shape, narrow with discriminators, validate at the seam." The 10 core patterns cover ~80% of weekly type-modeling decisions.</li>
+    <li><strong>Shape vs flag:</strong> states with different fields should be different shapes (a discriminated union), not one shape with optional fields and booleans — TS narrows by discriminator, not by flag.</li>
+    <li>Give each variant a <strong>literal-typed discriminator</strong> (<code>kind</code>/<code>tag</code>/<code>state</code>); a plain <code>string</code> discriminator can't narrow. Close switches with <code>default: { const _: never = x }</code> for exhaustiveness.</li>
+    <li><strong>Branded types</strong> (<code>string &amp; { __brand }</code>) distinguish structurally-equal types (<code>UserId</code> vs <code>OrderId</code>); always provide a constructor so call sites don't scatter <code>as</code>, and re-brand after serialization (JSON drops the brand).</li>
+    <li><strong>Const-as-union</strong> (<code>["a","b"] as const</code> → <code>typeof[number]</code>) replaces <code>enum</code>: zero runtime cost, tree-shakable, no const-enum / isolatedModules footgun.</li>
+    <li><strong>Result / Either</strong> returns errors as values for <em>expected</em> failures; <code>throw</code> only for truly exceptional cases — and a Result-returning function must never throw.</li>
+    <li><strong>Builder pattern</strong> returns <code>this</code> (not the base type) so chaining keeps the subclass type.</li>
+    <li><strong>State machines as discriminated unions:</strong> type transitions by narrowing the parameter (<code>ship(o: Order &amp; { state: "submitted" })</code>) so illegal transitions are compile errors; treat states as immutable.</li>
+    <li><strong>Typed event emitter / router:</strong> <code>keyof</code> + indexed access checks payloads by event key — always discriminate on the key, not the payload shape.</li>
+    <li><strong>Boundary validation:</strong> cast to <code>unknown</code> and narrow with a full guard or a <code>zod</code> schema — never trust <code>JSON.parse</code> with <code>as</code>, and never half-validate.</li>
+    <li><strong><code>satisfies</code> + <code>as const</code></strong> validates shape without widening — it keeps literal types for autocomplete, where a plain annotation would widen.</li>
+    <li><strong>Type predicates</strong> (<code>x is T</code>) create real narrowing; assertions (<code>as</code>) are statements of belief. A predicate with <code>any</code> input or a lying body poisons the type system — take <code>unknown</code>.</li>
+    <li>Patterns earn their cost at 3+ uses; past ~6–8 states, reach for a real FSM library (XState).</li>
+    <li><strong>Versions:</strong> these patterns are version-stable across <strong>TS 6.0</strong> (current stable, March 2026) and the Go-native <strong>TS 7.0</strong> RC (~10× faster checking).</li>
+  </ul>
+  <h4>Common trap</h4>
+  <div class="revision-trap"><strong>Modeling state as optional fields plus booleans</strong> (<code>loading?</code> / <code>data?</code> / <code>error?</code>) instead of a discriminated union — every read then needs guards, and illegal combinations (loading <em>and</em> error) are representable. Fix: one literal-typed discriminator per variant plus an exhaustive switch closed with <code>const _: never = x</code>, so adding a variant is a compile error until you handle it.</div>
+  <h4>Say this in the interview</h4>
+  <div class="revision-say">"I make illegal states unrepresentable — a discriminated union with a literal discriminator instead of a bag of optional fields and booleans."</div>
+  <div class="revision-say">"Types are lies at the boundary: I cast network and JSON responses to unknown and narrow with a guard or a zod schema before trusting anything."</div>
+  <div class="revision-say">"satisfies is my default for config and token objects — it checks the shape without widening, so I keep the literal types for autocomplete."</div>
+</div>
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "what-why", title: "🧠 What & Why", collapsible: true, html: `
 <h3>Why patterns matter more than features</h3>
 <p>TypeScript has hundreds of features — generics, conditional types, mapped types, template literals. Knowing them isn't enough. The skill that separates a senior TS engineer from a junior is recognizing which combination of features fits the situation, and reaching for the right one fast.</p>
 
@@ -61,12 +69,10 @@ window.PREP_SITE.registerTopic({
   <li><strong>Lean on inference.</strong> Annotate inputs and exports; let TS infer the rest. The narrower TS infers, the more it catches.</li>
   <li><strong>Compose small primitives.</strong> Each pattern is a few lines. Combinations cover the whole domain.</li>
 </ol>
-`
-    },
-    {
-      id: 'mental-model',
-      title: '🗺️ Mental Model',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mental-model", title: "🗺️ Mental Model", collapsible: true, html: `
 <h3>The "shape vs flag" rule</h3>
 <p>If two states have different fields, they should be different shapes — not the same shape with optional fields and booleans. TS narrows by shape, not by flag.</p>
 <pre><code class="language-ts">// BAD — every read needs ifs and ?? guards
@@ -111,12 +117,10 @@ type State =
 
 <h3>The "predicate over assertion" rule</h3>
 <p>Prefer <code>function isUser(x: unknown): x is User</code> (a type predicate) over <code>const u = x as User</code>. Predicates create real safety; assertions are statements of belief.</p>
-`
-    },
-    {
-      id: 'mechanics',
-      title: '⚙️ Mechanics',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "mechanics", title: "⚙️ Mechanics", collapsible: true, html: `
 <h3>Pattern 1 — Discriminated union</h3>
 <pre><code class="language-ts">type AsyncState&lt;T, E = Error&gt; =
   | { kind: "idle" }
@@ -332,12 +336,10 @@ function fn(x: unknown) {
   console.log(x.length);   // x narrowed to string
 }
 </code></pre>
-`
-    },
-    {
-      id: 'examples',
-      title: '🧪 Worked Examples',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "examples", title: "🧪 Examples", collapsible: true, html: `
 <h3>Example 1: Form validation with discriminated errors</h3>
 <pre><code class="language-ts">type ValidationIssue =
   | { code: "required"; field: string }
@@ -531,12 +533,11 @@ function fmt(e: unknown): string {
   return String(e);
 }
 </code></pre>
-`
-    },
-    {
-      id: 'edge-cases',
-      title: '⚠️ Edge Cases',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "pitfalls", title: "🕳️ Pitfalls", collapsible: true, html: `<div class="pitfalls-part">🕳️ Edge cases</div>
+
 <h3>Discriminated unions need a literal-typed discriminator</h3>
 <pre><code class="language-ts">// BAD — string isn't narrowing the variants
 type S = { kind: string; data: number } | { kind: string; error: string };
@@ -638,12 +639,9 @@ switch (s.kind) {
 }
 // Always 'return' or 'break' per case.
 </code></pre>
-`
-    },
-    {
-      id: 'bugs-anti-patterns',
-      title: '🐛 Bugs & Anti-Patterns',
-      html: `
+
+<div class="pitfalls-part">🐛 Bugs &amp; anti-patterns</div>
+
 <h3>Bug 1: Optional fields that should be discriminated</h3>
 <pre><code class="language-ts">// BAD — every field optional, every read needs a check
 interface State { loading?: boolean; data?: User; error?: Error; }
@@ -774,12 +772,10 @@ function isErrorLike(x: unknown): x is { message: string; name?: string } {
 <pre><code class="language-ts">function isUser(x: any): x is User { /*...*/ }   // any erodes safety in callers
 function isUser(x: unknown): x is User { /*...*/ } // safer; forces narrowing
 </code></pre>
-`
-    },
-    {
-      id: 'interview-patterns',
-      title: '🎤 Interview Patterns',
-      html: `
+` },
+
+// ─────────────────────────────────────────────────────────────
+{ id: "interview-qa", title: "🎤 Interview Q&A", collapsible: true, html: `
 <h3>Patterns FAANG and mid-size shops actually grade on</h3>
 <table>
   <thead><tr><th>Pattern</th><th>What's being tested</th></tr></thead>
@@ -873,56 +869,49 @@ type FormState = Step1 | Step2 | Step3;</code></pre>
   <li>"I'd explore <code>xstate</code> once we exceed ~6 states — its visualizer becomes net positive past that size."</li>
   <li>"I'd convert legacy <code>enum</code>s gradually with a codemod, keeping public API stable via re-exports."</li>
 </ul>
-`
-    },
-    {
-      id: 'revision',
-      title: '⚡ Revision — Points to Remember',
-      collapsible: true,
-      html: `
-<div class="revision-card">
-  <h4>In one line</h4>
-  <div class="revision-oneline">Model with <strong>shape, not optionality</strong> — make illegal states unrepresentable with discriminated unions, narrow at the boundary, and validate every value crossing in.</div>
-  <h4>Key points</h4>
-  <ul>
-    <li><strong>Shape vs flag:</strong> states with different fields should be different shapes (a discriminated union), not one shape with optional fields and booleans — TS narrows by discriminator, not by flag.</li>
-    <li>Give each variant a <strong>literal-typed discriminator</strong> (<code>kind</code>/<code>tag</code>/<code>state</code>); a plain <code>string</code> discriminator can't narrow. Close switches with <code>default: { const _: never = x }</code> for exhaustiveness.</li>
-    <li><strong>Branded types</strong> (<code>string &amp; { __brand }</code>) distinguish structurally-equal types (<code>UserId</code> vs <code>OrderId</code>); always provide a constructor so call sites don't scatter <code>as</code>, and re-brand after serialization (JSON drops the brand).</li>
-    <li><strong>Const-as-union</strong> (<code>["a","b"] as const</code> → <code>typeof[number]</code>) replaces <code>enum</code>: zero runtime cost, tree-shakable, no const-enum / isolatedModules footgun.</li>
-    <li><strong>Result / Either</strong> returns errors as values for <em>expected</em> failures; <code>throw</code> only for truly exceptional cases — and a Result-returning function must never throw.</li>
-    <li><strong>State machines as discriminated unions:</strong> type transitions by narrowing the parameter (<code>ship(o: Order &amp; { state: "submitted" })</code>) so illegal transitions are compile errors; treat states as immutable.</li>
-    <li><strong>Typed event emitter / router:</strong> <code>keyof</code> + indexed access checks payloads by event key — always discriminate on the key, not the payload shape.</li>
-    <li><strong>Boundary validation:</strong> cast to <code>unknown</code> and narrow with a full guard or a <code>zod</code> schema — never trust <code>JSON.parse</code> with <code>as</code>, and never half-validate.</li>
-    <li><strong><code>satisfies</code> + <code>as const</code></strong> validates shape without widening — it keeps literal types for autocomplete, where a plain annotation would widen.</li>
-    <li><strong>Type predicates</strong> (<code>x is T</code>) create real narrowing; assertions (<code>as</code>) are statements of belief. A predicate with <code>any</code> input or a lying body poisons the type system — take <code>unknown</code>.</li>
-    <li>Patterns earn their cost at 3+ uses; past ~6–8 states, reach for a real FSM library (XState).</li>
-  </ul>
-  <h4>Common trap</h4>
-  <div class="revision-trap"><strong>Modeling state as optional fields plus booleans</strong> (<code>loading?</code> / <code>data?</code> / <code>error?</code>) instead of a discriminated union — every read then needs guards, and illegal combinations (loading <em>and</em> error) are representable. Fix: one literal-typed discriminator per variant plus an exhaustive switch closed with <code>const _: never = x</code>, so adding a variant is a compile error until you handle it.</div>
-  <h4>Say this in the interview</h4>
-  <div class="revision-say">"I make illegal states unrepresentable — a discriminated union with a literal discriminator instead of a bag of optional fields and booleans."</div>
-  <div class="revision-say">"Types are lies at the boundary: I cast network and JSON responses to unknown and narrow with a guard or a zod schema before trusting anything."</div>
-  <div class="revision-say">"satisfies is my default for config and token objects — it checks the shape without widening, so I keep the literal types for autocomplete."</div>
+
+<div class="qa-block">
+  <div class="qa-question">Q1. What does "model with shape, not optionality" mean, and why does a discriminated union beat optional-field flags?</div>
+  <div class="qa-answer">
+    <p>If two states have different fields, they should be different shapes, not one shape with optional fields and booleans. With <code>{ loading: boolean; data?: User; error?: Error }</code> every read needs <code>if</code> and <code>??</code> guards, and illegal combinations such as loading <em>and</em> error are representable. A discriminated union like <code>{ kind: "loading" } | { kind: "loaded"; data: User } | { kind: "failed"; error: Error }</code> makes those combinations impossible, and TS narrows by the discriminator, so <code>data</code> is only reachable once you've checked <code>kind === "loaded"</code>.</p>
+  </div>
 </div>
-`
-    },
-    {
-      id: 'checklist',
-      title: '✅ Interview Checklist',
-      collapsible: true,
-      html: `
-<div class="callout success">
-  <div class="callout-title">Can you answer these before moving on?</div>
-  <ul>
-    <li>Can you explain "model with shape, not optionality" and why a discriminated union beats optional-field flags?</li>
-    <li>Can you explain why a discriminator must be literal-typed, and how to enforce exhaustiveness with a <code>never</code> check?</li>
-    <li>Can you explain what branded types solve and why you must re-brand after serialization?</li>
-    <li>Can you explain when to return a <code>Result</code>/<code>Either</code> instead of throwing?</li>
-    <li>Can you explain how <code>satisfies</code> + <code>as const</code> validates shape without widening?</li>
-    <li>Can you explain the difference between a type predicate (<code>x is T</code>) and an <code>as</code> assertion?</li>
-  </ul>
+<div class="qa-block">
+  <div class="qa-question">Q2. Why must a discriminator be literal-typed, and how do you enforce exhaustiveness?</div>
+  <div class="qa-answer">
+    <p>Narrowing works by comparing the discriminator against a literal; if every variant has <code>kind: string</code>, checking <code>kind === "ok"</code> can't rule any variant out, so nothing narrows. Give each variant a literal (<code>kind: "ok"</code> / <code>kind: "err"</code>). For exhaustiveness, end the switch with a <code>never</code> check: if a new variant is added and not handled, it can't be assigned to <code>never</code> and the compile fails. Always <code>return</code> or <code>break</code> per case, because fallthrough loses narrowing.</p>
+    <pre><code class="language-ts">switch (s.kind) {
+  case "success": return String(s.data);
+  case "error":   return s.error.message;
+  default: { const _: never = s; return _; }
+}</code></pre>
+  </div>
 </div>
-`
-    }
+<div class="qa-block">
+  <div class="qa-question">Q3. What problem do branded types solve, and why do you have to re-brand after serialization?</div>
+  <div class="qa-answer">
+    <p>TS is structural, so <code>UserId</code> and <code>OrderId</code> that are both <code>string</code> are interchangeable, and "I passed an order id to a user lookup" compiles. A brand, <code>type Brand&lt;T, B extends string&gt; = T &amp; { readonly __brand: B }</code>, makes them distinct at compile time with no runtime cost; provide a constructor like <code>userIdOf(s)</code> so call sites don't scatter <code>as</code>. The brand exists only in the type system, so <code>JSON.stringify</code> / <code>JSON.parse</code> gives you back a plain <code>string</code>, and you must re-brand at the boundary to get the type back.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q4. When do you return a Result / Either instead of throwing?</div>
+  <div class="qa-answer">
+    <p>Throw only for genuinely exceptional things such as programmer errors or infrastructure failure. For <em>expected</em> failure modes (form invalid, user not found, payment declined) return a tagged result, <code>{ ok: true; value: T } | { ok: false; error: E }</code>, ideally with a domain error union, so callers are forced by the type system to handle the failure. One rule: a Result-returning function must never throw internally, or callers get both contracts. Don't hand-roll a new Result in every project; share one.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q5. How does satisfies combined with as const validate a shape without widening?</div>
+  <div class="qa-answer">
+    <p>A plain annotation like <code>const theme: Theme = {...}</code> checks the shape but widens the variable to the annotated type, so <code>theme.colors.primary</code> becomes <code>string</code>. <code>satisfies</code> checks the object against the contract but keeps the inferred type, and <code>as const</code> keeps every value as a readonly literal. Together, <code>{...} as const satisfies { colors: Record&lt;string, string&gt; }</code> gives you a compile error on a bad shape and still types <code>theme.colors.primary</code> as <code>"#1d72b8"</code> for autocomplete. A later annotation on the variable can still widen it, so reference the const directly.</p>
+  </div>
+</div>
+<div class="qa-block">
+  <div class="qa-question">Q6. What's the difference between a type predicate (x is T) and an as assertion?</div>
+  <div class="qa-answer">
+    <p>A type predicate such as <code>function isUser(x: unknown): x is User</code> is a function that runs a real runtime check and, when it returns true, narrows the value in the caller; it can also be passed to <code>filter</code> (<code>xs.filter(nonNull)</code>). An <code>as</code> assertion does no check at all; it's a statement of belief the compiler accepts. Predicates can still lie: take <code>unknown</code> as input, never <code>any</code>, and make the body actually verify the shape (a body of <code>!!x</code> is broken). Assertion functions (<code>asserts x is string</code>) are the throwing variant that narrows after the call.</p>
+  </div>
+</div>
+` },
+
   ]
 });
