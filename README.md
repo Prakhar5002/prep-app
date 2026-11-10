@@ -25,10 +25,21 @@ Prep App brings structured technical notes, topic navigation, revision material,
 
 ## Screenshots
 
-See the live application for the latest interface and content:
+### Study dashboard
 
-- [Open Prep App](https://prepv1.vercel.app/)
-- [View portfolio](https://prakharpandeyy.vercel.app/)
+![Prep App study dashboard](assets/screenshots/home.png)
+
+### Topic reader
+
+![Prep App topic reader](assets/screenshots/topic-page.jpg)
+
+### Keyboard shortcuts
+
+![Prep App keyboard shortcuts](assets/screenshots/keyboard-shortcuts.png)
+
+### Search
+
+![Prep App search](assets/screenshots/search.png)
 
 ## Technical overview
 
@@ -49,6 +60,8 @@ The application is intentionally lightweight: the current repository structure i
 ```text
 .
 ├── index.html
+├── assets/
+│   └── screenshots/
 ├── styles/
 │   ├── app.css
 │   └── practice.css
