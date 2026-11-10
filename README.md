@@ -1,91 +1,107 @@
-# Prep Site — FAANG + Mobile Frontend Interview Prep
+# Prep App
 
-Self-contained, offline-ready study website covering deep-dive notes for
-React Native / mobile frontend interviews at FAANG and mid-size product companies.
+An interactive technical interview-preparation workspace covering frontend, React Native, backend engineering, cloud, system design, and AI/LLM engineering.
 
-## How to use
+<p align="center">
+  <a href="https://prepv1.vercel.app/"><strong>Open the live app →</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://prakharpandeyy.vercel.app/">Portfolio</a>
+</p>
 
-1. Keep this entire folder together — don't move individual files.
-2. Open `index.html` in any modern browser:
-   - **Desktop:** double-click `index.html` (Chrome/Safari/Firefox all work).
-   - **Mobile/Tablet:** transfer the folder to your device (AirDrop, Dropbox, Google Drive, USB) and open `index.html` in the device browser.
-3. Works entirely offline — no internet or server needed.
+## Overview
 
-## Features
+Prep App brings structured technical notes, topic navigation, revision material, and practice workflows into one browser-based study experience. The content is organized into learning domains and smaller modules so that a broad interview-preparation roadmap is easier to explore and work through.
 
-- **Sidebar navigation** — all 22 modules, collapsible.
-- **Right-rail TOC** — jump to any section in the current topic.
-- **cmd + K / ctrl + K** — full-text search across topics and sections.
-- **Dark / light theme toggle** — top-right, persisted in localStorage.
-- **Mark topics as studied** — progress tracked in localStorage, shown in sidebar.
-- **Code syntax highlighting** — JS/TS support built-in.
-- **Copy code** — hover a code block, click Copy.
-- **Collapsible sections** — click any section header except TL;DR.
-- **Prev/Next navigation** — at the bottom of every topic.
-- **Mobile-friendly** — drawer sidebar, responsive layout.
-- **Keyboard shortcuts:**
-  - `⌘ K` or `Ctrl+K` — search
-  - `/` — focus search (outside inputs)
-  - `Esc` — close search
-  - `↑` `↓` — navigate search results
-  - `↵` — open result
+## Highlights
 
-## Current status (Phase 1)
+- **Structured topic library** — organized learning domains spanning AI/LLM engineering, backend fundamentals and stack, API design, cloud and DevOps, system design, frontend, JavaScript, React, and mobile engineering.
+- **Focused topic reader** — section navigation, a page table of contents, collapsible sections, reading progress, and previous/next topic navigation.
+- **Search and keyboard navigation** — quickly find topics and move through the application with keyboard shortcuts.
+- **Study tracking** — mark topics as studied and view progress across the library.
+- **Study Plan and Quick Revision** — dedicated views to support planning and revisiting material.
+- **Practice area** — JavaScript and React Native practice content, including question formats such as output prediction, bug spotting, deep dives, and scenarios.
+- **Personalized reading experience** — light/dark theme, focus mode, and persisted local preferences.
+- **Optional cross-device progress sync** — Firebase integration is available for syncing study progress when configured.
 
-- ✅ 5 topics complete: Execution Context, Scope & Scope Chain, Closures, `this` Keyword, Event Loop
-- 🚧 Remaining: 17 modules, ~125 topics. Being added in Phase 2.
-- 📝 Interview question files (JS, React, RN, SD, DSA): added in Phase 3, after notes complete.
+## Screenshots
 
-## Folder structure
+See the live application for the latest interface and content:
 
-```
-Prep-Site/
-├── index.html              ← entry point (open this)
-├── README.md               ← this file
+- [Open Prep App](https://prepv1.vercel.app/)
+- [View portfolio](https://prakharpandeyy.vercel.app/)
+
+## Technical overview
+
+| Area | Implementation |
+| --- | --- |
+| UI | HTML, CSS, and vanilla JavaScript |
+| Content organization | Registry-driven topic and module structure |
+| Navigation | Client-side hash-based routing |
+| Study preferences and progress | Browser local storage |
+| Optional cross-device sync | Firebase |
+| Code highlighting | Prism.js |
+| Content validation | Node.js verification script |
+
+The application is intentionally lightweight: the current repository structure is a static web app and does not require a frontend bundling step to run locally.
+
+## Application structure
+
+```text
+.
+├── index.html
 ├── styles/
-│   └── app.css             ← Linear/Vercel dark-first theme
+│   ├── app.css
+│   └── practice.css
 ├── scripts/
-│   ├── app.js              ← router, sidebar, search, theme, progress
-│   └── content/
-│       ├── _index.js       ← module/topic registry
-│       ├── js-execution-context.js
-│       ├── js-scope-chain.js
-│       ├── js-closures.js
-│       ├── js-this.js
-│       └── js-event-loop.js
-└── vendor/
-    ├── prism.js            ← tiny offline JS syntax highlighter
-    └── prism.css
+│   ├── app.js
+│   ├── firebase-config.js
+│   ├── content/
+│   │   ├── _index.js
+│   │   └── topic content files
+│   └── practice/
+│       ├── _practice-index.js
+│       └── practice content files
+├── vendor/
+│   ├── prism.js
+│   └── prism.css
+└── tools/
+    └── verify-topics.mjs
 ```
 
-## Editing content
+## Run locally
 
-Each topic file is a JS module registering a topic object:
+No package installation or build command is required for the current static app.
 
-```js
-window.PREP_SITE.registerTopic({
-  id: 'js-my-topic',
-  module: 'JavaScript Deep',
-  title: 'My Topic',
-  estimatedReadTime: '20 min',
-  tags: ['tag1', 'tag2'],
-  sections: [
-    { id: 'tldr', title: '🎯 TL;DR', collapsible: false, html: `<p>...</p>` },
-    // ... more sections
-  ]
-});
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/Prakhar5002/prep-app.git
+   cd prep-app
+   ```
+
+2. Open `index.html` in a modern browser, or serve the directory with any static HTTP server.
+
+## Content validation
+
+Run the repository's topic verification script with Node.js:
+
+```bash
+node tools/verify-topics.mjs
 ```
 
-Section `html` is raw HTML. Use inline `<code>` for inline code and
-`<pre><code class="language-js">...</code></pre>` for code blocks.
+This script checks content registration and selected structural conventions. It is a content validation utility, not a full end-to-end test suite.
 
-Add the new file to `index.html` as `<script src="scripts/content/your-file.js"></script>`.
-Register it in `_index.js` if adding a new topic; the registry drives navigation.
+## Firebase sync configuration
 
-## Known limitations
+Firebase is optional. The app can use local browser storage without configuring cross-device sync. To enable Firebase-backed sync, configure the Firebase project and ensure Firestore security rules enforce the intended authentication and access controls. Never rely on a client-side Firebase configuration value as an authorization boundary.
 
-- Search currently matches titles/tags only (not full-text body). Extending this
-  in Phase 3.
-- Spaced-repetition / quiz mode: not included; progress-only for now.
-- Diagrams are ASCII. Could add SVG or Mermaid later.
-# Prep-app
+## Project status
+
+The content registry represents the broader learning roadmap; it should not be interpreted as a claim that every planned topic is already complete. The available material continues to evolve as content is added.
+
+## Author
+
+Built by [Prakhar Pandey](https://prakharpandeyy.vercel.app/).
+
+- [Portfolio](https://prakharpandeyy.vercel.app/)
+- [GitHub](https://github.com/Prakhar5002)
