@@ -1297,6 +1297,40 @@ html[data-theme="light"] .icon-moon { display: block; }
 .qa-block > .qa-a { padding: 0 20px 16px; }
 .qa-a p:first-child { margin-top: 4px; }
 
+/* Reveal blocks: self-test questions whose answer stays hidden until clicked */
+.qa-reveal > summary.qa-question {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.qa-reveal > summary.qa-question::-webkit-details-marker { display: none; }
+.qa-reveal > summary.qa-question::after {
+  content: "Show answer \25BE";
+  flex: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--fg-subtle);
+  white-space: nowrap;
+}
+.qa-reveal[open] > summary.qa-question::after { content: "Hide \25B4"; color: var(--accent); }
+.qa-reveal:not([open]) > summary.qa-question { border-bottom: 0; }
+.qa-reveal:not([open]) > .qa-answer { display: none; }
+.qa-reveal > summary.qa-question:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* Study-plan topics not written yet (later slices): muted, not clickable */
+.plan-soon {
+  color: var(--fg-subtle);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
+}
+.plan-soon::after { content: " · soon"; font: 600 10px var(--font-mono); color: var(--fg-subtle); text-transform: uppercase; letter-spacing: .04em; text-decoration: none; display: inline-block; }
+
+.plan-stretch { font: 600 11px var(--font-mono); text-transform: uppercase; color: var(--fg-subtle); }
+
 /* Anchor links on headings */
 .anchor-link {
   opacity: 0;

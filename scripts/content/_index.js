@@ -31,7 +31,7 @@ window.PREP_SITE.registry = {
     },
     {
       id: "backend",
-      title: "Backend (incl. System Design)",
+      title: "Backend",
       group: "core",
       groupLabel: "Core · Full Stack + FDE",
       topics: [
@@ -43,10 +43,12 @@ window.PREP_SITE.registry = {
         { id: "be-architecture", title: "Architecture Patterns" },
         { id: "be-resilience", title: "Resilience" },
         { id: "be-observability", title: "Observability" },
-        { id: "bsd-framework", title: "Backend SD Framework" },
-        { id: "bsd-cases", title: "Backend SD Cases" },
       ],
     },
+    { id: "backend-sd", title: "System Design (Backend, Deep)", group: "core", groupLabel: "Core · Full Stack + FDE",
+      topics: [ { id: "bsd-estimation", title: "Estimation & Numbers" },
+                { id: "bsd-framework", title: "Backend SD Framework" },
+                { id: "bsd-cases", title: "Backend SD Cases (overview)" } ] },
     {
       id: "backend-stack",
       title: "Backend Stack (Node, DBs, Messaging)",

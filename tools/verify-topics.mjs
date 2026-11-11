@@ -39,6 +39,66 @@ for (const mod of P.registry.modules) {
   }
 }
 
+const count = (h, re) => (h.match(re) || []).length;
+const mods = P.registry.modules;
+const bsdMod = mods.find(m => m.id === 'backend-sd');
+if (!bsdMod) fail('module "backend-sd" missing');
+else if (bsdMod.group !== 'core' || mods.indexOf(bsdMod) !== mods.findIndex(m => m.id === 'backend') + 1)
+  fail('module "backend-sd" must have group core and sit directly after "backend"');
+
+// BSD_RULES: per-id rules for the System Design (Backend, Deep) module; only apply once a topic exists
+const BSD_RULES = (id, s, sids) => {
+  const sec = (k) => (s.find(x => x.id === k) || {}).html || '';
+  if (id === 'bsd-estimation') {
+    if (!sids.includes('self-test')) fail(`${id}: missing section "self-test"`);
+    else if (count(sec('self-test'), /class="qa-block qa-reveal"/g) < 10) fail(`${id}: self-test needs >= 10 qa-block qa-reveal`);
+    for (let n = 1; n <= 14; n++) if (!sec('examples').includes(`<h3>Drill ${n}:`)) fail(`${id}: examples missing "<h3>Drill ${n}:"`);
+  }
+  if (id.startsWith('bsd-bb-')) {
+    const all = s.map(x => x.html).join('');
+    if (!/<table/.test(all)) fail(`${id}: needs at least one <table`);
+    if (!/class="diagram"/.test(all)) fail(`${id}: needs at least one class="diagram"`);
+    if (count(sec('interview-qa'), /class="qa-block/g) < 10) fail(`${id}: interview-qa needs >= 10 qa-block`);
+  }
+  if (id.startsWith('bsd-case-')) {
+    const dd = sids.indexOf('drill-down');
+    if (dd < 0) fail(`${id}: missing section "drill-down"`);
+    else {
+      if (dd !== sids.indexOf('interview-qa') - 1) fail(`${id}: drill-down must sit directly before interview-qa`);
+      if (count(sec('drill-down'), /class="qa-block/g) < 15) fail(`${id}: drill-down needs >= 15 qa-block`);
+      if (count(sec('drill-down'), /qa-ladder-start/g) < 3) fail(`${id}: drill-down needs >= 3 qa-ladder-start`);
+    }
+    if (count(sec('interview-qa'), /class="qa-block/g) < 8) fail(`${id}: interview-qa needs >= 8 qa-block`);
+  }
+};
+
+// ---- DSA plain-English rules ----
+const DSA_REWRITTEN = new Set([]);
+const DSA_CODE_RE = /<pre><code class="language-js">([\s\S]*?)<\/code><\/pre>/g;
+const DSA_RULES = (id, s) => {
+  if (!DSA_REWRITTEN.has(id)) return;
+  const sec = (k) => (s.find(x => x.id === k) || {}).html || '';
+  if (!/class="diagram"/.test(sec('mental-model'))) fail(`${id}: mental-model needs a class="diagram" trace`);
+  const all = s.map(x => x.html).join('');
+  for (const m of all.matchAll(DSA_CODE_RE)) {
+    for (const line of m[1].split('\n')) {
+      if (/^\s*(let|const|var)\s+[\w$]+\s*=[^;]*,\s*[\w$]+\s*=/.test(line)) fail(`${id}: multi-declare line in code: ${line.trim()}`);
+    }
+    if (/\|\|\s*0\)\s*[+-]/.test(m[1])) fail(`${id}: inline defaulting "(x || 0) +/-" in code`);
+  }
+};
+const DSA_WORDS_LINK_CHECK = () => {
+  const w = P.topicsById['dsa-words'];
+  if (!w) return;
+  const wordIds = new Set([...w.sections.map(x => x.html).join('').matchAll(/id="([^"]+)"/g)].map(m => m[1]));
+  for (const t of Object.values(P.topicsById)) {
+    for (const m of (t.sections || []).map(x => x.html).join('').matchAll(/href="#\/topic\/dsa-words#(w-[\w-]+)"/g)) {
+      if (!wordIds.has(m[1])) fail(`${t.id}: link to dsa-words#${m[1]} has no matching id`);
+    }
+  }
+};
+// ---- end DSA plain-English rules ----
+
 const ids = new Set(P.registry.modules.flatMap(m => m.topics.map(t => t.id)));
 for (const mod of P.registry.modules) {
   const before = failures;
@@ -58,10 +118,13 @@ for (const mod of P.registry.modules) {
     const rev = s[0]?.html || '';
     for (const c of ['revision-card', 'revision-oneline', 'revision-trap', 'revision-say']) if (!rev.includes(c)) fail(`${entry.id}: revision missing .${c}`);
     for (const m of s.map(x => x.html).join('').matchAll(/href="#\/topic\/([\w-]+)/g)) if (!ids.has(m[1])) fail(`${entry.id}: dead link #/topic/${m[1]}`);
+    BSD_RULES(entry.id, s, sids);
+    DSA_RULES(entry.id, s); // DSA plain-English rules
     ok++;
   }
   if (failures === before) console.log(`  ✓ ${mod.topics.length} topics`);
 }
+DSA_WORDS_LINK_CHECK(); // DSA plain-English rules
 console.log(`\n${ok} topics checked, ${pending} not written yet`);
 console.log(failures === 0 ? '✅ PASS' : `❌ FAIL (${failures})`);
 process.exit(failures === 0 ? 0 : 1);

@@ -1,6 +1,6 @@
 window.PREP_SITE.registerTopic({
   id: "bsd-cases",
-  module: "backend",
+  module: 'backend-sd',
   title: "Backend SD Cases",
   estimatedReadTime: "60 min",
   tags: ["system-design","cases","twitter","url-shortener","rate-limiter","chat","uber","feed","payments"],

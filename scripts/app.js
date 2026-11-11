@@ -96,7 +96,7 @@
       'js': 'JS', 'dsa': 'DS', 'react': 'Re', 'web': 'W', 'rn': 'RN',
       'typescript': 'TS', 'mobile-production': 'MP', 'offline': 'Of',
       'graphql': 'GQ', 'build': 'B', 'workplace': 'Wp', 'git': 'Gt',
-      'ai': 'AI', 'backend': 'Be', 'cloud': 'AW', 'lld': 'LD', 'backend-stack': 'BS', 'flutter': 'Fl'
+      'ai': 'AI', 'backend': 'Be', 'backend-sd': 'SD', 'cloud': 'AW', 'lld': 'LD', 'backend-stack': 'BS', 'flutter': 'Fl'
     };
     const letterFor = (m) => moduleLetters[m.id] || m.title.slice(0, 2);
 
@@ -155,6 +155,7 @@
     sparkles: '<path d="M12 3l1.8 4.6L18.5 9.4l-4.7 1.8L12 16l-1.8-4.8L5.5 9.4l4.7-1.8z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>',
     server: '<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>',
     layers: '<path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/>',
+    network: '<rect x="9" y="3" width="6" height="5" rx="1.5"/><rect x="2.5" y="16" width="6" height="5" rx="1.5"/><rect x="15.5" y="16" width="6" height="5" rx="1.5"/><path d="M12 8v4M5.5 16v-4h13v4"/>',
     plug: '<path d="M9 2v5M15 2v5"/><path d="M6 7h12v4a6 6 0 0 1-12 0z"/><path d="M12 17v5"/>',
     cloud: '<path d="M17.5 19H7a5 5 0 1 1 1.1-9.9A6 6 0 0 1 19.6 11 4 4 0 0 1 17.5 19z"/>',
     boxes: '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><path d="M17 13v8M13 17h8"/>',
@@ -192,7 +193,8 @@
   };
   const MODULE_META = {
     'ai':            { icon: 'sparkles', name: 'AI / LLM Engineering', sub: 'RAG · agents · evals · voice' },
-    'backend':       { icon: 'server',   name: 'Backend Core', sub: 'DBs · caching · queues · HLD' },
+    'backend':       { icon: 'server',   name: 'Backend Core', sub: 'DBs · caching · queues · resilience' },
+    'backend-sd':    { icon: 'network',  name: 'System Design', sub: 'Numbers · blocks · 16 cases' },
     'backend-stack': { icon: 'layers',   name: 'Backend Stack', sub: 'Express · NestJS · SQL · Kafka' },
     'api-design':    { icon: 'plug',     name: 'API Design', sub: 'REST · WebSockets · WebRTC' },
     'cloud':         { icon: 'cloud',    name: 'Cloud & DevOps', sub: 'AWS · Firebase · CI/CD' },
@@ -621,8 +623,12 @@
     // Jump to anchor if provided
     if (anchor) {
       setTimeout(() => {
-        const el = document.getElementById(anchor);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
+        const el = document.getElementById(anchor) || document.getElementById('sec-' + anchor);
+        if (el) {
+          const sec = el.closest('.section');
+          if (sec) sec.classList.remove('collapsed', 'mobile-collapsed');
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
       }, 50);
     }
   }
@@ -821,7 +827,13 @@
       for (const m of window.PREP_SITE.registry.modules) { const t = m.topics.find(x => x.id === id); if (t) return t.title; }
       return id;
     };
-    const T = (id, label) => { planTopics.add(id); return `<a class="plan-link" href="#/topic/${id}">${escapeHtml(label || titleOf(id))}</a>`; };
+    const T = (id, label) => {
+      // Not registered yet (later slices): muted "soon" label; not linked, not counted.
+      if (!window.PREP_SITE.topicsById[id]) return `<span class="plan-soon" title="Coming soon">${escapeHtml(label || titleOf(id))}</span>`;
+      planTopics.add(id);
+      return `<a class="plan-link" href="#/topic/${id}">${escapeHtml(label || titleOf(id))}</a>`;
+    };
+    const DRILLDOWN = '<b>Practice:</b> redo one drill-down ladder out loud';
     const QR = (label) => `<a class="plan-link" href="#/revise">Quick Revision</a> → ${label}`;
 
     const DATA = [
@@ -856,25 +868,25 @@
         [`<b>Vision + review:</b> ${T('ai-computer-vision')} · ${QR('AI / LLM')}`, '<b>Mock #1:</b> AI system design — "design a support copilot for a customer"'],
       ]},
       { cls: 'p4', name: 'System Design — HLD + LLD', days: [
-        [`<b>HLD:</b> ${T('bsd-framework')} · ${T('sd-framework')}`, '<b>DSA:</b> Graphs — topological sort / union-find — 4 problems'],
-        [`<b>HLD cases:</b> ${T('bsd-cases')} — URL shortener, rate limiter`, '<b>Practice:</b> redo one case on paper in 35 minutes'],
-        [`<b>HLD cases:</b> ${T('bsd-cases')} — chat, feed, payments`, '<b>DSA:</b> Dynamic Programming (1D) — 4 problems'],
-        [`<b>LLD:</b> ${T('lld-framework')} · ${T('lld-patterns')}`, '<b>Practice:</b> map 5 patterns to real code you have shipped'],
-        [`<b>LLD cases:</b> ${T('lld-parking-lot')} · ${T('lld-lru-cache')}`, '<b>Code:</b> LRU cache from scratch, timed (30 min)'],
-        [`<b>LLD cases:</b> ${T('lld-rate-limiter')} · ${T('lld-booking-system')}`, '<b>Code:</b> booking conflict check + a concurrency guard'],
-        [`<b>LLD + FE SD:</b> ${T('lld-notification')} · ${T('sd-cases')}`, '<b>Mock #2:</b> one HLD + one LLD round, timed'],
+        [`<b>HLD:</b> ${T('bsd-estimation')} · ${T('bsd-framework')}`, '<b>Drill:</b> 3 worked drills from memory, then check the math'],
+        [`<b>Building blocks:</b> ${T('bsd-bb-partitioning', 'Partitioning & Consistent Hashing')} · ${T('bsd-bb-replication', 'Replication & Quorums')} · ${T('bsd-bb-consistency', 'Consistency Models, CAP & PACELC')} · ${T('bsd-bb-consensus', 'Consensus & Coordination')}`, '<b>DSA:</b> Graphs — topological sort / union-find — 4 problems'],
+        [`<b>Building blocks:</b> ${T('bsd-bb-storage', 'Storage Engines & Picking a Database')} · ${T('bsd-bb-transactions', 'Distributed Transactions, Time & IDs')} · ${T('bsd-bb-probabilistic', 'Probabilistic & Geo Structures')} · ${T('bsd-bb-edge', 'Edge & Traffic (DNS, CDN, LBs, Gateways)')}`, '<b>DSA:</b> Dynamic Programming (1D) — 4 problems'],
+        [`<b>Cases:</b> ${T('bsd-case-url-shortener', 'URL Shortener')} · ${T('bsd-case-rate-limiter', 'Distributed Rate Limiter')}`, DRILLDOWN],
+        [`<b>Cases:</b> ${T('bsd-case-news-feed', 'News Feed (Twitter / Instagram)')} · ${T('bsd-case-chat', 'Chat (WhatsApp / Slack)')}`, DRILLDOWN],
+        [`<b>Cases:</b> ${T('bsd-case-notifications', 'Notification System')} · ${T('bsd-case-payments', 'Payment System')}`, DRILLDOWN],
+        [`<b>Cases:</b> ${T('bsd-case-kv-store', 'Distributed Key-Value Store')} · ${T('bsd-case-ticket-booking', 'Ticket Booking (BookMyShow)')}`, DRILLDOWN],
+        [`<b>Cases:</b> ${T('bsd-case-video-streaming', 'Video Streaming (YouTube)')} · ${T('bsd-case-ride-dispatch', 'Ride Dispatch (Uber)')}`, DRILLDOWN],
+        [`<b>LLD:</b> ${T('lld-framework')} · ${T('lld-patterns')} · ${T('lld-lru-cache')} · ${T('lld-rate-limiter')}`, '<b>Mock #2:</b> one HLD + one LLD round, timed'],
       ]},
       { cls: 'p5', name: 'Frontend Polish (fast)', days: [
-        [`<b>JavaScript:</b> ${QR('JavaScript')}; deep-read ${T('js-event-loop')} · ${T('js-promises')}`, '<b>DSA:</b> Dynamic Programming (2D) — 4 problems'],
-        [`<b>TS + React:</b> ${QR('TypeScript, React')}; deep-read ${T('react-concurrent')}`, '<b>Machine coding:</b> typeahead with debounce, keyboard nav, loading/empty states'],
-        [`<b>Full-stack React:</b> ${T('react-nextjs')} · ${T('react-ssr')}`, '<b>Build:</b> a Next.js page for your API — server component + server action'],
-        [`<b>Web:</b> ${T('web-security')} · ${T('web-networking')} · ${T('test-strategies')}`, '<b>Mock #3:</b> full-stack coding round (API + UI), timed'],
+        [`<b>FE system design:</b> ${T('sd-framework')} · ${T('sd-cases')}; ${QR('JavaScript, TypeScript, React')}`, '<b>Machine coding:</b> typeahead with debounce, keyboard nav, loading/empty states'],
+        [`<b>Full-stack:</b> ${T('react-nextjs')} · ${T('js-event-loop')} · ${T('web-security')}`, '<b>Mock #3:</b> full-stack coding round (API + UI), timed'],
       ]},
       { cls: 'p6', name: 'FDE Readiness &amp; Final Loop', days: [
-        [`<b>Behavioral:</b> ${T('beh-star')} · ${T('beh-stories')} — write 8 STAR stories (customer, ambiguity, incident, shipped AI feature)`, '<b>DSA:</b> mixed timed set — 6 problems'],
-        [`<b>FDE scenarios:</b> ${T('beh-company-values')} + answer every "a customer says…" question in the AI &amp; Backend Interview Q&amp;A`, '<b>Fix gaps</b> from mocks #1–#3'],
-        ['<b>Mock #4:</b> full FDE loop — problem decomposition + build-a-demo + behavioral', '<b>Log &amp; fix</b> every question you fumbled'],
-        [`<b>Full revision:</b> ${QR('Core tier, all modules')}`, '<b>Re-solve</b> the 3 hardest DSA problems from scratch'],
+        [`<b>Behavioral:</b> ${T('beh-star')} · ${T('beh-stories')} — write 8 STAR stories (customer, ambiguity, incident, shipped AI feature) <br><span class="plan-stretch">Stretch:</span> ${T('bsd-case-counter', 'Distributed Counter (likes, views)')} · ${T('bsd-case-file-sync', 'File Storage & Sync (Dropbox)')}`, '<b>DSA:</b> mixed timed set — 6 problems'],
+        [`<b>FDE scenarios:</b> ${T('beh-company-values')} + answer every "a customer says…" question in the AI &amp; Backend Interview Q&amp;A <br><span class="plan-stretch">Stretch:</span> ${T('bsd-case-autocomplete', 'Search Autocomplete')} · ${T('bsd-case-web-crawler', 'Web Crawler')}`, '<b>Fix gaps</b> from mocks #1–#3'],
+        [`<b>Mock #4:</b> full FDE loop — problem decomposition + build-a-demo + behavioral <br><span class="plan-stretch">Stretch:</span> ${T('bsd-case-job-scheduler', 'Distributed Job Scheduler')} · ${T('bsd-case-leaderboard', 'Leaderboard / Top-K')}`, '<b>Log &amp; fix</b> every question you fumbled'],
+        [`<b>Full revision:</b> ${QR('Core tier, all modules')} <br><span class="plan-stretch">Stretch:</span> ${T('lld-parking-lot')} · ${T('lld-booking-system')} · ${T('lld-notification')}`, '<b>Re-solve</b> the 3 hardest DSA problems from scratch'],
         ['<b>Light day:</b> your 5 weakest Revision cards + rehearse the resume walkthrough', '<b>Rest</b> — sleep beats one more topic'],
       ]},
     ];
@@ -889,12 +901,14 @@
         const dt = addDays(gi); gi++;
         const key = iso(dt);
         const isDone = done.has(key);
+        // Daily estimation warm-up from 12 Nov: Drill 1..14, cycling.
+        const warm = key >= '2026-11-12' ? ` · <b>Estimation:</b> <a class="plan-link" href="#/topic/bsd-estimation#examples">Drill ${((gi - 1 - 6) % 14) + 1}</a>` : '';
         return `
           <label class="plan-day${isDone ? ' is-done' : ''}">
             <input type="checkbox" class="plan-cb" data-day="${key}"${isDone ? ' checked' : ''}>
             <span class="plan-box" aria-hidden="true"></span>
             <span class="plan-date"><span class="plan-dow">${DOW[dt.getDay()]}</span><span class="plan-dnum">${fmt(dt)}</span></span>
-            <span class="plan-dbody"><span class="plan-line">${a}</span><span class="plan-sub">${b}</span></span>
+            <span class="plan-dbody"><span class="plan-line">${a}</span><span class="plan-sub">${b}${warm}</span></span>
           </label>`;
       }).join('');
       const last = addDays(gi - 1);
@@ -922,7 +936,7 @@
           <div class="plan-stats">
             <div class="plan-stat"><span class="n">~${total * 3}</span><span class="l">total hours</span></div>
             <div class="plan-stat"><span class="n">${planTopics.size}</span><span class="l">topics</span></div>
-            <div class="plan-stat"><span class="n">~60</span><span class="l">DSA problems</span></div>
+            <div class="plan-stat"><span class="n">~45</span><span class="l">DSA problems</span></div>
             <div class="plan-stat"><span class="n">4</span><span class="l">mock interviews</span></div>
           </div>
           <div class="plan-prog-head"><span class="lab">Progress</span><span class="pct" id="planPct"></span></div>
@@ -938,7 +952,7 @@
 
         ${phasesHtml}
 
-        <div class="plan-note"><strong>How to use it:</strong> each day is about 3 hours: read the concept topics (Revision card first, then the sections), then do the second line, which is DSA, a build step on your running project, or practice. Tick the day when done; ticks sync to your account. Consolidation days use <a class="plan-link" href="#/revise">Quick Revision</a>. The four mocks are load-bearing, so after each one, fix the gaps before moving on. Fell behind? Skip a DSA line, never a build step or a mock.</div>
+        <div class="plan-note"><strong>How to use it:</strong> each day is about 3 hours: read the concept topics (Revision card first, then the sections), then do the second line, which is DSA, a build step on your running project, or practice. Tick the day when done; ticks sync to your account. Consolidation days use <a class="plan-link" href="#/revise">Quick Revision</a>. From 12 Nov, every day also carries a 10-minute estimation warm-up (Drill 1 to 14, then repeat) so back-of-envelope math becomes automatic. Lines marked Stretch in Phase 6 are optional extra system-design cases, only if time allows. The four mocks are load-bearing, so after each one, fix the gaps before moving on. Fell behind? Skip a DSA line, never a build step or a mock.</div>
       </div>`;
 
     const toc = document.getElementById('tocList');
@@ -994,11 +1008,19 @@
     const questionsOf = (topic) => {
       const tpl = document.createElement('template');
       const qa = findSec(topic, ['interview-qa', 'interview-patterns', 'interview']);
+      const clean = (sel, root) => $$(sel, root)
+        .map(el => el.textContent.replace(/^\s*Q\d+[.:)]\s*/, '').trim())
+        .filter(q => q && !/^(expected answer|acceptable answer|solution|answer)$/i.test(q));
       if (qa) {
         tpl.innerHTML = qa.html;
-        const qs = $$('.qa-question, .qa-q', tpl.content)
-          .map(el => el.textContent.replace(/^\s*Q\d+[.:)]\s*/, '').trim())
-          .filter(q => q && !/^(expected answer|acceptable answer|solution|answer)$/i.test(q));
+        const qs = clean('.qa-question, .qa-q', tpl.content);
+        // Drill-down ladders: only each ladder's opening question is a self-test item.
+        const dd = findSec(topic, ['drill-down']);
+        if (dd) {
+          const t2 = document.createElement('template');
+          t2.innerHTML = dd.html;
+          qs.push(...clean('.qa-ladder-start .qa-question', t2.content));
+        }
         if (qs.length) return qs.map(escapeHtml);
       }
       const cl = findSec(topic, ['checklist']);

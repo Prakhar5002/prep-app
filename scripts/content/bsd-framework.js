@@ -1,6 +1,6 @@
 window.PREP_SITE.registerTopic({
   id: "bsd-framework",
-  module: "backend",
+  module: 'backend-sd',
   title: "Backend SD Framework",
   estimatedReadTime: "50 min",
   tags: ["system-design","framework","estimation","capacity-planning","tradeoffs","interview"],
@@ -18,7 +18,7 @@ window.PREP_SITE.registerTopic({
     <li><strong>Clarify first:</strong> features (in/out), users (total + DAU), traffic shape (read:write, peak), data shape, constraints (latency, consistency, compliance), availability target. Confirm scope back.</li>
     <li><strong>Estimate aloud:</strong> RPS ≈ DAU × actions/day ÷ 86400; peak ≈ 3× average; reads often ~100× writes; then storage and bandwidth. Order-of-magnitude is what counts — 100 RPS vs 100K RPS is a different system (10K RPS ≈ one beefy DB; 1M RPS = sharded).</li>
     <li><strong>Latency numbers:</strong> memory ~100ns, SSD ~100μs, datacenter RTT ~500μs, cross-continent RTT ~50-150ms.</li>
-    <li><strong>Capacity ceilings:</strong> single Postgres ~10K-50K writes/sec, single Redis ~100K ops/sec, single Kafka broker ~1M msg/sec.</li>
+    <li><strong>Capacity ceilings:</strong> single Postgres: plan ~5K simple writes/sec per primary, ceiling ~20K, single Redis ~100K ops/sec, single Kafka broker ~1M msg/sec.</li>
     <li><strong>High-level = 5-7 boxes with a narrative;</strong> walk one key flow end-to-end. Every box needs a rationale.</li>
     <li><strong>7 building blocks:</strong> load balancer, stateless app servers, SQL DB, NoSQL DB, cache (Redis/Valkey), queue/stream (Kafka/SQS), object storage (S3), CDN (+ search index, vector DB).</li>
     <li><strong>Consistency per operation, not per system:</strong> strong for money/inventory/auth, eventual for feeds/counts/search.</li>
@@ -136,38 +136,9 @@ Bandwidth:
 
 <p>Round generously. "Order of magnitude" right is what counts. Numbers anchor: 10K RPS = single beefy DB; 1M RPS = sharded.</p>
 
-<h3>Useful estimation reference points</h3>
-<table>
-  <thead><tr><th>Operation</th><th>Latency (single op)</th></tr></thead>
-  <tbody>
-    <tr><td>L1 cache reference</td><td>~0.5ns</td></tr>
-    <tr><td>Branch mispredict</td><td>~5ns</td></tr>
-    <tr><td>L2 cache reference</td><td>~7ns</td></tr>
-    <tr><td>Mutex lock/unlock</td><td>~25ns</td></tr>
-    <tr><td>Main memory reference</td><td>~100ns</td></tr>
-    <tr><td>Compress 1KB with Zippy</td><td>~10μs</td></tr>
-    <tr><td>Send 2KB over 1Gbps</td><td>~20μs</td></tr>
-    <tr><td>SSD random read</td><td>~150μs</td></tr>
-    <tr><td>Round-trip same datacenter</td><td>~500μs</td></tr>
-    <tr><td>Read 1MB sequentially from SSD</td><td>~1ms</td></tr>
-    <tr><td>HDD seek</td><td>~10ms</td></tr>
-    <tr><td>Cross-continental round trip</td><td>~150ms</td></tr>
-  </tbody>
-</table>
-
-<p>Memorize: memory ~100ns, SSD ~100μs, datacenter RTT ~500μs, internet RTT ~50-150ms.</p>
-
-<table>
-  <thead><tr><th>Storage / throughput</th><th>Value</th></tr></thead>
-  <tbody>
-    <tr><td>Single Postgres write throughput</td><td>~10K-50K writes/sec (depends on hardware + workload)</td></tr>
-    <tr><td>Single Redis throughput</td><td>~100K ops/sec per instance</td></tr>
-    <tr><td>Single Kafka broker</td><td>~1M msg/sec produce; consumer scales</td></tr>
-    <tr><td>S3 read latency</td><td>~50-200ms</td></tr>
-    <tr><td>CDN edge cache</td><td>~10-50ms globally</td></tr>
-    <tr><td>1KB row in Postgres</td><td>Disk + index ~few KB total</td></tr>
-  </tbody>
-</table>
+<div class="callout insight"><div class="callout-title">Numbers live in their own topic</div>
+<p>Latency, throughput and size numbers, the method, and 14 worked drills are in
+<a href="#/topic/bsd-estimation">Estimation &amp; Numbers</a>. Learn those by heart first.</p></div>
 
 <h3>Step 3: High-level design (10-15 min)</h3>
 <p>Sketch the boxes + arrows. Don't pick implementations yet — just shape:</p>
@@ -380,7 +351,7 @@ Tradeoff explicitly: Twitter uses hybrid; cost depends on follower distribution.
 
 <h3>Sample scale + reliability discussion</h3>
 <pre><code class="language-text">Bottlenecks at 10×:
-- Tweet store: 1800 writes/sec → 18000. Single Postgres ~10K writes/sec → must shard. Shard by user_id; consistent hashing.
+- Tweet store: 1800 writes/sec → 18000. Single Postgres: plan ~5K simple writes/sec per primary, ceiling ~20K → must shard. Shard by user_id; consistent hashing.
 - Feed cache: 540K reads/sec → 5.4M. Multi-region Redis cluster; per-region replicas.
 - Follow graph: not bottleneck at this scale; if it grows, shard by follower_id.
 
@@ -540,11 +511,11 @@ If insert returns no row → collision; generate new and retry.
 - Backend reads ~360 RPS — single Postgres handles.
 
 Write path: 2K RPS peak.
-- Single Postgres handles 10K-50K writes/sec.
+- Single Postgres: plan ~5K simple writes/sec per primary, ceiling ~20K. 2K fits.
 
 Bottleneck if 10×: write throughput.
-- At 20K writes/sec: still fits Postgres.
-- At 200K writes/sec: shard by short_id prefix.
+- At 20K writes/sec: at a single primary's ceiling, so batch writes through a queue or start sharding by short_id prefix.
+- At 200K writes/sec: shard by short_id prefix across many primaries.
 
 Reliability:
 - Postgres primary + replica; auto-failover.
@@ -811,7 +782,7 @@ Storage: 100M × 1000 tweets × 500B ≈ 50TB."
 "Single Postgres handles all writes." [for 1M writes/sec system]
 
 // GOOD
-"At 1M writes/sec, single Postgres won't work (~10K-50K/sec ceiling). Shard by user_id; consistent hashing; or write-optimized DB like Cassandra for tweets specifically."
+"At 1M writes/sec, single Postgres won't work (plan ~5K simple writes/sec per primary, ceiling ~20K). Shard by user_id; consistent hashing; or write-optimized DB like Cassandra for tweets specifically."
 </code></pre>
 
 <h3>Anti-pattern: missing the celeb / hot key problem</h3>
@@ -1054,7 +1025,7 @@ You: "Good question. For tweets: eventual is fine (people don't notice 100ms lag
 <div class="qa-block">
   <div class="qa-question">Q3. What ballpark capacity ceilings and latency numbers should you know?</div>
   <div class="qa-answer">
-    <p>Capacity: a single Postgres handles roughly 10K–50K writes/sec (hardware- and workload-dependent), a single Redis about 100K ops/sec, and a single Kafka broker about 1M messages/sec produced. Latency: main memory ~100ns, SSD random read ~100–150μs, a round trip within a datacenter ~500μs, and cross-continent ~50–150ms; for reference, S3 reads are ~50–200ms and a CDN edge ~10–50ms. These are what you compare your estimates against: 18,000 writes/sec at 10× scale exceeds one Postgres, so you shard.</p>
+    <p>Capacity: a single Postgres primary is planned at ~5K simple writes/sec with a ceiling around 20K (hardware- and workload-dependent), a single Redis about 100K ops/sec, and a single Kafka broker about 1M messages/sec produced. Latency: main memory ~100ns, SSD random read ~100–150μs, a round trip within a datacenter ~500μs, and cross-continent ~50–150ms; for reference, S3 reads are ~50–200ms and a CDN edge ~10–50ms. These are what you compare your estimates against: 18,000 writes/sec at 10× scale exceeds one Postgres, so you shard.</p>
   </div>
 </div>
 <div class="qa-block">
