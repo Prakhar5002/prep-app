@@ -914,30 +914,33 @@
         [`<b>Node:</b> ${T('be-express')} · ${T('be-nestjs')}`, '<b>Build:</b> start the running project — a small NestJS/Express CRUD API with validation + error handling'],
         [`<b>Auth:</b> ${T('api-auth-rbac')} · ${T('api-versioning')}`, '<b>Build:</b> add JWT auth + a role guard to your API'],
         [`<b>Async:</b> ${T('be-queues')} · ${T('be-event-driven')} · ${T('be-kafka')}`, '<b>DSA:</b> Stack &amp; Queue + Linked List — 4 problems'],
-        [`<b>Realtime:</b> ${T('api-websockets')} · ${T('be-mqtt')} · ${T('test-api')}`, '<b>Build:</b> integration tests for your API (supertest + a test DB)'],
-        [`<b>Ops:</b> ${T('be-architecture')} · ${T('be-resilience')} · ${T('be-observability')}`, `<b>Consolidate:</b> ${QR('Backend, Backend Stack, API Design')}`],
+        [`<b>Ops:</b> ${T('be-architecture')} · ${T('be-resilience')} · ${T('be-observability')}`, `<b>Build:</b> add structured logs, a /health check and timeouts + retries to your API · <b>Consolidate:</b> ${QR('Backend, Backend Stack, API Design')}`],
       ]},
-      { cls: 'p2', name: 'Cloud &amp; DevOps (AWS)', days: [
+      { cls: 'p2', name: 'Frontend &amp; Full-Stack Core', days: [
+        [`<b>JS core:</b> ${QR('JavaScript')}, then deep-read ${T('js-closures')} · ${T('js-this')} · ${T('js-event-loop')} · ${T('js-promises')}`, `<b>Machine coding:</b> typeahead with debounce + keyboard nav (${T('mc-patterns', 'Machine Coding Patterns')}) · <b>DSA:</b> warm-up — 2 problems (revisit arrays / hashing / two pointers)`],
+        [`<b>TS + React:</b> ${T('ts-type-system')} · ${T('ts-generics')} · ${T('react-hooks')} · ${T('react-typescript')}`, `<b>Machine coding:</b> infinite scroll list with IntersectionObserver (${T('mc-patterns', 'Machine Coding Patterns')})`],
+        [`<b>React deep:</b> ${T('react-reconciliation')} · ${T('react-concurrent')} · ${T('react-state')} · ${T('react-performance')}`, `<b>Machine coding:</b> modal + toast with a focus trap (${T('mc-components', 'Machine Coding Components')}) · <b>Build:</b> start the UI for your API, a Next.js app that lists and creates records · <b>DSA:</b> warm-up — 2 problems (revisit arrays / hashing / two pointers)`],
+        [`<b>Full-stack:</b> ${T('react-nextjs')} · ${T('react-ssr')} · end-to-end auth: ${T('api-auth-rbac')} recap, cookies vs JWT, CORS/CSRF via ${T('web-security')}`, `<b>Machine coding (30 min):</b> kanban board with drag &amp; drop, one column move only (${T('mc-patterns', 'Machine Coding Patterns')})`],
+        [`<b>Browser &amp; web:</b> ${T('web-networking')} (HTTP caching) · ${T('web-cwv')} · ${T('perf-bundle-loading')}`, `<b>Machine coding:</b> data table with sort, filter + pagination · <b>Build:</b> add login to your UI (httpOnly cookie against your API's JWT auth) + one role-gated page · <b>DSA:</b> warm-up — 2 problems (revisit arrays / hashing / two pointers)`],
+        [`<b>Light read:</b> Revision cards only for ${T('api-websockets')} · ${T('test-api')} · ${T('test-strategies')}`, '<b>Mock #1:</b> UI machine coding round (60–90 min) on a prompt you have not built yet, timed'],
+      ]},
+      { cls: 'p3', name: 'Cloud &amp; DevOps (AWS)', days: [
         [`<b>AWS:</b> ${T('cloud-aws-foundations')}`, '<b>DSA:</b> Binary Search — 4 problems'],
         [`<b>Serverless:</b> ${T('cloud-lambda')} · ${T('cloud-api-gateway')}`, '<b>Build:</b> put your API behind Lambda + API Gateway (or sketch it in SAM/CDK)'],
         [`<b>Storage &amp; queues:</b> ${T('cloud-s3')} · ${T('cloud-sqs')}`, '<b>DSA:</b> Trees — traversals + recursion — 4 problems'],
-        [`<b>Data &amp; ops:</b> ${T('cloud-rds')} · ${T('cloud-cloudwatch')}`, '<b>Practice:</b> write 3 Logs Insights queries + an alarm plan for your API'],
-        [`<b>Auth &amp; BaaS:</b> ${T('cloud-cognito')} · ${T('cloud-amplify')} · ${T('cloud-firebase')}`, '<b>DSA:</b> BST + tree DP basics — 4 problems'],
-        [`<b>Delivery:</b> ${T('cloud-cicd')} · ${T('cloud-dev-tools')}`, '<b>Build:</b> GitHub Actions pipeline for your API (test → deploy, OIDC to AWS)'],
-        [`<b>Case:</b> ${T('cloud-serverless-case')} — whiteboard it end to end`, `<b>Consolidate:</b> ${QR('Cloud &amp; DevOps')}`],
+        [`<b>Data, ops &amp; auth:</b> ${T('cloud-rds')} · ${T('cloud-cloudwatch')} (+ ${T('cloud-cognito')})`, '<b>DSA:</b> BST + tree DP basics — 4 problems'],
+        [`<b>Delivery:</b> ${T('cloud-cicd')} · ${T('cloud-dev-tools')} · <b>Case:</b> ${T('cloud-serverless-case')}, whiteboard it end to end`, `<b>Build:</b> GitHub Actions pipeline that tests and deploys your API + UI to AWS (OIDC) · <b>Consolidate:</b> ${QR('Cloud &amp; DevOps')}`],
       ]},
-      { cls: 'p3', name: 'AI / LLM Engineering — the FDE core', days: [
-        [`<b>LLM:</b> ${T('ai-prompts')} · ${T('ai-llm-integration')}`, '<b>Build:</b> a streaming chat endpoint with structured (JSON-schema) output'],
-        [`<b>Agents:</b> ${T('ai-agents-tools')}`, '<b>Build:</b> give the chat 2 tools (function calling) and handle tool errors as results'],
-        [`<b>Retrieval:</b> ${T('ai-vector-search')}`, '<b>DSA:</b> Heaps / top-K — 4 problems'],
-        [`<b>RAG:</b> ${T('ai-rag')}`, '<b>Build:</b> mini RAG over your own notes — chunk → embed → retrieve → answer with citations'],
-        [`<b>Quality:</b> ${T('ai-evals')}`, '<b>Build:</b> a 20-case golden set + LLM-as-judge for the RAG demo; record a baseline'],
-        [`<b>Conversations:</b> ${T('ai-conversational')} · ${T('api-webrtc')}`, '<b>DSA:</b> Graphs — BFS / DFS — 4 problems'],
-        [`<b>Voice:</b> ${T('ai-realtime-voice')} · ${T('ai-livekit')}`, "<b>Practice:</b> explain a voice agent's latency budget out loud, on a whiteboard"],
+      { cls: 'p4', name: 'AI / LLM Engineering', days: [
+        [`<b>LLM:</b> ${T('ai-prompts')} · ${T('ai-llm-integration')}`, '<b>Build:</b> add the AI feature to your project, starting with a streaming chat endpoint with structured (JSON-schema) output'],
+        [`<b>Agents:</b> ${T('ai-agents-tools')}`, '<b>Build:</b> give the chat 2 tools that call your own API; return tool errors as results · <b>DSA:</b> Heaps / top-K — 3 problems'],
+        [`<b>Retrieval:</b> ${T('ai-vector-search')} · ${T('ai-rag')}`, '<b>Build:</b> RAG over your project data (chunk → embed → retrieve → answer with citations), shown in your UI'],
+        [`<b>Quality:</b> ${T('ai-evals')}`, '<b>Build:</b> a 20-case golden set + LLM-as-judge for the RAG feature; record a baseline'],
+        [`<b>Conversations &amp; voice:</b> ${T('ai-conversational')} · ${T('ai-realtime-voice')} (+ ${T('ai-livekit')} · ${T('api-webrtc')})`, '<b>DSA:</b> Graphs — BFS / DFS — 4 problems'],
         [`<b>Your resume:</b> ${T('ai-call-scoring')} · ${T('ai-predictive')}`, '<b>Practice:</b> tell the call-scoring story in 90 s, then survive the deep-dive questions'],
-        [`<b>Vision + review:</b> ${T('ai-computer-vision')} · ${QR('AI / LLM')}`, '<b>Mock #1:</b> AI system design — "design a support copilot for a customer"'],
+        [`<b>Review:</b> ${QR('AI / LLM')}`, '<b>Mock #2:</b> AI system design — "design a support copilot for a customer"'],
       ]},
-      { cls: 'p4', name: 'System Design — HLD + LLD', days: [
+      { cls: 'p5', name: 'System Design: HLD + FE SD + LLD', days: [
         [`<b>HLD:</b> ${T('bsd-estimation')} · ${T('bsd-framework')}`, '<b>Drill:</b> 3 worked drills from memory, then check the math'],
         [`<b>Building blocks:</b> ${T('bsd-bb-partitioning', 'Partitioning & Consistent Hashing')} · ${T('bsd-bb-replication', 'Replication & Quorums')} · ${T('bsd-bb-consistency', 'Consistency Models, CAP & PACELC')} · ${T('bsd-bb-consensus', 'Consensus & Coordination')}`, '<b>DSA:</b> Graphs — topological sort / union-find — 4 problems'],
         [`<b>Building blocks:</b> ${T('bsd-bb-storage', 'Storage Engines & Picking a Database')} · ${T('bsd-bb-transactions', 'Distributed Transactions, Time & IDs')} · ${T('bsd-bb-probabilistic', 'Probabilistic & Geo Structures')} · ${T('bsd-bb-edge', 'Edge & Traffic (DNS, CDN, LBs, Gateways)')}`, '<b>DSA:</b> Dynamic Programming (1D) — 4 problems'],
@@ -945,18 +948,15 @@
         [`<b>Cases:</b> ${T('bsd-case-news-feed', 'News Feed (Twitter / Instagram)')} · ${T('bsd-case-chat', 'Chat (WhatsApp / Slack)')}`, DRILLDOWN],
         [`<b>Cases:</b> ${T('bsd-case-notifications', 'Notification System')} · ${T('bsd-case-payments', 'Payment System')}`, DRILLDOWN],
         [`<b>Cases:</b> ${T('bsd-case-kv-store', 'Distributed Key-Value Store')} · ${T('bsd-case-ticket-booking', 'Ticket Booking (BookMyShow)')}`, DRILLDOWN],
-        [`<b>Cases:</b> ${T('bsd-case-video-streaming', 'Video Streaming (YouTube)')} · ${T('bsd-case-ride-dispatch', 'Ride Dispatch (Uber)')}`, DRILLDOWN],
-        [`<b>LLD:</b> ${T('lld-framework')} · ${T('lld-patterns')} · ${T('lld-lru-cache')} · ${T('lld-rate-limiter')}`, '<b>Mock #2:</b> one HLD + one LLD round, timed'],
+        [`<b>Frontend system design:</b> ${T('sd-framework')} · ${T('sd-cases')}`, '<b>DSA:</b> Dynamic Programming (2D) — 4 problems'],
+        [`<b>LLD:</b> ${T('lld-framework')} · ${T('lld-patterns')} · ${T('lld-lru-cache')} · ${T('lld-rate-limiter')}`, '<b>Mock #3:</b> one HLD + one LLD round, timed'],
       ]},
-      { cls: 'p5', name: 'Frontend Polish (fast)', days: [
-        [`<b>FE system design:</b> ${T('sd-framework')} · ${T('sd-cases')}; ${QR('JavaScript, TypeScript, React')}`, '<b>Machine coding:</b> typeahead with debounce, keyboard nav, loading/empty states'],
-        [`<b>Full-stack:</b> ${T('react-nextjs')} · ${T('js-event-loop')} · ${T('web-security')}`, '<b>Mock #3:</b> full-stack coding round (API + UI), timed'],
-      ]},
-      { cls: 'p6', name: 'FDE Readiness &amp; Final Loop', days: [
-        [`<b>Behavioral:</b> ${T('beh-star')} · ${T('beh-stories')} — write 8 STAR stories (customer, ambiguity, incident, shipped AI feature) <br><span class="plan-stretch">Stretch:</span> ${T('bsd-case-counter', 'Distributed Counter (likes, views)')} · ${T('bsd-case-file-sync', 'File Storage & Sync (Dropbox)')}`, '<b>DSA:</b> mixed timed set — 6 problems'],
-        [`<b>FDE scenarios:</b> ${T('beh-company-values')} + answer every "a customer says…" question in the AI &amp; Backend Interview Q&amp;A <br><span class="plan-stretch">Stretch:</span> ${T('bsd-case-autocomplete', 'Search Autocomplete')} · ${T('bsd-case-web-crawler', 'Web Crawler')}`, '<b>Fix gaps</b> from mocks #1–#3'],
-        [`<b>Mock #4:</b> full FDE loop — problem decomposition + build-a-demo + behavioral <br><span class="plan-stretch">Stretch:</span> ${T('bsd-case-job-scheduler', 'Distributed Job Scheduler')} · ${T('bsd-case-leaderboard', 'Leaderboard / Top-K')}`, '<b>Log &amp; fix</b> every question you fumbled'],
-        [`<b>Full revision:</b> ${QR('Core tier, all modules')} <br><span class="plan-stretch">Stretch:</span> ${T('lld-parking-lot')} · ${T('lld-booking-system')} · ${T('lld-notification')}`, '<b>Re-solve</b> the 3 hardest DSA problems from scratch'],
+      { cls: 'p6', name: 'Interview Readiness: both loops', days: [
+        [`<b>Behavioral:</b> ${T('beh-star')} · ${T('beh-stories')} — write 10 STAR stories: customer, ambiguity, incident (FDE) + ownership, product call, frontend perf win (Full Stack) <br><span class="plan-stretch">Stretch:</span> ${T('bsd-case-video-streaming', 'Video Streaming (YouTube)')} · ${T('bsd-case-ride-dispatch', 'Ride Dispatch (Uber)')} · ${T('bsd-case-counter', 'Distributed Counter (likes, views)')}`, '<b>DSA:</b> mixed timed set — 6 problems'],
+        [`<b>Mock #4:</b> Full Stack loop — build an API + UI feature in ~2 hrs, then a short FE + BE design discussion <br><span class="plan-stretch">Stretch:</span> ${T('bsd-case-file-sync', 'File Storage & Sync (Dropbox)')} · ${T('bsd-case-autocomplete', 'Search Autocomplete')} · ${T('bsd-case-web-crawler', 'Web Crawler')}`, '<b>Log &amp; fix</b> every question you fumbled'],
+        [`<b>Mock #5:</b> FDE loop — problem decomposition + build-a-demo + behavioral (${T('beh-company-values')}) <br><span class="plan-stretch">Stretch:</span> ${T('bsd-case-job-scheduler', 'Distributed Job Scheduler')} · ${T('bsd-case-leaderboard', 'Leaderboard / Top-K')} · ${T('be-mqtt')}`, '<b>Practice:</b> demo your running project in 5 minutes, as if to a customer'],
+        [`<b>Fix gaps</b> from all five mocks <br><span class="plan-stretch">Stretch:</span> ${T('lld-parking-lot')} · ${T('lld-booking-system')} · ${T('lld-notification')} · ${T('cloud-amplify')} · ${T('cloud-firebase')} · ${T('ai-computer-vision')}`, '<b>Re-solve</b> the 3 hardest DSA problems from scratch'],
+        [`<b>Full revision:</b> ${QR('Core tier, all modules')}`, '<b>Practice:</b> walk through your project end to end: architecture, trade-offs, what you would build next'],
         ['<b>Light day:</b> your 5 weakest Revision cards + rehearse the resume walkthrough', '<b>Rest</b> — sleep beats one more topic'],
       ]},
     ];
@@ -994,19 +994,27 @@
     }).join('');
 
     const total = gi;
+    // DSA stat = sum of the "<b>DSA:</b> … — N problems" lines, so it tracks the rows honestly.
+    const dsaCount = DATA.flatMap(p => p.days).flat().reduce((sum, h) => {
+      const html = String(h);
+      if (!html.includes('<b>DSA:')) return sum;
+      const m = html.match(/<b>DSA:<\/b>[^<]*?— (\d+) problems/);
+      if (!m) { console.warn('[plan] DSA line not counted (expected "<b>DSA:</b> … — N problems"):', html); return sum; }
+      return sum + +m[1];
+    }, 0);
 
     container.innerHTML = `
       <div class="plan">
         <div class="topic-meta topic-crumbs"><span class="crumb-tier">Study Plan</span><span class="crumb-sep" aria-hidden="true">/</span><span class="crumb-mod">Full Stack + FDE</span><span class="crumb-time" id="planDayLine"></span></div>
         <h1 class="topic-title">${total}-Day Full Stack + FDE Plan</h1>
-        <p class="plan-lede">A day-by-day plan to move from React Native to <strong>Full Stack</strong> and <strong>Forward Deployed Engineer</strong> roles. Go deep on what's new (backend, cloud, AI, design) and polish what you already know (JS, TypeScript, React) with Quick Revision. One project grows through the plan, from API to cloud to AI demo, so you finish with something to show. Every topic name links to its page.</p>
+        <p class="plan-lede">A day-by-day plan to move from React Native to <strong>Full Stack</strong> and <strong>Forward Deployed Engineer</strong> roles. The plan serves both loops: backend, cloud, AI and design for depth, plus a frontend week with daily machine coding. One full-stack project grows through it (API → React UI + auth → AWS → AI feature), and five mocks cover UI machine coding, AI design, HLD + LLD, a Full Stack loop and an FDE loop. Every topic name links to its page.</p>
 
         <div class="plan-board">
           <div class="plan-stats">
             <div class="plan-stat"><span class="n">~${total * 3}</span><span class="l">total hours</span></div>
             <div class="plan-stat"><span class="n">${planTopics.size}</span><span class="l">topics</span></div>
-            <div class="plan-stat"><span class="n">~45</span><span class="l">DSA problems</span></div>
-            <div class="plan-stat"><span class="n">4</span><span class="l">mock interviews</span></div>
+            <div class="plan-stat"><span class="n">~${dsaCount}</span><span class="l">DSA problems</span></div>
+            <div class="plan-stat"><span class="n">5</span><span class="l">mock interviews</span></div>
           </div>
           <div class="plan-prog-head"><span class="lab">Progress</span><span class="pct" id="planPct"></span></div>
           <div class="plan-track"><div class="plan-fill" id="planFill"></div></div>
@@ -1015,13 +1023,13 @@
 
         <div class="plan-method">
           <div class="plan-m"><span class="k">Daily rhythm</span><strong>~1.5h concept · ~1h build or DSA · ~30m revise</strong></div>
-          <div class="plan-m"><span class="k">Learn vs polish</span><strong>Deep-read backend, cloud, AI and LLD; skim frontend with Quick Revision</strong></div>
-          <div class="plan-m"><span class="k">FDE edge</span><strong>Build as you go: API → AWS → RAG demo with evals you can show</strong></div>
+          <div class="plan-m"><span class="k">Learn vs polish</span><strong>Refresh JS/React with Quick Revision, then deep-read the tricky bits; go deep on backend, cloud, AI and design</strong></div>
+          <div class="plan-m"><span class="k">Running project</span><strong>API → React UI + auth → AWS → AI feature: one demo for both loops</strong></div>
         </div>
 
         ${phasesHtml}
 
-        <div class="plan-note"><strong>How to use it:</strong> each day is about 3 hours: read the concept topics (Revision card first, then the sections), then do the second line, which is DSA, a build step on your running project, or practice. Tick the day when done; ticks sync to your account. Consolidation days use <a class="plan-link" href="#/revise">Quick Revision</a>. From Day 7, every day also carries a 10-minute estimation warm-up (Drill 1 to 14, then repeat) so back-of-envelope math becomes automatic. Lines marked Stretch in Phase 6 are optional extra system-design cases, only if time allows. The four mocks are load-bearing, so after each one, fix the gaps before moving on. Fell behind? Skip a DSA line, never a build step or a mock.</div>
+        <div class="plan-note"><strong>How to use it:</strong> each day is about 3 hours: read the concept topics (Revision card first, then the sections), then do the second line, which is DSA, a build step on your running project, or practice. Tick the day when done; ticks sync to your account. Consolidation days use <a class="plan-link" href="#/revise">Quick Revision</a>. From Day 7, every day also carries a 10-minute estimation warm-up (Drill 1 to 14, then repeat) so back-of-envelope math becomes automatic. Lines marked Stretch in Phase 6 are optional extras (more system-design cases, LLD cases, niche topics), only if time allows. The five mocks are load-bearing, so after each one, fix the gaps before moving on. Fell behind? Skip a DSA line, never a build step or a mock.</div>
       </div>`;
 
     const toc = document.getElementById('tocList');

@@ -5,7 +5,7 @@
 // DSA words link to the glossary at #/topic/dsa-words#w-<slug>.
 window.PREP_SITE.registerTopic({
   id: "dsa-hashing",
-  module: "DSA",
+  module: "dsa",
   title: "Hashing",
   estimatedReadTime: "40 min",
   tags: ["dsa","hash","map","set","frequency","lookup","prefix-sum"],

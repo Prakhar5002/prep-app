@@ -3,7 +3,7 @@
 // DSA words link to the glossary at #/topic/dsa-words#w-<slug>.
 window.PREP_SITE.registerTopic({
   id: "dsa-sliding-window",
-  module: "DSA",
+  module: "dsa",
   title: "Sliding Window",
   estimatedReadTime: "35 min",
   tags: ["dsa","sliding-window","array","string","pattern"],

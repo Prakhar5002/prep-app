@@ -255,9 +255,10 @@ Reads:    2 × 10⁸ DAU × 10 opens = 2 × 10⁹/day ÷ 10⁵ ≈ 20K/s avg →
 Fan-out:  5 × 10⁸ tweets × 200 followers = 10¹¹ inserts/day ÷ 10⁵ ≈ 1M/s avg (~3M/s peak)
 Storage:  5 × 10⁸ × 1 KB = 500 GB/day → × 365 ≈ 180 TB/yr → × 3 ≈ 550 TB/yr (text)
 Media:    5 × 10⁷ × 500 KB = 25 TB/day → ~9 PB/yr (object storage, erasure coded)
-Cache:    800 tweet ids × 8 B = 6.4 KB per user × 2 × 10⁸ ≈ 1.3 TB of timelines
+Cache:    800 ids × 8 B = 6.4 KB/user × 2 × 10⁸ ≈ 1.3 TB (lower bound)
+          with author id/flags (~20 B/entry) + Redis overhead ≈ 4-5 TB
 Egress:   60K pages/s × 20 × 1 KB ≈ 1.2 GB/s ≈ 10 Gbps of text; media via CDN</code></pre>
-<p><strong>Decision:</strong> 15K tweet writes/s is beyond one primary, so the tweet store is sharded by tweet id. The real load is the 1M+/s fan-out inserts, which go through a queue to async workers. A celebrity with 100M followers would be 10⁸ inserts for one tweet, so use <strong>hybrid fan-out</strong>: push for normal authors, pull for authors over a follower threshold and merge at read time. ~1.3 TB of timeline ids means a Redis cluster of a few dozen nodes (with replicas), not one box. Media never touches the app tier: object storage plus CDN.</p>
+<p><strong>Decision:</strong> 15K tweet writes/s is beyond one primary, so the tweet store is sharded by tweet id. The real load is the 1M+/s fan-out inserts, which go through a queue to async workers. A celebrity with 100M followers would be 10⁸ inserts for one tweet, so use <strong>hybrid fan-out</strong>: push for normal authors, pull for authors over a follower threshold and merge at read time. Cache: 800 ids × 8 B ≈ 1.3 TB is a lower bound; with author id/flags (~20 B per entry) and Redis overhead it is ~4-5 TB. Combined with ~3M inserts/s at peak, that means on the order of ~100 Redis primaries plus replicas, not one box and not a few dozen. Media never touches the app tier: object storage plus CDN.</p>
 
 <h3>Drill 2: WhatsApp messaging</h3>
 <p><strong>Assume:</strong> 1B DAU, 100B messages/day, ~200 B per stored message, 10-20% of DAU online at peak, 5% of messages carry ~200 KB of media.</p>

@@ -4,7 +4,7 @@
 // DSA words link to the glossary at #/topic/dsa-words#w-<slug>.
 window.PREP_SITE.registerTopic({
   id: "dsa-arrays-strings",
-  module: "DSA",
+  module: "dsa",
   title: "Arrays & Strings",
   estimatedReadTime: "45 min",
   tags: ["dsa","array","string","patterns","in-place","reverse","rotate"],

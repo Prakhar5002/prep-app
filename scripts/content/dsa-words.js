@@ -2,7 +2,7 @@
 // Each entry: <h3 id="w-<slug>"> → plain meaning → everyday picture → tiny example → "You'll meet it in".
 window.PREP_SITE.registerTopic({
   id: "dsa-words",
-  module: "DSA",
+  module: "dsa",
   title: "DSA Words in Plain English",
   estimatedReadTime: "40 min",
   tags: ["dsa","glossary","beginner","terms","big-o","vocabulary"],

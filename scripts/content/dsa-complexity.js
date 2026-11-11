@@ -3,7 +3,7 @@
 // n is always "how many guests" (the size of the input). DSA words link to #/topic/dsa-words#w-<slug>.
 window.PREP_SITE.registerTopic({
   id: "dsa-complexity",
-  module: "DSA",
+  module: "dsa",
   title: "Complexity Analysis",
   estimatedReadTime: "45 min",
   tags: ["dsa","complexity","big-o","time","space","amortized","asymptotic"],
