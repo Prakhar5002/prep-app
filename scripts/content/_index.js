@@ -48,6 +48,14 @@ window.PREP_SITE.registry = {
     { id: "backend-sd", title: "System Design (Backend, Deep)", group: "core", groupLabel: "Core · Full Stack + FDE",
       topics: [ { id: "bsd-estimation", title: "Estimation & Numbers" },
                 { id: "bsd-framework", title: "Backend SD Framework" },
+                { id: "bsd-bb-partitioning", title: "Partitioning & Consistent Hashing" },
+                { id: "bsd-bb-replication", title: "Replication & Quorums" },
+                { id: "bsd-bb-consistency", title: "Consistency Models, CAP & PACELC" },
+                { id: "bsd-bb-consensus", title: "Consensus & Coordination" },
+                { id: "bsd-bb-storage", title: "Storage Engines & Picking a Database" },
+                { id: "bsd-bb-transactions", title: "Distributed Transactions, Time & IDs" },
+                { id: "bsd-bb-probabilistic", title: "Probabilistic & Geo Structures" },
+                { id: "bsd-bb-edge", title: "Edge & Traffic (DNS, CDN, LBs, Gateways)" },
                 { id: "bsd-cases", title: "Backend SD Cases (overview)" } ] },
     {
       id: "backend-stack",
@@ -121,6 +129,7 @@ window.PREP_SITE.registry = {
       group: "core",
       groupLabel: "Core · Full Stack + FDE",
       topics: [
+        { id: "dsa-words", title: "DSA Words in Plain English" },
         { id: "dsa-complexity", title: "Complexity Analysis" },
         { id: "dsa-arrays-strings", title: "Arrays & Strings" },
         { id: "dsa-two-pointers", title: "Two Pointers" },

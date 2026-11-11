@@ -1160,6 +1160,8 @@ html[data-theme="light"] .icon-moon { display: block; }
   border-top: 1px solid var(--border); cursor: pointer; position: relative;
 }
 .plan-day:first-child { border-top: none; }
+.plan-day.is-current { background: var(--pc-soft); box-shadow: inset 3px 0 0 var(--pc); }
+#navPlanLink[hidden], .kbd-row[hidden] { display: none !important; }
 .plan-day:hover { background: var(--bg-elev-2); }
 .plan-day input { position: absolute; opacity: 0; width: 0; height: 0; }
 .plan-box {

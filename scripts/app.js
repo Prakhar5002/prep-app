@@ -357,6 +357,7 @@
       setPracticeNavActive();
     }
     else if (r.name === 'plan') {
+      if (!guardPlanRoute()) return;
       renderPlan($('#content'));
       setPlanNavActive();
     }
@@ -637,7 +638,7 @@
   // ACCOUNTS + CROSS-DEVICE SYNC (Firebase)
   // Studied topics + Study Plan progress sync to users/{uid}.
   // ==========================================================
-  let _authUser = null, _userUnsub = null, _fbDb = null, _syncTimer = null, _applyingRemote = false, _authMode = 'signin';
+  let _authUser = null, _userUnsub = null, _fbDb = null, _syncTimer = null, _applyingRemote = false, _authMode = 'signin', _authResolved = false;
 
   function fbConfigured() {
     const c = window.PREP_FIREBASE_CONFIG;
@@ -664,7 +665,7 @@
   function reRenderForSync() {
     renderSidebar(); updateProgress();
     const r = parseRoute();
-    if (r.name === 'plan') renderPlan($('#content'));
+    if (r.name === 'plan') { if (isPlanOwner()) renderPlan($('#content')); }
     else if (r.name === 'revise') renderRevise($('#content'));
     else if (r.name === 'topic' && state.currentTopicId) {
       const pt = $('#progressToggle'); if (pt) pt.classList.toggle('active', state.studied.has(state.currentTopicId));
@@ -675,7 +676,7 @@
     if (!data) return;
     _applyingRemote = true;
     if (Array.isArray(data.studied)) { state.studied = new Set(data.studied); store.set('studied', data.studied); }
-    if (Array.isArray(data.planDone)) { store.set('prep-plan-done', data.planDone); }
+    if (Array.isArray(data.planDone)) { store.set('prep-plan-done', migratePlanKeys(data.planDone)); }
     if (Array.isArray(data.revised)) { store.set('prep-revised', data.revised); }
     reRenderForSync();
     _applyingRemote = false;
@@ -688,7 +689,7 @@
       const remote = (snap && snap.exists) ? (snap.data() || {}) : {};
       // Merge local + remote once at login so nothing is lost.
       const mStudied = new Set([].concat(remote.studied || [], Array.from(state.studied)));
-      const mPlan = new Set([].concat(remote.planDone || [], store.get('prep-plan-done', []) || []));
+      const mPlan = new Set(migratePlanKeys([].concat(remote.planDone || [], store.get('prep-plan-done', []) || [])));
       const mRevised = new Set([].concat(remote.revised || [], store.get('prep-revised', []) || []));
       store.set('prep-revised', Array.from(mRevised));
       state.studied = mStudied; store.set('studied', Array.from(mStudied));
@@ -802,24 +803,93 @@
   }
   function initAuthAndSync() {
     initAuthUI();
-    if (!fbInit()) { updateAuthUI(); return; }
+    updatePlanVisibility();
+    if (!fbInit()) {
+      updateAuthUI();
+      _authResolved = true;
+      if (parseRoute().name === 'plan' && !isPlanOwner()) route();
+      return;
+    }
+    // Safety net: if auth never reports (blocked/offline SDK), stop waiting so a non-owner isn't left on a blank #/plan.
+    setTimeout(function () {
+      if (_authResolved) return;
+      _authResolved = true;
+      if (parseRoute().name === 'plan' && !isPlanOwner()) route();
+    }, 2500);
     firebase.auth().onAuthStateChanged(function (u) {
       if (u && !u.isAnonymous) onLoggedIn(u); else onLoggedOut();
+      _authResolved = true;
+      updatePlanVisibility();
+      // Owner whose auth resolved after we bounced them off #/plan: restore it.
+      if (_planRedirected && isPlanOwner() && parseRoute().name === 'home') { _planRedirected = false; location.hash = '#/plan'; return; }
+      // Re-route if we're on #/plan and it wasn't rendered yet (or the user is no longer the owner).
+      if (parseRoute().name === 'plan' && (!isPlanOwner() || !$('#content .plan'))) route();
     });
   }
 
   // ==========================================================
-  // STUDY PLAN (30-day roadmap page)
+  // STUDY PLAN (40-day roadmap page, owner-only)
   // ==========================================================
+  const PLAN_OWNER_EMAIL = 'pandey.prakhar5002@gmail.com';
+  const PLAN_KEY = 'prep-plan-done';
+  const PLAN_DAYS = 40;
+  // MIGRATION ONLY: legacy ticks were keyed by ISO date counted from this start (6 Nov 2026).
+  // Used solely to convert old 'YYYY-MM-DD' keys to 'day-N'. The page itself shows no dates.
+  const PLAN_LEGACY_START = Date.UTC(2026, 10, 6);
+
+  function isPlanOwner() {
+    // Dev/test switch: localStorage 'prep:plan-owner-preview' = '1' shows the plan without signing in (headless tests).
+    try { if (localStorage.getItem('prep:plan-owner-preview') === '1') return true; } catch (e) {}
+    const em = _authUser && _authUser.email;
+    return !!em && String(em).toLowerCase() === PLAN_OWNER_EMAIL.toLowerCase();
+  }
+
+  // Pure: legacy ISO keys -> day-N, drop out-of-range/unknown keys, de-dupe, sorted by day.
+  function migratePlanKeys(keys) {
+    const out = new Set();
+    (Array.isArray(keys) ? keys : []).forEach(function (k) {
+      let n = NaN;
+      const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(k);
+      const dm = /^day-(\d+)$/.exec(k);
+      if (iso) n = Math.round((Date.UTC(+iso[1], +iso[2] - 1, +iso[3]) - PLAN_LEGACY_START) / 86400000) + 1;
+      else if (dm) n = +dm[1];
+      if (n >= 1 && n <= PLAN_DAYS) out.add(n);
+    });
+    return Array.from(out).sort(function (a, b) { return a - b; }).map(function (n) { return 'day-' + n; });
+  }
+  function normalizePlanStore() {
+    const cur = store.get(PLAN_KEY, []) || [];
+    const next = migratePlanKeys(cur);
+    if (JSON.stringify(cur) !== JSON.stringify(next)) store.set(PLAN_KEY, next);
+    return next;
+  }
+  window.PREP_SITE.migratePlanKeys = migratePlanKeys;
+
+  // Show/hide every plan entry point for the current user.
+  function updatePlanVisibility() {
+    const owner = isPlanOwner();
+    const nav = $('#navPlanLink'); if (nav) nav.hidden = !owner;
+    $$('.kbd-row').forEach(function (r) { if (/Go to Study Plan/.test(r.textContent)) r.hidden = !owner; });
+    $$('.auth-sub').forEach(function (el) {
+      if (el.dataset.orig === undefined) el.dataset.orig = el.innerHTML;
+      if (!/Study Plan/.test(el.dataset.orig)) return;
+      el.innerHTML = owner ? el.dataset.orig : el.dataset.orig.replace(' &amp; Study Plan', '');
+    });
+  }
+  // Auth may resolve after the first route: until it does, a non-owner on #/plan sees an empty page;
+  // the auth listener then re-routes (owner -> plan renders, others -> redirected home).
+  let _planRedirected = false;
+  function authSettled() { return _authResolved || !fbConfigured(); }
+  function guardPlanRoute() {
+    if (isPlanOwner()) return true;
+    if (!authSettled()) { const c = $('#content'); if (c) c.innerHTML = ''; return false; }
+    _planRedirected = true; // remember the intended route so a late-resolving owner can be sent back
+    location.replace('#/');
+    return false;
+  }
+
   function renderPlan(container) {
-    // Fixed start date so the plan is stable regardless of when it's opened.
-    const START = new Date(2026, 10, 6); // 6 Nov 2026 (month 10 = November) → 40 days → 15 Dec
-    const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const pad = n => (n < 10 ? '0' + n : '' + n);
-    const iso = dt => dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate());
-    const fmt = dt => dt.getDate() + ' ' + MON[dt.getMonth()];
-    const addDays = n => { const d = new Date(START); d.setDate(START.getDate() + n); return d; };
+    normalizePlanStore(); // convert any legacy ISO-date ticks to day-N before reading
 
     // Topic link helper: T('be-kafka') → clickable topic title; titles come from the registry.
     const planTopics = new Set();
@@ -891,46 +961,45 @@
       ]},
     ];
 
-    const KEY = 'prep-plan-done';
+    const KEY = PLAN_KEY;
     const done = new Set(store.get(KEY, []) || []);
     let gi = 0;
 
     const phasesHtml = DATA.map((p, pi) => {
-      const first = addDays(gi);
+      const firstN = gi + 1;
       const rows = p.days.map(([a, b]) => {
-        const dt = addDays(gi); gi++;
-        const key = iso(dt);
+        gi++;
+        const n = gi;
+        const key = 'day-' + n;
         const isDone = done.has(key);
-        // Daily estimation warm-up from 12 Nov: Drill 1..14, cycling.
-        const warm = key >= '2026-11-12' ? ` · <b>Estimation:</b> <a class="plan-link" href="#/topic/bsd-estimation#examples">Drill ${((gi - 1 - 6) % 14) + 1}</a>` : '';
+        // Daily estimation warm-up from Day 7: Drill 1..14, cycling.
+        const warm = n >= 7 ? ` · <b>Estimation:</b> <a class="plan-link" href="#/topic/bsd-estimation#examples">Drill ${((n - 7) % 14) + 1}</a>` : '';
         return `
           <label class="plan-day${isDone ? ' is-done' : ''}">
             <input type="checkbox" class="plan-cb" data-day="${key}"${isDone ? ' checked' : ''}>
             <span class="plan-box" aria-hidden="true"></span>
-            <span class="plan-date"><span class="plan-dow">${DOW[dt.getDay()]}</span><span class="plan-dnum">${fmt(dt)}</span></span>
+            <span class="plan-date"><span class="plan-dnum">Day ${n}</span></span>
             <span class="plan-dbody"><span class="plan-line">${a}</span><span class="plan-sub">${b}${warm}</span></span>
           </label>`;
       }).join('');
-      const last = addDays(gi - 1);
       return `
         <section class="plan-phase ${p.cls}">
           <div class="plan-phead">
             <span class="plan-ptag">Phase ${pi + 1}</span>
             <h2 class="plan-pname">${p.name}</h2>
-            <span class="plan-pfocus">${fmt(first)} – ${fmt(last)}</span>
+            <span class="plan-pfocus">Days ${firstN}–${gi}</span>
           </div>
           <div class="plan-days">${rows}</div>
         </section>`;
     }).join('');
 
     const total = gi;
-    const endDt = addDays(total - 1);
 
     container.innerHTML = `
       <div class="plan">
-        <div class="topic-meta topic-crumbs"><span class="crumb-tier">Study Plan</span><span class="crumb-sep" aria-hidden="true">/</span><span class="crumb-mod">Full Stack + FDE</span><span class="crumb-time">${total} days · ${fmt(START)} – ${fmt(endDt)}</span></div>
+        <div class="topic-meta topic-crumbs"><span class="crumb-tier">Study Plan</span><span class="crumb-sep" aria-hidden="true">/</span><span class="crumb-mod">Full Stack + FDE</span><span class="crumb-time" id="planDayLine"></span></div>
         <h1 class="topic-title">${total}-Day Full Stack + FDE Plan</h1>
-        <p class="plan-lede">A date-by-date plan to move from React Native to <strong>Full Stack</strong> and <strong>Forward Deployed Engineer</strong> roles. Go deep on what's new (backend, cloud, AI, design) and polish what you already know (JS, TypeScript, React) with Quick Revision. One project grows through the plan, from API to cloud to AI demo, so you finish with something to show. Every topic name links to its page.</p>
+        <p class="plan-lede">A day-by-day plan to move from React Native to <strong>Full Stack</strong> and <strong>Forward Deployed Engineer</strong> roles. Go deep on what's new (backend, cloud, AI, design) and polish what you already know (JS, TypeScript, React) with Quick Revision. One project grows through the plan, from API to cloud to AI demo, so you finish with something to show. Every topic name links to its page.</p>
 
         <div class="plan-board">
           <div class="plan-stats">
@@ -952,7 +1021,7 @@
 
         ${phasesHtml}
 
-        <div class="plan-note"><strong>How to use it:</strong> each day is about 3 hours: read the concept topics (Revision card first, then the sections), then do the second line, which is DSA, a build step on your running project, or practice. Tick the day when done; ticks sync to your account. Consolidation days use <a class="plan-link" href="#/revise">Quick Revision</a>. From 12 Nov, every day also carries a 10-minute estimation warm-up (Drill 1 to 14, then repeat) so back-of-envelope math becomes automatic. Lines marked Stretch in Phase 6 are optional extra system-design cases, only if time allows. The four mocks are load-bearing, so after each one, fix the gaps before moving on. Fell behind? Skip a DSA line, never a build step or a mock.</div>
+        <div class="plan-note"><strong>How to use it:</strong> each day is about 3 hours: read the concept topics (Revision card first, then the sections), then do the second line, which is DSA, a build step on your running project, or practice. Tick the day when done; ticks sync to your account. Consolidation days use <a class="plan-link" href="#/revise">Quick Revision</a>. From Day 7, every day also carries a 10-minute estimation warm-up (Drill 1 to 14, then repeat) so back-of-envelope math becomes automatic. Lines marked Stretch in Phase 6 are optional extra system-design cases, only if time allows. The four mocks are load-bearing, so after each one, fix the gaps before moving on. Fell behind? Skip a DSA line, never a build step or a mock.</div>
       </div>`;
 
     const toc = document.getElementById('tocList');
@@ -965,6 +1034,12 @@
       const pct = document.getElementById('planPct');
       if (fill) fill.style.width = pctN + '%';
       if (pct) pct.textContent = d.size + ' / ' + total + ' days · ' + pctN + '%';
+      // Current day = first unticked day. Nothing is ever marked late or overdue.
+      let cur = 0;
+      for (let n = 1; n <= total; n++) { if (!d.has('day-' + n)) { cur = n; break; } }
+      $$('.plan-day', container).forEach((row, idx) => { row.classList.toggle('is-current', idx + 1 === cur); if (idx + 1 === cur) row.setAttribute('aria-current', 'step'); else row.removeAttribute('aria-current'); });
+      const line = document.getElementById('planDayLine');
+      if (line) line.textContent = cur ? 'Day ' + cur + ' of ' + total : 'All ' + total + ' days done';
     }
     $$('.plan-cb', container).forEach(cb => {
       cb.addEventListener('change', () => {
@@ -1461,7 +1536,7 @@
         if (lower === 'g') window.scrollTo({ top: 0, behavior: 'smooth' });
         else if (lower === 'h') location.hash = '#/';
         else if (lower === 'p') location.hash = '#/practice';
-        else if (lower === 's') location.hash = '#/plan';
+        else if (lower === 's') { if (isPlanOwner()) location.hash = '#/plan'; else handled = false; }
         else if (lower === 'r') location.hash = '#/revise';
         else handled = false;
         if (handled) { e.preventDefault(); return; }

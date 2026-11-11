@@ -73,7 +73,7 @@ const BSD_RULES = (id, s, sids) => {
 };
 
 // ---- DSA plain-English rules ----
-const DSA_REWRITTEN = new Set([]);
+const DSA_REWRITTEN = new Set(['dsa-words', 'dsa-sliding-window', 'dsa-complexity', 'dsa-arrays-strings', 'dsa-hashing']);
 const DSA_CODE_RE = /<pre><code class="language-js">([\s\S]*?)<\/code><\/pre>/g;
 const DSA_RULES = (id, s) => {
   if (!DSA_REWRITTEN.has(id)) return;
